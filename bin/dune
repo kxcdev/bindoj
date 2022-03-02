@@ -1,10 +1,20 @@
 (executable
- (public_name codegen)
- (name main)
+ (name gen)
+ (modules gen)
  (libraries codegen ppxlib)
  (preprocess (pps ppxlib.metaquot)))
 
+(executable
+ (name main)
+ (modules main)
+ (libraries test_gen codegen ppxlib))
+
+(library
+ (name test_gen)
+ (modules test_gen))
+
 (rule
- (deps   (:gen main.exe))
- (action (with-stdout-to test.gen.ml (run %{gen})))
+ (targets test_gen.ml)
+ (deps   (:gen gen.exe))
+ (action (with-stdout-to %{targets} (run %{gen})))
  (mode   (promote (until-clean))))

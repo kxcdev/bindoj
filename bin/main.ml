@@ -1,7 +1,3 @@
-open Ppxlib
-
-let loc = Location.none
-
 let () =
-  Pprintast.structure Format.std_formatter
-    [%str let () = print_endline "hello ast"]
+  Format.printf "Test_gen.greeting \"Alice\": %s"
+    (Test_gen.greeting "Alice")
