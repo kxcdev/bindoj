@@ -1,0 +1,10 @@
+(executable
+ (public_name codegen)
+ (name main)
+ (libraries codegen ppxlib)
+ (preprocess (pps ppxlib.metaquot)))
+
+(rule
+ (deps   (:gen main.exe))
+ (action (with-stdout-to test.gen.ml (run %{gen})))
+ (mode   (promote (until-clean))))
