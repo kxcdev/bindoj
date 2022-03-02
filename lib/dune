@@ -1,2 +1,12 @@
 (library
- (name codegen))
+ (name codegen)
+ ; (modules greeting)
+)
+
+(rule
+ (targets greeting.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/greeting.exe}))))
+
+(rule
+ (targets arith.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/arith.exe}))))

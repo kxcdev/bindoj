@@ -1,0 +1,4 @@
+(executables
+ (names greeting arith)
+ (libraries gen_lib ppxlib)
+ (preprocess (pps ppxlib.metaquot)))
