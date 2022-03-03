@@ -1,3 +1,4 @@
 _build
 *_gen.ml
 *_gen.mli
+*.sw*
