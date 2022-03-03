@@ -28,7 +28,7 @@ module Datatype_desc = struct
     Ptype_record (List.map (fun ({rf_name; rf_type}, _doc) ->
         label_declaration
           ~name:(Located.mk ~loc rf_name)
-          ~type_:(ptyp_var ~loc rf_type)
+          ~type_:(ptyp_constr ~loc (Located.mk ~loc (lident rf_type)) [])
           ~loc
           ~mutable_:Immutable
       ) fields)
