@@ -25,13 +25,29 @@ module Datatype_desc = struct
   let kind_type_of_record_type_desc : record_type_desc with_docstr -> type_kind =
     fun (fields, _doc) ->
     let loc = Location.none in
-    Ptype_record (List.map (fun ({rf_name; rf_type}, _doc) ->
-        label_declaration
+    Ptype_record (List.map (fun ({rf_name; rf_type;}, _doc) ->
+        label_declaration ~loc ~mutable_:Immutable
           ~name:(Located.mk ~loc rf_name)
           ~type_:(ptyp_constr ~loc (Located.mk ~loc (lident rf_type)) [])
-          ~loc
-          ~mutable_:Immutable
       ) fields)
+
+  let kind_type_of_variant_type_desc : variant_type_desc with_docstr -> type_kind =
+    fun (constrs, _doc) ->
+    let loc = Location.none in
+    Ptype_variant (List.map (function
+        | Cstr_tuple {ct_name; ct_args;}, _doc ->
+           constructor_declaration ~loc ~res:None
+             ~name:(Located.mk ~loc ct_name)
+             ~args:(Pcstr_tuple (List.map (fun ct_arg ->
+                 ptyp_constr ~loc (Located.mk ~loc (lident ct_arg)) [])
+                 ct_args))
+        | Cstr_record {cr_name; cr_fields;}, _doc ->
+           constructor_declaration ~loc ~res:None
+             ~name:(Located.mk ~loc cr_name)
+             ~args:(match kind_type_of_record_type_desc (cr_fields, `nodoc) with
+                 | Ptype_record fields -> Pcstr_record fields
+                 | _ -> failwith "impossible type_kind"))
+        constrs)
 
 end
 
@@ -89,10 +105,13 @@ let () =
   let open Ppxlib in
   let open Ast_builder.Default in
   let loc = Location.none in
-  Ppxlib.Pprintast.signature_item
-    Format.std_formatter
+  Ppxlib.Pprintast.signature Format.std_formatter [
     (psig_type ~loc Recursive
-       [type_declaration
+       [type_declaration ~loc ~params:[] ~cstrs:[] ~private_:Public ~manifest:None
           ~name:(Located.mk ~loc "student")
-          ~kind:(Datatype_desc.kind_type_of_record_type_desc ex01)
-          ~loc ~params:[] ~cstrs:[] ~private_:Public ~manifest:None])
+          ~kind:(Datatype_desc.kind_type_of_record_type_desc ex01)]);
+    (psig_type ~loc Recursive
+       [type_declaration ~loc ~params:[] ~cstrs:[] ~private_:Public ~manifest:None
+          ~name:(Located.mk ~loc "person")
+          ~kind:(Datatype_desc.kind_type_of_variant_type_desc ex02)]);
+  ]
