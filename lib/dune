@@ -10,3 +10,23 @@
 (rule
  (targets arith.ml)
  (action (with-stdout-to %{targets} (run %{exe:gen/arith.exe}))))
+
+(rule
+ (targets ex01.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/ex01.exe})))
+ (mode (promote (until-clean))))
+
+(rule
+ (targets ex02.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/ex02.exe})))
+ (mode (promote (until-clean))))
+
+(rule
+ (targets ex01_docstr.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/ex01_docstr.exe})))
+ (mode (promote (until-clean))))
+
+(rule
+ (targets ex02_docstr.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/ex02_docstr.exe})))
+ (mode (promote (until-clean))))

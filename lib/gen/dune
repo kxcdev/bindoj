@@ -1,4 +1,4 @@
 (executables
- (names greeting arith)
+ (names greeting arith ex01 ex02 ex01_docstr ex02_docstr)
  (libraries gen_lib ppxlib)
  (preprocess (pps ppxlib.metaquot)))
