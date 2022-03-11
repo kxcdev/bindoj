@@ -72,8 +72,8 @@ module Datatype_desc = struct
              | Variant_kind variant -> kind_type_of_variant_type_desc variant))
       with ptype_attributes = attributes_of_doc doc }
 
-  let gen_jsonm_encoder : string -> type_decl -> value_binding =
-    fun ec_name { td_name=_; td_kind=(kind, _); } ->
+  let gen_jsonm_encoder : type_decl -> expression =
+    fun { td_name=_; td_kind=(kind, _); } ->
     let loc = Location.none in
     match kind with
     | Record_kind record ->
@@ -84,23 +84,25 @@ module Datatype_desc = struct
        let members = List.mapi (fun i { rf_name; rf_type; } ->
            let name = [%expr `Name [%e estring ~loc rf_name]] in
            if rf_type = "int" then
-             [%expr [[%e name]; `Float (float_of_int [%e evari i])]]
+             (name, [%expr `Float (float_of_int [%e evari i])])
            else if rf_type = "float" then
-             [%expr [[%e name]; `Float [%e evari i]]]
+             (name, [%expr `Float [%e evari i]])
            else if rf_type = "string" then
-             [%expr [[%e name]; `String [%e evari i]]]
+             (name, [%expr `String [%e evari i]])
            else if rf_type = "bool" then
-             [%expr [[%e name]; `Bool [%e evari i]]]
+             (name, [%expr `Bool [%e evari i]])
            else failwith "unsupported record field type") fields in
-       let obj = elist ~loc ([[%expr [`Os]]] @ members @ [[%expr [`Oe]]])
-                 |> fun e -> [%expr List.concat [%e e]] in
+       let obj =
+         List.fold_right
+           (fun (n, v) e -> [%expr Seq.cons [%e n] (Seq.cons [%e v] [%e e])])
+           members
+           [%expr Seq.return `Oe]
+         |> fun e -> [%expr Seq.cons `Os [%e e]] in
        let rf_binds = List.mapi (fun i { rf_name; rf_type=_ } ->
            (Located.mk ~loc (lident rf_name), pvari i)) fields in
-       value_binding ~loc
-         ~pat:(pvar ~loc ec_name)
-         ~expr:[%expr fun [%p ppat_record ~loc rf_binds Closed ] -> [%e obj]]
+       [%expr fun [%p ppat_record ~loc rf_binds Closed] -> [%e obj]]
     | Variant_kind _ ->
-       failwith "encoder of variant is not unimplemented."
+       failwith "encoder of variant is not implemented."
 
 end
 
@@ -206,6 +208,5 @@ let () =
        [Datatype_desc.type_declaration_of_type_decl ex02_docstr]);
   ];
   Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_value ~loc Nonrecursive
-       [Datatype_desc.gen_jsonm_encoder "encode_student_jsonm" ex01])
+    [%stri let encode_student_jsonm = [%e Datatype_desc.gen_jsonm_encoder ex01]]
   ];
