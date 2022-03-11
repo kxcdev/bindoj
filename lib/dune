@@ -1,7 +1,6 @@
 (library
  (name codegen)
- ; (modules greeting)
-)
+ (libraries jsonm))
 
 (rule
  (targets greeting.ml)
@@ -12,21 +11,21 @@
  (action (with-stdout-to %{targets} (run %{exe:gen/arith.exe}))))
 
 (rule
- (targets ex01.ml)
+ (targets ex01_gen.ml)
  (action (with-stdout-to %{targets} (run %{exe:gen/ex01.exe})))
  (mode (promote (until-clean))))
 
 (rule
- (targets ex02.ml)
+ (targets ex02_gen.ml)
  (action (with-stdout-to %{targets} (run %{exe:gen/ex02.exe})))
  (mode (promote (until-clean))))
 
 (rule
- (targets ex01_docstr.ml)
+ (targets ex01_docstr_gen.ml)
  (action (with-stdout-to %{targets} (run %{exe:gen/ex01_docstr.exe})))
  (mode (promote (until-clean))))
 
 (rule
- (targets ex02_docstr.ml)
+ (targets ex02_docstr_gen.ml)
  (action (with-stdout-to %{targets} (run %{exe:gen/ex02_docstr.exe})))
  (mode (promote (until-clean))))

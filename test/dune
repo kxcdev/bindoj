@@ -1,2 +1,5 @@
-(test
- (name codegen))
+(library
+ (name codegen_test)
+ (libraries codegen jsonm)
+ (inline_tests)
+ (preprocess (pps ppx_inline_test)))
