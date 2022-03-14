@@ -90,7 +90,7 @@ let gen_json_encoder : type_decl -> expression =
     let evari i = evar ~loc (vari i) in
     let pvari i = pvar ~loc (vari i) in
     let members = List.mapi (fun i { rf_name; rf_type; rf_codec; } ->
-        let name = [%expr `Name [%e estring ~loc rf_name]] in
+        let name = estring ~loc rf_name in
         let field_encoder_name = match rf_codec with
           | `default_codec -> "encode_"^rf_type^"_json"
           | `codec_val codec -> codec
@@ -99,10 +99,9 @@ let gen_json_encoder : type_decl -> expression =
         fields in
     let obj =
       List.fold_right
-        (fun (n, v) e -> [%expr Seq.cons [%e n] (Seq.cons [%e v] [%e e])])
+        (fun (n, v) e -> [%expr ([%e n], [%e v]) :: [%e e]])
         members
-        [%expr Seq.return `Oe]
-      |> fun e -> [%expr Seq.cons `Os [%e e]] in
+        [%expr []] in
     let rf_binds = List.mapi (fun i { rf_name; rf_type=_; rf_codec=_; } ->
         (Located.mk ~loc (lident rf_name), pvari i)) fields in
     [%expr fun [%p ppat_record ~loc rf_binds Closed] -> [%e obj]]
