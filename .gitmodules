@@ -1,0 +1,3 @@
+[submodule "vendors/kxclib"]
+	path = vendors/kxclib
+	url = https://github.com/kxcteam/kxclib-ocaml.git
