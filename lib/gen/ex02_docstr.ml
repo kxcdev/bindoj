@@ -9,17 +9,22 @@ let ex02_docstr : type_decl =
           Cstr_record {
             cr_name = "Student";
             cr_fields = [
-              { rf_name = "student_id"; rf_type = "int" }, `docstr "student_id field in Student constructor";
-              { rf_name = "name"; rf_type = "string" }, `docstr "name field in Student constructor";
+              { rf_name = "student_id"; rf_type = "int"; rf_codec = `default_codec },
+              `docstr "student_id field in Student constructor";
+              { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
+              `docstr "name field in Student constructor";
             ]
           },
           `docstr "Student constructor";
           Cstr_record {
             cr_name = "Teacher";
             cr_fields = [
-              { rf_name = "faculty_id"; rf_type = "int" }, `docstr "faculty_id field in Teacher constructor";
-              { rf_name = "name"; rf_type = "string" }, `docstr "name field in Teacher constructor";
-              { rf_name = "department"; rf_type = "string" }, `docstr "dapartment field in Teacher constructor";
+              { rf_name = "faculty_id"; rf_type = "int"; rf_codec = `default_codec },
+              `docstr "faculty_id field in Teacher constructor";
+              { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
+              `docstr "name field in Teacher constructor";
+              { rf_name = "department"; rf_type = "string"; rf_codec = `default_codec },
+              `docstr "dapartment field in Teacher constructor";
             ]
           },
           `docstr "Teacher constructor"],

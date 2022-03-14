@@ -1,6 +1,8 @@
 (library
  (name codegen)
- (libraries jsonm))
+ (libraries kxclib jsonm yojson))
+
+(vendored_dirs vendors)
 
 (rule
  (targets greeting.ml)

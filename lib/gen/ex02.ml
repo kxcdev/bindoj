@@ -8,13 +8,15 @@ let ex02 : type_decl =
            Cstr_tuple { ct_name = "With_id"; ct_args = ["int"]}, `nodoc;
            Cstr_record { cr_name = "Student";
                          cr_fields =
-                           [{ rf_name = "student_id"; rf_type = "int" }, `nodoc;
-                            { rf_name = "name"; rf_type = "string" }, `nodoc]; }, `nodoc;
+                           [{ rf_name = "student_id"; rf_type = "int"; rf_codec = `default_codec; }, `nodoc;
+                            { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc]; },
+           `nodoc;
            Cstr_record { cr_name = "Teacher";
                          cr_fields =
-                           [{ rf_name = "faculty_id"; rf_type = "int" }, `nodoc;
-                            { rf_name = "name"; rf_type = "string" }, `nodoc;
-                            { rf_name = "department"; rf_type = "string" }, `nodoc ]; }, `nodoc]),
+                           [{ rf_name = "faculty_id"; rf_type = "int"; rf_codec = `default_codec; }, `nodoc;
+                            { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc;
+                            { rf_name = "department"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc ]; },
+           `nodoc]),
       `nodoc; }
 
 let () =

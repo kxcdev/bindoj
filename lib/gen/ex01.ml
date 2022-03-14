@@ -4,8 +4,8 @@ let ex01 : type_decl =
   { td_name = "student";
     td_kind =
       Record_kind
-        ([{ rf_name = "admission_year"; rf_type = "int"; }, `nodoc;
-          { rf_name = "name"; rf_type = "string"; }, `nodoc;]),
+        ([{ rf_name = "admission_year"; rf_type = "int"; rf_codec = `default_codec }, `nodoc;
+          { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec }, `nodoc;]),
       `nodoc; }
 
 let () =
@@ -14,5 +14,9 @@ let () =
   let loc = Location.none in
   Astlib.Pprintast.structure Format.std_formatter [
     (pstr_type ~loc Recursive [type_declaration_of_type_decl ex01]);
-    [%stri let encode_student_jsonm = [%e gen_jsonm_encoder ex01]];
+    (pstr_value ~loc Recursive
+       (gen_primitive_encoder () @
+        [value_binding ~loc
+           ~pat:(pvar ~loc "encode_student_json")
+           ~expr:(gen_json_encoder ex01)]));
   ]
