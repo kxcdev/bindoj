@@ -75,13 +75,13 @@ let gen_primitive_encoder : unit -> value_binding list = fun () ->
   let bind str expr =
     value_binding ~loc ~pat:(pvar ~loc str) ~expr:expr in
   [bind "encode_null_json" [%expr fun () -> `null];
-   bind "encode_bool_json" [%expr fun __bindoj_arg -> `bool __bindoj_arg];
-   bind "encode_int_json" [%expr fun __bindoj_arg -> `num (float_of_int __bindoj_arg)];
-   bind "encode_float_json" [%expr fun __bindoj_arg -> `num __bindoj_arg];
-   bind "encode_string_json" [%expr fun __bindoj_arg -> `string __bindoj_arg]]
+   bind "encode_bool_json" [%expr fun (__bindoj_arg : bool) -> `bool __bindoj_arg];
+   bind "encode_int_json" [%expr fun (__bindoj_arg : int) -> `num (float_of_int __bindoj_arg)];
+   bind "encode_float_json" [%expr fun (__bindoj_arg : float) -> `num __bindoj_arg];
+   bind "encode_string_json" [%expr fun (__bindoj_arg : string) -> `str __bindoj_arg]]
 
 let gen_json_encoder : type_decl -> expression =
-  fun { td_name=_; td_kind=(kind, _); } ->
+  fun { td_name; td_kind=(kind, _); } ->
   let loc = Location.none in
   match kind with
   | Record_kind record ->
@@ -104,6 +104,9 @@ let gen_json_encoder : type_decl -> expression =
         [%expr []] in
     let rf_binds = List.mapi (fun i { rf_name; rf_type=_; rf_codec=_; } ->
         (Located.mk ~loc (lident rf_name), pvari i)) fields in
-    [%expr fun [%p ppat_record ~loc rf_binds Closed] -> [%e obj]]
+    [%expr fun
+      ([%p ppat_record ~loc rf_binds Closed]
+       : [%t ptyp_constr ~loc (Located.mk ~loc (lident td_name)) []]) ->
+      (`obj [%e obj] : Kxclib.Json.jv)]
   | Variant_kind _ ->
     failwith "encoder of variant is not implemented."
