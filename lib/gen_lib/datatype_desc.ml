@@ -70,19 +70,32 @@ let type_declaration_of_type_decl : type_decl -> type_declaration =
            | Variant_kind variant -> kind_type_of_variant_type_desc variant))
     with ptype_attributes = attributes_of_doc doc }
 
-let gen_primitive_encoder : unit -> value_binding list = fun () ->
+let gen_primitive_encoders : unit -> value_binding list = fun () ->
   let loc = Location.none in
   let bind str expr =
     value_binding ~loc ~pat:(pvar ~loc str) ~expr:expr in
-  [bind "encode_null_json" [%expr fun () -> `null];
-   bind "encode_bool_json" [%expr fun (__bindoj_arg : bool) -> `bool __bindoj_arg];
-   bind "encode_int_json" [%expr fun (__bindoj_arg : int) -> `num (float_of_int __bindoj_arg)];
-   bind "encode_float_json" [%expr fun (__bindoj_arg : float) -> `num __bindoj_arg];
-   bind "encode_string_json" [%expr fun (__bindoj_arg : string) -> `str __bindoj_arg]]
+  [bind "encode_null_json"
+     [%expr fun () -> (`null : Kxclib.Json.jv)];
+   bind "encode_bool_json"
+     [%expr fun (__bindoj_arg : bool) -> (`bool __bindoj_arg : Kxclib.Json.jv)];
+   bind "encode_int_json"
+     [%expr fun (__bindoj_arg : int) -> (`num (float_of_int __bindoj_arg) : Kxclib.Json.jv)];
+   bind "encode_float_json"
+     [%expr fun (__bindoj_arg : float) -> (`num __bindoj_arg : Kxclib.Json.jv)];
+   bind "encode_string_json"
+     [%expr fun (__bindoj_arg : string) -> (`str __bindoj_arg : Kxclib.Json.jv)]]
 
-let gen_json_encoder : type_decl -> expression =
-  fun { td_name; td_kind=(kind, _); } ->
+let gen_json_encoder : type_decl -> codec -> value_binding =
+  fun { td_name; td_kind=(kind, _); } codec ->
   let loc = Location.none in
+  let encoder_name = begin match codec with
+    | `default_codec -> "encode_"^td_name^"_json"
+    | `codec_val codec -> codec
+    | `codec_in_module codec -> codec^".encode_"^td_name^"_json"
+  end |> (fun name ->
+      ppat_constraint ~loc
+        (pvar ~loc name)
+        (ptyp_constr ~loc (Located.mk ~loc (lident td_name)) [])) in
   match kind with
   | Record_kind record ->
     let fields = List.map fst record in
@@ -104,9 +117,8 @@ let gen_json_encoder : type_decl -> expression =
         [%expr []] in
     let rf_binds = List.mapi (fun i { rf_name; rf_type=_; rf_codec=_; } ->
         (Located.mk ~loc (lident rf_name), pvari i)) fields in
-    [%expr fun
-      ([%p ppat_record ~loc rf_binds Closed]
-       : [%t ptyp_constr ~loc (Located.mk ~loc (lident td_name)) []]) ->
-      (`obj [%e obj] : Kxclib.Json.jv)]
+    value_binding ~loc
+      ~pat:encoder_name
+      ~expr:[%expr (fun [%p ppat_record ~loc rf_binds Closed] -> (`obj [%e obj] : Kxclib.Json.jv))]
   | Variant_kind _ ->
     failwith "encoder of variant is not implemented."
