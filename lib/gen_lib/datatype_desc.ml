@@ -95,7 +95,7 @@ let gen_json_encoder : type_decl -> codec -> value_binding =
   end |> (fun name ->
       ppat_constraint ~loc
         (pvar ~loc name)
-        (ptyp_constr ~loc (Located.mk ~loc (lident td_name)) [])) in
+        [%type: [%t (ptyp_constr ~loc (Located.mk ~loc (lident td_name)) [])] -> Kxclib.Json.jv]) in
   match kind with
   | Record_kind record ->
     let fields = List.map fst record in
