@@ -3,6 +3,7 @@ open Ast_builder.Default
 open Kxclib
 
 let locmk = Located.mk
+let loclid ~loc x = locmk ~loc (lident x)
 
 type 'x with_docstr = 'x*[ `docstr of string | `nodoc ]
 let attributes_of_doc = function
@@ -76,7 +77,7 @@ and label_declaration_of_record_field_desc : record_field_desc -> label_declarat
   let loc = Location.none in
   label_declaration ~loc ~mutable_:Immutable
     ~name:(locmk ~loc rf_name)
-    ~type_:(ptyp_constr ~loc (locmk ~loc (lident rf_type)) [])
+    ~type_:(ptyp_constr ~loc (loclid ~loc rf_type) [])
 
 and constructor_declaration_of_variant_constructor_desc : variant_constructor_desc -> constructor_declaration =
   let loc = Location.none in
@@ -85,7 +86,7 @@ and constructor_declaration_of_variant_constructor_desc : variant_constructor_de
     constructor_declaration ~loc ~res:None
       ~name:(locmk ~loc ct_name)
       ~args:(Pcstr_tuple (ct_args |&> fun arg ->
-          ptyp_constr ~loc (locmk ~loc (lident arg)) []))
+          ptyp_constr ~loc (loclid ~loc arg) []))
   | Cstr_record { cr_name; cr_fields; cr_codec=_; } ->
     constructor_declaration ~loc ~res:None
       ~name:(locmk ~loc cr_name)
@@ -117,7 +118,7 @@ let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_k
   let gen_record_encoder_params : record_field_desc list -> pattern = fun fields ->
     ppat_record ~loc
       (List.mapi (fun i { rf_name; rf_type=_; rf_codec=_; } ->
-           (locmk ~loc (lident rf_name), pvari i))
+           (loclid ~loc rf_name, pvari i))
           fields)
       Closed in
   let gen_record_encoder_body : record_field_desc list -> expression = fun fields ->
@@ -132,13 +133,13 @@ let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_k
     constrs |&> function
       | Cstr_tuple { ct_name; ct_args; ct_codec=_; } ->
         ppat_construct ~loc
-          (locmk ~loc (lident ct_name))
+          (loclid ~loc ct_name)
           (match ct_args with
            | [] -> None
            | _ -> Some (ppat_tuple ~loc (List.mapi (fun i _ -> pvari i) ct_args)))
       | Cstr_record { cr_name; cr_fields; cr_codec=_; } ->
         ppat_construct ~loc
-          (locmk ~loc (lident cr_name))
+          (loclid ~loc cr_name)
           (Some (gen_record_encoder_params (cr_fields |&> fst))) in
   let gen_variant_encoder_body : variant_constructor_desc list -> expression list = fun constrs ->
     constrs |&> function
