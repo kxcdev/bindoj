@@ -16,10 +16,12 @@ and variant_constructor_desc =
   | Cstr_tuple of {
       ct_name : string;
       ct_args : string list;
+      ct_codec : codec;
     }
   | Cstr_record of {
       cr_name : string;
       cr_fields : record_type_desc;
+      cr_codec : codec;
     }
 
 type generic_kind =
@@ -37,4 +39,3 @@ val gen_primitive_encoders : codec -> value_binding list
 
 val gen_json_encoder : type_decl -> codec -> value_binding
 
-(* val gen_json_decoder : type_decl -> codec -> value_binding *)

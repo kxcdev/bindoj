@@ -4,8 +4,10 @@ let ex02_docstr : type_decl =
   { td_name = "person";
     td_kind =
       Variant_kind
-        [ Cstr_tuple { ct_name = "Anonymous"; ct_args = []; }, `docstr "Anonymous constructor";
-          Cstr_tuple { ct_name = "With_id"; ct_args = ["int"]; }, `docstr "With_id constructor";
+        [ Cstr_tuple { ct_name = "Anonymous"; ct_args = []; ct_codec = `default_codec },
+          `docstr "Anonymous constructor";
+          Cstr_tuple { ct_name = "With_id"; ct_args = ["int"]; ct_codec = `default_codec },
+          `docstr "With_id constructor";
           Cstr_record {
             cr_name = "Student";
             cr_fields = [
@@ -13,7 +15,8 @@ let ex02_docstr : type_decl =
               `docstr "student_id field in Student constructor";
               { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
               `docstr "name field in Student constructor";
-            ]
+            ];
+            cr_codec = `default_codec;
           },
           `docstr "Student constructor";
           Cstr_record {
@@ -25,7 +28,8 @@ let ex02_docstr : type_decl =
               `docstr "name field in Teacher constructor";
               { rf_name = "department"; rf_type = "string"; rf_codec = `default_codec },
               `docstr "dapartment field in Teacher constructor";
-            ]
+            ];
+            cr_codec = `default_codec;
           },
           `docstr "Teacher constructor"],
       `docstr "definition of person type"; }
