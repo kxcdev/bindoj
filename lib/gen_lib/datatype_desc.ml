@@ -146,7 +146,7 @@ let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_k
         let name = estring ~loc ct_name in
         let args =
           List.mapi (fun i typ ->
-              [%expr [%e estring ~loc (encoder_name typ ct_codec)] [%e evari i]])
+              [%expr [%e evar ~loc (encoder_name typ ct_codec)] [%e evari i]])
             ct_args
           |> elist ~loc in
         [%expr `arr [[%e name]; `arr [%e args]]]
