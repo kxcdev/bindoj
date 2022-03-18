@@ -148,13 +148,16 @@ let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_k
         let args =
           List.mapi (fun i typ ->
               [%expr [%e evar ~loc (encoder_name typ ct_codec)] [%e evari i]])
-            ct_args
-          |> elist ~loc in
-        [%expr `arr [[%e name]; `arr [%e args]]]
+            ct_args in
+        begin match args with
+          | [] -> [%expr `arr [`str [%e name]]]
+          | [arg] -> [%expr `arr [`str [%e name]; [%e arg]]]
+          | _ -> [%expr `arr [`str [%e name]; `arr [%e elist ~loc args]]]
+        end
       | Cstr_record { cr_name; cr_fields; cr_codec=_; } ->
         let name = estring ~loc cr_name in
         let args = gen_record_encoder_body (cr_fields |&> fst) in
-        [%expr `arr [[%e name]; [%e args]]] in
+        [%expr `arr [`str [%e name]; [%e args]]] in
   match kind with
   | Record_kind record ->
     let fields = record |&> fst in
