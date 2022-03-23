@@ -1,13 +1,12 @@
 open Codegen
 open Kxclib
 
-let%test "ex01_encoding" =
+let%test "ex01" =
   let open Ex01_gen in
   let ex01_student : student = {
     admission_year = 1984;
     name = "William Gibson";
   } in
-  let encoded_student = encode_student_json ex01_student in
   let jv_student : Json.jv =
     `obj [("admission_year", `num 1984.);
           ("name", `str "William Gibson")] in
@@ -19,10 +18,15 @@ let%test "ex01_encoding" =
      `Name "admission_year"; `Float 1984.0;
      `Name "name"; `String "William Gibson";
      `Oe] in
-  encoded_student = jv_student
-  && Json.to_yojson encoded_student = yojson_student
-  && Json.to_yojson encoded_student |> Json.yojson_basic_of_safe = yojson_student
-  && Json.to_jsonm encoded_student |> List.of_seq = jsonm_student
+  (* ex01 encoding *)
+  encode_student_json ex01_student = jv_student &&
+  Json.to_yojson (encode_student_json ex01_student) = yojson_student &&
+  Json.to_yojson (encode_student_json ex01_student) |> Json.yojson_basic_of_safe = yojson_student &&
+  Json.to_jsonm (encode_student_json ex01_student) |> List.of_seq = jsonm_student &&
+  (* ex01 decoding *)
+  Some ex01_student = decode_student_json jv_student &&
+  Some ex01_student = decode_student_json (Json.of_yojson yojson_student) &&
+  Some ex01_student = Option.bind (Json.of_jsonm (List.to_seq jsonm_student)) decode_student_json
 
 let%test "ex02_encoding" =
   let open Ex02_gen in
