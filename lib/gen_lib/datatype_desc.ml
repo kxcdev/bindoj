@@ -4,6 +4,7 @@ open Kxclib
 
 let locmk = Located.mk
 let loclid ~loc x = locmk ~loc (lident x)
+let typcons ~loc x = ptyp_constr ~loc (loclid ~loc x) []
 
 type 'x with_docstr = 'x*[ `docstr of string | `nodoc ]
 let attributes_of_doc = function
@@ -188,7 +189,9 @@ let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_k
     let body = gen_record_encoder_body fields in
     value_binding ~loc
       ~pat:name
-      ~expr:[%expr fun [%p params] -> [%e body]]
+      ~expr:(pexp_constraint ~loc
+               [%expr fun [%p params] -> [%e body]]
+               [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
   | Variant_kind variant ->
     let constrs = variant |&> fst in
     let params = gen_variant_encoder_params constrs in
@@ -198,7 +201,9 @@ let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_k
         params body in
     value_binding ~loc
       ~pat:name
-      ~expr:(pexp_function ~loc cases)
+      ~expr:(pexp_constraint ~loc
+               (pexp_function ~loc cases)
+               [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
 
 let gen_json_decoder : type_decl -> codec -> value_binding = fun { td_name; td_kind=(kind, _); } codec ->
   let loc = Location.none in
@@ -229,11 +234,13 @@ let gen_json_decoder : type_decl -> codec -> value_binding = fun { td_name; td_k
     let body = gen_record_decoder_body fields in
     value_binding ~loc
       ~pat:name
-      ~expr:[%expr function
-        | `obj [%p param_p] ->
-          [%e List.fold_right (fun (p, e) body ->
-              [%expr Option.bind [%e e] (fun [%p p] -> [%e body])])
-              bindings body]
-        | _ -> None]
+      ~expr:(pexp_constraint ~loc
+               [%expr function
+                 | `obj [%p param_p] ->
+                   [%e List.fold_right (fun (p, e) body ->
+                       [%expr Option.bind [%e e] (fun [%p p] -> [%e body])])
+                       bindings body]
+                 | _ -> None]
+               [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   | Variant_kind _ ->
     failwith "noimpl: decoder for variant"
