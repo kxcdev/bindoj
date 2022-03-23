@@ -20,7 +20,7 @@ let encoder_name type_name = function
   | `default_codec -> "encode_"^type_name^"_json"
   | `codec_val v -> v
   | `codec_in_module m -> m^".encode_"^type_name^"_json"
-let _decoder_name type_name = function
+let decoder_name type_name = function
   | `default_codec -> "decode_"^type_name^"_json"
   | `codec_val v -> v
   | `codec_in_module m -> m^".decode_"^type_name^"_json"
@@ -109,6 +109,29 @@ let gen_primitive_encoders : codec -> value_binding list = fun codec ->
    bind (encoder_name "string" codec)
      [%expr fun (__bindoj_arg : string) -> (`str __bindoj_arg : Kxclib.Json.jv)]]
 
+let gen_primitive_decoders : codec -> value_binding list = fun codec ->
+  let loc = Location.none in
+  let bind str expr =
+    value_binding ~loc ~pat:(pvar ~loc str) ~expr:expr in
+  [bind (decoder_name "null" codec)
+     [%expr fun `null -> ()];
+   bind (decoder_name "bool" codec)
+     [%expr function
+       | (`bool __bindoj_arg : Kxclib.Json.jv) -> Some __bindoj_arg
+       | (_ : Kxclib.Json.jv) -> None];
+   bind (decoder_name "int" codec)
+     [%expr function
+       | (`num __bindoj_arg : Kxclib.Json.jv) -> Some (int_of_float __bindoj_arg)
+       | (_ : Kxclib.Json.jv) -> None];
+   bind (decoder_name "float" codec)
+     [%expr function
+       | (`num __bindoj_arg : Kxclib.Json.jv) -> Some __bindoj_arg
+       | _ -> None];
+   bind (decoder_name "string" codec)
+     [%expr function
+       | (`str __bindoj_arg : Kxclib.Json.jv) -> Some __bindoj_arg
+       | _ -> None]]
+
 let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_kind=(kind, _); } codec ->
   let loc = Location.none in
   let name = pvar ~loc (encoder_name td_name codec) in
@@ -176,3 +199,39 @@ let gen_json_encoder : type_decl -> codec -> value_binding = fun { td_name; td_k
     value_binding ~loc
       ~pat:name
       ~expr:(pexp_function ~loc cases)
+
+let gen_json_decoder : type_decl -> codec -> value_binding = fun { td_name; td_kind=(kind, _); } codec ->
+  let loc = Location.none in
+  let name = pvar ~loc (decoder_name td_name codec) in
+  let vari i = "__bindoj_gen_json_decoder_var_"^string_of_int i in
+  let evari i = evar ~loc (vari i) in
+  let pvari i = pvar ~loc (vari i) in
+  let param_e = evar ~loc "__bindoj_gen_json_decoder_var_param" in
+  let param_p = pvar ~loc "__bindoj_gen_json_decoder_var_param" in
+  let gen_record_decoder_bindings : record_field_desc list -> (pattern * expression) list = fun fields ->
+    List.mapi (fun i { rf_name; rf_type; rf_codec; } ->
+        (pvari i,
+         [%expr
+           [%e evar ~loc (decoder_name rf_type rf_codec)]
+             (List.assoc [%e estring ~loc rf_name] [%e param_e])]))
+      fields in
+  let gen_record_decoder_body : record_field_desc list -> expression = fun fields ->
+    [%expr Some
+        [%e pexp_record ~loc
+            (List.mapi (fun i { rf_name; rf_type=_; rf_codec=_; } ->
+                 (loclid ~loc rf_name, [%expr [%e evari i]]))
+                fields)
+            None]] in
+  match kind with
+  | Record_kind record ->
+    let fields = record |&> fst in
+    let bindings = gen_record_decoder_bindings fields in
+    let body = gen_record_decoder_body fields in
+    value_binding ~loc
+      ~pat:name
+      ~expr:[%expr fun [%p param_p] ->
+        [%e List.fold_right (fun (p, e) body ->
+            [%expr Option.bind [%e e] (fun [%p p] -> [%e body])])
+            bindings body]]
+  | Variant_kind _ ->
+    failwith "noimpl: decoder for variant"

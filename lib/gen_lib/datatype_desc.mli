@@ -37,5 +37,8 @@ val type_declaration_of_type_decl : type_decl -> type_declaration
 
 val gen_primitive_encoders : codec -> value_binding list
 
+val gen_primitive_decoders : codec -> value_binding list
+
 val gen_json_encoder : type_decl -> codec -> value_binding
 
+val gen_json_decoder : type_decl -> codec -> value_binding

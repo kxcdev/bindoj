@@ -16,4 +16,6 @@ let () =
     (pstr_type ~loc Recursive [type_declaration_of_type_decl ex01]);
     (pstr_value ~loc Recursive
        (gen_json_encoder ex01 `default_codec :: gen_primitive_encoders `default_codec));
+    (pstr_value ~loc Recursive
+       (gen_json_decoder ex01 `default_codec :: gen_primitive_decoders `default_codec));
   ]
