@@ -229,9 +229,11 @@ let gen_json_decoder : type_decl -> codec -> value_binding = fun { td_name; td_k
     let body = gen_record_decoder_body fields in
     value_binding ~loc
       ~pat:name
-      ~expr:[%expr fun [%p param_p] ->
-        [%e List.fold_right (fun (p, e) body ->
-            [%expr Option.bind [%e e] (fun [%p p] -> [%e body])])
-            bindings body]]
+      ~expr:[%expr function
+        | `obj [%p param_p] ->
+          [%e List.fold_right (fun (p, e) body ->
+              [%expr Option.bind [%e e] (fun [%p p] -> [%e body])])
+              bindings body]
+        | _ -> None]
   | Variant_kind _ ->
     failwith "noimpl: decoder for variant"
