@@ -217,8 +217,9 @@ let gen_json_decoder : type_decl -> codec -> value_binding = fun { td_name; td_k
     List.mapi (fun i { rf_name; rf_type; rf_codec; } ->
         (pvari i,
          [%expr
-           [%e evar ~loc (decoder_name rf_type rf_codec)]
-             (List.assoc [%e estring ~loc rf_name] [%e param_e])]))
+            Option.bind
+              (List.assoc_opt [%e estring ~loc rf_name] [%e param_e])
+              [%e evar ~loc (decoder_name rf_type rf_codec)]]))
       fields in
   let gen_record_decoder_body : record_field_desc list -> expression = fun fields ->
     [%expr Some
