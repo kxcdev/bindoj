@@ -26,7 +26,10 @@ let%test "ex01" =
   (* decoding *)
   Some ex01_student = decode_student_json jv_student &&
   Some ex01_student = decode_student_json (Json.of_yojson yojson_student) &&
-  Some ex01_student = Option.bind (Json.of_jsonm (List.to_seq jsonm_student)) decode_student_json
+  Some ex01_student = Option.bind (Json.of_jsonm (List.to_seq jsonm_student)) decode_student_json &&
+  (* encoding & decoding *)
+  decode_student_json (encode_student_json ex01_student) = Some ex01_student &&
+  Option.map encode_student_json (decode_student_json jv_student) = Some jv_student
 
 let%test "ex02_anonymous" =
   let open Ex02_gen in
@@ -42,7 +45,10 @@ let%test "ex02_anonymous" =
   (* decoding *)
   Some ex02_anonymous = decode_person_json jv_anonymous &&
   Some ex02_anonymous = decode_person_json (Json.of_yojson yojson_anonymous) &&
-  Some ex02_anonymous = Option.bind (Json.of_jsonm (List.to_seq jsonm_anonymous)) decode_person_json
+  Some ex02_anonymous = Option.bind (Json.of_jsonm (List.to_seq jsonm_anonymous)) decode_person_json &&
+  (* encoding & decoding *)
+  decode_person_json (encode_person_json ex02_anonymous) = Some ex02_anonymous &&
+  Option.map encode_person_json (decode_person_json jv_anonymous) = Some jv_anonymous
 
 let%test "ex02_with_id" =
   let open Ex02_gen in
@@ -58,7 +64,10 @@ let%test "ex02_with_id" =
   (* decoding *)
   Some ex02_with_id = decode_person_json jv_with_id &&
   Some ex02_with_id = decode_person_json (Json.of_yojson yojson_with_id) &&
-  Some ex02_with_id = Option.bind (Json.of_jsonm (List.to_seq jsonm_with_id)) decode_person_json
+  Some ex02_with_id = Option.bind (Json.of_jsonm (List.to_seq jsonm_with_id)) decode_person_json &&
+  (* encoding & decoding *)
+  decode_person_json (encode_person_json ex02_with_id) = Some ex02_with_id &&
+  Option.map encode_person_json (decode_person_json jv_with_id) = Some jv_with_id
 
 let%test "ex02_student" =
   let open Ex02_gen in
@@ -90,7 +99,10 @@ let%test "ex02_student" =
   (* decoding *)
   Some ex02_student = decode_person_json jv_student &&
   Some ex02_student = decode_person_json (Json.of_yojson yojson_student) &&
-  Some ex02_student = Option.bind (Json.of_jsonm (List.to_seq jsonm_student)) decode_person_json
+  Some ex02_student = Option.bind (Json.of_jsonm (List.to_seq jsonm_student)) decode_person_json &&
+  (* encoding & decoding *)
+  decode_person_json (encode_person_json ex02_student) = Some ex02_student &&
+  Option.map encode_person_json (decode_person_json jv_student) = Some jv_student
 
 let%test "ex02_teacher" =
   let open Ex02_gen in
@@ -126,4 +138,7 @@ let%test "ex02_teacher" =
   (* decoding *)
   Some ex02_teacher = decode_person_json jv_teacher &&
   Some ex02_teacher = decode_person_json (Json.of_yojson yojson_teacher) &&
-  Some ex02_teacher = Option.bind (Json.of_jsonm (List.to_seq jsonm_teacher)) decode_person_json
+  Some ex02_teacher = Option.bind (Json.of_jsonm (List.to_seq jsonm_teacher)) decode_person_json &&
+  (* encoding & decoding *)
+  decode_person_json (encode_person_json ex02_teacher) = Some ex02_teacher &&
+  Option.map encode_person_json (decode_person_json jv_teacher) = Some jv_teacher
