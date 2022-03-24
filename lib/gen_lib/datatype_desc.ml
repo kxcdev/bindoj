@@ -217,17 +217,61 @@ let gen_json_decoder : type_decl -> codec -> value_binding = fun { td_name; td_k
     List.mapi (fun i { rf_name; rf_type; rf_codec; } ->
         (pvari i,
          [%expr
-            Option.bind
-              (List.assoc_opt [%e estring ~loc rf_name] [%e param_e])
-              [%e evar ~loc (decoder_name rf_type rf_codec)]]))
+           (List.assoc_opt [%e estring ~loc rf_name] [%e param_e]) >>=
+           [%e evar ~loc (decoder_name rf_type rf_codec)]]))
       fields in
+  let bind_options : (pattern * expression) list -> expression -> expression = fun bindings body ->
+    [%expr
+      let (>>=) = Option.bind in
+      [%e List.fold_right (fun (p, e) body ->
+          [%expr [%e e] >>= (fun [%p p] -> [%e body])])
+          bindings body]] in
   let gen_record_decoder_body : record_field_desc list -> expression = fun fields ->
-    [%expr Some
-        [%e pexp_record ~loc
-            (List.mapi (fun i { rf_name; rf_type=_; rf_codec=_; } ->
-                 (loclid ~loc rf_name, [%expr [%e evari i]]))
-                fields)
-            None]] in
+    pexp_record ~loc
+      (List.mapi (fun i { rf_name; rf_type=_; rf_codec=_; } ->
+           (loclid ~loc rf_name, [%expr [%e evari i]]))
+          fields)
+      None in
+  let gen_variant_decoder_params : variant_constructor_desc list -> pattern list = fun cstrs ->
+    cstrs |&> function
+      | Cstr_tuple { ct_name; ct_args; ct_codec=_; } ->
+        begin match ct_args with
+        | [] -> [%pat? `arr [`str [%p pstring ~loc ct_name]]]
+        | _ -> [%pat? `arr (`str [%p pstring ~loc ct_name]
+                            :: [%p plist ~loc (List.mapi (fun i _ -> pvari i) ct_args)])]
+        end
+      | Cstr_record { cr_name; cr_fields=_; cr_codec=_; } ->
+        [%pat? `arr [`str [%p pstring ~loc cr_name]; `obj [%p param_p]]] in
+  let gen_variant_decoder_body : variant_constructor_desc list -> expression list = fun cstrs ->
+    cstrs |&> function
+      | Cstr_tuple { ct_name; ct_args; ct_codec=_; } ->
+        let construct args =
+          [%expr Some [%e pexp_construct ~loc (loclid ~loc ct_name) args]] in
+        begin match ct_args with
+          | [] -> construct None
+          | _ ->
+            let bindings =
+              List.mapi (fun i arg ->
+                  (pvari i,
+                   [%expr [%e evar ~loc (decoder_name arg codec)] [%e evari i]]))
+                ct_args in
+            let body =
+              construct
+                (Some
+                   (pexp_tuple ~loc (List.mapi (fun i _ -> evari i) ct_args))) in
+            bind_options bindings body
+        end
+      | Cstr_record { cr_name; cr_fields; cr_codec=_; } ->
+        let construct args =
+          pexp_construct ~loc (loclid ~loc cr_name) args in
+        begin match cr_fields with
+          | [] -> construct None
+          | _ ->
+            let fields = cr_fields |&> fst in
+            let bindings = gen_record_decoder_bindings fields in
+            let body = gen_record_decoder_body fields in
+            bind_options bindings [%expr Some [%e (construct (Some body))]]
+        end in
   match kind with
   | Record_kind record ->
     let fields = record |&> fst in
@@ -237,11 +281,20 @@ let gen_json_decoder : type_decl -> codec -> value_binding = fun { td_name; td_k
       ~pat:name
       ~expr:(pexp_constraint ~loc
                [%expr function
-                 | `obj [%p param_p] ->
-                   [%e List.fold_right (fun (p, e) body ->
-                       [%expr Option.bind [%e e] (fun [%p p] -> [%e body])])
-                       bindings body]
+                 | `obj [%p param_p] -> [%e bind_options bindings [%expr Some [%e body]]]
                  | _ -> None]
                [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
-  | Variant_kind _ ->
-    failwith "noimpl: decoder for variant"
+  | Variant_kind variant ->
+    let cstrs = variant |&> fst in
+    let params = gen_variant_decoder_params cstrs in
+    let body = gen_variant_decoder_body cstrs in
+    let cases =
+      List.map2 (fun p b ->
+          case ~lhs:p ~rhs:b ~guard:None)
+        params body
+      @ [(case ~lhs:(ppat_any ~loc) ~rhs:[%expr None] ~guard:None)] in
+    value_binding ~loc
+      ~pat:name
+      ~expr:(pexp_constraint ~loc
+               (pexp_function ~loc cases)
+               [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
