@@ -15,7 +15,7 @@ let () =
   Astlib.Pprintast.structure Format.std_formatter [
     (pstr_type ~loc Recursive [type_declaration_of_type_decl ex01]);
     (pstr_value ~loc Nonrecursive
-       [gen_json_encoder ~self_contained:true ex01 `default_codec]);
+       [gen_json_encoder ~self_contained:true ex01]);
     (pstr_value ~loc Nonrecursive
-       [gen_json_decoder ~self_contained:true ex01 `default_codec]);
+       [gen_json_decoder ~self_contained:true ex01]);
   ]

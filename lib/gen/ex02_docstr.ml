@@ -40,4 +40,8 @@ let () =
   let loc = Location.none in
   Astlib.Pprintast.structure Format.std_formatter [
     (pstr_type ~loc Recursive [type_declaration_of_type_decl ex02_docstr]);
+    (pstr_value ~loc Nonrecursive
+       [gen_json_encoder ~self_contained:true ex02_docstr]);
+    (pstr_value ~loc Nonrecursive
+       [gen_json_decoder ~self_contained:true ex02_docstr]);
   ]
