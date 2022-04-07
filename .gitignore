@@ -1,4 +1,45 @@
-_build
 *_gen.ml
 *_gen.mli
 *.sw*
+
+# editor specifics
+.vscode/settings.json
+
+# ocaml artifacts
+*.o
+*.a
+*.so
+*.obj
+*.lib
+*.dll
+*.la
+*.cm[ioxat]
+*.cmx[as]
+*.cmti
+*.annot
+*.exe
+*.exe.manifest
+*.out
+*.out.dSYM
+*.swp
+*.odoc
+
+# ocamlbuild working directory
+_build/
+
+# ocamlbuild targets
+*.byte
+*.native
+
+# oasis generated files
+setup.data
+setup.log
+
+# Merlin configuring file for Vim and Emacs
+.merlin
+
+# Dune generated files
+*.install
+
+# Local OPAM switch
+_opam/
