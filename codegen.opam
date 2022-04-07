@@ -11,7 +11,6 @@ depends: [
   "jsonm" {>= "1.0"}
   "yojson" {>= "1.7"}
   "ppx_inline_test" {with-test}
-  "odoc" {with-doc}
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
