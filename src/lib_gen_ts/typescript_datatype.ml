@@ -1,6 +1,3 @@
-let default_kind_fname = "kind"
-let default_arg_fname = "arg"
-
 module Rope = struct
   [@ocaml.warning "-32"]
   [@ocaml.warning "-34"]
@@ -24,6 +21,9 @@ module RopeUtil = struct
 end
 
 module StringMap = Map.Make (String)
+
+open Bindoj_gen.Json_codec
+type flavor = variant_type_flavor
 
 type type_map = string StringMap.t
 
@@ -91,7 +91,6 @@ let ts_object_of_variant_constructor : type_map -> flavor -> variant_constructor
             | _ -> failwith "unknown flavor configs"
           end
       end
-    | _ -> failwith "unknown flavor"
 
 let gen_ts_type : ?flavor:flavor -> type_decl -> string =
   fun ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); } ->

@@ -18,8 +18,8 @@ module Versioned = struct
       module Structure = struct
         type elt = structure_item
         type t = structure
-        open Ppxlib
-        open Ast_builder.Default
+        type rec_flag = Ppxlib.rec_flag
+        open Ppxlib.Ast_builder.Default
         open struct
           let loc = Location.none
         end
@@ -32,7 +32,7 @@ module Versioned = struct
           fun ?rec_flag:(rf=Recursive) item ->
           pstr_type ~loc rf [item]
 
-        let pp_caml : Format.formatter -> structure -> unit = Pprintast.structure
+        let pp_caml : Format.formatter -> t -> unit = Pprintast.structure
       end
     end
 

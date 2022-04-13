@@ -2,6 +2,19 @@ open Ppxlib
 open Ast_builder.Default
 open Utils
 
+type variant_type_flavor = [
+    `flat_kind
+  (* | `tuple *)
+  (* | `nested_kind *)
+  ]
+type ('pos, 'flavor) flavor_config +=
+   | Flvconfig_flat_kind : {
+       kind_fname : string option;
+       arg_fname : string option;
+     } -> ([ `branch ], [ `flat_kind ]) flavor_config
+
+type flavor = variant_type_flavor
+
 let encoder_name type_name = function
   | `default_codec -> "encode_"^type_name^"_json"
   | `codec_val v -> v
@@ -10,6 +23,9 @@ let decoder_name type_name = function
   | `default_codec -> "decode_"^type_name^"_json"
   | `codec_val v -> v
   | `codec_in_module m -> m^".decode_"^type_name^"_json"
+
+let default_kind_fname = "kind"
+let default_arg_fname = "arg"
 
 let gen_primitive_encoders : codec -> value_binding list = fun codec ->
   let loc = Location.none in
@@ -123,7 +139,7 @@ let gen_json_encoder :
                        | _ -> failwith "unknown flavor configs"
                        end
                   end
-    | _ -> failwith "unknown flavor" in
+  in
   match kind with
   | Record_kind record ->
      let fields = record |&> fst in
@@ -213,7 +229,7 @@ let gen_json_decoder :
                       | _ -> failwith "unknown flavor configs"
                       end
                  end
-    | _ -> failwith "unknown flavor" in
+  in
   let variant_body : variant_constructor_desc list -> expression list = fun cstrs ->
     let construct name args =
       pexp_construct ~loc (lidloc ~loc name) args in

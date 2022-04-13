@@ -4,4 +4,5 @@
  (flags (:standard
           -open Kxclib
           -open Bindoj_base.Type_desc
-          -open Bindoj_gen_ts.Typescript_datatype)))
+          -open Bindoj_gen_ts.Typescript_datatype
+          -open Bindoj_gen.Json_codec)))
