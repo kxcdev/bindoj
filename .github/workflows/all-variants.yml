@@ -1,7 +1,9 @@
 name: Common CI workflow
 
 on:
-  push:
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
 
 jobs:
   build:
@@ -12,9 +14,8 @@ jobs:
           - ubuntu-latest
         ocaml-version:
           - 4.12.1
-          ## we only test all versions at the [all-variants] flow
-          # - 4.13.x
-          # - 4.14.x
+          - 4.13.x
+          - 4.14.x
 
     runs-on: ${{ matrix.os }}
 
@@ -50,12 +51,4 @@ jobs:
 
       - run: opam install . --deps-only --with-test
       - run: opam exec -- dune build
-      - run: opam exec -- dune build @doc
       - run: opam exec -- dune runtest
-
-      - name: upload odoc generated document
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-version == '4.12.1' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: odoc-html-${{ github.sha }}
-          path: _build/default/_doc/_html/
