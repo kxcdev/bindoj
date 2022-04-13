@@ -1,4 +1,5 @@
 (lang dune 3.0)
+(using mdx 0.2)
 (name bindoj)
 
 (license Apache-2.0)
@@ -27,6 +28,7 @@
   (odoc (and :dev (>= 2.1.0)))
   (jsonm (>= 1.0))
   (yojson (>= 1.7))
+  (mdx (and :with-test (>= 2.1.0)))
   (alcotest :with-test)
   (ppx_inline_test :with-test)
   (ocaml (>= 4.12))))

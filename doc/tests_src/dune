@@ -1,0 +1,14 @@
+(library
+ (name doctests_utils)
+ (libraries bindoj kxclib)
+ (flags (:standard
+          -open Kxclib)))
+
+(mdx
+ (libraries
+   bindoj
+   bindoj_typedesc
+   bindoj_base
+   bindoj_gen
+   bindoj_gen_ts
+   kxclib doctests_utils))
