@@ -1,0 +1,9 @@
+(library
+ (name bindoj_gen)
+ (public_name bindoj.gen)
+ (libraries kxclib bindoj_base ppxlib zed)
+ (preprocess
+  (pps ppxlib.metaquot))
+ (flags (:standard
+          -open Kxclib
+          -open Bindoj_base.Type_desc)))

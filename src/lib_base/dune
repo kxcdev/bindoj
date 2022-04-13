@@ -1,0 +1,6 @@
+(library
+ (name bindoj_base)
+ (public_name bindoj.base)
+ (libraries kxclib bindoj_typedesc)
+ (preprocess
+  (pps ppxlib.metaquot)))

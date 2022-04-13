@@ -1,5 +1,0 @@
-(library
- (name gen_lib)
- (libraries kxclib ppxlib)
- (preprocess
-  (pps ppxlib.metaquot)))

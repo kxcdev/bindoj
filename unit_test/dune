@@ -1,5 +1,0 @@
-(library
- (name codegen_test)
- (libraries codegen kxclib yojson jsonm)
- (inline_tests)
- (preprocess (pps ppx_inline_test)))

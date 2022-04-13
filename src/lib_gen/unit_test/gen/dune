@@ -1,0 +1,10 @@
+(executables
+ (names ex01 ex02 ex03
+        ex01_docstr ex02_docstr ex03_docstr)
+ (libraries bindoj_gen bindoj_base ppxlib)
+ (preprocess (pps ppxlib.metaquot))
+ (flags (:standard
+          -open Kxclib
+          -open Bindoj_base.Type_desc
+          -open Bindoj_gen.Caml_datatype
+          -open Bindoj_gen.Json_codec)))

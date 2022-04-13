@@ -1,5 +1,3 @@
-open Gen_lib.Datatype_desc
-
 let ex01_docstr : type_decl =
   { td_name = "student";
     td_kind =

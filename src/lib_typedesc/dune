@@ -1,0 +1,6 @@
+(library
+ (name bindoj_typedesc)
+ (public_name bindoj.typedesc)
+ (flags (:standard
+          -open Kxclib))
+ (libraries ppxlib kxclib))

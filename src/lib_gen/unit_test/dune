@@ -1,16 +1,11 @@
 (library
- (name codegen)
- (libraries kxclib jsonm yojson))
-
-(vendored_dirs vendors)
-
-(rule
- (targets greeting.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/greeting.exe}))))
-
-(rule
- (targets arith.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/arith.exe}))))
+ (name bindoj_gen_test)
+ (libraries bindoj_base kxclib yojson jsonm)
+ (flags (:standard
+          -open Kxclib
+          -open Bindoj_base.Type_desc))
+ (inline_tests)
+ (preprocess (pps ppx_inline_test)))
 
 (rule
  (targets ex01_gen.ml)
@@ -23,6 +18,11 @@
  (mode (promote (until-clean))))
 
 (rule
+ (targets ex03_gen.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/ex03.exe})))
+ (mode (promote (until-clean))))
+
+(rule
  (targets ex01_docstr_gen.ml)
  (action (with-stdout-to %{targets} (run %{exe:gen/ex01_docstr.exe})))
  (mode (promote (until-clean))))
@@ -30,4 +30,9 @@
 (rule
  (targets ex02_docstr_gen.ml)
  (action (with-stdout-to %{targets} (run %{exe:gen/ex02_docstr.exe})))
+ (mode (promote (until-clean))))
+
+(rule
+ (targets ex03_docstr_gen.ml)
+ (action (with-stdout-to %{targets} (run %{exe:gen/ex03_docstr.exe})))
  (mode (promote (until-clean))))

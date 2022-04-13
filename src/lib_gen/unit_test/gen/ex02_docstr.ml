@@ -1,13 +1,19 @@
-open Gen_lib.Datatype_desc
-
 let ex02_docstr : type_decl =
   { td_name = "person";
     td_kind =
       Variant_kind
-        [ Cstr_tuple { ct_name = "Anonymous"; ct_args = []; ct_codec = `default_codec },
-          `docstr "Anonymous constructor";
-          Cstr_tuple { ct_name = "With_id"; ct_args = ["int"]; ct_codec = `default_codec },
-          `docstr "With_id constructor";
+        [ Cstr_tuple { ct_name = "Anonymous";
+                       ct_args = [];
+                       ct_codec = `default_codec;
+                       ct_flvconfigs = [Flvconfig_flat_kind
+                                          { kind_fname=Some "kind"; arg_fname=None; }]
+                     }, `docstr "Anonymous constructor";
+          Cstr_tuple { ct_name = "With_id";
+                       ct_args = ["int"];
+                       ct_codec = `default_codec;
+                       ct_flvconfigs = [Flvconfig_flat_kind
+                                          { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
+                     }, `docstr "With_id constructor";
           Cstr_record {
             cr_name = "Student";
             cr_fields = [
@@ -17,8 +23,8 @@ let ex02_docstr : type_decl =
               `docstr "name field in Student constructor";
             ];
             cr_codec = `default_codec;
-          },
-          `docstr "Student constructor";
+            cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some "kind"; arg_fname=None; }];
+          }, `docstr "Student constructor";
           Cstr_record {
             cr_name = "Teacher";
             cr_fields = [
@@ -30,9 +36,8 @@ let ex02_docstr : type_decl =
               `docstr "dapartment field in Teacher constructor";
             ];
             cr_codec = `default_codec;
-          },
-          `docstr "Teacher constructor"],
-      `docstr "definition of person type"; }
+            cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some "kind"; arg_fname=None; }]
+          }, `docstr "Teacher constructor"], `docstr "definition of person type"; }
 
 let () =
   let open Ppxlib in

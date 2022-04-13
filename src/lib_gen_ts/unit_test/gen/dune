@@ -1,0 +1,7 @@
+(executables
+ (names ex01_ts ex02_ts ex03_ts)
+ (libraries bindoj_gen_ts bindoj_base)
+ (flags (:standard
+          -open Kxclib
+          -open Bindoj_base.Type_desc
+          -open Bindoj_gen_ts.Typescript_datatype)))

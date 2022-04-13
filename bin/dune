@@ -1,6 +1,0 @@
-(executable
- (name main)
- (modules main)
- (libraries codegen ppxlib jsonm)
- (preprocess
-  (pps ppxlib.metaquot)))
