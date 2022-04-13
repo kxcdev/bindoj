@@ -2,13 +2,19 @@
 
 ## Getting Started
 
-```
+```bash
 git clone --recursive git@github.com:kxcteam/bindoj.git
 
 # or
 git clone git@github.com:kxcteam/bindoj.git
 git submodule init
 git submodule update
+```
+
+```bash
+opam install . --deps-only
+opam install -y dune # you'd need (dune (>= 3.0))
+dune build && dune runtest
 ```
 
 ## Developer Setup
