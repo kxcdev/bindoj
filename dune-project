@@ -23,6 +23,8 @@
  (synopsis "A generative datatype toolkit for OCaml centric workflows")
  (depends
   (ppxlib (>= 0.26))
+  (zed (>= 3.1.0))
+  (odoc (and :dev (>= 2.1.0)))
   (jsonm (>= 1.0))
   (yojson (>= 1.7))
   (alcotest :with-test)
