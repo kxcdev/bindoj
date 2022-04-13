@@ -1,10 +1,3 @@
-(library
- (name bindoj_gen_ts_test)
- (libraries bindoj_base lib_gen)
- (flags (:standard
-          -open Kxclib
-          -open Bindoj_base.Type_desc)))
-
 (rule
  (targets ex01_ts_gen.ts)
  (action (with-stdout-to %{targets} (run %{exe:gen/ex01_ts.exe})))
