@@ -1,4 +1,4 @@
-name: Common CI workflow
+name: Matrix Check
 
 on:
   workflow_dispatch:
