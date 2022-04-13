@@ -12,7 +12,7 @@ git submodule update
 ```
 
 ```bash
-opam install . --deps-only
+opam install . --deps-only --with-test
 opam install -y dune # you'd need (dune (>= 3.0))
 dune build && dune runtest
 ```
