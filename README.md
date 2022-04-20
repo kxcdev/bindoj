@@ -26,6 +26,7 @@ Tool | version
 Nodejs version | 14.x (but also test against 16.x LTS && 17.x)
 JSOO version | 4.0.0 (target : browser)
 OCaml version | 4.12.x, 4.13.x, 4.14.x
+Yarn version | 1.22.17
 
 ### NPM or Yarn?
 yarn!
