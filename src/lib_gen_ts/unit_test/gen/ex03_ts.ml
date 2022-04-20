@@ -31,5 +31,5 @@ let ex03 : type_decl =
       `nodoc; }
 
 let () =
-  print_endline (gen_ts_type ex03);
-  print_endline (gen_ts_case_analyzer ex03)
+  print_endline (gen_ts_type ~export:true ex03);
+  print_endline (gen_ts_case_analyzer ~export:true ex03)

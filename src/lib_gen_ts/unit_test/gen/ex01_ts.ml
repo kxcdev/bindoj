@@ -21,4 +21,4 @@ let ex01 : type_decl =
       `nodoc; }
 
 let () =
-  print_endline (gen_ts_type ex01)
+  print_endline (gen_ts_type ~export:true ex01)

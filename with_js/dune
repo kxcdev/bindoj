@@ -1,0 +1,10 @@
+(rule
+ (alias runtest)
+ (deps
+  (glob_files *)
+  (glob_files unit-tests/*.test.ts)
+  (alias ../src/lib_gen_ts/unit_test/default))
+ (action
+  (progn
+   (run yarn install --non-interactive)
+   (run yarn test))))

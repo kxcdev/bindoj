@@ -106,11 +106,12 @@ let ts_object_of_variant_constructor : type_map -> flavor -> variant_constructor
           end
       end
 
-let gen_ts_type : ?flavor:flavor -> type_decl -> string =
-  fun ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); } ->
+let gen_ts_type : ?export: bool -> ?flavor:flavor -> type_decl -> string =
+  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); } ->
   let open RopeUtil in
   let type_def name body =
-    rope "type "^name^rope " = "^body^rope ";" in
+    let header = if export then "export type " else "type " in
+    rope header^name^rope " = "^body^rope ";" in
   let type_map =
     default_type_convertion_map
     |> add_new_type td_name in
@@ -127,14 +128,15 @@ let gen_ts_type : ?flavor:flavor -> type_decl -> string =
          (variant |&> fun (cstr, _) -> ts_object_of_variant_constructor type_map flavor cstr))
     |> Rope.to_string
 
-let gen_ts_case_analyzer : ?flavor:flavor -> type_decl -> string =
-  fun ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); } ->
+let gen_ts_case_analyzer : ?export: bool -> ?flavor:flavor -> type_decl -> string =
+  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); } ->
   match kind with
   | Variant_kind variant ->
     let open RopeUtil in
     let type_name = rope td_name in
     let analyzer type_arg arg arg_type ret_type body =
-      rope "function analyze_"^type_name
+      let header = if export then "export function " else "function " in
+      rope header ^ rope "analyze_" ^ type_name
       ^rope "<" ^ type_arg ^rope ">"
       ^rope "(\n" ^arg^rope " : "^arg_type ^rope "\n) : "
       ^rope "("^ret_type^rope ") {\n" ^body ^rope "\n};" in
