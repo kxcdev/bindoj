@@ -18,13 +18,12 @@ limitations under the License. -->
 # open Doctests_utils.Test_utils;;
 ```
 
-## Basic OCaml Datatype Declaration Generation
+## Basic OCaml JSON Codec Generation
 
-`Bindoj.Type_desc.type_decl` is a type meaning type declaration and there are
-record type and variant type as type kinds. The following are datatype
-declaration generation examples: `student` of record type and `person` of
-variant type. `Bindoj.Type_desc.type_declaration_of_type_decl` is a function
-converting `Bindoj.Type_desc.type_decl` to `type_declaration`.
+`Bindoj.Caml_gen.Json_codec.gen_encoder`/`Bindoj.Caml_gen.Json_codec.gen_decoder`
+are functions generating JSON encoder/decoder from
+`Bindoj.Type_desc.type_declaration`. The following are JSON encoder/decoder
+generation examples: `student` of record type and `person` of variant type.
 
 ### simple record type : student
 ```ocaml
@@ -57,7 +56,7 @@ val student_desc : type_decl =
 
 ### simple variant type : person
 ```ocaml
-# open Bindoj_gen.Json_codec;;
+# open Bindoj.Caml_gen.Json_codec;;
 # #show_type type_decl;;
 type nonrec type_decl =
   type_decl = {
@@ -158,60 +157,124 @@ val person_desc : type_decl =
      `nodoc)}
 ```
 
-### `Bindoj.Caml_gen`
-```ocaml
-# #show_module Bindoj.Caml_gen;;
-module Caml_gen = Bindoj.Versioned.V0.Caml_gen
-module Caml_gen :
-  sig
-    module Caml = Bindoj.Versioned.V0.Caml
-    module Datatype = Bindoj_gen.Caml_datatype
-    module Json_codec = Bindoj_gen.Json_codec
-  end
-# #show_module Bindoj.Caml_gen.Datatype;;
-module Datatype = Bindoj_gen.Caml_datatype
-module Datatype = Bindoj_gen.Caml_datatype
-module Datatype :
-  sig
-    val type_declaration_of_type_decl :
-      type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
-  end
-# #show_module Bindoj.Caml;;
-module Caml = Bindoj.Versioned.V0.Caml
-module Caml :
-  sig
-    module Ppxlib = Ppxlib
-    module Astlib = Astlib
-    module Pprintast = Astlib.Pprintast
-    module CommonTypes : sig ... end
-    type structure_item = CommonTypes.structure_item
-    type structure = structure_item list
-    type value_binding = CommonTypes.value_binding
-    type type_declaration = CommonTypes.type_declaration
-    module Structure : sig ... end
-  end
-```
-
+### `Bindoj.Caml_gen.Json_codec`
 ```ocaml
 # Bindoj.(
-   let student_decl = Caml_gen.Datatype.type_declaration_of_type_decl student_desc in
-   Caml.Structure.([declaration student_decl] |> printf "%a@?" pp_caml));;
-type student = {
-  admission_year: int ;
-  full_name: string }
+   let student_encoder = Caml_gen.Json_codec.gen_json_encoder student_desc in
+   Caml.Structure.([binding student_encoder] |> printf "%a@?" pp_caml));;
+let encode_student_json =
+  (fun
+     { admission_year = __bindoj_gen_json_encoder_var_0;
+       full_name = __bindoj_gen_json_encoder_var_1 }
+     ->
+     `obj
+       [("admission_year", (encode_int_json __bindoj_gen_json_encoder_var_0));
+       ("full_name", (encode_string_json __bindoj_gen_json_encoder_var_1))] :
+  student -> Kxclib.Json.jv)
 - : unit = ()
 # Bindoj.(
-   let person_decl = Caml_gen.Datatype.type_declaration_of_type_decl person_desc in
-   Caml.Structure.([declaration person_decl] |> printf "%a@?" pp_caml));;
-type person =
-  | Anonymous
-  | With_id of int
-  | Student of {
-  student_id: int ;
-  name: string }
-  | Teacher of {
-  faculty_id: int ;
-  name: string ;
-  department: string }
+   let student_decoder = Caml_gen.Json_codec.gen_json_decoder student_desc in
+   Caml.Structure.([binding student_decoder] |> printf "%a@?" pp_caml));;
+let decode_student_json =
+  (function
+   | `obj __bindoj_gen_json_decoder_var_param ->
+       let (>>=) = Option.bind in
+       ((List.assoc_opt "admission_year" __bindoj_gen_json_decoder_var_param)
+          >>= decode_int_json)
+         >>=
+         ((fun __bindoj_gen_json_decoder_var_0 ->
+             ((List.assoc_opt "full_name" __bindoj_gen_json_decoder_var_param)
+                >>= decode_string_json)
+               >>=
+               (fun __bindoj_gen_json_decoder_var_1 ->
+                  Some
+                    {
+                      admission_year = __bindoj_gen_json_decoder_var_0;
+                      full_name = __bindoj_gen_json_decoder_var_1
+                    })))
+   | _ -> None : Kxclib.Json.jv -> student option)
+- : unit = ()
+# Bindoj.(
+   let person_encoder = Caml_gen.Json_codec.gen_json_encoder person_desc in
+   Caml.Structure.([binding person_encoder] |> printf "%a@?" pp_caml));;
+let encode_person_json =
+  (function
+   | Anonymous -> `obj [("kind", (`str "Anonymous"))]
+   | With_id __bindoj_gen_json_encoder_var_0 ->
+       `obj
+         [("kind", (`str "With_id"));
+         ("arg", (encode_int_json __bindoj_gen_json_encoder_var_0))]
+   | Student
+       { student_id = __bindoj_gen_json_encoder_var_0;
+         name = __bindoj_gen_json_encoder_var_1 }
+       ->
+       `obj
+         [("kind", (`str "Student"));
+         ("student_id", (encode_int_json __bindoj_gen_json_encoder_var_0));
+         ("name", (encode_string_json __bindoj_gen_json_encoder_var_1))]
+   | Teacher
+       { faculty_id = __bindoj_gen_json_encoder_var_0;
+         name = __bindoj_gen_json_encoder_var_1;
+         department = __bindoj_gen_json_encoder_var_2 }
+       ->
+       `obj
+         [("kind", (`str "Teacher"));
+         ("faculty_id", (encode_int_json __bindoj_gen_json_encoder_var_0));
+         ("name", (encode_string_json __bindoj_gen_json_encoder_var_1));
+         ("department", (encode_string_json __bindoj_gen_json_encoder_var_2))] :
+  person -> Kxclib.Json.jv)
+- : unit = ()
+# Bindoj.(
+   let person_decoder = Caml_gen.Json_codec.gen_json_decoder person_desc in
+   Caml.Structure.([binding person_decoder] |> printf "%a@?" pp_caml));;
+let decode_person_json =
+  (function
+   | `obj (("kind", `str "Anonymous")::[]) -> Some Anonymous
+   | `obj
+       (("kind", `str "With_id")::("arg", __bindoj_gen_json_decoder_var_0)::[])
+       ->
+       let (>>=) = Option.bind in
+       (decode_int_json __bindoj_gen_json_decoder_var_0) >>=
+         ((fun __bindoj_gen_json_decoder_var_0 ->
+             Some (With_id __bindoj_gen_json_decoder_var_0)))
+   | `obj (("kind", `str "Student")::__bindoj_gen_json_decoder_var_param) ->
+       let (>>=) = Option.bind in
+       ((List.assoc_opt "student_id" __bindoj_gen_json_decoder_var_param) >>=
+          decode_int_json)
+         >>=
+         ((fun __bindoj_gen_json_decoder_var_0 ->
+             ((List.assoc_opt "name" __bindoj_gen_json_decoder_var_param) >>=
+                decode_string_json)
+               >>=
+               (fun __bindoj_gen_json_decoder_var_1 ->
+                  Some
+                    (Student
+                       {
+                         student_id = __bindoj_gen_json_decoder_var_0;
+                         name = __bindoj_gen_json_decoder_var_1
+                       }))))
+   | `obj (("kind", `str "Teacher")::__bindoj_gen_json_decoder_var_param) ->
+       let (>>=) = Option.bind in
+       ((List.assoc_opt "faculty_id" __bindoj_gen_json_decoder_var_param) >>=
+          decode_int_json)
+         >>=
+         ((fun __bindoj_gen_json_decoder_var_0 ->
+             ((List.assoc_opt "name" __bindoj_gen_json_decoder_var_param) >>=
+                decode_string_json)
+               >>=
+               (fun __bindoj_gen_json_decoder_var_1 ->
+                  ((List.assoc_opt "department"
+                      __bindoj_gen_json_decoder_var_param)
+                     >>= decode_string_json)
+                    >>=
+                    (fun __bindoj_gen_json_decoder_var_2 ->
+                       Some
+                         (Teacher
+                            {
+                              faculty_id = __bindoj_gen_json_decoder_var_0;
+                              name = __bindoj_gen_json_decoder_var_1;
+                              department = __bindoj_gen_json_decoder_var_2
+                            })))))
+   | _ -> None : Kxclib.Json.jv -> person option)
 - : unit = ()
 ```
