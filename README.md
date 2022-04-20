@@ -1,5 +1,8 @@
 # bindoj
 
+## Current Roadmap:
+https://github.com/kxcteam/bindoj/issues/15
+
 ## Getting Started
 
 ```bash
