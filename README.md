@@ -19,6 +19,10 @@ dune build && dune runtest
 
 ## Developer Setup
 
+```bash
+dune build @doc
+```
+
 ### Toolchain Versions
 
 Tool | version
