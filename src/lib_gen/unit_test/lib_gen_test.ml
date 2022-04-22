@@ -12,7 +12,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
+open Alcotest
 open Kxclib
+
+let pp_jv ppf
+let jv = testable pp_char ( = )
+let jsonm = testable Jsonm.pp_lexeme ( = )
+
+let ex01_test () =
+  let open Ex01_gen in
+  let ex01_student : student = {
+    admission_year = 1984;
+    name = "William Gibson";
+  } in
+  let jv_student : Json.jv =
+    `obj [("admission_year", `num 1984.);
+          ("name", `str "William Gibson")] in
+  let yojson_student =
+    `Assoc [("admission_year", `Int 1984);
+            ("name", `String "William Gibson")] in
+  let jsonm_student : Jsonm.lexeme list =
+    [`Os;
+     `Name "admission_year"; `Float 1984.0;
+     `Name "name"; `String "William Gibson";
+     `Oe] in
+  Alcotest.(check Json.jv) "same Json.jv"
+    jv_student
+    (encode_student_json ex01_student)
 
 let%test "ex01" =
   let open Ex01_gen in

@@ -1,6 +1,6 @@
 (library
  (name bindoj_gen_test)
- (libraries bindoj_base kxclib yojson jsonm)
+ (libraries alcotest bindoj_base kxclib yojson jsonm)
  (flags (:standard
           -open Kxclib
           -open Bindoj_base.Type_desc))
