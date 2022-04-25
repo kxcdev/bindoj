@@ -15,167 +15,158 @@ limitations under the License. *)
 open Alcotest
 open Kxclib
 
-let pp_jv ppf
-let jv = testable pp_char ( = )
-let jsonm = testable Jsonm.pp_lexeme ( = )
+module Testables : sig
+  val jv : Json.jv testable
+  val yojson : Json.yojson testable
+  val jsonm : Json.jsonm testable
+end = struct
+  type jv = [
+    | `null
+    | `bool of bool
+    | `num of float
+    | `str of string
+    | `arr of jv list
+    | `obj of (string * jv) list
+  ] [@@ deriving show]
+  let jv = testable pp_jv ( = )
+  let yojson = testable Yojson.Safe.pp ( = )
+  let jsonm =
+    testable
+      (fun ppf jsonm ->
+         List.pp Jsonm.pp_lexeme ppf (List.of_seq jsonm))
+      (fun x y -> List.of_seq x = List.of_seq y)
+end
 
-let ex01_test () =
+type 'a test_fields = {
+  orig : 'a;
+  jv : Json.jv;
+  yojson : Json.yojson;
+  jsonm : Json.jsonm;
+}
+
+let ex01_test student =
   let open Ex01_gen in
-  let ex01_student : student = {
-    admission_year = 1984;
-    name = "William Gibson";
-  } in
-  let jv_student : Json.jv =
-    `obj [("admission_year", `num 1984.);
-          ("name", `str "William Gibson")] in
-  let yojson_student =
-    `Assoc [("admission_year", `Int 1984);
-            ("name", `String "William Gibson")] in
-  let jsonm_student : Jsonm.lexeme list =
-    [`Os;
-     `Name "admission_year"; `Float 1984.0;
-     `Name "name"; `String "William Gibson";
-     `Oe] in
-  Alcotest.(check Json.jv) "same Json.jv"
-    jv_student
-    (encode_student_json ex01_student)
+  let testable_student : student testable =
+    testable pp_student ( = ) in
+  (* encoding *)
+  check Testables.jv "ex01 encoding test"
+    student.jv
+    (encode_student_json student.orig);
+  check Testables.yojson "ex01 encoding test (+ yojson)"
+    student.yojson
+    (Json.to_yojson (encode_student_json student.orig));
+  check Testables.jsonm "ex01 encoding test (+ jsonm)"
+    student.jsonm
+    (Json.to_jsonm (encode_student_json student.orig));
+  (* decoding *)
+  check (option testable_student) "ex01 decoding test"
+    (Some student.orig)
+    (decode_student_json student.jv);
+  check (option testable_student) "ex01 decoding test (+ yojson)"
+    (Some student.orig)
+    (decode_student_json (Json.of_yojson student.yojson));
+  check (option testable_student) "ex01 decoding test (+ jsonm)"
+    (Some student.orig)
+    (Option.bind (Json.of_jsonm student.jsonm) (fun (jv, _) ->
+         decode_student_json jv));
+  (* encoding & decoding *)
+  check (option testable_student) "ex01 encoding and decoding test"
+    (Some student.orig)
+    (decode_student_json (encode_student_json student.orig));
+  check (option Testables.jv) "ex01 decoding and encoding test"
+    (Some student.jv)
+    (Option.map encode_student_json (decode_student_json student.jv))
 
-let%test "ex01" =
+let ex02_test person =
+  let open Ex02_gen in
+  let testable_person : person testable =
+    testable pp_person ( = ) in
+  (* encoding *)
+  check Testables.jv "ex02 anonymous encoding test"
+    person.jv
+    (encode_person_json person.orig);
+  check Testables.yojson "ex02 anonymous encoding test (+ yojson)"
+    person.yojson
+    (Json.to_yojson (encode_person_json person.orig));
+  check Testables.jsonm "ex02 anonymous encoding test (+ jsonm)"
+    person.jsonm
+    (Json.to_jsonm (encode_person_json person.orig));
+  (* decoding *)
+  check (option testable_person) "ex02 anonymous decoding test"
+    (Some person.orig)
+    (decode_person_json person.jv);
+  check (option testable_person) "ex02 anonymous decoding test (+ yojson)"
+    (Some person.orig)
+    (decode_person_json (Json.of_yojson person.yojson));
+  check (option testable_person) "ex02 anonymous decoding test (+ jsonm)"
+    (Some person.orig)
+    (Option.bind (Json.of_jsonm person.jsonm) (fun (jv, _) ->
+         decode_person_json jv));
+  (* encoding & decoding *)
+  check (option testable_person) "ex02 anonymous encoding and decoding test"
+    (Some person.orig)
+    (decode_person_json (encode_person_json person.orig));
+  check (option Testables.jv) "ex02 anonymous decoding and encoding test"
+    (Some person.jv)
+    (Option.map encode_person_json (decode_person_json person.jv))
+
+
+let () =
   let open Ex01_gen in
-  let ex01_student : student = {
-    admission_year = 1984;
-    name = "William Gibson";
+  let open Ex02_gen in
+  let ex01_student : student test_fields = {
+    orig   = { admission_year = 1984;
+               name = "William Gibson"; };
+    jv     = `obj [("admission_year", `num 1984.);
+                   ("name", `str "William Gibson")];
+    yojson = `Assoc [("admission_year", `Int 1984);
+                     ("name", `String "William Gibson")];
+    jsonm  = [`Os;
+              `Name "admission_year"; `Float 1984.0;
+              `Name "name"; `String "William Gibson";
+              `Oe] |> List.to_seq;
   } in
-  let jv_student : Json.jv =
-    `obj [("admission_year", `num 1984.);
-          ("name", `str "William Gibson")] in
-  let yojson_student =
-    `Assoc [("admission_year", `Int 1984);
-            ("name", `String "William Gibson")] in
-  let jsonm_student : Jsonm.lexeme list =
-    [`Os;
-     `Name "admission_year"; `Float 1984.0;
-     `Name "name"; `String "William Gibson";
-     `Oe] in
-  (* encoding *)
-  encode_student_json ex01_student = jv_student &&
-  Json.to_yojson (encode_student_json ex01_student) = yojson_student &&
-  Json.to_yojson (encode_student_json ex01_student) |> Json.yojson_basic_of_safe = yojson_student &&
-  Json.to_jsonm (encode_student_json ex01_student) |> List.of_seq = jsonm_student &&
-  (* decoding *)
-  Some ex01_student = decode_student_json jv_student &&
-  Some ex01_student = decode_student_json (Json.of_yojson yojson_student) &&
-  Some ex01_student = Option.bind (Json.of_jsonm (List.to_seq jsonm_student)) (fun (jv, _) -> decode_student_json jv) &&
-  (* encoding & decoding *)
-  decode_student_json (encode_student_json ex01_student) = Some ex01_student &&
-  Option.map encode_student_json (decode_student_json jv_student) = Some jv_student
-
-let%test "ex02_anonymous" =
-  let open Ex02_gen in
-  let ex02_anonymous : person = Anonymous in
-  let jv_anonymous : Json.jv = `obj [("kind", `str "Anonymous")] in
-  let yojson_anonymous = `Assoc [("kind", `String "Anonymous")] in
-  let jsonm_anonymous = [`Os; `Name "kind"; `String "Anonymous"; `Oe] in
-  (* encoding *)
-  encode_person_json ex02_anonymous = jv_anonymous &&
-  Json.to_yojson (encode_person_json ex02_anonymous) = yojson_anonymous &&
-  Json.to_yojson (encode_person_json ex02_anonymous) |> Json.yojson_basic_of_safe = yojson_anonymous &&
-  Json.to_jsonm (encode_person_json ex02_anonymous) |> List.of_seq = jsonm_anonymous &&
-  (* decoding *)
-  Some ex02_anonymous = decode_person_json jv_anonymous &&
-  Some ex02_anonymous = decode_person_json (Json.of_yojson yojson_anonymous) &&
-  Some ex02_anonymous = Option.bind (Json.of_jsonm (List.to_seq jsonm_anonymous)) (fun (jv, _) -> decode_person_json jv) &&
-  (* encoding & decoding *)
-  decode_person_json (encode_person_json ex02_anonymous) = Some ex02_anonymous &&
-  Option.map encode_person_json (decode_person_json jv_anonymous) = Some jv_anonymous
-
-let%test "ex02_with_id" =
-  let open Ex02_gen in
-  let ex02_with_id : person = With_id 1619 in
-  let jv_with_id : Json.jv = `obj [("kind", `str "With_id"); ("arg", `num 1619.)] in
-  let yojson_with_id = `Assoc [("kind", `String "With_id"); ("arg", `Int 1619)] in
-  let jsonm_with_id = [`Os; `Name "kind"; `String "With_id"; `Name "arg"; `Float 1619.; `Oe] in
-  (* encoding *)
-  encode_person_json ex02_with_id = jv_with_id &&
-  Json.to_yojson (encode_person_json ex02_with_id) = yojson_with_id &&
-  Json.to_yojson (encode_person_json ex02_with_id) |> Json.yojson_basic_of_safe = yojson_with_id &&
-  Json.to_jsonm (encode_person_json ex02_with_id) |> List.of_seq = jsonm_with_id &&
-  (* decoding *)
-  Some ex02_with_id = decode_person_json jv_with_id &&
-  Some ex02_with_id = decode_person_json (Json.of_yojson yojson_with_id) &&
-  Some ex02_with_id = Option.bind (Json.of_jsonm (List.to_seq jsonm_with_id)) (fun (jv, _) -> decode_person_json jv) &&
-  (* encoding & decoding *)
-  decode_person_json (encode_person_json ex02_with_id) = Some ex02_with_id &&
-  Option.map encode_person_json (decode_person_json jv_with_id) = Some jv_with_id
-
-let%test "ex02_student" =
-  let open Ex02_gen in
-  let ex02_student : person =
-    Student {
-      student_id = 451;
-      name = "Ray Bradbury";
-    } in
-  let jv_student : Json.jv =
-    `obj [("kind", `str "Student");
-          ("student_id", `num 451.);
-          ("name", `str "Ray Bradbury");] in
-  let yojson_student =
-    `Assoc [("kind", `String "Student");
-            ("student_id", `Int 451);
-            ("name", `String "Ray Bradbury");] in
-  let jsonm_student =
-    [`Os;
-     `Name "kind"; `String "Student";
-     `Name "student_id"; `Float 451.;
-     `Name "name"; `String "Ray Bradbury";
-     `Oe] in
-  (* encoding *)
-  encode_person_json ex02_student = jv_student &&
-  Json.to_yojson (encode_person_json ex02_student) = yojson_student &&
-  Json.to_yojson (encode_person_json ex02_student) |> Json.yojson_basic_of_safe = yojson_student &&
-  Json.to_jsonm (encode_person_json ex02_student) |> List.of_seq = jsonm_student &&
-  (* decoding *)
-  Some ex02_student = decode_person_json jv_student &&
-  Some ex02_student = decode_person_json (Json.of_yojson yojson_student) &&
-  Some ex02_student = Option.bind (Json.of_jsonm (List.to_seq jsonm_student)) (fun (jv, _) -> decode_person_json jv) &&
-  (* encoding & decoding *)
-  decode_person_json (encode_person_json ex02_student) = Some ex02_student &&
-  Option.map encode_person_json (decode_person_json jv_student) = Some jv_student
-
-let%test "ex02_teacher" =
-  let open Ex02_gen in
-  let ex02_teacher : person =
-    Teacher {
-      faculty_id = 2001;
-      name = "Arthur C. Clark";
-      department = "Space";
-    } in
-  let jv_teacher : Json.jv =
-    `obj [("kind", `str "Teacher");
-          ("faculty_id", `num 2001.);
-          ("name", `str "Arthur C. Clark");
-          ("department", `str "Space")] in
-  let yojson_teacher =
-    `Assoc [("kind", `String "Teacher");
-            ("faculty_id", `Int 2001);
-            ("name", `String "Arthur C. Clark");
-            ("department", `String "Space")] in
-  let jsonm_teacher =
-    [`Os;
-     `Name "kind"; `String "Teacher";
-     `Name "faculty_id"; `Float 2001.;
-     `Name "name"; `String "Arthur C. Clark";
-     `Name "department"; `String "Space";
-     `Oe] in
-  (* encoding *)
-  encode_person_json ex02_teacher = jv_teacher &&
-  Json.to_yojson (encode_person_json ex02_teacher) = yojson_teacher &&
-  Json.to_yojson (encode_person_json ex02_teacher) |> Json.yojson_basic_of_safe = yojson_teacher &&
-  Json.to_jsonm (encode_person_json ex02_teacher) |> List.of_seq = jsonm_teacher &&
-  (* decoding *)
-  Some ex02_teacher = decode_person_json jv_teacher &&
-  Some ex02_teacher = decode_person_json (Json.of_yojson yojson_teacher) &&
-  Some ex02_teacher = Option.bind (Json.of_jsonm (List.to_seq jsonm_teacher)) (fun (jv, _) -> decode_person_json jv) &&
-  (* encoding & decoding *)
-  decode_person_json (encode_person_json ex02_teacher) = Some ex02_teacher &&
-  Option.map encode_person_json (decode_person_json jv_teacher) = Some jv_teacher
+  let ex02_anonymous : person test_fields = {
+    orig   = Anonymous;
+    jv     = `obj [("kind", `str "Anonymous")];
+    yojson = `Assoc [("kind", `String "Anonymous")];
+    jsonm  = [`Os; `Name "kind"; `String "Anonymous"; `Oe] |> List.to_seq;
+  } in
+  let ex02_student : person test_fields = {
+    orig   = Student { student_id = 451;
+                       name = "Ray Bradbury"; };
+    jv     = `obj [("kind", `str "Student");
+                   ("student_id", `num 451.);
+                   ("name", `str "Ray Bradbury");];
+    yojson = `Assoc [("kind", `String "Student");
+                     ("student_id", `Int 451);
+                     ("name", `String "Ray Bradbury");];
+    jsonm  = [`Os;
+              `Name "kind"; `String "Student";
+              `Name "student_id"; `Float 451.;
+              `Name "name"; `String "Ray Bradbury";
+              `Oe] |> List.to_seq;
+  } in
+  let ex02_teacher : person test_fields = {
+    orig   = Teacher { faculty_id = 2001;
+                       name = "Arthur C. Clark";
+                       department = "Space"; };
+    jv     = `obj [("kind", `str "Teacher");
+                   ("faculty_id", `num 2001.);
+                   ("name", `str "Arthur C. Clark");
+                   ("department", `str "Space")];
+    yojson = `Assoc [("kind", `String "Teacher");
+                     ("faculty_id", `Int 2001);
+                     ("name", `String "Arthur C. Clark");
+                     ("department", `String "Space")];
+    jsonm  = [`Os;
+              `Name "kind"; `String "Teacher";
+              `Name "faculty_id"; `Float 2001.;
+              `Name "name"; `String "Arthur C. Clark";
+              `Name "department"; `String "Space";
+              `Oe] |> List.to_seq;
+  } in
+  ex01_test ex01_student;
+  ex02_test ex02_anonymous;
+  ex02_test ex02_student;
+  ex02_test ex02_teacher

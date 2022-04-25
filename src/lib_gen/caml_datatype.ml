@@ -22,7 +22,7 @@ let rec type_declaration_of_type_decl : type_decl -> type_declaration = fun { td
   { (type_declaration ~loc ~params:[] ~cstrs:[] ~private_:Public ~manifest:None
        ~name:(locmk ~loc td_name)
        ~kind:(type_kind_of_generic_kind kind))
-    with ptype_attributes = doc_attributes doc }
+    with ptype_attributes = show_attribute () :: doc_attributes doc }
 
 and type_kind_of_generic_kind : generic_kind -> type_kind = function
   | Record_kind record ->

@@ -4,8 +4,7 @@
  (flags (:standard
           -open Kxclib
           -open Bindoj_base.Type_desc))
- (inline_tests)
- (preprocess (pps ppx_inline_test)))
+ (preprocess (pps ppx_deriving.show)))
 
 (rule
  (targets ex01_gen.ml)

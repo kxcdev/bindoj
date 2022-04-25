@@ -198,7 +198,7 @@ module Caml :
    Caml.Structure.([declaration student_decl] |> printf "%a@?" pp_caml));;
 type student = {
   admission_year: int ;
-  full_name: string }
+  full_name: string }[@@deriving show]
 - : unit = ()
 # Bindoj.(
    let person_decl = Caml_gen.Datatype.type_declaration_of_type_decl person_desc in
@@ -212,6 +212,6 @@ type person =
   | Teacher of {
   faculty_id: int ;
   name: string ;
-  department: string }
+  department: string } [@@deriving show]
 - : unit = ()
 ```

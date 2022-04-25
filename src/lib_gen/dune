@@ -1,7 +1,7 @@
 (library
  (name bindoj_gen)
  (public_name bindoj.gen)
- (libraries kxclib bindoj_base ppxlib zed)
+ (libraries kxclib bindoj_base ppxlib ppx_deriving.show)
  (preprocess
   (pps ppxlib.metaquot))
  (flags (:standard
