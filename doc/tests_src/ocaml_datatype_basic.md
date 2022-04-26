@@ -174,7 +174,7 @@ module Datatype = Bindoj_gen.Caml_datatype
 module Datatype :
   sig
     val type_declaration_of_type_decl :
-      type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
+      ?show:bool -> type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
   end
 # #show_module Bindoj.Caml;;
 module Caml = Bindoj.Versioned.V0.Caml
@@ -198,7 +198,7 @@ module Caml :
    Caml.Structure.([declaration student_decl] |> printf "%a@?" pp_caml));;
 type student = {
   admission_year: int ;
-  full_name: string }[@@deriving show]
+  full_name: string }
 - : unit = ()
 # Bindoj.(
    let person_decl = Caml_gen.Datatype.type_declaration_of_type_decl person_desc in
@@ -212,6 +212,6 @@ type person =
   | Teacher of {
   faculty_id: int ;
   name: string ;
-  department: string } [@@deriving show]
+  department: string }
 - : unit = ()
 ```
