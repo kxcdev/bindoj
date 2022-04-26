@@ -38,20 +38,14 @@ jobs:
           key: v1-${{ runner.os }}-${{ matrix.ocaml-version }}-opam-switch
 
       - name: check OCaml version and workspace info
-        run: |
-          echo ">>> uname -a"
-          uname -a
-          echo && echo ">>> OCaml --version"
-          opam exec -- ocamlc --version
-          echo && echo ">>> git status"
-          git show HEAD^..HEAD --stat || git show HEAD --stat
-          echo && echo ">>> git ls-files"
-          git ls-files
+        run: ./scripts/ci_print_env.sh
 
-      - run: opam install . --deps-only --with-test
-      - run: opam exec -- dune build
+      - name: Install dependencies
+        run: opam install . --deps-only --with-test
+
+      - name: build & test
+        run: ./scripts/ci_run.sh
       - run: opam exec -- dune build @doc
-      - run: opam exec -- dune runtest
 
       - name: upload odoc generated document
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-version == '4.12.1' }}
