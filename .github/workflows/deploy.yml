@@ -1,7 +1,19 @@
-name: Common CI workflow
+name: vercel deploy
 
 on:
-  push:
+  # 一応動確のために手動で GitHub Actions を実行可能にする
+  # その際の引数として checkout 時の ref を渡している
+  # default 部分はリポジトリに設定されているデフォルトブランチを指定する
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: branch|tag|SHA to checkout
+        default: 'main'
+        required: true
+  # 毎日日本時間の 11時 に GitHub Actions が実行される (cron の時刻は UTC)
+  # 実行の際に参照されるブランチは上記の default で指定したものが使用される
+  schedule:
+    - cron:  '0 2 * * *'
 
 jobs:
   build:
@@ -12,9 +24,6 @@ jobs:
           - ubuntu-latest
         ocaml-version:
           - 4.12.1
-          ## we only test all versions at the [all-variants] flow
-          # - 4.13.x
-          # - 4.14.x
 
     runs-on: ${{ matrix.os }}
 
@@ -47,13 +56,6 @@ jobs:
         run: ./scripts/ci_run.sh
       - run: opam exec -- dune build @doc
 
-      - name: upload odoc generated document
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-version == '4.12.1' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: odoc-html-${{ github.sha }}
-          path: _build/default/_doc/_html/
-
       - uses: amondnet/vercel-action@v20.0.1
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -62,3 +64,4 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
           working-directory: ./
           scope: "kxcteam"
+          vercel-args: '--prod'

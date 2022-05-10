@@ -1,0 +1,4 @@
+(rule
+ (targets ocaml_datatype_basic.md)
+ (action (copy ../tests_src/ocaml_datatype_basic.md %{targets}))
+ (mode (promote (until-clean))))

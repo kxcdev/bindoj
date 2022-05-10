@@ -44,3 +44,7 @@ setup.log
 
 # Local OPAM switch
 _opam/
+
+# project specific
+doc/dist/*.md
+.vercel

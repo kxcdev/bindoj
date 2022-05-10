@@ -1,6 +1,7 @@
 # bindoj
 
 ## Current Roadmap:
+
 https://github.com/kxcteam/bindoj/issues/15
 
 ## Getting Started
@@ -36,6 +37,7 @@ OCaml version | 4.12.x, 4.13.x, 4.14.x
 Yarn version | 1.22.17
 
 ### NPM or Yarn?
+
 yarn!
 
 ## Contribution Guide 
