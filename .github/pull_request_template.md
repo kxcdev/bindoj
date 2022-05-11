@@ -1,8 +1,11 @@
 # Summary
 
-| issue number
-:---------:
-#xxx
+* 箇条書きで簡単に説明を書くといいかも
+
+# Closing Issues
+
+* Closes #xxx
+* Closes #yyy
 
 # References
 
@@ -10,6 +13,6 @@
 - yyy
 - zzz
 
-# preview password
+# Preview Password
 
 `bjbj`
