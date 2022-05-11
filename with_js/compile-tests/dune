@@ -1,0 +1,17 @@
+(rule
+ (alias cases)
+ (targets ex01_ts_gen.ts)
+ (action (with-stdout-to %{targets} (run %{exe:../../src/lib_gen_ts/unit_test/gen/ex01_ts.exe})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias cases)
+ (targets ex02_ts_gen.ts)
+ (action (with-stdout-to %{targets} (run %{exe:../../src/lib_gen_ts/unit_test/gen/ex02_ts.exe})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias cases)
+ (targets ex03_ts_gen.ts)
+ (action (with-stdout-to %{targets} (run %{exe:../../src/lib_gen_ts/unit_test/gen/ex03_ts.exe})))
+ (mode (promote (until-clean))))

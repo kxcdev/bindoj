@@ -1,10 +1,12 @@
 (rule
  (alias runtest)
  (deps
+  (alias compile-tests/cases)
   (glob_files *)
-  (glob_files unit-tests/*.test.ts)
-  (alias ../src/lib_gen_ts/unit_test/default))
+  (glob_files unit-tests/*.test.ts))
  (action
   (progn
-   (run yarn install --non-interactive)
-   (run yarn test))))
+   (run yarn install --non-interactive) ; install dependencies
+   (run yarn build) ; build & run compilation tests
+   (run yarn test)  ; run unit tests
+  )))

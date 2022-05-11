@@ -9,15 +9,15 @@
   "files": [
     "dist/"
   ],
-  "main": "dist/index.js",
+  "main": "./dist/src/index.js",
   "bin": {
-    "bindoj": "./dist/index.js"
+    "bindoj": "./dist/src/index.js"
   },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "bindoj": "node ./dist/index.js"
+    "bindoj": "node ./dist/src/index.js"
   },
   "jest": {
     "moduleFileExtensions": [

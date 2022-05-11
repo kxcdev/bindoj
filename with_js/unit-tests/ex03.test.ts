@@ -1,4 +1,4 @@
-import * as ex03 from "../../src/lib_gen_ts/unit_test/ex03_ts_gen"
+import * as ex03 from "../compile-tests/ex03_ts_gen"
 
 function cons (arg: ex03.intlist) : ex03.intlist {
   return { kind: "CONS", arg: arg };

@@ -15,6 +15,11 @@ jobs:
           ## we only test all versions at the [all-variants] flow
           # - 4.13.x
           # - 4.14.x
+        node-version:
+          - lts/fermium # v14 Maintenance LTS
+          ## we only test all versions at the [all-variants] flow
+          # - lts/gallium # v16 Active LTS
+          # - 17
 
     runs-on: ${{ matrix.os }}
 
@@ -29,6 +34,13 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-version }}
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: yarn
+          cache-dependency-path: 'with_js/yarn.lock'
 
       - name: Cache OPAM switch
         id: cache-switch

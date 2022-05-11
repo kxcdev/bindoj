@@ -1,4 +1,4 @@
-import * as ex02 from "../../src/lib_gen_ts/unit_test/ex02_ts_gen"
+import * as ex02 from "../compile-tests/ex02_ts_gen"
 
 const sample01 : ex02.person = { kind: "Anonymous" };
 const sample02 : ex02.person = { kind: "With_id", arg: 4 }
