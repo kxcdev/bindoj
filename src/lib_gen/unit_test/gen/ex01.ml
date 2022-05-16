@@ -12,22 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-let ex01 : type_decl =
-  { td_name = "student";
-    td_kind =
-      Record_kind
-        ([{ rf_name = "admission_year"; rf_type = "int"; rf_codec = `default_codec }, `nodoc;
-          { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec }, `nodoc;]),
-      `nodoc; }
+open Bindoj_test_common
+
+module Ex = Typedesc_examples.Ex01
 
 let () =
   let open Ppxlib in
   let open Ast_builder.Default in
   let loc = Location.none in
   Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_type ~loc Recursive [type_declaration_of_type_decl ex01]);
+    (pstr_type ~loc Recursive [type_declaration_of_type_decl Ex.decl]);
     (pstr_value ~loc Nonrecursive
-       [gen_json_encoder ~self_contained:true ex01]);
+       [gen_json_encoder ~self_contained:true Ex.decl]);
     (pstr_value ~loc Nonrecursive
-       [gen_json_decoder ~self_contained:true ex01]);
+       [gen_json_decoder ~self_contained:true Ex.decl]);
   ]

@@ -12,24 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-let ex03 : type_decl =
-  { td_name = "intlist";
-    td_kind =
-      Variant_kind
-        [Cstr_tuple { ct_name = "NIL";
-                      ct_args = [];
-                      ct_codec = `default_codec;
-                      ct_flvconfigs = [Flvconfig_flat_kind
-                                         { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
-                    }, `nodoc;
-         Cstr_tuple { ct_name = "CONS";
-                      ct_args = ["intlist"];
-                      ct_codec = `default_codec;
-                      ct_flvconfigs = [Flvconfig_flat_kind
-                                         { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
-                    }, `nodoc],
-      `nodoc; }
+open Bindoj_test_common
+
+module Ex = Typedesc_examples.Ex03
 
 let () =
-  print_endline (gen_ts_type ~export:true ex03);
-  print_endline (gen_ts_case_analyzer ~export:true ex03)
+  print_endline (gen_ts_type ~export:true Ex.decl);
+  print_endline (gen_ts_case_analyzer ~export:true Ex.decl)
