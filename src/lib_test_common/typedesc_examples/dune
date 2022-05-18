@@ -1,6 +1,4 @@
 (library
  (name bindoj_test_common_typedesc_examples)
- (libraries bindoj_gen bindoj_base ppxlib)
- (preprocess
-  (pps ppxlib.metaquot))
+ (libraries bindoj_gen bindoj_base)
  (flags (:standard -open Kxclib)))
