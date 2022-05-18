@@ -54,7 +54,9 @@ jobs:
 
       - name: build & test
         run: ./scripts/ci_run.sh
-      - run: opam exec -- dune build @doc
+      - run: |
+          opam exec -- dune build @doc
+          make doc
 
       - uses: amondnet/vercel-action@v20.0.1
         with:
