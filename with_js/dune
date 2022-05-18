@@ -1,12 +1,19 @@
 (rule
- (alias runtest)
+ (alias node_modules)
  (deps
-  (alias compile-tests/cases)
-  (glob_files *)
-  (glob_files unit-tests/*.test.ts))
+  (sandbox none)
+  (source_tree src)
+  (glob_files *))
  (action
   (progn
-   (run yarn install --non-interactive) ; install dependencies
-   (run yarn build) ; build & run compilation tests
-   (run yarn test)  ; run unit tests
-  )))
+   (run yarn install --frozen-lockfile)
+   (run yarn clean))))
+
+(rule
+ (alias runtest)
+ (deps
+  (sandbox none)
+  (alias node_modules)
+  (alias compile-tests/gen)
+  (source_tree unit-tests))
+ (action (run yarn test)))

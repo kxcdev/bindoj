@@ -1,0 +1,6 @@
+(executable
+ (name gen)
+ (libraries
+  bindoj_test_common
+  ppxlib)
+ (flags (:standard -open Kxclib)))

@@ -1,9 +1,8 @@
 import * as ex02 from "../compile-tests/ex02_ts_gen"
+import * as tmp from "../compile-tests/ex02_examples.json"
 
-const sample01 : ex02.person = { kind: "Anonymous" };
-const sample02 : ex02.person = { kind: "With_id", arg: 4 }
-const sample03 : ex02.person = { kind: "Student", student_id: 2, name: "Yamada" };
-const sample04 : ex02.person = { kind: "Teacher", faculty_id: 42, name: "Foo", department: "Department of Silly Walks" };
+// also typecheck the generate JSON
+const samples : ex02.person[] = <ex02.person[]>tmp;
 
 type AnalyzeResult = string | number | [string, number] | [string, number, string]
 
@@ -20,9 +19,9 @@ describe('ex02', (): void => {
         Student:   v => [v.name, v.student_id],
         Teacher:   v => [v.name, v.faculty_id, v.department]
       });
-    expect(analyzer(sample01)).toBe("anonymous")
-    expect(analyzer(sample02)).toBe(4)
-    expect(analyzer(sample03)).toStrictEqual(["Yamada", 2])
-    expect(analyzer(sample04)).toStrictEqual(["Foo", 42, "Department of Silly Walks"])
+    expect(analyzer(samples[0])).toBe("anonymous")
+    expect(analyzer(samples[1])).toBe(1619)
+    expect(analyzer(samples[2])).toStrictEqual(["Ray Bradbury", 451])
+    expect(analyzer(samples[3])).toStrictEqual(["Arthur C. Clark", 2001, "Space"])
   })
 })
