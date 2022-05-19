@@ -12,16 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex03
+include Bindoj_test_common_typedesc_generated_examples
 
-let () =
-  let open Ppxlib in
-  let open Ast_builder.Default in
-  let loc = Location.none in
-  Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_type ~loc Recursive [type_declaration_of_type_decl ~show:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_encoder ~self_contained:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_decoder ~self_contained:true Ex.decl_with_docstr]);
-  ]
+(** each example module should have this module type *)
+module type T = sig
+  type t
+  val pp : ppf -> t -> unit
+  val equal : t -> t -> bool
+  val t : t Alcotest.testable
+  val sample_values : t list
+  val encode_json : t -> Kxclib.Json.jv
+  val decode_json : Kxclib.Json.jv -> t option
+end
+
+(** contains all the example modules. *)
+let all : (string * (module T)) list = [
+  "ex01", (module Ex01);
+  "ex02", (module Ex02);
+  "ex03", (module Ex03);
+]

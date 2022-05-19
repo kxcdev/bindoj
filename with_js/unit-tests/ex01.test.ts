@@ -1,14 +1,13 @@
 import * as ex01 from "../compile-tests/ex01_ts_gen"
+import * as tmp from "../compile-tests/ex01_examples.json"
 
-const sample01 : ex01.student = {
-  admission_year: 2022,
-  name: "Yamada"
-}
+// also typecheck the generate JSON
+const samples : ex01.student[] = <ex01.student[]>tmp;
 
 describe('ex01', (): void => {
   test('it compiles', (): void => {
-    expect(sample01.admission_year).toBe(2022);
-    expect(sample01.name).toBe("Yamada");
+    expect(samples[0].admission_year).toBe(1984);
+    expect(samples[0].name).toBe("William Gibson");
     return;
   })
 })

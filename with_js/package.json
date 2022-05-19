@@ -7,17 +7,18 @@
   "license": "Apache-2.0",
   "private": true,
   "files": [
-    "dist/"
+    "src/"
   ],
-  "main": "./dist/src/index.js",
+  "main": "./src/index.js",
   "bin": {
-    "bindoj": "./dist/src/index.js"
+    "bindoj": "./src/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "test": "jest",
-    "bindoj": "node ./dist/src/index.js"
+    "build": "yarn tsc",
+    "watch": "yarn tsc -w",
+    "clean": "yarn tsc --build --clean",
+    "test":  "yarn jest",
+    "bindoj": "node ./src/index.js"
   },
   "jest": {
     "moduleFileExtensions": [

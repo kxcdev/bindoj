@@ -1,0 +1,4 @@
+(library
+ (name bindoj_test_common_typedesc_generated_examples)
+ (preprocess (pps ppx_deriving.show ppx_deriving.eq))
+ (libraries bindoj_gen_test bindoj_base alcotest))

@@ -12,16 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex03
+[@@@ocaml.warning "-32-33"]
 
-let () =
-  let open Ppxlib in
-  let open Ast_builder.Default in
-  let loc = Location.none in
-  Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_type ~loc Recursive [type_declaration_of_type_decl ~show:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_encoder ~self_contained:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_decoder ~self_contained:true Ex.decl_with_docstr]);
-  ]
+open Js_of_ocaml
+
+include Js
+
+type any = Unsafe.any
+
+let require specifier = Js.Unsafe.eval_string (Format.sprintf "require('%s')" specifier)
+
+module Json = struct
+  let stringify (obj: 'a) : string = _JSON##stringify obj |> to_string
+
+  let parse (str: string) : 'a = _JSON##parse (string str)
+end
+
+module Console = struct
+  let log (x: 'a) = Firebug.console##log x
+end

@@ -40,6 +40,10 @@ let decoder_name type_name = function
 
 let default_kind_fname = "kind"
 let default_arg_fname = "arg"
+let kind_fname_value kind_fname =
+  Option.value kind_fname ~default:default_kind_fname
+let arg_fname_value arg_fname =
+  Option.value arg_fname ~default:default_arg_fname
 
 let gen_primitive_encoders : codec -> value_binding list = fun codec ->
   let loc = Location.none in

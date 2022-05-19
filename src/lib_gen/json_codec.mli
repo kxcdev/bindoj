@@ -33,5 +33,7 @@ val gen_json_encoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?c
 
 val gen_json_decoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?codec:codec -> type_decl -> value_binding
 
+val kind_fname_value : string option -> string
+val arg_fname_value : string option -> string
 val default_kind_fname : string
 val default_arg_fname : string

@@ -12,16 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex03
+include Bindoj_gen_test.Ex01_gen
 
-let () =
-  let open Ppxlib in
-  let open Ast_builder.Default in
-  let loc = Location.none in
-  Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_type ~loc Recursive [type_declaration_of_type_decl ~show:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_encoder ~self_contained:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_decoder ~self_contained:true Ex.decl_with_docstr]);
-  ]
+type t = student = { admission_year: int; name: string } [@@deriving show, eq]
+
+let encode_json = encode_student_json
+let decode_json = decode_student_json
+let t : t Alcotest.testable = Alcotest.testable pp equal
+
+let sample_value01 = {
+  admission_year = 1984;
+  name = "William Gibson";
+}
+
+let sample_values = [
+  sample_value01;
+]

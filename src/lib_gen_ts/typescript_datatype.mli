@@ -14,5 +14,99 @@ limitations under the License. *)
 
 type flavor = Bindoj_gen.Json_codec.variant_type_flavor
 
+type ts_ast = ts_statement list
+and ts_statement = [
+  | `type_alias_declaration of ts_type_alias_decl
+  | `function_declaration of ts_func_decl
+  | `return_statement of ts_expression
+  | `if_statement of ts_expression * ts_statement * ts_statement
+  | `throw_statement of ts_expression
+  | `block of ts_ast
+]
+and ts_type_alias_decl = {
+  tsa_modifiers : ts_modifier list;
+  tsa_name : string;
+  tsa_type_parameters : string list;
+  tsa_type_desc : ts_type_desc;
+}
+and ts_func_decl = {
+  tsf_modifiers : ts_modifier list;
+  tsf_name : string;
+  tsf_type_parameters : string list;
+  tsf_parameters : ts_parameter list;
+  tsf_type_desc : ts_type_desc;
+  tsf_body : ts_ast;
+}
+and ts_type_desc = [
+  | `type_reference of string (* includes primitive types *)
+  | `type_literal of ts_property_signature list
+  | `literal_type of ts_literal_type
+  | `tuple of ts_type_desc list
+  | `union of ts_type_desc list
+  | `func_type of ts_func_type_desc
+]
+and ts_property_signature = {
+  tsps_modifiers : [ `read_only ] list;
+  tsps_name : string;
+  tsps_type_desc : ts_type_desc;
+}
+and ts_literal_type = [
+  | `numeric_literal of float
+  | `string_literal of string
+]
+and ts_parameter = {
+  tsp_name : string;
+  tsp_type_desc : ts_type_desc;
+}
+and ts_func_type_desc = {
+  tsft_parameters : ts_parameter list;
+  tsft_type_desc : ts_type_desc;
+}
+and ts_expression = [
+  | `identifier of string
+  | `literal_expression of ts_literal_expression
+  | `call_expression of ts_call_expression
+  | `element_access_expression of ts_element_access_expression
+  | `property_access_expression of ts_property_access_expression
+  | `binary_expression of ts_binary_expression
+  | `arrow_function of ts_arrow_function
+  | `new_expression of ts_new_expression
+]
+and ts_literal_expression = [
+  | `string_literal of string
+]
+and ts_call_expression = {
+  tsce_expression : ts_expression;
+  tsce_arguments : ts_expression list;
+}
+and ts_element_access_expression = {
+  tsea_expression : ts_expression;
+  tsea_argument : ts_expression;
+}
+and ts_property_access_expression = {
+  tspa_expression : ts_expression;
+  tspa_name : string;
+}
+and ts_binary_expression = {
+  tsbe_left : ts_expression;
+  tsbe_operator_token : string;
+  tsbe_right : ts_expression;
+}
+and ts_arrow_function = {
+  tsaf_parameters : ts_parameter list;
+  tsaf_body : ts_ast;
+}
+and ts_new_expression = {
+  tsne_expression : ts_expression;
+  tsne_arguments : ts_expression list;
+}
+and ts_modifier = [
+  | `export
+]
+
+open Bindoj_gen_foreign.Foreign_datatype
+
+val ts_ast_of_fwrt_decl : (ts_modifier list, [`read_only] list) fwrt_decl -> ts_ast
+
 val gen_ts_type : ?export:bool -> ?flavor:flavor -> type_decl -> string
 val gen_ts_case_analyzer : ?export:bool -> ?flavor:flavor -> type_decl -> string

@@ -12,16 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex03
+open Bindoj_test_common.Typedesc_generated_examples
+
+let print_json (module Ex : T) =
+  let values = Ex.sample_values |> List.map Ex.encode_json in
+  `arr values
+  |> Json.to_yojson
+  |> Yojson.Safe.to_string
+  |> print_endline
 
 let () =
-  let open Ppxlib in
-  let open Ast_builder.Default in
-  let loc = Location.none in
-  Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_type ~loc Recursive [type_declaration_of_type_decl ~show:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_encoder ~self_contained:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Recursive
-       [gen_json_decoder ~self_contained:true Ex.decl_with_docstr]);
-  ]
+  if Array.length Sys.argv < 2 then
+    failwith "usage: gen.exe <exXX>"
+  else
+    let name = Array.get Sys.argv 1 in
+    match List.assoc_opt name all with
+    | None -> failwith (sprintf "unknown example %s" name)
+    | Some m -> print_json m

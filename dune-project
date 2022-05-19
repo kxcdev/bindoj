@@ -24,10 +24,13 @@
  (synopsis "A generative datatype toolkit for OCaml centric workflows")
  (depends
   (ppxlib (>= 0.26))
+  (ppx_deriving (>= 5.2.1))
   (zed (>= 3.1.0))
   (odoc (and :dev (>= 2.1.0)))
   (jsonm (>= 1.0))
   (yojson (>= 1.7))
+  (js_of_ocaml (and :with-test (>= 4.0.0)))
+  (js_of_ocaml-ppx (and :with-test (>= 4.0.0)))
   (mdx (and :with-test (>= 2.1.0)))
   (alcotest :with-test)
   (ppx_inline_test :with-test)

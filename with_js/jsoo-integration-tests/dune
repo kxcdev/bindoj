@@ -1,0 +1,26 @@
+(executable
+ (name run)
+ (libraries
+  js_of_ocaml
+  bindoj_test_common
+  bindoj_base
+  alcotest
+  yojson
+  kxclib)
+ (modes js)
+ (optional)
+ (preprocess (pps js_of_ocaml-ppx ppx_inline_test))
+ (js_of_ocaml)
+ (flags (:standard -open Kxclib)))
+
+(rule
+ (alias runtest)
+ (deps
+  (sandbox none)
+  (:test (file ./run.bc.js))
+  (alias ../node_modules)
+  (alias ../compile-tests/gen))
+ (action
+  (progn
+    (run yarn build)
+    (run node %{test}))))

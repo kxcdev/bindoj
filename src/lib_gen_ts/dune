@@ -1,7 +1,7 @@
 (library
  (name bindoj_gen_ts)
  (public_name bindoj.gen_ts)
- (libraries bindoj_gen kxclib zed)
+ (libraries bindoj_gen bindoj_gen_foreign kxclib zed)
  (flags (:standard
           -open Kxclib
           -open Bindoj_base.Type_desc)))

@@ -12,9 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-open Bindoj_test_common
-
-module Ex = Typedesc_examples.Ex03
+module Ex = Bindoj_test_common_typedesc_examples.Ex03
 
 let () =
   let open Ppxlib in
