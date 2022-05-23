@@ -5,6 +5,8 @@ import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import { getAllDocs, getDocByFileName } from "./api/fetch";
 import markdownToHtml from "../utils/markdownToHtml";
+import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/plugins/line-numbers/prism-line-numbers.css";
 
 type Props = InferGetStaticPropsType<typeof getStaticProps>;
 
