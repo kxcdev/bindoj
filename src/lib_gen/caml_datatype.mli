@@ -13,4 +13,4 @@ See the License for the specific language governing permissions and
 limitations under the License. *)
 
 val type_declaration_of_type_decl :
-  type_decl -> Ppxlib.type_declaration
+  ?show:bool -> type_decl -> Ppxlib.type_declaration

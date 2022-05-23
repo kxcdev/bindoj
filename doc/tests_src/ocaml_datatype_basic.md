@@ -174,7 +174,7 @@ module Datatype = Bindoj_gen.Caml_datatype
 module Datatype :
   sig
     val type_declaration_of_type_decl :
-      type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
+      ?show:bool -> type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
   end
 # #show_module Bindoj.Caml;;
 module Caml = Bindoj.Versioned.V0.Caml

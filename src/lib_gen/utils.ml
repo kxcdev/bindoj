@@ -27,6 +27,11 @@ let doc_attributes = function
        ~payload:(PStr [pstr_eval ~loc (estring ~loc doc) []])]
   | `nodoc -> []
   | _ -> failwith "unknown polymorphic variant for docstr"
+let show_attribute () =
+  let loc = Location.none in
+  attribute ~loc
+    ~name:(Located.mk ~loc "deriving")
+    ~payload:(PStr [pstr_eval ~loc (evar ~loc "show") []])
 let warning_attributes str =
   let loc = Location.none in
   [attribute ~loc

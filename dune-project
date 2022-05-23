@@ -34,4 +34,5 @@
   (mdx (and :with-test (>= 2.1.0)))
   (alcotest :with-test)
   (ppx_inline_test :with-test)
+  (ppx_deriving (>= 5.1.2))
   (ocaml (>= 4.12))))
