@@ -29,6 +29,9 @@ const Home: NextPage<Props> = ({ allDocs }) => {
                 <h2>{doc.filename}</h2>
               </a>
             ))}
+          <a href="html/index.html" className={styles.card}>
+            <h2>dune build @doc</h2>
+          </a>
         </div>
       </main>
     </div>
