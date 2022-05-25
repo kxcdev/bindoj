@@ -12,22 +12,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-include Bindoj_gen_test.Ex03_gen
+include Bindoj_gen_test_gen_output.Ex03_gen
 
 type t = int_list =
   | IntNil
   | IntCons of int * t
-  [@@deriving show, eq]
+  [@@deriving show]
 
 let encode_json = encode_int_list_json
 let decode_json = decode_int_list_json
-let t : t Alcotest.testable = Alcotest.testable pp equal
+let t : t Alcotest.testable = Alcotest.of_pp pp
 
-let sample_value01 = IntNil
+open Sample_value
+open Sample_value.JvHelper
 
-let sample_value02 = IntCons (1, IntCons (2, IntNil))
+let intCons a b = ctor2 "IntCons" (`num (float_of_int a)) b
+let intNil = ctor0 "IntNil"
 
-let sample_value03 = IntCons (1, IntCons (2, IntCons (3, IntCons (4, IntNil))))
+let sample_value01 = { orig = IntNil; jv = intNil }
+
+let sample_value02 = {
+  orig = IntCons (1, IntCons (2, IntNil));
+  jv = intCons 1 (intCons 2 intNil);
+}
+
+let sample_value03 = {
+  orig = IntCons (1, IntCons (2, IntCons (3, IntCons (4, IntNil))));
+  jv = intCons 1 (intCons 2 (intCons 3 (intCons 4 intNil)));
+}
 
 let sample_values = [
   sample_value01;

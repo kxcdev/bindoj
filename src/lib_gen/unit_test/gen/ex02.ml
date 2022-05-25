@@ -13,8 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License. *)
 
 module Ex = Bindoj_test_common_typedesc_examples.Ex02
+open Bindoj_base.Type_desc
+open Bindoj_gen.Caml_datatype
+open Bindoj_gen.Json_codec
 
-let () =
+let name = "ex02"
+
+let gen () =
   let open Ppxlib in
   let open Ast_builder.Default in
   let loc = Location.none in

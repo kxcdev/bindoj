@@ -1,4 +1,4 @@
-import * as ex01 from "../compile-tests/ex01_ts_gen"
+import * as ex01 from "../compile-tests/ex01_gen"
 import * as tmp from "../compile-tests/ex01_examples.json"
 
 // also typecheck the generate JSON

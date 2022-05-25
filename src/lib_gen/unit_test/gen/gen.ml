@@ -12,21 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-include Bindoj_test_common_typedesc_generated_examples
-
-(** each example module should have this module type *)
 module type T = sig
-  type t
-  val pp : ppf -> t -> unit
-  val t : t Alcotest.testable
-  val sample_values : t Sample_value.t list
-  val encode_json : t -> Kxclib.Json.jv
-  val decode_json : Kxclib.Json.jv -> t option
+  val name: string
+  val gen:  unit -> unit
 end
 
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
+let modules : (string * (module T)) list = [
   "ex01", (module Ex01);
+  "ex01_docstr", (module Ex01_docstr);
   "ex02", (module Ex02);
+  "ex02_docstr", (module Ex02_docstr);
   "ex03", (module Ex03);
+  "ex03_docstr", (module Ex03_docstr);
 ]
+
+let mapping =
+  modules |> List.map (fun (s, m) -> sprintf "%s_gen.ml" s, m)
+
+let () =
+  match Array.to_list Sys.argv |> List.tl with
+  | [] | _ :: _ :: _ ->
+    failwith "usage: gen <filename>"
+  | [name] ->
+    match List.assoc_opt name mapping with
+    | None -> failwith (sprintf "unknown example %s" name)
+    | Some (module Ex : T) -> Ex.gen ()

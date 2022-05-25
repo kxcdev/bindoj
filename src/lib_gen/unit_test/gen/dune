@@ -1,13 +1,8 @@
-(executables
- (names ex01 ex02 ex03
-        ex01_docstr ex02_docstr ex03_docstr)
+(executable
+ (name gen)
  (libraries
   bindoj_test_common_typedesc_examples
   bindoj_gen bindoj_base
   ppxlib)
  (preprocess (pps ppxlib.metaquot))
- (flags (:standard
-          -open Kxclib
-          -open Bindoj_base.Type_desc
-          -open Bindoj_gen.Caml_datatype
-          -open Bindoj_gen.Json_codec)))
+ (flags (:standard -open Kxclib -w "-32-33")))

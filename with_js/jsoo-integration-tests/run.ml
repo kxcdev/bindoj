@@ -12,17 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-open Bindoj_test_common
+open Bindoj_test_common.Typedesc_generated_examples
 
-let create_test_cases name (module Ex : Typedesc_generated_examples.T) =
+let create_test_cases name (module Ex : T) =
   let open Alcotest in
 
-  let gen  = Js.require (sprintf "../compile-tests/%s_ts_gen" name) in
+  (* let gen  = Js.require (sprintf "../compile-tests/%s_gen" name) in *)
   let json = Js.require (sprintf "../compile-tests/%s_examples.json" name) in
-
-  let test_require () =
-    check pass "should not fail" (gen, json) (gen, json)
-  in
 
   let test_decode_json () =
     let json_samples =
@@ -36,15 +32,15 @@ let create_test_cases name (module Ex : Typedesc_generated_examples.T) =
         |> Json.of_yojson
         |> Ex.decode_json)
     in
-    check (list Ex.t) "same value(s)" Ex.sample_values json_samples
+    let values = Ex.sample_values |> List.map Sample_value.orig in
+    check (list Ex.t) "same value(s)" values json_samples
   in
 
   name, [
-    test_case "can require test files (.ts, .json)" `Quick test_require;
-    test_case "Ex.decode_json works" `Quick test_decode_json
+    test_case "JSON decoder works in js_of_ocaml" `Quick test_decode_json
   ]
 
 let () =
-  Typedesc_generated_examples.all
+  all
   |> List.map (fun (name, m) -> create_test_cases name m)
-  |> Alcotest.run "jsoo_integration_tests" ~compact:true
+  |> Alcotest.run "with_js.jsoo_integration"

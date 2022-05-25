@@ -1,37 +1,6 @@
-(library
- (name bindoj_gen_test)
- (libraries alcotest bindoj_base kxclib yojson jsonm)
- (flags (:standard
-          -open Kxclib
-          -open Bindoj_base.Type_desc))
+(tests
+ (names
+  json_codec)
+ (libraries alcotest bindoj_test_common bindoj_base kxclib yojson jsonm)
+ (flags (:standard -open Kxclib))
  (preprocess (pps ppx_deriving.show)))
-
-(rule
- (targets ex01_gen.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/ex01.exe})))
- (mode (promote (until-clean))))
-
-(rule
- (targets ex02_gen.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/ex02.exe})))
- (mode (promote (until-clean))))
-
-(rule
- (targets ex03_gen.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/ex03.exe})))
- (mode (promote (until-clean))))
-
-(rule
- (targets ex01_docstr_gen.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/ex01_docstr.exe})))
- (mode (promote (until-clean))))
-
-(rule
- (targets ex02_docstr_gen.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/ex02_docstr.exe})))
- (mode (promote (until-clean))))
-
-(rule
- (targets ex03_docstr_gen.ml)
- (action (with-stdout-to %{targets} (run %{exe:gen/ex03_docstr.exe})))
- (mode (promote (until-clean))))

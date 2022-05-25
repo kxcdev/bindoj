@@ -12,10 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-open Bindoj_test_common
+module type T = sig
+  val name: string
+  val gen:  unit -> unit
+end
 
-module Ex = Typedesc_examples.Ex02
+let modules : (string * (module T)) list = [
+  "ex01", (module Ex01);
+  "ex02", (module Ex02);
+  "ex03", (module Ex03);
+]
+
+let mapping =
+  modules |> List.map (fun (s, m) -> sprintf "%s_gen.ts" s, m)
 
 let () =
-  print_endline (gen_ts_type ~export:true Ex.decl);
-  print_endline (gen_ts_case_analyzer ~export:true Ex.decl)
+  match Array.to_list Sys.argv |> List.tl with
+  | [] | _ :: _ :: _ ->
+    failwith "usage: gen <filename>"
+  | [name] ->
+    match List.assoc_opt name mapping with
+    | None -> failwith (sprintf "unknown example %s" name)
+    | Some (module Ex : T) -> Ex.gen ()

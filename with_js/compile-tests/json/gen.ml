@@ -15,17 +15,22 @@ limitations under the License. *)
 open Bindoj_test_common.Typedesc_generated_examples
 
 let print_json (module Ex : T) =
-  let values = Ex.sample_values |> List.map Ex.encode_json in
-  `arr values
+  Ex.sample_values
+  |> List.map Sample_value.orig
+  |> List.map Ex.encode_json
+  |> (fun x -> `arr x)
   |> Json.to_yojson
   |> Yojson.Safe.to_string
   |> print_endline
 
+let mapping =
+  all |> List.map (fun (s, m) -> sprintf "%s_examples.json" s, m)
+
 let () =
-  if Array.length Sys.argv < 2 then
-    failwith "usage: gen.exe <exXX>"
-  else
-    let name = Array.get Sys.argv 1 in
-    match List.assoc_opt name all with
+  match Array.to_list Sys.argv |> List.tl with
+  | [] | _ :: _ :: _ ->
+    failwith "usage: gen <filename>"
+  | [name] ->
+    match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
     | Some m -> print_json m

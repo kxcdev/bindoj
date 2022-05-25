@@ -1,30 +1,35 @@
 (rule
  (alias gen)
- (target ex01_ts_gen.ts)
- (action (with-stdout-to %{target} (run %{exe:../../src/lib_gen_ts/unit_test/gen/ex01_ts.exe})))
+ (target ex01_gen.ts)
+ (deps %{exe:../../src/lib_gen_ts/unit_test/gen/gen.exe})
+ (action (with-stdout-to %{target} (run %{deps} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex01_examples.json)
+ (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
  (mode (promote (until-clean))))
 
 (rule
  (alias gen)
- (target ex02_ts_gen.ts)
- (action (with-stdout-to %{target} (run %{exe:../../src/lib_gen_ts/unit_test/gen/ex02_ts.exe})))
+ (target ex02_gen.ts)
+ (deps %{exe:../../src/lib_gen_ts/unit_test/gen/gen.exe})
+ (action (with-stdout-to %{target} (run %{deps} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex02_examples.json)
+ (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
  (mode (promote (until-clean))))
 
 (rule
  (alias gen)
- (target ex03_ts_gen.ts)
- (action (with-stdout-to %{target} (run %{exe:../../src/lib_gen_ts/unit_test/gen/ex03_ts.exe})))
+ (target ex03_gen.ts)
+ (deps %{exe:../../src/lib_gen_ts/unit_test/gen/gen.exe})
+ (action (with-stdout-to %{target} (run %{deps} %{target})))
  (mode (promote (until-clean))))
-
 (rule
  (alias gen)
- (targets
-  ex01_examples.json
-  ex02_examples.json
-  ex03_examples.json)
- (action
-  (progn
-    (with-stdout-to ex01_examples.json (run %{exe:./json/gen.exe} ex01))
-    (with-stdout-to ex02_examples.json (run %{exe:./json/gen.exe} ex02))
-    (with-stdout-to ex03_examples.json (run %{exe:./json/gen.exe} ex03))))
+ (target ex03_examples.json)
+ (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
  (mode (promote (until-clean))))

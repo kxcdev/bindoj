@@ -13,8 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License. *)
 
 open Bindoj_test_common
+open Bindoj_gen_ts.Typescript_datatype
 
-module Ex = Typedesc_examples.Ex01
+module Ex = Typedesc_examples.Ex02
 
-let () =
-  print_endline (gen_ts_type ~export:true Ex.decl)
+let name = "ex02"
+
+let gen () =
+  print_endline (gen_ts_type ~export:true Ex.decl);
+  print_endline (gen_ts_case_analyzer ~export:true Ex.decl)

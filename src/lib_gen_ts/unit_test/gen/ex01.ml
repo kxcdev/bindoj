@@ -12,25 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-include Bindoj_gen_test_gen_output.Ex01_gen
+open Bindoj_test_common
+open Bindoj_gen_ts.Typescript_datatype
 
-type t = student = { admission_year: int; name: string } [@@deriving show]
+module Ex = Typedesc_examples.Ex01
 
-let encode_json = encode_student_json
-let decode_json = decode_student_json
-let t : t Alcotest.testable = Alcotest.of_pp pp
+let name = "ex01"
 
-let sample_value01 : t Sample_value.t = {
-  orig = {
-    admission_year = 1984;
-    name = "William Gibson";
-  };
-  jv = `obj [
-    ("admission_year", `num 1984.);
-    ("name", `str "William Gibson")
-  ];
-}
-
-let sample_values = [
-  sample_value01;
-]
+let gen () =
+  print_endline (gen_ts_type ~export:true Ex.decl)
