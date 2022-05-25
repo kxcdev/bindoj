@@ -21,7 +21,9 @@ let decl : type_decl =
       Record_kind
         ([{ rf_name = "admission_year"; rf_type = "int"; rf_codec = `default_codec }, `nodoc;
           { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec }, `nodoc;]),
-      `nodoc; }
+      `nodoc;
+    td_flvconfigs = [];
+  }
 
 let decl_with_docstr : type_decl =
   { td_name = "student";
@@ -31,7 +33,9 @@ let decl_with_docstr : type_decl =
           `docstr "addmission_year field";
           { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
           `docstr "name field";],
-      `docstr "definition of student type"; }
+      `docstr "definition of student type";
+    td_flvconfigs = [];
+  }
 
 let fwrt : (unit, unit) fwrt_decl =
   FwrtTypeEnv.init

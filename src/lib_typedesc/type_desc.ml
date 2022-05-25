@@ -51,4 +51,5 @@ type generic_kind =
 type type_decl = {
   td_name : string;
   td_kind : generic_kind with_docstr;
+  td_flvconfigs: [ `type_decl ] flavor_configs;
 }

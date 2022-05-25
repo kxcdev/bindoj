@@ -31,6 +31,7 @@ type 'x with_docstr = 'x * [ `docstr of string | `nodoc ]
 type type_decl = {
     td_name : string;
     td_kind : generic_kind with_docstr;
+    td_flvconfigs: [ `type_decl ] flavor_configs;
   }
 
 and generic_kind =
@@ -49,14 +50,14 @@ and variant_type_desc =
   variant_constructor_desc with_docstr list
 and variant_constructor_desc =
   | Cstr_tuple of {
-      ct_name       : string;
-      ct_args       : string list;
-      ct_codec      : codec;
+      ct_name : string;
+      ct_args : string list;
+      ct_codec : codec;
       ct_flvconfigs : [ `branch ] flavor_configs;
     }
   | Cstr_record of {
-      cr_name       : string;
-      cr_fields     : record_type_desc;
-      cr_codec      : codec;
+      cr_name : string;
+      cr_fields : record_type_desc;
+      cr_codec : codec;
       cr_flvconfigs : [ `branch ] flavor_configs;
     }

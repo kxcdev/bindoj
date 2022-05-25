@@ -49,7 +49,9 @@ let decl : type_decl =
                           cr_flvconfigs = [Flvconfig_flat_kind
                                             { kind_fname=Some "kind"; arg_fname=None; }]
               }, `nodoc]),
-      `nodoc; }
+      `nodoc;
+    td_flvconfigs = [];
+  }
 
 let decl_with_docstr : type_decl =
   { td_name = "person";
@@ -90,7 +92,9 @@ let decl_with_docstr : type_decl =
                 ];
               cr_codec = `default_codec;
               cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some "kind"; arg_fname=None; }]
-            }, `docstr "Teacher constructor"], `docstr "definition of person type"; }
+            }, `docstr "Teacher constructor"], `docstr "definition of person type";
+    td_flvconfigs = [];
+  }
 
 let fwrt : (unit, unit) fwrt_decl =
   FwrtTypeEnv.init

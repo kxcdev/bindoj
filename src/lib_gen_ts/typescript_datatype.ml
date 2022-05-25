@@ -491,7 +491,7 @@ let ts_object_of_variant_constructor : TypeMap.t -> flavor -> variant_constructo
 
 (*
 let gen_ts_type : ?export: bool -> ?flavor:flavor -> type_decl -> string =
-  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); } ->
+  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); _ } ->
   let open RopeUtil in
   let type_def name body =
     let header = if export then "export type " else "type " in
@@ -514,7 +514,7 @@ let gen_ts_type : ?export: bool -> ?flavor:flavor -> type_decl -> string =
 *)
 
 let gen_ts_case_analyzer : ?export: bool -> ?flavor:flavor -> type_decl -> string =
-  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); } ->
+  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); _ } ->
   match kind with
   | Variant_kind variant ->
     let open RopeUtil in

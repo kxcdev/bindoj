@@ -16,8 +16,19 @@ open Ppxlib
 open Ast_builder.Default
 open Utils
 
+type variant_type_flavor = [
+  | `regular_variant_type (** the default *)
+  | `polymorphic_variant_type
+  (* | `extensible_variant_type (* future work *) *)
+  ]
+
+type ('pos, 'flavor) flavor_config +=
+   | Flvconfig_variant_flavor :
+       variant_type_flavor
+       -> ([ `type_decl ], [ `variant_flavor ]) flavor_config
+
 let rec type_declaration_of_type_decl : ?show:bool -> type_decl -> type_declaration =
-  fun ?(show=false) { td_name; td_kind; } ->
+  fun ?(show=false) { td_name; td_kind; _ } ->
   let loc = Location.none in
   let (kind, doc) = td_kind in
   { (type_declaration ~loc ~params:[] ~cstrs:[] ~private_:Public ~manifest:None

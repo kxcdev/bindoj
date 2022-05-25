@@ -118,7 +118,7 @@ type type_map = TypeMap.t
 let fwrt_decl_of_type_decl : flavor -> type_decl -> (unit, unit) fwrt_decl =
   function
   | `flat_kind -> begin function
-      | { td_name; td_kind=(Record_kind record, doc); } ->
+      | { td_name; td_kind=(Record_kind record, doc); _ } ->
         let fields =
           record |&> fun ({ rf_name; rf_type; _; }, rf_doc) ->
             ({ ff_name = rf_name;
@@ -127,7 +127,7 @@ let fwrt_decl_of_type_decl : flavor -> type_decl -> (unit, unit) fwrt_decl =
         (td_name,
          FwrtTypeEnv.init
          |> FwrtTypeEnv.bind ~doc ~annot:() td_name fields)
-      | { td_name; td_kind=(Variant_kind variant, doc); } ->
+      | { td_name; td_kind=(Variant_kind variant, doc); _ } ->
         let cstrs =
           variant |&> function
             | Cstr_tuple { ct_name; ct_args; ct_flvconfigs; _; }, ct_doc ->

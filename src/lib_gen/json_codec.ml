@@ -85,7 +85,7 @@ let gen_primitive_decoders : codec -> value_binding list = fun codec ->
 
 let gen_json_encoder :
       ?self_contained:bool -> ?flavor:flavor -> ?codec:codec -> type_decl -> value_binding =
-  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); } ->
+  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); _ } ->
   let loc = Location.none in
   let name = pvar ~loc (encoder_name td_name codec) in
   let vari i = "__bindoj_gen_json_encoder_var_"^string_of_int i in
@@ -183,7 +183,7 @@ let gen_json_encoder :
 
 let gen_json_decoder :
       ?self_contained:bool -> ?flavor:flavor -> ?codec:codec -> type_decl -> value_binding =
-  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); } ->
+  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); _ } ->
   let loc = Location.none in
   let name = pvar ~loc (decoder_name td_name codec) in
   let vari i = "__bindoj_gen_json_decoder_var_"^string_of_int i in

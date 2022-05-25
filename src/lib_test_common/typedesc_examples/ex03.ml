@@ -32,7 +32,9 @@ let decl : type_decl =
                       ct_flvconfigs = [Flvconfig_flat_kind
                                           { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
             }, `nodoc],
-      `nodoc; }
+      `nodoc;
+    td_flvconfigs = [];
+  }
 
 let decl_with_docstr : type_decl =
   { td_name = "int_list";
@@ -50,7 +52,9 @@ let decl_with_docstr : type_decl =
                       ct_flvconfigs = [Flvconfig_flat_kind
                                           { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
             }, `docstr "cons for int_list"],
-      `docstr "int list"; }
+      `docstr "int list";
+    td_flvconfigs = [];
+  }
 
 let fwrt : (unit, unit) fwrt_decl =
   FwrtTypeEnv.init
