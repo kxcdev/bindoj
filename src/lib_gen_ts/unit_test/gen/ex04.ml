@@ -12,15 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex02
-open Bindoj_base.Type_desc
-open Bindoj_gen.Caml_datatype
-open Bindoj_gen.Json_codec
+open Bindoj_test_common
+open Bindoj_gen_ts.Typescript_datatype
 
-let name = "ex02"
-let gen () = Utils.gen_with_json_codec ~self_contained:true Ex.decl
+module Ex = Typedesc_examples.Ex04
 
-module Docstr = struct
-  let name = "ex02_docstr"
-  let gen () = Utils.gen_with_json_codec ~self_contained:true Ex.decl_with_docstr
-end
+let name = "ex04"
+
+let gen () =
+  print_endline (gen_ts_type ~export:true Ex.decl);
+  print_endline (gen_ts_case_analyzer ~export:true Ex.decl)

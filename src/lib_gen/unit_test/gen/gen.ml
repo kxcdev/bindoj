@@ -19,11 +19,13 @@ end
 
 let modules : (string * (module T)) list = [
   "ex01", (module Ex01);
-  "ex01_docstr", (module Ex01_docstr);
+  "ex01_docstr", (module Ex01.Docstr);
   "ex02", (module Ex02);
-  "ex02_docstr", (module Ex02_docstr);
+  "ex02_docstr", (module Ex02.Docstr);
   "ex03", (module Ex03);
-  "ex03_docstr", (module Ex03_docstr);
+  "ex03_docstr", (module Ex03.Docstr);
+  "ex04", (module Ex04);
+  "ex04_docstr", (module Ex04.Docstr);
 ]
 
 let mapping =

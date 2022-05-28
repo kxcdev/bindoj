@@ -92,14 +92,6 @@ type ('ann0, 'ann1) fwrt_decl = string * ('ann0, 'ann1) fwrt_type_env
 
 type flavor = variant_type_flavor
 
-let find_flat_kind_configs :
-  'pos flavor_configs -> ([`branch], [`flat_kind]) flavor_config list = fun configs ->
-  let rec aux acc = function
-    | FlavorConfigs.[] -> acc
-    | Flvconfig_flat_kind _ as x :: xs -> aux (x :: acc) xs
-    | _ :: xs -> aux acc xs in
-  aux [] configs
-
 module TypeMap = struct
   module StringMap = Map.Make (String)
   type t = string StringMap.t
@@ -128,26 +120,23 @@ let fwrt_decl_of_type_decl : flavor -> type_decl -> (unit, unit) fwrt_decl =
          FwrtTypeEnv.init
          |> FwrtTypeEnv.bind ~doc ~annot:() td_name fields)
       | { td_name; td_kind=(Variant_kind variant, doc); _ } ->
+        let get_fnames flvconfigs =
+          FlavorConfigs.find_or_default (function
+            | Flvconfig_flat_kind { kind_fname; arg_fname; _ } ->
+              Some (kind_fname_value kind_fname, arg_fname_value arg_fname)
+            | _ -> None
+          ) flvconfigs ~default:(default_kind_fname, default_arg_fname)
+        in
         let cstrs =
           variant |&> function
             | Cstr_tuple { ct_name; ct_args; ct_flvconfigs; _; }, ct_doc ->
-              let flat_kind_configs = find_flat_kind_configs ct_flvconfigs in
-              let (kind_fname, arg_fname) = match flat_kind_configs with
-                | Flvconfig_flat_kind { kind_fname; arg_fname; } :: _ ->
-                  (kind_fname_value kind_fname, arg_fname_value arg_fname)
-                | [] -> (default_kind_fname, default_arg_fname)
-                | _ -> failwith "impossible case" in
+              let kind_fname, arg_fname = get_fnames ct_flvconfigs in
               let fields = match ct_args with
                 | [] -> []
                 | _ -> [{ ff_name = arg_fname; ff_type = ct_args; ff_annot = (); }, ct_doc] in
               (ct_name, kind_fname, fields, ct_doc)
             | Cstr_record { cr_name; cr_fields; cr_flvconfigs; _; }, cr_doc ->
-              let flat_kind_configs = find_flat_kind_configs cr_flvconfigs in
-              let kind_fname = match flat_kind_configs with
-                | Flvconfig_flat_kind { kind_fname; _; } :: _ ->
-                  kind_fname_value kind_fname
-                | [] -> default_kind_fname
-                | _ -> failwith "impossible case" in
+              let kind_fname, _ = get_fnames cr_flvconfigs in
               let fields =
                 cr_fields |&> fun ({ rf_name; rf_type; _; }, rf_doc) ->
                   ({ ff_name = rf_name;

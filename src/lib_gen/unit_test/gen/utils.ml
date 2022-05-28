@@ -12,21 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex01
+open Ppxlib
+open Ast_helper
 open Bindoj_base.Type_desc
 open Bindoj_gen.Caml_datatype
-open Bindoj_gen.Json_codec
 
-let name = "ex01_docstr"
-
-let gen () =
-  let open Ppxlib in
-  let open Ast_builder.Default in
-  let loc = Location.none in
+let gen_with_json_codec ?(recursive = false) ?self_contained ?flavor ?codec decl =
+  let open Bindoj_gen.Json_codec in
+  let recursive = if recursive then Recursive else Nonrecursive in
   Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_type ~loc Recursive [type_declaration_of_type_decl ~show:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Nonrecursive
-       [gen_json_encoder ~self_contained:true Ex.decl_with_docstr]);
-    (pstr_value ~loc Nonrecursive
-       [gen_json_decoder ~self_contained:true Ex.decl_with_docstr])
+    Str.type_ Recursive [type_declaration_of_type_decl ~show:true decl];
+    Str.value recursive [gen_json_encoder ?self_contained ?flavor ?codec decl];
+    Str.value recursive [gen_json_decoder ?self_contained ?flavor ?codec decl];
   ]

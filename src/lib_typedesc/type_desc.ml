@@ -19,6 +19,34 @@ type ('pos, 'flavor) flavor_config = ..
 
 module FlavorConfigs = struct
   type 'pos t = [] : 'pos t | (::) : (('pos, _) flavor_config * 'pos t) -> 'pos t
+
+  type ('pos, 'flavor) flavor_config +=
+    | Flvconfig_dummy : ('pos, 'flavor) flavor_config
+
+  let find : (('pos, 'flavor) flavor_config -> 'a option) -> 'pos t -> 'a option =
+    fun finder configs ->
+    let rec go : 'pos t -> 'a option = function
+      | [] -> None
+      | flavor :: rest ->
+        match finder (Obj.magic flavor) with
+        | None -> go rest
+        | Some v -> Some v
+    in
+    go configs
+
+  let find_or_default : default:'a -> (('pos, 'flavor) flavor_config -> 'a option) -> 'pos t -> 'a =
+    fun ~default finder configs -> find finder configs |> Option.value ~default
+
+  let get : ?default:('pos, 'flavor) flavor_config -> (('pos, 'flavor) flavor_config -> bool) -> 'pos t -> ('pos, 'flavor) flavor_config =
+    fun ?(default = Flvconfig_dummy) pred configs ->
+    let rec go : 'pos t -> _ = function
+      | [] -> default
+      | flavor :: rest ->
+        let flavor = Obj.magic flavor in
+        if pred flavor then flavor else go rest
+    in
+    go configs
+
 end
 type 'pos flavor_configs = 'pos FlavorConfigs.t
 

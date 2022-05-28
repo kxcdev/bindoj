@@ -14,6 +14,7 @@ limitations under the License. *)
 
 open Ppxlib
 open Ast_builder.Default
+open Ast_helper
 open Utils
 
 type variant_type_flavor = [
@@ -28,6 +29,12 @@ type ('pos, 'flavor) flavor_config +=
      } -> ([ `branch ], [ `flat_kind ]) flavor_config
 
 type flavor = variant_type_flavor
+
+let get_variant_type_flavor : _ -> ([`branch], variant_type_flavor) flavor_config =
+  let default =
+    Flvconfig_flat_kind { kind_fname = None; arg_fname = None }
+  in
+  FlavorConfigs.get ~default (function Flvconfig_flat_kind _ -> true | _ -> false)
 
 let encoder_name type_name = function
   | `default_codec -> "encode_"^type_name^"_json"
@@ -45,10 +52,10 @@ let kind_fname_value kind_fname =
 let arg_fname_value arg_fname =
   Option.value arg_fname ~default:default_arg_fname
 
-let gen_primitive_encoders : codec -> value_binding list = fun codec ->
+let gen_primitive_encoders : ?attrs:attributes -> codec -> value_binding list =
+  fun ?attrs codec ->
   let loc = Location.none in
-  let bind str expr =
-    value_binding ~loc ~pat:(pvar ~loc str) ~expr:expr in
+  let bind str expr = Vb.mk ~loc ?attrs (Pat.var (strloc str)) expr in
   [bind (encoder_name "null" codec)
      [%expr fun () -> (`null : Kxclib.Json.jv)];
    bind (encoder_name "bool" codec)
@@ -60,10 +67,10 @@ let gen_primitive_encoders : codec -> value_binding list = fun codec ->
    bind (encoder_name "string" codec)
      [%expr fun (__bindoj_arg : string) -> (`str __bindoj_arg : Kxclib.Json.jv)]]
 
-let gen_primitive_decoders : codec -> value_binding list = fun codec ->
+let gen_primitive_decoders : ?attrs:attributes -> codec -> value_binding list =
+  fun ?attrs codec ->
   let loc = Location.none in
-  let bind str expr =
-    value_binding ~loc ~pat:(pvar ~loc str) ~expr:expr in
+  let bind str expr = Vb.mk ~loc ?attrs (Pat.var (strloc str)) expr in
   [bind (decoder_name "null" codec)
      [%expr fun `null -> ()];
    bind (decoder_name "bool" codec)
@@ -85,7 +92,7 @@ let gen_primitive_decoders : codec -> value_binding list = fun codec ->
 
 let gen_json_encoder :
       ?self_contained:bool -> ?flavor:flavor -> ?codec:codec -> type_decl -> value_binding =
-  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); _ } ->
+  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); td_flvconfigs } ->
   let loc = Location.none in
   let name = pvar ~loc (encoder_name td_name codec) in
   let vari i = "__bindoj_gen_json_encoder_var_"^string_of_int i in
@@ -94,8 +101,7 @@ let gen_json_encoder :
   let wrap_self_contained e =
     if self_contained then
       pexp_let ~loc Nonrecursive
-        (gen_primitive_encoders codec |&> fun binding ->
-                                          { binding with pvb_attributes = warning_attributes "-26" })
+        (gen_primitive_encoders ~attrs:(warning_attribute "-26") codec)
         e
     else e in
   let record_params : record_field_desc list -> pattern = fun fields ->
@@ -113,50 +119,60 @@ let gen_json_encoder :
     [%expr `obj [%e elist ~loc members]] in
   let variant_params : variant_constructor_desc list -> pattern list = fun constrs ->
     constrs |&> function
-              | Cstr_tuple { ct_name; ct_args; _; } ->
-                 ppat_construct ~loc
-                   (lidloc ~loc ct_name)
-                   (match ct_args with
-                    | [] -> None
-                    | _ -> Some (ppat_tuple ~loc (List.mapi (fun i _ -> pvari i) ct_args)))
-              | Cstr_record { cr_name; cr_fields; _; } ->
-                 ppat_construct ~loc
-                   (lidloc ~loc cr_name)
-                   (Some (record_params (cr_fields |&> fst))) in
+      | Cstr_tuple { ct_name; ct_args; _; } ->
+        let inner =
+          match ct_args with
+          | [] -> None
+          | _ -> Some (Pat.tuple (List.mapi (fun i _ -> pvari i) ct_args))
+        in
+        begin match Caml_datatype.get_variant_type td_flvconfigs with
+        | `regular_variant -> Pat.construct (lidloc ct_name) inner
+        | `polymorphic_variant -> Pat.variant ct_name inner
+        end
+      | Cstr_record { cr_name; cr_fields; _; } ->
+        begin match Caml_datatype.get_variant_type td_flvconfigs with
+        | `regular_variant ->
+          ppat_construct ~loc
+            (lidloc ~loc cr_name)
+            (Some (record_params (cr_fields |&> fst)))
+        | `polymorphic_variant ->
+          failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" cr_name
+        end
+  in
   let variant_body : variant_constructor_desc list -> expression list = fun cnstrs ->
     match flavor with
     | `flat_kind ->
-       cnstrs |&> begin function
-                    | Cstr_tuple { ct_name; ct_args; ct_codec; ct_flvconfigs; } ->
-                       begin match ct_flvconfigs with
-                       | Flvconfig_flat_kind { kind_fname; arg_fname; } :: _ ->
-                          let kind_fname =
-                            estring ~loc (Option.value kind_fname ~default:default_kind_fname) in
-                          let arg_fname =
-                            estring ~loc (Option.value arg_fname ~default:default_arg_fname) in
-                          let cstr = [%expr ([%e kind_fname], `str [%e estring ~loc ct_name])] in
-                          let args =
-                            List.mapi (fun i typ ->
-                                [%expr [%e evar ~loc (encoder_name typ ct_codec)] [%e evari i]])
-                              ct_args in
-                          begin match args with
-                          | [] -> [%expr `obj [[%e cstr]]]
-                          | [arg] -> [%expr `obj [[%e cstr]; ([%e arg_fname], [%e arg])]]
-                          | _ -> [%expr `obj [[%e cstr]; ([%e arg_fname], `arr [%e elist ~loc args])]]
-                          end
-                       | _ -> failwith "unknown flavor configs"
-                       end
-                    | Cstr_record { cr_name; cr_fields; cr_flvconfigs; _; } ->
-                       begin match cr_flvconfigs with
-                       | Flvconfig_flat_kind { kind_fname; _; } :: _ ->
-                          let kind_fname =
-                            estring ~loc (Option.value kind_fname ~default:default_kind_fname) in
-                          let cstr = [%expr ([%e kind_fname], `str [%e estring ~loc cr_name])] in
-                          let args = List.mapi (fun i (field, _) -> member_of_field i field) cr_fields in
-                          [%expr `obj [%e elist ~loc (cstr :: args)]]
-                       | _ -> failwith "unknown flavor configs"
-                       end
-                  end
+      cnstrs |&> begin function
+        | Cstr_tuple { ct_name; ct_args; ct_codec; ct_flvconfigs; } ->
+          begin match get_variant_type_flavor ct_flvconfigs with
+          | Flvconfig_flat_kind { kind_fname; arg_fname; } ->
+            let kind_fname =
+              estring ~loc (Option.value kind_fname ~default:default_kind_fname) in
+            let arg_fname =
+              estring ~loc (Option.value arg_fname ~default:default_arg_fname) in
+            let cstr = [%expr ([%e kind_fname], `str [%e estring ~loc ct_name])] in
+            let args =
+              List.mapi (fun i typ ->
+                  [%expr [%e evar ~loc (encoder_name typ ct_codec)] [%e evari i]])
+                ct_args in
+            begin match args with
+            | [] -> [%expr `obj [[%e cstr]]]
+            | [arg] -> [%expr `obj [[%e cstr]; ([%e arg_fname], [%e arg])]]
+            | _ -> [%expr `obj [[%e cstr]; ([%e arg_fname], `arr [%e elist ~loc args])]]
+            end
+          | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" ct_name td_name
+          end
+        | Cstr_record { cr_name; cr_fields; cr_flvconfigs; _; } ->
+          begin match get_variant_type_flavor cr_flvconfigs with
+          | Flvconfig_flat_kind { kind_fname; _; } ->
+            let kind_fname =
+              estring ~loc (Option.value kind_fname ~default:default_kind_fname) in
+            let cstr = [%expr ([%e kind_fname], `str [%e estring ~loc cr_name])] in
+            let args = List.mapi (fun i (field, _) -> member_of_field i field) cr_fields in
+            [%expr `obj [%e elist ~loc (cstr :: args)]]
+          | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" cr_name td_name
+          end
+      end
   in
   match kind with
   | Record_kind record ->
@@ -183,7 +199,7 @@ let gen_json_encoder :
 
 let gen_json_decoder :
       ?self_contained:bool -> ?flavor:flavor -> ?codec:codec -> type_decl -> value_binding =
-  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); _ } ->
+  fun ?(self_contained=false) ?(flavor=`flat_kind) ?(codec=`default_codec) { td_name; td_kind=(kind, _); td_flvconfigs } ->
   let loc = Location.none in
   let name = pvar ~loc (decoder_name td_name codec) in
   let vari i = "__bindoj_gen_json_decoder_var_"^string_of_int i in
@@ -194,8 +210,7 @@ let gen_json_decoder :
   let wrap_self_contained e =
     if self_contained then
       pexp_let ~loc Nonrecursive
-        (gen_primitive_decoders codec |&> fun binding ->
-                                          { binding with pvb_attributes = warning_attributes "-26" })
+        (gen_primitive_decoders ~attrs:(warning_attribute "-26") codec)
         e
     else e in
   let bind_options : (pattern * expression) list -> expression -> expression = fun bindings body ->
@@ -220,64 +235,71 @@ let gen_json_decoder :
   let variant_params : variant_constructor_desc list -> pattern list = fun cstrs ->
     match flavor with
     | `flat_kind ->
-       cstrs |&> begin function
-                   | Cstr_tuple { ct_name; ct_args; ct_flvconfigs; _; } ->
-                      begin match ct_flvconfigs with
-                      | Flvconfig_flat_kind { kind_fname; arg_fname; } :: _ ->
-                         let kind_fname =
-                           pstring ~loc (Option.value kind_fname ~default:default_kind_fname) in
-                         let arg_fname =
-                           pstring ~loc (Option.value arg_fname ~default:default_arg_fname) in
-                         let cstr = [%pat? ([%p kind_fname], `str [%p pstring ~loc ct_name])] in
-                         let args = List.mapi (fun i _ -> pvari i) ct_args in
-                         begin match args with
-                         | [] -> [%pat? `obj [[%p cstr]]]
-                         | [arg] -> [%pat? `obj [[%p cstr]; ([%p arg_fname], [%p arg])]]
-                         | _ -> [%pat? `obj [[%p cstr]; ([%p arg_fname], `arr [%p plist ~loc args])]]
-                         end
-                      | _ -> failwith "unknown flavor configs"
-                      end
-                   | Cstr_record { cr_name; cr_flvconfigs; _;  } ->
-                      begin match cr_flvconfigs with
-                      | Flvconfig_flat_kind { kind_fname; _; } :: _ ->
-                         let kind_fname =
-                           pstring ~loc (Option.value kind_fname ~default:default_kind_fname) in
-                         let cstr = [%pat? ([%p kind_fname], `str [%p pstring ~loc cr_name])] in
-                         [%pat? `obj ([%p cstr] :: [%p param_p])]
-                      | _ -> failwith "unknown flavor configs"
-                      end
-                 end
+      cstrs |&> begin function
+        | Cstr_tuple { ct_name; ct_args; ct_flvconfigs; _; } ->
+          begin match get_variant_type_flavor ct_flvconfigs with
+          | Flvconfig_flat_kind { kind_fname; arg_fname; } ->
+            let kind_fname =
+              pstring ~loc (Option.value kind_fname ~default:default_kind_fname) in
+            let arg_fname =
+              pstring ~loc (Option.value arg_fname ~default:default_arg_fname) in
+            let cstr = [%pat? ([%p kind_fname], `str [%p pstring ~loc ct_name])] in
+            let args = List.mapi (fun i _ -> pvari i) ct_args in
+            begin match args with
+            | [] -> [%pat? `obj [[%p cstr]]]
+            | [arg] -> [%pat? `obj [[%p cstr]; ([%p arg_fname], [%p arg])]]
+            | _ -> [%pat? `obj [[%p cstr]; ([%p arg_fname], `arr [%p plist ~loc args])]]
+            end
+          | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" ct_name td_name
+          end
+        | Cstr_record { cr_name; cr_flvconfigs; _;  } ->
+          begin match get_variant_type_flavor cr_flvconfigs with
+          | Flvconfig_flat_kind { kind_fname; _; } ->
+            let kind_fname =
+              pstring ~loc (Option.value kind_fname ~default:default_kind_fname) in
+            let cstr = [%pat? ([%p kind_fname], `str [%p pstring ~loc cr_name])] in
+            [%pat? `obj ([%p cstr] :: [%p param_p])]
+          | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" cr_name td_name
+          end
+      end
   in
   let variant_body : variant_constructor_desc list -> expression list = fun cstrs ->
     let construct name args =
-      pexp_construct ~loc (lidloc ~loc name) args in
+      match Caml_datatype.get_variant_type td_flvconfigs with
+      | `regular_variant -> Exp.construct (lidloc name) args
+      | `polymorphic_variant -> Exp.variant name args
+    in
     cstrs |&> begin function
-                | Cstr_tuple { ct_name; ct_args; _; } ->
-                   begin match ct_args with
-                   | [] -> [%expr Some [%e construct ct_name None]]
-                   | _ ->
-                      let bindings : (pattern * expression) list =
-                        List.mapi (fun i arg ->
-                            (pvari i,
-                             [%expr [%e evar ~loc (decoder_name arg codec)] [%e evari i]]))
-                          ct_args in
-                      let body : expression =
-                        [%expr Some
-                            [%e construct
-                                ct_name
-                                (Some (pexp_tuple ~loc (List.mapi (fun i _ -> evari i) ct_args)))]] in
-                      bind_options bindings body
-                   end
-                | Cstr_record { cr_name; cr_fields; _; } ->
-                   begin match cr_fields with
-                   | [] -> construct cr_name None
-                   | _ ->
-                      let fields = cr_fields |&> fst in
-                      let bindings = record_bindings fields in
-                      let body = record_body fields in
-                      bind_options bindings [%expr Some [%e (construct cr_name (Some body))]]
-                   end
-              end
+      | Cstr_tuple { ct_name; ct_args; _; } ->
+        begin match ct_args with
+        | [] -> [%expr Some [%e construct ct_name None]]
+        | _ ->
+          let bindings : (pattern * expression) list =
+            List.mapi (fun i arg ->
+                (pvari i,
+                  [%expr [%e evar ~loc (decoder_name arg codec)] [%e evari i]]))
+              ct_args in
+          let body : expression =
+            [%expr Some
+                [%e construct
+                    ct_name
+                    (Some (pexp_tuple ~loc (List.mapi (fun i _ -> evari i) ct_args)))]] in
+          bind_options bindings body
+        end
+      | Cstr_record { cr_name; cr_fields; _; } ->
+        begin match cr_fields with
+        | [] -> construct cr_name None
+        | _ ->
+          let fields = cr_fields |&> fst in
+          let bindings = record_bindings fields in
+          let body =
+            match Caml_datatype.get_variant_type td_flvconfigs with
+            | `regular_variant -> record_body fields
+            | `polymorphic_variant -> failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" cr_name
+          in
+          bind_options bindings [%expr Some [%e (construct cr_name (Some body))]]
+        end
+  end
   in
   begin match kind with
   | Record_kind record ->

@@ -17,6 +17,10 @@ module FlavorConfigs : sig
   type 'pos t =
     | [] : 'pos t
     | (::) : (('pos, 'a) flavor_config * 'pos t) -> 'pos t
+
+  val find : (('pos, 'flavor) flavor_config -> 'a option) -> 'pos t -> 'a option
+  val find_or_default : default:'a -> (('pos, 'flavor) flavor_config -> 'a option) -> 'pos t -> 'a
+  val get : ?default:('pos, 'flavor) flavor_config -> (('pos, 'flavor) flavor_config -> bool) -> 'pos t -> ('pos, 'flavor) flavor_config
 end
 type 'pos flavor_configs = 'pos FlavorConfigs.t
 

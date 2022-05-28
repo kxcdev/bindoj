@@ -4,6 +4,7 @@
  (libraries kxclib bindoj_base ppx_deriving.show)
  (preprocess
   (pps ppxlib.metaquot))
+ (private_modules utils)
  (flags (:standard
           -open Kxclib
           -open Bindoj_base.Type_desc)))

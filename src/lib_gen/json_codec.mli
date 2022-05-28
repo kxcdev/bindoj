@@ -25,12 +25,12 @@ type ('pos, 'flavor) flavor_config +=
        arg_fname : string option;
      } -> ([ `branch ], [ `flat_kind ]) flavor_config
 
-val gen_primitive_encoders : codec -> value_binding list
+val get_variant_type_flavor : [`branch] flavor_configs -> ([`branch], variant_type_flavor) flavor_config
 
-val gen_primitive_decoders : codec -> value_binding list
+val gen_primitive_encoders : ?attrs:attributes -> codec -> value_binding list
+val gen_primitive_decoders : ?attrs:attributes -> codec -> value_binding list
 
 val gen_json_encoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?codec:codec -> type_decl -> value_binding
-
 val gen_json_decoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?codec:codec -> type_decl -> value_binding
 
 val kind_fname_value : string option -> string

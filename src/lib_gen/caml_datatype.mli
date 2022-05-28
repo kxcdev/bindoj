@@ -13,15 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License. *)
 
 type variant_type_flavor = [
-  | `regular_variant_type (** the default *)
-  | `polymorphic_variant_type
-  (* | `extensible_variant_type (* future work *) *)
+  | `regular_variant (** the default *)
+  | `polymorphic_variant
+  (* | `extensible_variant (* future work *) *)
   ]
 
 type ('pos, 'flavor) flavor_config +=
    | Flvconfig_variant_flavor :
        variant_type_flavor
        -> ([ `type_decl ], [ `variant_flavor ]) flavor_config
+
+val get_variant_type : [`type_decl] flavor_configs -> variant_type_flavor
 
 val type_declaration_of_type_decl :
   ?show:bool -> type_decl -> Ppxlib.type_declaration

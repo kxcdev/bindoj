@@ -12,15 +12,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex02
-open Bindoj_base.Type_desc
-open Bindoj_gen.Caml_datatype
-open Bindoj_gen.Json_codec
+include Bindoj_gen_test_gen_output.Ex04_gen
 
-let name = "ex02"
-let gen () = Utils.gen_with_json_codec ~self_contained:true Ex.decl
+type t = foo [@@deriving show]
 
-module Docstr = struct
-  let name = "ex02_docstr"
-  let gen () = Utils.gen_with_json_codec ~self_contained:true Ex.decl_with_docstr
-end
+let encode_json = encode_foo_json
+let decode_json = decode_foo_json
+let t : t Alcotest.testable = Alcotest.of_pp pp
+
+type sample = t Sample_value.t
+open Sample_value
+open Sample_value.JvHelper
+
+let sample_value01 : sample = {
+  orig = `Bar 42;
+  jv = ctor1 "Bar" (`num 42.);
+}
+
+let sample_value02 : sample = {
+  orig = `Baz "Hello";
+  jv = ctor1 "Baz" (`str "Hello");
+}
+
+let sample_values = [
+  sample_value01;
+  sample_value02;
+]

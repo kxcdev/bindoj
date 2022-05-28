@@ -18,15 +18,9 @@ open Bindoj_gen.Caml_datatype
 open Bindoj_gen.Json_codec
 
 let name = "ex03"
+let gen () = Utils.gen_with_json_codec ~recursive:true ~self_contained:true Ex.decl
 
-let gen () =
-  let open Ppxlib in
-  let open Ast_builder.Default in
-  let loc = Location.none in
-  Astlib.Pprintast.structure Format.std_formatter [
-    (pstr_type ~loc Recursive [type_declaration_of_type_decl ~show:true Ex.decl]);
-    (pstr_value ~loc Recursive
-       [gen_json_encoder ~self_contained:true Ex.decl]);
-    (pstr_value ~loc Recursive
-       [gen_json_decoder ~self_contained:true Ex.decl]);
-  ]
+module Docstr = struct
+  let name = "ex03_docstr"
+  let gen () = Utils.gen_with_json_codec ~recursive:true ~self_contained:true Ex.decl_with_docstr
+end
