@@ -14,6 +14,7 @@ limitations under the License. *)
 
 open Bindoj_base.Type_desc
 open Bindoj_gen.Json_codec
+open Bindoj_gen_foreign.Foreign_datatype
 
 let decl : type_decl =
   { td_name = "int_list";
@@ -50,3 +51,12 @@ let decl_with_docstr : type_decl =
                                           { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
             }, `docstr "cons for int_list"],
       `docstr "int list"; }
+
+let fwrt : (unit, unit) fwrt_decl =
+  FwrtTypeEnv.init
+  |> FwrtTypeEnv.bind ~annot:() "int_list" []
+  |> FwrtTypeEnv.bind ~parent:(Some "int_list") ~annot:() ~kind_fname:"kind"
+    "IntNil" []
+  |> FwrtTypeEnv.bind ~parent:(Some "int_list") ~annot:() ~kind_fname:"kind"
+    "IntCons" [ { ff_name = "arg"; ff_type = ["int"; "int_list"]; ff_annot = (); }, `nodoc ]
+  |> fun env -> ("int_list", env)

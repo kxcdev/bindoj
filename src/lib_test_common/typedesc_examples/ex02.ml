@@ -14,6 +14,7 @@ limitations under the License. *)
 
 open Bindoj_base.Type_desc
 open Bindoj_gen.Json_codec
+open Bindoj_gen_foreign.Foreign_datatype
 
 let decl : type_decl =
   { td_name = "person";
@@ -90,3 +91,23 @@ let decl_with_docstr : type_decl =
               cr_codec = `default_codec;
               cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some "kind"; arg_fname=None; }]
             }, `docstr "Teacher constructor"], `docstr "definition of person type"; }
+
+let fwrt : (unit, unit) fwrt_decl =
+  FwrtTypeEnv.init
+  |> FwrtTypeEnv.bind ~annot:() "person" []
+  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
+    "Anonymous" []
+  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
+    "With_id" [{ ff_name = "arg"; ff_type = ["int"]; ff_annot = () }, `nodoc]
+  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
+    "Student" [
+    { ff_name = "student_id"; ff_type = ["int"]; ff_annot = () }, `nodoc;
+    { ff_name = "name"; ff_type = ["string"]; ff_annot = () }, `nodoc;
+  ]
+  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
+    "Teacher" [
+    { ff_name = "faculty_id"; ff_type = ["int"]; ff_annot = () }, `nodoc;
+    { ff_name = "name"; ff_type = ["string"]; ff_annot = () }, `nodoc;
+    { ff_name = "department"; ff_type = ["string"]; ff_annot = () }, `nodoc;
+  ]
+  |> fun env -> ("person", env)

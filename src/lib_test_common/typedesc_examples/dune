@@ -1,4 +1,4 @@
 (library
  (name bindoj_test_common_typedesc_examples)
- (libraries bindoj_gen bindoj_base)
+ (libraries bindoj_gen bindoj_gen_foreign bindoj_base)
  (flags (:standard -open Kxclib)))

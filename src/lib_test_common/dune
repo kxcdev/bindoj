@@ -3,7 +3,7 @@
  (libraries
   bindoj_test_common_typedesc_examples
   bindoj_test_common_typedesc_generated_examples
-  bindoj_gen bindoj_base ppxlib)
+  bindoj_gen bindoj_gen_foreign bindoj_base ppxlib)
  (preprocess
   (pps ppxlib.metaquot))
  (flags (:standard -open Kxclib)))

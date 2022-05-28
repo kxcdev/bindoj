@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
+open Bindoj_typedesc.Type_desc
+
 type ('ann0, 'ann1) fwrt_desc = {
   fd_name : string;
   fd_kind_fname : string;

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. *)
 
 open Bindoj_base.Type_desc
+open Bindoj_gen_foreign.Foreign_datatype
 
 let decl : type_decl =
   { td_name = "student";
@@ -31,3 +32,15 @@ let decl_with_docstr : type_decl =
           { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
           `docstr "name field";],
       `docstr "definition of student type"; }
+
+let fwrt : (unit, unit) fwrt_decl =
+  FwrtTypeEnv.init
+  |> FwrtTypeEnv.bind ~annot:() "student" [
+    { ff_name = "admission_year";
+      ff_type = ["int"];
+      ff_annot = (); }, `nodoc;
+    { ff_name = "name";
+      ff_type = ["string"];
+      ff_annot = (); }, `nodoc;
+  ]
+  |> fun env -> ("student", env)

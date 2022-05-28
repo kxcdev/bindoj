@@ -1,0 +1,3 @@
+(library
+ (name bindoj_gen_foreign_test)
+ (libraries alcotest bindoj_test_common bindoj_base bindoj_gen_foreign))

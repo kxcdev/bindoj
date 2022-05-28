@@ -2,6 +2,5 @@
  (name bindoj_gen_foreign)
  (public_name bindoj.gen_foreign)
  (libraries bindoj_gen kxclib)
- (flags (:standard
-          -open Kxclib
-          -open Bindoj_base.Type_desc)))
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show)))
