@@ -16,6 +16,8 @@ open Bindoj_base.Type_desc
 open Bindoj_gen.Json_codec
 open Bindoj_gen_foreign.Foreign_datatype
 
+let kind_fname = "kind"
+
 let decl : type_decl =
   { td_name = "int_list";
     td_kind =
@@ -24,13 +26,13 @@ let decl : type_decl =
                       ct_args = [];
                       ct_codec = `default_codec;
                       ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some "kind"; arg_fname=Some "arg"; }];
+                                          { kind_fname=Some kind_fname; arg_fname=Some "arg"; }];
             }, `nodoc;
           Cstr_tuple { ct_name = "IntCons";
                       ct_args = ["int"; "int_list"];
                       ct_codec = `default_codec;
                       ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
+                                          { kind_fname=Some kind_fname; arg_fname=Some "arg"; }]
             }, `nodoc],
       `nodoc;
     td_flvconfigs = [];
@@ -44,23 +46,22 @@ let decl_with_docstr : type_decl =
                       ct_args = [];
                       ct_codec = `default_codec;
                       ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
+                                          { kind_fname=Some kind_fname; arg_fname=Some "arg"; }]
             }, `docstr "nil for int_list";
           Cstr_tuple { ct_name = "IntCons";
                       ct_args = ["int"; "int_list"];
                       ct_codec = `default_codec;
                       ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
+                                          { kind_fname=Some kind_fname; arg_fname=Some "arg"; }]
             }, `docstr "cons for int_list"],
       `docstr "int list";
     td_flvconfigs = [];
   }
 
 let fwrt : (unit, unit) fwrt_decl =
-  FwrtTypeEnv.init
-  |> FwrtTypeEnv.bind ~annot:() "int_list" []
-  |> FwrtTypeEnv.bind ~parent:(Some "int_list") ~annot:() ~kind_fname:"kind"
-    "IntNil" []
-  |> FwrtTypeEnv.bind ~parent:(Some "int_list") ~annot:() ~kind_fname:"kind"
-    "IntCons" [ { ff_name = "arg"; ff_type = ["int"; "int_list"]; ff_annot = (); }, `nodoc ]
-  |> fun env -> ("int_list", env)
+  "int_list", FwrtTypeEnv.(
+    init
+    |> bind ~annot:() "int_list" []
+    |> bind ~parent:"int_list" ~annot:() ~kind_fname "IntNil" []
+    |> bind ~parent:"int_list" ~annot:() ~kind_fname "IntCons" [ item ~annot:() "arg" ["int"; "int_list"] ]
+  )

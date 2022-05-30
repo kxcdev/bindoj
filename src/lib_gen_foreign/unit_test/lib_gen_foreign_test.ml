@@ -15,11 +15,6 @@ limitations under the License. *)
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_test_common
 
-module Ex01 = Typedesc_examples.Ex01
-module Ex02 = Typedesc_examples.Ex02
-module Ex03 = Typedesc_examples.Ex03
-
-
 let testable_fwrt =
   let pp : (unit, unit) fwrt_decl Fmt.t = fun ppf (name, env) ->
     let ({ fd_name; fd_kind_fname; fd_parent; fd_children; _; }, _) =
@@ -53,17 +48,15 @@ let testable_fwrt =
     fields1 = fields2 && children1 = children2 in
   Alcotest.testable pp equal
 
-let create_cases doc decl fwrt =
+let create_cases doc (module Ex : Typedesc_examples.T) =
   let open Alcotest in
   let create_test () =
     Alcotest.check testable_fwrt doc
-      (fwrt_decl_of_type_decl `flat_kind decl) fwrt in
+      (fwrt_decl_of_type_decl `flat_kind Ex.decl) Ex.fwrt in
   (doc, [test_case "fwrt_decl_of_type_decl works" `Quick create_test])
 
 let () =
   let open Alcotest in
-  run "lib_gen_foreign" [
-    create_cases "ex01" Ex01.decl Ex01.fwrt;
-    create_cases "ex02" Ex02.decl Ex02.fwrt;
-    create_cases "ex03" Ex03.decl Ex03.fwrt;
-  ]
+  Typedesc_examples.all
+  |> List.map (fun (name, m) -> create_cases name m)
+  |> run "lib_gen_foreign"

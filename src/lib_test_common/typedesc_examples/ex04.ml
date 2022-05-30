@@ -14,20 +14,27 @@ limitations under the License. *)
 
 open Bindoj_base.Type_desc
 open Bindoj_gen.Caml_datatype
+open Bindoj_gen_foreign.Foreign_datatype
 
 let decl : type_decl = {
   td_name = "foo";
   td_kind =
     Variant_kind [
       Cstr_tuple {
-        ct_name = "Bar";
+        ct_name = "Foo0";
+        ct_args = [];
+        ct_codec = `default_codec;
+        ct_flvconfigs = []
+      }, `nodoc;
+      Cstr_tuple {
+        ct_name = "Foo1";
         ct_args = ["int"];
         ct_codec = `default_codec;
         ct_flvconfigs = []
       }, `nodoc;
       Cstr_tuple {
-        ct_name = "Baz";
-        ct_args = ["string"];
+        ct_name = "Foo2";
+        ct_args = ["int"; "int"];
         ct_codec = `default_codec;
         ct_flvconfigs = []
       }, `nodoc;
@@ -42,19 +49,34 @@ let decl_with_docstr : type_decl = {
   td_kind =
     Variant_kind [
       Cstr_tuple {
-        ct_name = "Bar";
+        ct_name = "Foo0";
+        ct_args = [];
+        ct_codec = `default_codec;
+        ct_flvconfigs = []
+      }, `docstr "polyvariant case (length=0)";
+      Cstr_tuple {
+        ct_name = "Foo1";
         ct_args = ["int"];
         ct_codec = `default_codec;
         ct_flvconfigs = []
-      }, `docstr "polyvariant example case";
+      }, `docstr "polyvariant case (length=1)";
       Cstr_tuple {
-        ct_name = "Baz";
-        ct_args = ["string"];
+        ct_name = "Foo2";
+        ct_args = ["int"; "int"];
         ct_codec = `default_codec;
         ct_flvconfigs = []
-      }, `docstr "polyvariant example case";
-    ], `docstr "polyvariant example";
+      }, `docstr "polyvariant case (length=2)";
+    ], `docstr "polyvariant";
   td_flvconfigs = [
     Flvconfig_variant_flavor `polymorphic_variant
   ]
 }
+
+let fwrt : (unit, unit) fwrt_decl =
+  "foo", FwrtTypeEnv.(
+    init
+    |> bind ~annot:() "foo" []
+    |> bind ~parent:"foo" ~annot:() "Foo0" []
+    |> bind ~parent:"foo" ~annot:() "Foo1" [ item ~annot:() "arg" ["int"] ]
+    |> bind ~parent:"foo" ~annot:() "Foo2" [ item ~annot:() "arg" ["int"; "int"] ]
+  )

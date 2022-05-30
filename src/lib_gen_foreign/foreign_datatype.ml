@@ -31,13 +31,22 @@ and 'ann fwrt_field_desc = {
 
 module FwrtTypeEnv = struct
   module StringMap = Map.Make (String)
+
   type ('ann0, 'ann1) t =  ('ann0, 'ann1) fwrt_desc with_docstr StringMap.t
+
   let init : ('ann0, 'ann1) t = StringMap.empty
+
+  let item :
+       ?doc:([`docstr of string | `nodoc]) -> annot:'ann0 -> string -> string list
+    -> 'ann0 fwrt_field_desc with_docstr =
+    fun ?(doc = `nodoc) ~annot name types ->
+    { ff_name = name; ff_type = types; ff_annot = annot }, doc
+
   let bind :
-    ?doc:([`docstr of string | `nodoc]) -> ?parent:(string option) -> ?kind_fname:(string) ->
+    ?doc:([`docstr of string | `nodoc]) -> ?parent:string-> ?kind_fname:string ->
     annot:'ann0 -> string -> 'ann1 fwrt_field_desc with_docstr list -> ('ann0, 'ann1) t ->
     ('ann0, 'ann1) t =
-    fun ?(doc = `nodoc) ?(parent = None) ?(kind_fname = default_kind_fname) ~annot name fields env ->
+    fun ?(doc = `nodoc) ?parent ?(kind_fname = default_kind_fname) ~annot name fields env ->
     let register_child parent child env =
       match StringMap.find_opt parent env with
       | None -> failwith "the parent does not exist"
@@ -61,11 +70,15 @@ module FwrtTypeEnv = struct
     | Some parent_name ->
       register_child parent_name name env
       |> add_new_type
+
   let lookup : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc with_docstr =
     StringMap.find
+
   let lookup_opt : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc with_docstr option  =
     StringMap.find_opt
+
   let bindings = StringMap.bindings
+
   let annotate : string -> ('ann0 * 'ann0) -> ('ann1 * 'ann1) -> (unit, unit) t -> ('ann0, 'ann1) t =
     fun typ (ann0, ann0') (ann1, ann1') env ->
     let ({ fd_fields; _; } as desc, doc) = lookup typ env in
@@ -149,5 +162,5 @@ let fwrt_decl_of_type_decl : flavor -> type_decl -> (unit, unit) fwrt_decl =
          |> fun env ->
          List.rev cstrs |@> (env, fun (acc, (name, kind_fname, fields, doc)) ->
              FwrtTypeEnv.bind
-               ~doc ~annot:() ~kind_fname ~parent:(Some td_name) name fields acc))
+               ~doc ~annot:() ~kind_fname ~parent:td_name name fields acc))
     end

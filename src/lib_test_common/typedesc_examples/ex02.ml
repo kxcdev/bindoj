@@ -16,21 +16,23 @@ open Bindoj_base.Type_desc
 open Bindoj_gen.Json_codec
 open Bindoj_gen_foreign.Foreign_datatype
 
+let kind_fname = "kind"
+
 let decl : type_decl =
-  { td_name = "person";
-    td_kind =
-      Variant_kind
-        ([ Cstr_tuple { ct_name = "Anonymous";
+{ td_name = "person";
+  td_kind =
+    Variant_kind
+      ([ Cstr_tuple { ct_name = "Anonymous";
                         ct_args = [];
                         ct_codec = `default_codec;
                         ct_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some "kind"; arg_fname=None; }]
+                                            { kind_fname=Some kind_fname; arg_fname=None; }]
               }, `nodoc;
             Cstr_tuple { ct_name = "With_id";
                         ct_args = ["int"];
                         ct_codec = `default_codec;
                         ct_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
+                                            { kind_fname=Some kind_fname; arg_fname=Some "arg"; }]
               }, `nodoc;
             Cstr_record { cr_name = "Student";
                           cr_fields =
@@ -38,7 +40,7 @@ let decl : type_decl =
                             { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc];
                           cr_codec = `default_codec;
                           cr_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some "kind"; arg_fname=None; }]
+                                            { kind_fname=Some kind_fname; arg_fname=None; }]
               }, `nodoc;
             Cstr_record { cr_name = "Teacher";
                           cr_fields =
@@ -47,7 +49,7 @@ let decl : type_decl =
                             { rf_name = "department"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc ];
                           cr_codec = `default_codec;
                           cr_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some "kind"; arg_fname=None; }]
+                                            { kind_fname=Some kind_fname; arg_fname=None; }]
               }, `nodoc]),
       `nodoc;
     td_flvconfigs = [];
@@ -61,13 +63,13 @@ let decl_with_docstr : type_decl =
                         ct_args = [];
                         ct_codec = `default_codec;
                         ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some "kind"; arg_fname=None; }]
+                                          { kind_fname=Some kind_fname; arg_fname=None; }]
             }, `docstr "Anonymous constructor";
           Cstr_tuple { ct_name = "With_id";
                         ct_args = ["int"];
                         ct_codec = `default_codec;
                         ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
+                                          { kind_fname=Some kind_fname; arg_fname=Some "arg"; }]
             }, `docstr "With_id constructor";
           Cstr_record {
               cr_name = "Student";
@@ -78,7 +80,7 @@ let decl_with_docstr : type_decl =
                   `docstr "name field in Student constructor";
                 ];
               cr_codec = `default_codec;
-              cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some "kind"; arg_fname=None; }];
+              cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some kind_fname; arg_fname=None; }];
             }, `docstr "Student constructor";
           Cstr_record {
               cr_name = "Teacher";
@@ -91,27 +93,23 @@ let decl_with_docstr : type_decl =
                   `docstr "dapartment field in Teacher constructor";
                 ];
               cr_codec = `default_codec;
-              cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some "kind"; arg_fname=None; }]
+              cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some kind_fname; arg_fname=None; }]
             }, `docstr "Teacher constructor"], `docstr "definition of person type";
     td_flvconfigs = [];
   }
 
 let fwrt : (unit, unit) fwrt_decl =
-  FwrtTypeEnv.init
-  |> FwrtTypeEnv.bind ~annot:() "person" []
-  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
-    "Anonymous" []
-  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
-    "With_id" [{ ff_name = "arg"; ff_type = ["int"]; ff_annot = () }, `nodoc]
-  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
-    "Student" [
-    { ff_name = "student_id"; ff_type = ["int"]; ff_annot = () }, `nodoc;
-    { ff_name = "name"; ff_type = ["string"]; ff_annot = () }, `nodoc;
-  ]
-  |> FwrtTypeEnv.bind ~parent:(Some "person") ~annot:() ~kind_fname:"kind"
-    "Teacher" [
-    { ff_name = "faculty_id"; ff_type = ["int"]; ff_annot = () }, `nodoc;
-    { ff_name = "name"; ff_type = ["string"]; ff_annot = () }, `nodoc;
-    { ff_name = "department"; ff_type = ["string"]; ff_annot = () }, `nodoc;
-  ]
-  |> fun env -> ("person", env)
+  "person", FwrtTypeEnv.(
+    init
+    |> bind ~annot:() "person" []
+    |> bind ~parent:"person" ~annot:() ~kind_fname "Anonymous" []
+    |> bind ~parent:"person" ~annot:() ~kind_fname "With_id"
+      [ item ~annot:() "arg" ["int"]; ]
+    |> bind ~parent:"person" ~annot:() ~kind_fname "Student"
+      [ item ~annot:() "student_id" ["int"];
+        item ~annot:() "name" ["string"]; ]
+    |> bind ~parent:"person" ~annot:() ~kind_fname "Teacher"
+      [ item ~annot:() "faculty_id" ["int"];
+        item ~annot:() "name" ["string"];
+        item ~annot:() "department" ["string"]; ]
+  )

@@ -25,16 +25,22 @@ open Sample_value
 open Sample_value.JvHelper
 
 let sample_value01 : sample = {
-  orig = `Bar 42;
-  jv = ctor1 "Bar" (`num 42.);
+  orig = `Foo0;
+  jv = ctor0 "Foo0";
 }
 
 let sample_value02 : sample = {
-  orig = `Baz "Hello";
-  jv = ctor1 "Baz" (`str "Hello");
+  orig = `Foo1 1;
+  jv = ctor1 "Foo1" (`num 1.);
+}
+
+let sample_value03 : sample = {
+  orig = `Foo2 (1, 2);
+  jv = ctor2 "Foo2" (`num 1.) (`num 2.);
 }
 
 let sample_values = [
   sample_value01;
   sample_value02;
+  sample_value03;
 ]

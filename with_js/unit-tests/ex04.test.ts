@@ -11,14 +11,16 @@ describe('ex04', (): void => {
 
   test('the case analyzer works', (): void => {
     function analyzer(x: ex04.foo) {;
-      return ex04.analyze_foo<number|string>({
-        Bar: v => v.arg,
-        Baz: v => v.arg
+      return ex04.analyze_foo<number>({
+        Foo0: _ => 0,
+        Foo1: v => v.arg,
+        Foo2: v => v.arg.reduce((x,y) => x+y, 0),
       })(x);
     };
 
-    expect(analyzer(samples[0])).toBe(42)
-    expect(analyzer(samples[1])).toBe("Hello")
+    expect(analyzer(samples[0])).toBe(0)
+    expect(analyzer(samples[1])).toBe(1)
+    expect(analyzer(samples[2])).toBe(3)
   })
 })
 

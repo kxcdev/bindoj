@@ -31,7 +31,8 @@ and 'ann fwrt_field_desc = {
 module FwrtTypeEnv : sig
   type ('ann0, 'ann1) t
   val init : ('ann0, 'ann1) t
-  val bind : ?doc:([`docstr of string | `nodoc]) -> ?parent:(string option) -> ?kind_fname:(string) -> annot:'ann0 ->
+  val item : ?doc:([`docstr of string | `nodoc]) -> annot:'ann0 -> string -> string list -> 'ann0 fwrt_field_desc with_docstr
+  val bind : ?doc:([`docstr of string | `nodoc]) -> ?parent:string -> ?kind_fname:(string) -> annot:'ann0 ->
     string -> 'ann1 fwrt_field_desc with_docstr list -> ('ann0, 'ann1) t -> ('ann0, 'ann1) t
   val lookup : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc with_docstr
   val lookup_opt : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc with_docstr  option

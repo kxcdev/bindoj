@@ -38,13 +38,9 @@ let decl_with_docstr : type_decl =
   }
 
 let fwrt : (unit, unit) fwrt_decl =
-  FwrtTypeEnv.init
-  |> FwrtTypeEnv.bind ~annot:() "student" [
-    { ff_name = "admission_year";
-      ff_type = ["int"];
-      ff_annot = (); }, `nodoc;
-    { ff_name = "name";
-      ff_type = ["string"];
-      ff_annot = (); }, `nodoc;
-  ]
-  |> fun env -> ("student", env)
+  "student", FwrtTypeEnv.(
+    init
+    |> bind ~annot:() "student"
+      [ item ~annot:() "admission_year" ["int"];
+        item ~annot:() "name" ["string"]; ]
+  )
