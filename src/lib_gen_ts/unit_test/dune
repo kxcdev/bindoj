@@ -1,0 +1,3 @@
+(test
+ (name lib_gen_ts_test)
+ (libraries alcotest bindoj_test_common bindoj_base bindoj_gen_ts))

@@ -14,7 +14,7 @@ limitations under the License. *)
 
 type flavor = Bindoj_gen.Json_codec.variant_type_flavor
 
-type ts_ast = ts_statement list
+type ts_ast = ts_statement list [@@deriving show]
 and ts_statement = [
   | `type_alias_declaration of ts_type_alias_decl
   | `function_declaration of ts_func_decl
@@ -107,6 +107,7 @@ and ts_modifier = [
 open Bindoj_gen_foreign.Foreign_datatype
 
 val ts_ast_of_fwrt_decl : (ts_modifier list, [`read_only] list) fwrt_decl -> ts_ast
+val annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`read_only] list) fwrt_decl
 
 val gen_ts_type : ?export:bool -> ?flavor:flavor -> type_decl -> string
 val gen_ts_case_analyzer : ?export:bool -> ?flavor:flavor -> type_decl -> string

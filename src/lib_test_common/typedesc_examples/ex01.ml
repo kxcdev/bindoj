@@ -14,6 +14,7 @@ limitations under the License. *)
 
 open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
+open Bindoj_gen_ts.Typescript_datatype
 
 let decl : type_decl =
   { td_name = "student";
@@ -44,3 +45,18 @@ let fwrt : (unit, unit) fwrt_decl =
       [ item ~annot:() "admission_year" ["int"];
         item ~annot:() "name" ["string"]; ]
   )
+
+let ts_ast : ts_ast option =
+  Some
+    [ `type_alias_declaration
+        { tsa_modifiers = [`export];
+          tsa_name = "student";
+          tsa_type_parameters = [];
+          tsa_type_desc =
+            `type_literal
+              [ { tsps_modifiers = [];
+                  tsps_name = "admission_year";
+                  tsps_type_desc = `type_reference "number"; };
+                { tsps_modifiers = [];
+                  tsps_name = "name";
+                  tsps_type_desc = `type_reference "string"; }; ]; } ]

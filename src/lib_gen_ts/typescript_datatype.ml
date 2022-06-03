@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-type ts_ast = ts_statement list
+type ts_ast = ts_statement list [@@deriving show]
 and ts_statement = [
   | `type_alias_declaration of ts_type_alias_decl
   | `function_declaration of ts_func_decl
@@ -128,7 +128,12 @@ let type_reference x =
 
 let rec ts_ast_of_fwrt_decl : (ts_modifier list, [`read_only] list) fwrt_decl -> ts_ast =
   fun fwrt_decl ->
-  [ `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl fwrt_decl) ]
+  match FwrtTypeEnv.lookup (fst fwrt_decl) (snd fwrt_decl) with
+  | { fd_children = []; _; }, _ ->
+    [ `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl fwrt_decl) ]
+  | _ ->
+    [ `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl fwrt_decl);
+      `function_declaration (ts_func_decl_of_fwrt_decl fwrt_decl) ]
 
 and ts_type_alias_decl_of_fwrt_decl :
   (ts_modifier list, [`read_only] list) fwrt_decl -> ts_type_alias_decl =
@@ -430,8 +435,8 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
 let gen_ts_type : ?export:bool -> ?flavor:flavor -> type_decl -> string =
   fun ?(export=true) ?(flavor=`flat_kind) type_decl ->
   let fwrt_decl = annotate_fwrt_decl export false (fwrt_decl_of_type_decl flavor type_decl) in
-  let ts_ast = ts_ast_of_fwrt_decl fwrt_decl in
-  let rope = rope_of_ts_ast ts_ast in
+  let ts_type_alias_decl = ts_type_alias_decl_of_fwrt_decl fwrt_decl in
+  let rope = rope_of_ts_type_alias_decl ts_type_alias_decl in
   Rope.to_string rope
 
 let gen_ts_case_analyzer : ?export:bool -> ?flavor:flavor -> type_decl -> string =
@@ -441,146 +446,3 @@ let gen_ts_case_analyzer : ?export:bool -> ?flavor:flavor -> type_decl -> string
   let rope = rope_of_ts_func_decl ts_func_decl in
   Rope.to_string rope
 
-
-(*
-let in_object : Rope.t -> Rope.t = fun content ->
-  let open RopeUtil in
-  rope "{ "^content^rope " }"
-
-let ts_field_of_record_field : TypeMap.t -> record_field_desc -> Rope.t =
-  fun type_map { rf_name; rf_type; _; } ->
-  let open RopeUtil in
-  rope rf_name^rope ": "^rope (TypeMap.convert_type type_map rf_type)^rope ";"
-
-let ts_object_of_variant_constructor : TypeMap.t -> flavor -> variant_constructor_desc -> Rope.t =
-  let open RopeUtil in
-  fun type_map -> function
-    | `flat_kind ->
-      begin function
-        | Cstr_tuple { ct_name; ct_args; ct_flvconfigs; _; } ->
-          begin match ct_flvconfigs with
-            | Flvconfig_flat_kind { kind_fname; arg_fname; } :: _ ->
-              let kind_fname = rope (Option.value kind_fname ~default:default_kind_fname) in
-              let arg_fname = rope (Option.value arg_fname ~default:default_arg_fname) in
-              let cstr = kind_fname^rope ": "^rope "\""^rope ct_name^rope "\";" in
-              begin match ct_args with
-                | [] -> in_object cstr
-                | [arg] -> in_object
-                             (cstr^rope " "^arg_fname^rope ": "^rope (TypeMap.convert_type type_map arg))
-                | _ -> in_object
-                         (cstr^rope " "
-                          ^arg_fname^rope ": ["
-                          ^Rope.concat (rope ", ")
-                            (ct_args |&> fun arg -> rope (TypeMap.convert_type type_map arg))
-                          ^rope "];")
-              end
-            | _ -> failwith "unknown flavor configs"
-          end
-        | Cstr_record { cr_name; cr_fields; cr_flvconfigs; _; } ->
-          begin match cr_flvconfigs with
-            | Flvconfig_flat_kind { kind_fname; _; } :: _ ->
-              let kind_fname = rope (Option.value kind_fname ~default:default_kind_fname) in
-              let cstr = kind_fname^rope ": "^rope "\""^rope cr_name^rope "\";" in
-              let args =
-                Rope.concat (rope " ")
-                  (cr_fields |&> fun (field, _) -> ts_field_of_record_field type_map field) in
-              in_object (cstr^rope " "^args)
-            | _ -> failwith "unknown flavor configs"
-          end
-      end
-
-(*
-let gen_ts_type : ?export: bool -> ?flavor:flavor -> type_decl -> string =
-  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); _ } ->
-  let open RopeUtil in
-  let type_def name body =
-    let header = if export then "export type " else "type " in
-    rope header^name^rope " = "^body^rope ";" in
-  let type_map =
-    default_type_convertion_map
-    |> TypeMap.add_fixed_point td_name in
-  match kind with
-  | Record_kind record ->
-    type_def (rope td_name)
-      (Rope.concat (rope " ")
-         (record |&> fun (field, _) -> ts_field_of_record_field type_map field)
-       |> in_object)
-    |> Rope.to_string
-  | Variant_kind variant ->
-    type_def (rope td_name)
-      (Rope.concat (rope "\n| ")
-         (variant |&> fun (cstr, _) -> ts_object_of_variant_constructor type_map flavor cstr))
-    |> Rope.to_string
-*)
-
-let gen_ts_case_analyzer : ?export: bool -> ?flavor:flavor -> type_decl -> string =
-  fun ?(export = true) ?(flavor=`flat_kind) { td_name; td_kind=(kind, _); _ } ->
-  match kind with
-  | Variant_kind variant ->
-    let open RopeUtil in
-    let type_name = rope td_name in
-    let analyzer type_arg arg arg_type ret_type body =
-      let header = if export then "export function " else "function " in
-      rope header ^ rope "analyze_" ^ type_name
-      ^rope "<" ^ type_arg ^rope ">"
-      ^rope "(\n" ^arg^rope " : "^arg_type ^rope "\n) : "
-      ^rope "("^ret_type^rope ") {\n" ^body ^rope "\n};" in
-    let cstrs = variant |&> fst in
-    let type_argument = rope "__bindoj_ret" in
-    let argument = rope "__bindoj_fns" in
-    let argument_type type_arg =
-      let type_map =
-        default_type_convertion_map
-        |> TypeMap.add_fixed_point td_name in
-      let obj_brs =
-        (cstrs |&> fun cstr ->
-            let name = match cstr with
-              | Cstr_tuple { ct_name; _; } -> rope ct_name
-              | Cstr_record { cr_name; _; } -> rope cr_name in
-            name^rope ": (v: "^
-            ts_object_of_variant_constructor type_map flavor cstr
-            ^rope ") => "^type_arg)
-        |> Rope.concat (rope ",\n")
-        |> fun content -> rope "{\n"^content^rope "\n}" in
-      obj_brs in
-    let var_x = rope "__bindoj_x" in
-    let return_type type_arg =
-      rope "("^var_x^rope ": "^type_name^rope ") => "^type_arg in
-    let body arg =
-      let in_strlit x = rope "\""^x^rope "\"" in
-      let return_lambda var typ body =
-        rope "return ("^var^rope ": "^typ^rope ") => {\n"^body^rope "\n}" in
-      let cases =
-        Rope.concat (rope " else ")
-          (cstrs |&> fun cstr ->
-              let tag = match cstr with
-                | Cstr_tuple { ct_name; _; } ->
-                  in_strlit (rope ct_name)
-                | Cstr_record { cr_name; _; } ->
-                  in_strlit (rope cr_name) in
-              let kind_fname = match cstr with
-                | Cstr_tuple { ct_flvconfigs=Flvconfig_flat_kind { kind_fname; _; } :: _; _; } ->
-                  let kind_fname =
-                    rope (Option.value kind_fname ~default:default_kind_fname) in
-                  var_x^rope "."^kind_fname
-                | Cstr_record { cr_flvconfigs=Flvconfig_flat_kind { kind_fname; _; } :: _; _; }->
-                  let kind_fname =
-                    rope (Option.value kind_fname ~default:default_kind_fname) in
-                  var_x^rope "."^kind_fname
-                | _ -> failwith "unknown flavor configs" in
-              rope "if ("^kind_fname^rope " === "^tag^rope ") {\n"
-              ^rope "return "^arg^rope "["^kind_fname^rope "]("^var_x^rope ");\n}")
-        ^rope " else {\n"
-        ^rope "throw new TypeError(\""
-        ^rope "panic @analyze_person - unrecognized: \" + "^var_x
-        ^rope ");\n}" in
-      return_lambda var_x type_name cases in
-    analyzer
-      type_argument
-      argument
-      (argument_type type_argument)
-      (return_type type_argument)
-      (body argument)
-    |> Rope.to_string
-  | _ -> failwith "case analyzer is not for record"
-*)

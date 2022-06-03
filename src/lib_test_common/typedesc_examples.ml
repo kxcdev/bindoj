@@ -15,12 +15,14 @@ limitations under the License. *)
 include Bindoj_test_common_typedesc_examples
 open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
+open Bindoj_gen_ts.Typescript_datatype
 
 (** each example module should have this module type *)
 module type T = sig
   val decl: type_decl
   val decl_with_docstr: type_decl
   val fwrt: (unit, unit) fwrt_decl
+  val ts_ast: ts_ast option
 end
 
 (** this should contain all the example modules. *)
