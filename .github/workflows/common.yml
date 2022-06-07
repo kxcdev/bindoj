@@ -58,8 +58,7 @@ jobs:
       - name: build & test
         run: ./scripts/ci_run.sh
       - run: |
-          opam exec -- dune build @doc
-          make doc
+          opam exec -- make doc
 
       - name: upload odoc generated document
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-version == '4.12.1' }}

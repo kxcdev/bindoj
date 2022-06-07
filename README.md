@@ -6,6 +6,15 @@ https://github.com/kxcteam/bindoj/issues/15
 
 ## Getting Started
 
+Please install the following tools beforehand.
+
+- [dune](https://dune.build/)
+  - Follow the official [installation instructions](https://dune.build/install), or
+  - (for KXC members) the [KXC internal instructions](https://stackoverflow.com/c/kxcteam/questions/21/22#22) for OCaml setup (including dune)
+- yarn
+  - step1: Install [nodejs](https://nodejs.org/en/)
+  - step2: run `npm install -g yarn`
+
 ```bash
 git clone --recursive git@github.com:kxcteam/bindoj.git
 
@@ -16,15 +25,16 @@ git submodule update
 ```
 
 ```bash
-opam install . --deps-only --with-test
-opam install -y dune # you'd need (dune (>= 3.0))
-dune build && dune runtest
+make setup
+
+make build # or `dune build`
+make runtest # or `dune runtest`
 ```
 
 ## Developer Setup
 
 ```bash
-dune build @doc
+make doc # or `dune build @doc`
 ```
 
 ### Toolchain Versions
