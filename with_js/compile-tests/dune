@@ -9,6 +9,11 @@
  (target ex01_examples.json)
  (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
  (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex01_schema.json)
+ (action (with-stdout-to %{target} (run %{exe:./schema/gen.exe} %{target})))
+ (mode (promote (until-clean))))
 
 (rule
  (alias gen)
@@ -20,6 +25,11 @@
  (alias gen)
  (target ex02_examples.json)
  (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex02_schema.json)
+ (action (with-stdout-to %{target} (run %{exe:./schema/gen.exe} %{target})))
  (mode (promote (until-clean))))
 
 (rule
@@ -33,6 +43,11 @@
  (target ex03_examples.json)
  (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
  (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex03_schema.json)
+ (action (with-stdout-to %{target} (run %{exe:./schema/gen.exe} %{target})))
+ (mode (promote (until-clean))))
 
 (rule
  (alias gen)
@@ -44,4 +59,9 @@
  (alias gen)
  (target ex04_examples.json)
  (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex04_schema.json)
+ (action (with-stdout-to %{target} (run %{exe:./schema/gen.exe} %{target})))
  (mode (promote (until-clean))))

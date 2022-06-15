@@ -1,17 +1,19 @@
 (executable
  (name run)
  (libraries
+  bindoj_withjs_import
   js_of_ocaml
   bindoj_test_common
   bindoj_base
   alcotest
   yojson
-  kxclib)
+  kxclib
+  ojs)
  (modes js)
  (optional)
  (preprocess (pps js_of_ocaml-ppx ppx_inline_test))
  (js_of_ocaml)
- (flags (:standard -open Kxclib)))
+ (flags (:standard -open Kxclib -w -58)))
 
 (rule
  (alias runtest)

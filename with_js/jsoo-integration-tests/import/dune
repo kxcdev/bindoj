@@ -1,0 +1,20 @@
+(library
+ (name bindoj_withjs_import)
+ (libraries
+  js_of_ocaml
+  gen_js_api
+  ojs)
+ (preprocess (pps gen_js_api.ppx))
+ (js_of_ocaml
+  (javascript_files stub.js))
+ (flags (:standard -w -58)))
+
+(rule
+ (targets ts2ocaml.ml)
+ (deps ts2ocaml.mli)
+ (action (run %{bin:gen_js_api} %{deps})))
+
+(rule
+ (targets json_schema_faker.ml)
+ (deps json_schema_faker.mli)
+ (action (run %{bin:gen_js_api} %{deps})))

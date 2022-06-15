@@ -33,6 +33,8 @@ val gen_primitive_decoders : ?attrs:attributes -> codec -> value_binding list
 val gen_json_encoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?codec:codec -> type_decl -> value_binding
 val gen_json_decoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?codec:codec -> type_decl -> value_binding
 
+val gen_openapi_schema : type_decl -> Json.jv
+
 val kind_fname_value : string option -> string
 val arg_fname_value : string option -> string
 val default_kind_fname : string

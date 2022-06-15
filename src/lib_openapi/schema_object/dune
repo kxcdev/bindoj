@@ -1,0 +1,8 @@
+(library
+ (name bindoj_openapi_schema_object)
+ (public_name bindoj.openapi.schema_object)
+ (libraries
+  bindoj_base kxclib)
+ (preprocess
+  (pps ppx_yojson_conv))
+ (flags (:standard -open Kxclib)))

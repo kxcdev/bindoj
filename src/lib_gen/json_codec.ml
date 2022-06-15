@@ -329,3 +329,98 @@ let gen_json_decoder :
                 (wrap_self_contained (pexp_function ~loc cases))
                 [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   end
+
+open Bindoj_openapi.V3
+
+let gen_openapi_schema : type_decl -> Json.jv =
+  let schema = Schema_object.schema in
+
+  let docopt = function
+    | `docstr s -> Some s
+    | `nodoc -> None
+  in
+  let convert_type ?description = function
+    | "int" -> Schema_object.integer ?description ()
+    | "float" -> Schema_object.number ?description ()
+    | "string" -> Schema_object.string ?description ()
+    | "bool" -> Schema_object.boolean ?description ()
+    | x -> Schema_object.ref ("#" ^ x)
+  in
+
+  let record_to_t ?schema ?id ?(additional_fields = []) ~name ~doc desc =
+    let field_to_t (field, doc) =
+      field.rf_name,
+      convert_type ?description:(docopt doc) field.rf_type
+    in
+    let fields = desc |> List.map field_to_t in
+    Schema_object.record
+      ?schema
+      ~title:name
+      ?description:(docopt doc)
+      ?id
+      (fields @ additional_fields)
+  in
+
+  fun { td_name; td_kind; _ } ->
+    let id = "#" ^ td_name in
+    let doc = snd td_kind in
+    let so =
+      match fst td_kind with
+      | Record_kind desc ->
+        record_to_t ~schema ~id ~name:td_name ~doc desc
+      | Variant_kind desc ->
+        let ctor_name (ctor, _) =
+          match ctor with
+          | Cstr_record r -> r.cr_name
+          | Cstr_tuple  t -> t.ct_name
+        in
+        let ctor_to_id ctor = id ^ "." ^ ctor_name ctor in
+        let ctor_to_t (ctor, doc) =
+          let name = ctor_name (ctor, doc) in
+          let id = ctor_to_id (ctor, doc) in
+          let pattern = sprintf "^%s$" name in
+          match ctor with
+          | Cstr_record r ->
+            begin match get_variant_type_flavor r.cr_flvconfigs with
+            | Flvconfig_flat_kind { kind_fname; _ } ->
+              let kind_fname = kind_fname_value kind_fname in
+              let additional_fields = [kind_fname, Schema_object.string ~pattern ()] in
+              record_to_t
+                ~id
+                ~additional_fields
+                ~name
+                ~doc
+                r.cr_fields
+            | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" name td_name
+            end
+          | Cstr_tuple t ->
+            begin match get_variant_type_flavor t.ct_flvconfigs with
+            | Flvconfig_flat_kind { kind_fname; arg_fname } ->
+              let kind_fname = kind_fname_value kind_fname in
+              let arg_fname = arg_fname_value arg_fname in
+              let kind_field = [kind_fname, Schema_object.string ~pattern ()] in
+              let arg_field =
+                match t.ct_args with
+                | []  -> []
+                | [t] -> [arg_fname, convert_type t]
+                | ts  -> [arg_fname,  Schema_object.tuple (ts |> List.map convert_type)]
+              in
+              let fields = kind_field @ arg_field in
+              Schema_object.record
+                ~id
+                ?description:(docopt doc)
+                ~title:name
+                fields
+            | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" name td_name
+            end
+        in
+        let definitions = desc |> List.map (fun x-> ctor_name x, ctor_to_t x) in
+        Schema_object.oneOf
+          ~schema
+          ~title:td_name
+          ?description:(docopt doc)
+          ~id
+          ~definitions
+          (desc |> List.map (fun x -> Schema_object.ref (ctor_to_id x)))
+    in
+    Schema_object.to_json so

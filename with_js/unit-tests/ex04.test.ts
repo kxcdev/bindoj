@@ -1,5 +1,8 @@
 import * as ex04 from "../compile-tests/ex04_gen"
 import * as tmp from "../compile-tests/ex04_examples.json"
+import * as schema from "../compile-tests/ex04_schema.json"
+import {Validator} from "jsonschema"
+var validator = new Validator();
 
 // also typecheck the generate JSON
 const samples : ex04.foo[] = <ex04.foo[]>tmp;
@@ -7,7 +10,16 @@ const samples : ex04.foo[] = <ex04.foo[]>tmp;
 describe('ex04', (): void => {
   test('it compiles', (): void => {
     return;
-  })
+  });
+
+  test('schema validates all the examples', (): void => {
+    samples.forEach(sample => {
+      const result = validator.validate(sample, schema);
+      expect(result.valid);
+      expect(result.errors).toStrictEqual([]);
+    });
+    return;
+  });
 
   test('the case analyzer works', (): void => {
     function analyzer(x: ex04.foo) {;
