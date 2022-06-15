@@ -1,4 +1,11 @@
-.PHONY: setup build test doc clean
+.PHONY: default info setup build test doc clean
+
+default: info build
+
+info:
+  $(info =========================== Building bindoj ===========================)
+  $(info > Hint: you may need to setup git submodules and run 'make setup' first)
+  $(info =======================================================================)
 
 setup:
 	opam install . --deps-only --with-test
