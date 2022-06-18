@@ -1,11 +1,12 @@
 import * as ex02 from "../compile-tests/ex02_gen"
-import * as tmp from "../compile-tests/ex02_examples.json"
-import * as schema from "../compile-tests/ex02_schema.json"
-import {Validator} from "jsonschema"
+import * as samples_tmp from "../compile-tests/ex02_examples.json"
+import * as schema_tmp from "../compile-tests/ex02_schema.json"
+import {Schema, Validator} from "jsonschema"
 var validator = new Validator();
 
 // also typecheck the generate JSON
-const samples : ex02.person[] = <ex02.person[]>tmp;
+const samples : ex02.person[] = <ex02.person[]>samples_tmp;
+const schema : Schema = <Schema><unknown>schema_tmp;
 
 type AnalyzeResult = string | number | [string, number] | [string, number, string]
 

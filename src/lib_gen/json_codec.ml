@@ -232,36 +232,39 @@ let gen_json_decoder :
            (lidloc ~loc rf_name, [%expr [%e evari i]]))
          fields)
       None in
-  let variant_params : variant_constructor_desc list -> pattern list = fun cstrs ->
+  let variant_params : variant_constructor_desc list -> pattern list*(*kind_fname*)string = fun cstrs ->
     match flavor with
     | `flat_kind ->
       cstrs |&> begin function
         | Cstr_tuple { ct_name; ct_args; ct_flvconfigs; _; } ->
           begin match get_variant_type_flavor ct_flvconfigs with
           | Flvconfig_flat_kind { kind_fname; arg_fname; } ->
-            let kind_fname =
-              pstring ~loc (Option.value kind_fname ~default:default_kind_fname) in
+            let kind_fname = Option.value kind_fname ~default:default_kind_fname in
+            let kind_fpatt = pstring ~loc kind_fname  in
             let arg_fname =
               pstring ~loc (Option.value arg_fname ~default:default_arg_fname) in
-            let cstr = [%pat? ([%p kind_fname], `str [%p pstring ~loc ct_name])] in
+            let cstr = [%pat? ([%p kind_fpatt], `str [%p pstring ~loc ct_name])] in
             let args = List.mapi (fun i _ -> pvari i) ct_args in
             begin match args with
             | [] -> [%pat? `obj [[%p cstr]]]
             | [arg] -> [%pat? `obj [[%p cstr]; ([%p arg_fname], [%p arg])]]
             | _ -> [%pat? `obj [[%p cstr]; ([%p arg_fname], `arr [%p plist ~loc args])]]
-            end
+            end, kind_fname
           | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" ct_name td_name
           end
         | Cstr_record { cr_name; cr_flvconfigs; _;  } ->
           begin match get_variant_type_flavor cr_flvconfigs with
           | Flvconfig_flat_kind { kind_fname; _; } ->
-            let kind_fname =
-              pstring ~loc (Option.value kind_fname ~default:default_kind_fname) in
-            let cstr = [%pat? ([%p kind_fname], `str [%p pstring ~loc cr_name])] in
-            [%pat? `obj ([%p cstr] :: [%p param_p])]
+            let kind_fname = Option.value kind_fname ~default:default_kind_fname in
+            let kind_fpatt = pstring ~loc kind_fname  in
+            let cstr = [%pat? ([%p kind_fpatt], `str [%p pstring ~loc cr_name])] in
+            [%pat? `obj ([%p cstr] :: [%p param_p])], kind_fname
           | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" cr_name td_name
           end
-      end
+      end |> List.unzip |> (identity // List.dedup)
+      |> (function
+          | patts, [fname] -> patts, fname
+          | _, fnames -> failwith' "inconsistant kind_fname: %a" List.(pp pp_string) fnames)
   in
   let variant_body : variant_constructor_desc list -> expression list = fun cstrs ->
     let construct name args =
@@ -316,7 +319,7 @@ let gen_json_decoder :
                 [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   | Variant_kind variant ->
      let cstrs = variant |&> fst in
-     let params = variant_params cstrs in
+     let params, kind_fname = variant_params cstrs in
      let body = variant_body cstrs in
      let cases =
        List.map2 (fun p b ->
@@ -326,7 +329,9 @@ let gen_json_decoder :
      value_binding ~loc
        ~pat:name
        ~expr:(pexp_constraint ~loc
-                (wrap_self_contained (pexp_function ~loc cases))
+                [%expr fun __bindoj_orig ->
+                    Kxclib.Jv.pump_field [%e estring ~loc kind_fname ] __bindoj_orig
+                    |> [%e (wrap_self_contained (pexp_function ~loc cases))]]
                 [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   end
 
@@ -374,10 +379,8 @@ let gen_openapi_schema : type_decl -> Json.jv =
           | Cstr_record r -> r.cr_name
           | Cstr_tuple  t -> t.ct_name
         in
-        let ctor_to_id ctor = id ^ "." ^ ctor_name ctor in
         let ctor_to_t (ctor, doc) =
           let name = ctor_name (ctor, doc) in
-          let id = ctor_to_id (ctor, doc) in
           let pattern = sprintf "^%s$" name in
           match ctor with
           | Cstr_record r ->
@@ -386,7 +389,6 @@ let gen_openapi_schema : type_decl -> Json.jv =
               let kind_fname = kind_fname_value kind_fname in
               let additional_fields = [kind_fname, Schema_object.string ~pattern ()] in
               record_to_t
-                ~id
                 ~additional_fields
                 ~name
                 ~doc
@@ -407,20 +409,17 @@ let gen_openapi_schema : type_decl -> Json.jv =
               in
               let fields = kind_field @ arg_field in
               Schema_object.record
-                ~id
                 ?description:(docopt doc)
                 ~title:name
                 fields
             | _ -> failwith' "unknown flavor configs on case '%s' of type '%s'" name td_name
             end
         in
-        let definitions = desc |> List.map (fun x-> ctor_name x, ctor_to_t x) in
         Schema_object.oneOf
           ~schema
           ~title:td_name
           ?description:(docopt doc)
           ~id
-          ~definitions
-          (desc |> List.map (fun x -> Schema_object.ref (ctor_to_id x)))
+          (desc |> List.map ctor_to_t)
     in
     Schema_object.to_json so

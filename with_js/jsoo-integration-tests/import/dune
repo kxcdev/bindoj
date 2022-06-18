@@ -18,3 +18,8 @@
  (targets json_schema_faker.ml)
  (deps json_schema_faker.mli)
  (action (run %{bin:gen_js_api} %{deps})))
+
+(rule
+ (targets jsonschema.ml)
+ (deps jsonschema.mli)
+ (action (run %{bin:gen_js_api} %{deps})))

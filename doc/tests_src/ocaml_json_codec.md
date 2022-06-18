@@ -234,53 +234,62 @@ let encode_person_json =
    let person_decoder = Caml_gen.Json_codec.gen_json_decoder person_desc in
    Caml.Structure.([binding person_decoder] |> printf "%a@?" pp_caml));;
 let decode_person_json =
-  (function
-   | `obj (("kind", `str "Anonymous")::[]) -> Some Anonymous
-   | `obj
-       (("kind", `str "With_id")::("arg", __bindoj_gen_json_decoder_var_0)::[])
-       ->
-       let (>>=) = Option.bind in
-       (decode_int_json __bindoj_gen_json_decoder_var_0) >>=
-         ((fun __bindoj_gen_json_decoder_var_0 ->
-             Some (With_id __bindoj_gen_json_decoder_var_0)))
-   | `obj (("kind", `str "Student")::__bindoj_gen_json_decoder_var_param) ->
-       let (>>=) = Option.bind in
-       ((List.assoc_opt "student_id" __bindoj_gen_json_decoder_var_param) >>=
-          decode_int_json)
-         >>=
-         ((fun __bindoj_gen_json_decoder_var_0 ->
-             ((List.assoc_opt "name" __bindoj_gen_json_decoder_var_param) >>=
-                decode_string_json)
-               >>=
-               (fun __bindoj_gen_json_decoder_var_1 ->
-                  Some
-                    (Student
-                       {
-                         student_id = __bindoj_gen_json_decoder_var_0;
-                         name = __bindoj_gen_json_decoder_var_1
-                       }))))
-   | `obj (("kind", `str "Teacher")::__bindoj_gen_json_decoder_var_param) ->
-       let (>>=) = Option.bind in
-       ((List.assoc_opt "faculty_id" __bindoj_gen_json_decoder_var_param) >>=
-          decode_int_json)
-         >>=
-         ((fun __bindoj_gen_json_decoder_var_0 ->
-             ((List.assoc_opt "name" __bindoj_gen_json_decoder_var_param) >>=
-                decode_string_json)
-               >>=
-               (fun __bindoj_gen_json_decoder_var_1 ->
-                  ((List.assoc_opt "department"
-                      __bindoj_gen_json_decoder_var_param)
+  (fun __bindoj_orig ->
+     (Kxclib.Jv.pump_field "kind" __bindoj_orig) |>
+       (function
+        | `obj (("kind", `str "Anonymous")::[]) -> Some Anonymous
+        | `obj
+            (("kind", `str "With_id")::("arg",
+                                        __bindoj_gen_json_decoder_var_0)::[])
+            ->
+            let (>>=) = Option.bind in
+            (decode_int_json __bindoj_gen_json_decoder_var_0) >>=
+              ((fun __bindoj_gen_json_decoder_var_0 ->
+                  Some (With_id __bindoj_gen_json_decoder_var_0)))
+        | `obj
+            (("kind", `str "Student")::__bindoj_gen_json_decoder_var_param)
+            ->
+            let (>>=) = Option.bind in
+            ((List.assoc_opt "student_id" __bindoj_gen_json_decoder_var_param)
+               >>= decode_int_json)
+              >>=
+              ((fun __bindoj_gen_json_decoder_var_0 ->
+                  ((List.assoc_opt "name" __bindoj_gen_json_decoder_var_param)
                      >>= decode_string_json)
                     >>=
-                    (fun __bindoj_gen_json_decoder_var_2 ->
+                    (fun __bindoj_gen_json_decoder_var_1 ->
                        Some
-                         (Teacher
+                         (Student
                             {
-                              faculty_id = __bindoj_gen_json_decoder_var_0;
-                              name = __bindoj_gen_json_decoder_var_1;
-                              department = __bindoj_gen_json_decoder_var_2
-                            })))))
-   | _ -> None : Kxclib.Json.jv -> person option)
+                              student_id = __bindoj_gen_json_decoder_var_0;
+                              name = __bindoj_gen_json_decoder_var_1
+                            }))))
+        | `obj
+            (("kind", `str "Teacher")::__bindoj_gen_json_decoder_var_param)
+            ->
+            let (>>=) = Option.bind in
+            ((List.assoc_opt "faculty_id" __bindoj_gen_json_decoder_var_param)
+               >>= decode_int_json)
+              >>=
+              ((fun __bindoj_gen_json_decoder_var_0 ->
+                  ((List.assoc_opt "name" __bindoj_gen_json_decoder_var_param)
+                     >>= decode_string_json)
+                    >>=
+                    (fun __bindoj_gen_json_decoder_var_1 ->
+                       ((List.assoc_opt "department"
+                           __bindoj_gen_json_decoder_var_param)
+                          >>= decode_string_json)
+                         >>=
+                         (fun __bindoj_gen_json_decoder_var_2 ->
+                            Some
+                              (Teacher
+                                 {
+                                   faculty_id =
+                                     __bindoj_gen_json_decoder_var_0;
+                                   name = __bindoj_gen_json_decoder_var_1;
+                                   department =
+                                     __bindoj_gen_json_decoder_var_2
+                                 })))))
+        | _ -> None) : Kxclib.Json.jv -> person option)
 - : unit = ()
 ```

@@ -31,6 +31,6 @@ doc:
 
 clean:
 	dune clean
+	yarn --cwd with_js clean || echo "yarn clean failed... you probably does not have a complete setup yet"
 	rm -rf with_js/node_modules
 	rm -rf doc/app/node_modules
-	yarn --cwd with_js clean
