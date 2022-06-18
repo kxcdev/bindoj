@@ -41,8 +41,14 @@ let sample_value03 = {
   jv = intCons 1 (intCons 2 (intCons 3 (intCons 4 intNil)));
 }
 
+let sample_value04 = {
+    orig = IntCons (26335605, IntCons (35460072, IntNil));
+    jv = intCons 26335605 (intCons 35460072 intNil)
+  }
+
 let sample_values = [
   sample_value01;
   sample_value02;
   sample_value03;
+  sample_value04;
 ]

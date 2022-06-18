@@ -22,6 +22,8 @@ type any = Unsafe.any
 
 let require specifier = Js.Unsafe.eval_string (Format.sprintf "require('%s')" specifier)
 
+let clone (obj: 'a) : 'a = _JSON##parse (_JSON##stringify obj)
+
 module Json = struct
   let stringify (obj: 'a) : string = _JSON##stringify obj |> to_string
 

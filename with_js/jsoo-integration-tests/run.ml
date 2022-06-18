@@ -51,22 +51,43 @@ let create_test_cases name (module Ex : T) =
 
   let test_schema_generate () =
     let module F = Faker.JSONSchemaFaker in
+    let open Bindoj_withjs_import.Jsonschema in
+
+    let validator = Validator.create () in
+
     let setOption = F.option () |> Ts.Intersection.get_1 in
     setOption (
-      Faker.JSONSchemaFakerOptions.create ~fillProperties:false ()
+      Faker.JSONSchemaFakerOptions.create
+        ~fillProperties:false
+        ~failOnInvalidTypes:true
+        ~failOnInvalidFormat:true
+        ()
     );
-    for i = 1 to 10 do
-      let value = F.generate ~schema ()  in
-      let json =
-        value
-        |> Js.Json.stringify
-        |> Yojson.Safe.from_string
+
+    for i = 1 to 100 do
+      let instance =
+        (* clone because faker pollutes the schema object *)
+        let schema = Js.clone schema in
+        F.generate ~schema ()
       in
-      let json_str = Yojson.Safe.pretty_to_string json in
-      check (notNone Ex.t)
-        (sprintf "random example #%d can be parsed: %s" i json_str)
-        (Some (Obj.magic ()))
-        (json |> Json.of_yojson |> Ex.decode_json)
+      let result =
+        (* validate because faker sometimes generates an invalid example *)
+        Validator.validate validator ~schema ~instance ()
+      in
+      if ValidatorResult.get_valid result && ValidatorResult.get_errors result = [] then begin
+        let json =
+          instance
+          |> Js.Json.stringify
+          |> Yojson.Safe.from_string
+        in
+        let json_str = Yojson.Safe.pretty_to_string json in
+        let result =
+          json |> Json.of_yojson |> Ex.decode_json
+        in
+        check (notNone Ex.t)
+          (sprintf "random example #%d can be parsed: %s" i json_str)
+          (Some (Obj.magic ())) result
+      end
     done
   in
 

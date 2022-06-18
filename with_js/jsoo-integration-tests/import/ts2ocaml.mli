@@ -300,3 +300,42 @@ module Primitive : sig
   let classify c = classify' Obj.magic c
   ]
 end
+
+module[@js.scope "Promise"] Promise : sig
+  type 'T t = private Ojs.t
+  val t_to_js: ('T -> Ojs.t) -> 'T t -> Ojs.t
+  val t_of_js: (Ojs.t -> 'T) -> Ojs.t -> 'T t
+
+  (**
+    language version: ES2018
+    Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+    resolved value cannot be modified from the callback.
+    @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+    @return A Promise for the completion of the callback.
+  *)
+  val finally: 'T t -> ?onfinally:([`Null | `Undefined of undefined | `U1 of (unit -> unit)] [@js.union]) -> unit -> 'T t [@@js.call "finally"]
+  (* [Symbol.toStringTag]: unit -> string *)
+
+  (**
+    Attaches callbacks for the resolution and/or rejection of the Promise.
+    @param onfulfilled The callback to execute when the Promise is resolved.
+    @param onrejected The callback to execute when the Promise is rejected.
+    @return A Promise for the completion of which ever callback is executed.
+  *)
+  val then_: 'T t -> ?onfulfilled:([`Null | `Undefined of undefined | `U1 of ('T -> ([`U1 of 'TResult1 | `U2 of 'TResult1 t] [@js.union]))] [@js.union]) -> ?onrejected:([`Null | `Undefined of undefined | `U1 of (any -> ([`U1 of 'TResult2 | `U2 of 'TResult2 t] [@js.union]))] [@js.union]) -> unit -> ('TResult1, 'TResult2) union2 t [@@js.call "then"]
+
+  (**
+    Attaches a callback for only the rejection of the Promise.
+    @param onrejected The callback to execute when the Promise is rejected.
+    @return A Promise for the completion of the callback.
+  *)
+  val catch: 'T t -> ?onrejected:([`Null | `Undefined of undefined | `U1 of (any -> ([`U1 of 'TResult | `U2 of 'TResult t] [@js.union]))] [@js.union]) -> unit -> ('T, 'TResult) union2 t [@@js.call "catch"]
+
+  (**
+    Creates a new Promise.
+    @param executor A callback used to initialize the promise. This callback is passed two arguments:
+    a resolve callback used to resolve the promise with a value or the result of another promise,
+    and a reject callback used to reject the promise with a provided reason or error.
+  *)
+  val create: (resolve:(([`U1 of 'T | `U2 of 'T t] [@js.union]) -> unit) -> reject:(?reason:any -> unit -> unit) -> unit) -> 'T t [@@js.create]
+end

@@ -1,11 +1,12 @@
 import * as ex03 from "../compile-tests/ex03_gen"
-import * as tmp from "../compile-tests/ex03_examples.json"
-import * as schema from "../compile-tests/ex03_schema.json"
-import {Validator} from "jsonschema"
+import * as samples_tmp from "../compile-tests/ex03_examples.json"
+import * as schema_tmp from "../compile-tests/ex03_schema.json"
+import {Schema,Validator} from "jsonschema"
 var validator = new Validator();
 
 // also typecheck the generate JSON
-const samples : ex03.int_list[] = <ex03.int_list[]>tmp;
+const samples : ex03.int_list[] = <ex03.int_list[]>samples_tmp;
+const schema : Schema = <Schema><unknown>schema_tmp;
 
 describe('ex03', (): void => {
   test('it compiles', (): void => {
