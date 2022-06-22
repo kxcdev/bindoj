@@ -20,8 +20,8 @@ module type T = sig
   val pp : ppf -> t -> unit
   val t : t Alcotest.testable
   val sample_values : t Sample_value.t list
-  val encode_json : t -> Kxclib.Json.jv
-  val decode_json : Kxclib.Json.jv -> t option
+  val to_json : t -> Kxclib.Json.jv
+  val of_json : Kxclib.Json.jv -> t option
 end
 
 (** this should contain all the example modules. *)
@@ -30,4 +30,7 @@ let all : (string * (module T)) list = [
   "ex02", (module Ex02);
   "ex03", (module Ex03);
   "ex04", (module Ex04);
+  "ex05", (module Ex05);
+  "ex06", (module Ex06);
+  "ex07", (module Ex07);
 ]

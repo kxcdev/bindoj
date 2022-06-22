@@ -30,26 +30,26 @@ let jsonm (x: 'a t) : Json.jsonm = Json.to_jsonm x.jv
 module JvHelper = struct
   open Json
 
-  let ctor0 name : jv = `obj [("kind", `str name)]
+  let ctor0 ?(discriminator="kind") name : jv = `obj [(discriminator, `str name)]
 
-  let ctor1 name (value: jv) : jv =
+  let ctor1 ?(discriminator="kind") ?(arg="arg") name (value: jv) : jv =
     `obj [
-      ("kind", `str name);
-      ("arg", value);
+      (discriminator, `str name);
+      (arg, value);
     ]
 
-  let ctor2 name (v1: jv) (v2: jv) : jv =
+  let ctor2 ?(discriminator="kind") ?(arg="arg") name (v1: jv) (v2: jv) : jv =
     `obj [
-      ("kind", `str name);
-      ("arg", `arr [v1; v2]);
+      (discriminator, `str name);
+      (arg, `arr [v1; v2]);
     ]
 
-  let ctorN name (values: jv list) : jv =
+  let ctorN ?(discriminator="kind") ?(arg="arg") name (values: jv list) : jv =
     `obj [
-      ("kind", `str name);
-      ("arg", `arr values);
+      (discriminator, `str name);
+      (arg, `arr values);
     ]
 
-  let ctor_record name (fields: (string * jv) list) : jv =
-    `obj (("kind", `str name) :: fields)
+  let ctor_record ?(discriminator="kind") name (fields: (string * jv) list) : jv =
+    `obj ((discriminator, `str name) :: fields)
 end

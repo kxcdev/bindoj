@@ -12,9 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-type flavor = Bindoj_gen.Json_codec.variant_type_flavor
+module Ts_config : sig
+  include module type of Bindoj_gen.Json_codec.Json_config
+end
 
-type ts_ast = ts_statement list [@@deriving show]
+type ts_ast = ts_statement list
 and ts_statement = [
   | `type_alias_declaration of ts_type_alias_decl
   | `function_declaration of ts_func_decl
@@ -43,7 +45,10 @@ and ts_type_desc = [
   | `literal_type of ts_literal_type
   | `tuple of ts_type_desc list
   | `union of ts_type_desc list
+  | `intersection of ts_type_desc list
+  | `array of ts_type_desc
   | `func_type of ts_func_type_desc
+  | `record of ts_type_desc * ts_type_desc (* https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type *)
 ]
 and ts_property_signature = {
   tsps_modifiers : [ `read_only ] list;
@@ -104,10 +109,15 @@ and ts_modifier = [
   | `export
 ]
 
+val pp_ts_ast : ppf -> ts_ast -> unit
+val show_ts_ast : ts_ast -> string
+val equal_ts_ast : ts_ast -> ts_ast -> bool
+
+open Bindoj_typedesc.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 
 val ts_ast_of_fwrt_decl : (ts_modifier list, [`read_only] list) fwrt_decl -> ts_ast
 val annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`read_only] list) fwrt_decl
 
-val gen_ts_type : ?export:bool -> ?flavor:flavor -> type_decl -> string
-val gen_ts_case_analyzer : ?export:bool -> ?flavor:flavor -> type_decl -> string
+val gen_ts_type : ?export:bool -> type_decl -> string
+val gen_ts_case_analyzer : ?export:bool -> ?name:string -> type_decl -> string

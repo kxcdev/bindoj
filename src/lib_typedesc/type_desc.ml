@@ -12,72 +12,302 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-type codec = [ `default_codec | `codec_val of string | `codec_in_module of string ]
-type 'x with_docstr = 'x*[ `docstr of string | `nodoc ]
+type pos = [
+  | `type_decl
+  | `record_field
+  | `variant_constructor
+  | `coretype
+]
 
-type ('pos, 'flavor) flavor_config = ..
+type ('pos, 'kind) config = .. constraint 'pos = [< pos]
 
-module FlavorConfigs = struct
-  type 'pos t = [] : 'pos t | (::) : (('pos, _) flavor_config * 'pos t) -> 'pos t
+module Configs = struct
+  type 'pos t =
+    | [] : 'pos t
+    | (::) : (('pos, _) config * 'pos t) -> 'pos t
 
-  type ('pos, 'flavor) flavor_config +=
-    | Flvconfig_dummy : ('pos, 'flavor) flavor_config
+  type ('pos, 'kind) config +=
+    | Config_dummy
 
-  let find : (('pos, 'flavor) flavor_config -> 'a option) -> 'pos t -> 'a option =
+  let empty : 'pos t = []
+
+  let find : (('pos, 'kind) config -> 'a option) -> 'pos t -> 'a option =
     fun finder configs ->
     let rec go : 'pos t -> 'a option = function
       | [] -> None
-      | flavor :: rest ->
-        match finder (Obj.magic flavor) with
+      | kind :: rest ->
+        match finder (Obj.magic kind) with
         | None -> go rest
         | Some v -> Some v
     in
     go configs
 
-  let find_or_default : default:'a -> (('pos, 'flavor) flavor_config -> 'a option) -> 'pos t -> 'a =
+  let find_or_default : default:'a -> (('pos, 'kind) config -> 'a option) -> 'pos t -> 'a =
     fun ~default finder configs -> find finder configs |> Option.value ~default
 
-  let get : ?default:('pos, 'flavor) flavor_config -> (('pos, 'flavor) flavor_config -> bool) -> 'pos t -> ('pos, 'flavor) flavor_config =
-    fun ?(default = Flvconfig_dummy) pred configs ->
+  let get : ?default:('pos, 'kind) config -> (('pos, 'kind) config -> bool) -> 'pos t -> ('pos, 'kind) config =
+    fun ?(default = Config_dummy) pred configs ->
     let rec go : 'pos t -> _ = function
       | [] -> default
-      | flavor :: rest ->
-        let flavor = Obj.magic flavor in
-        if pred flavor then flavor else go rest
+      | kind :: rest ->
+        let kind = Obj.magic kind in
+        if pred kind then kind else go rest
     in
     go configs
 
 end
-type 'pos flavor_configs = 'pos FlavorConfigs.t
+type 'pos configs = 'pos Configs.t constraint 'pos = [< pos]
 
-type record_type_desc = record_field_desc with_docstr list
-and record_field_desc = {
-  rf_name : string;
-  rf_type : string;
-  rf_codec : codec;
-}
+let pp_configs _ ppf _ = Format.pp_print_string ppf "<configs>"
+let equal_configs _ _ _ = true
 
-type variant_type_desc = variant_constructor_desc with_docstr list
-and variant_constructor_desc =
-  | Cstr_tuple of {
-      ct_name : string;
-      ct_args : string list;
-      ct_codec : codec;
-      ct_flvconfigs : [ `branch ] flavor_configs;
-    }
-  | Cstr_record of {
-      cr_name : string;
-      cr_fields : record_type_desc;
-      cr_codec : codec;
-      cr_flvconfigs : [ `branch ] flavor_configs;
-    }
+type 't ignore_order_list = 't list [@@deriving show]
+let equal_ignore_order_list equal_t xs ys =
+  List.equal equal_t (List.sort compare xs) (List.sort compare ys)
 
-type generic_kind =
-  | Record_kind of record_type_desc
-  | Variant_kind of variant_type_desc
+module Coretype = struct
+  type prim = [
+    | `unit (** [unit] in ocaml *)
+    | `bool (** [bool] in ocaml *)
+    | `int (** [int] in ocaml *)
+    | `float (** [float] in ocaml *)
+    | `string (** holding a text string; [string] in ocaml *)
+    | `uchar (** holding one unicode scalar value; [Uchar.t] in ocaml *)
+    | `byte (** holding a byte; [char] in ocaml *)
+    | `bytes (** holding a octet string; [Bytes.t] in ocaml *)
+  ] [@@deriving show,eq]
+
+  type map_key = [
+    | `string
+(*  | prim *)
+(*  | `Tuple of 'key list *)
+(*  | `StringEnum of string list *)
+(*  | `IntEnum of (string * int list ) *)
+  ] [@@deriving show,eq] (* TODO #125: extend map_key *)
+
+  type desc =
+    | Prim of prim (** primitive types *)
+    | Inhabitable (** an inhabitable type; [Kxclib.null] in ocaml *)
+    | Ident of ident (** user-defined types *)
+    | Option of desc (** [t option] in ocaml *)
+    | Tuple of desc list (** invariant: list len >= 2; [t1*t2*..] in ocaml *)
+    | List of desc (** [t list] in ocaml *)
+    | Map of map_key * desc (** [(k*v) list] in ocaml *)
+    | StringEnum of string ignore_order_list (** 0-ary polyvariant in OCaml *)
+(*  | IntEnum of (string * int) ignore_order_list *) (* TODO #126: implement IntEnum *)
+    | Self (** self type. used in a recursive definition *)
+    [@@deriving show,eq]
+
+  and ident = {
+    id_name: string;
+    id_codec: codec;
+  } [@@deriving show,eq]
+
+  and codec = [
+    | `default
+    | `in_module of string
+ (* | `codec_val of string *)
+  ] [@@deriving show,eq]
+
+  let desc_of_map_key : map_key -> desc = function
+    | `string -> Prim `string
+
+  let prim p = Prim p
+  let ident ?(codec = `default) name = Ident { id_name = name; id_codec = codec }
+  let option t = Option t
+  let tuple ts =
+    if List.length ts < 2 then
+      invalid_arg "length(ts) < 2"
+    else
+      Tuple ts
+  let list t = List t
+  let map k v = Map (k, v)
+  let string_enum cases = StringEnum cases
+  let inhabitable = Inhabitable
+  let self = Self
+
+  type t = {
+    ct_desc: desc;
+    ct_configs: [`coretype] configs
+  } [@@deriving show,eq]
+
+  let rec fold' (f: 'a -> desc -> [`break of 'a | `continue of 'a]) (state: 'a) desc =
+    let result = f state desc in
+    match result with
+    | `break state -> state
+    | `continue state ->
+      begin match desc with
+      | Option desc -> fold' f state desc
+      | List desc -> fold' f state desc
+      | Map (_, v_desc) -> fold' f state v_desc
+      | Tuple descs -> List.fold_left (fold' f) state descs
+      | Prim _ | Inhabitable | Ident _ | StringEnum _ | Self -> state
+      end
+
+  let fold f state desc = fold' (fun state x -> `continue (f state x)) state desc
+
+  let rec map_ident f = function
+    | Ident s -> Ident (f s)
+    | Option desc -> Option (map_ident f desc)
+    | List desc -> List (map_ident f desc)
+    | Map (k_desc, v_desc) -> Map (k_desc, map_ident f v_desc)
+    | Tuple descs -> Tuple (List.map (map_ident f) descs)
+    | (Prim _ | Inhabitable | Self | StringEnum _) as x -> x
+
+  let mk ?(configs=Configs.([])) desc = { ct_desc = desc; ct_configs=configs }
+  let mk_impl ?configs ~f = f (fun ct_desc -> mk ?configs ct_desc)
+
+  let mk_prim = mk_impl ~f:(fun mk p -> mk (prim p))
+  let mk_ident = mk_impl ~f:(fun mk ?codec name -> mk (ident ?codec name))
+  let mk_option = mk_impl ~f:(fun mk t -> mk (option t))
+  let mk_tuple = mk_impl ~f:(fun mk ts -> mk (tuple ts))
+  let mk_list = mk_impl ~f:(fun mk t -> mk (list t))
+  let mk_map = mk_impl ~f:(fun mk k v -> mk (map k v))
+  let mk_string_enum = mk_impl ~f:(fun mk cs -> mk (string_enum cs))
+  let mk_inhabitable = mk_impl ~f:(fun mk () -> mk inhabitable)
+  let mk_self = mk_impl ~f:(fun mk () -> mk self)
+
+  let is_option { ct_desc; _ } =
+    match ct_desc with Option _ -> true | _ -> false
+
+  let string_of_prim : prim -> string = function
+    | `unit -> "unit"
+    | `bool -> "bool"
+    | `int -> "int"
+    | `float -> "float"
+    | `string -> "string"
+    | `uchar -> "uchar"
+    | `byte -> "byte"
+    | `bytes -> "bytes"
+end
+
+type coretype = Coretype.t [@@deriving show,eq]
+let string_of_coretype = show_coretype
+
+type doc = [
+  | `docstr of string
+  | `nodoc
+] [@@deriving show,eq]
+let string_of_doc = show_doc
+
+type record_field = {
+  rf_name: string;
+  rf_type: coretype;
+  rf_configs: [`record_field] configs;
+  rf_doc: doc;
+} [@@deriving show,eq]
+let string_of_record_field = show_record_field
+
+let record_field ?(doc=`nodoc) ?(configs=Configs.empty) rf_name rf_type =
+  { rf_name; rf_type; rf_configs = configs; rf_doc = doc }
+
+type variant_constructor = {
+  vc_name: string;
+  vc_param: [
+    | `no_param
+    | `tuple_like of coretype list
+    | `inline_record of record_field ignore_order_list
+  ];
+  vc_configs: [`variant_constructor] configs;
+  vc_doc: doc;
+} [@@deriving show,eq]
+let string_of_variant_constructor = show_variant_constructor
+
+let variant_constructor ?(doc=`nodoc) ?(configs=Configs.empty) vc_name vc_param =
+  match vc_param with
+  | `tuple_like [] -> invalid_arg "`tuple_like but no type is given"
+  | `inline_record [] -> invalid_arg "`inline_record but no field is given"
+  | _ -> { vc_name; vc_param; vc_configs = configs; vc_doc = doc }
+
+type type_decl_kind =
+  | Alias_decl of coretype
+  | Record_decl of record_field ignore_order_list
+  | Variant_decl of variant_constructor ignore_order_list
+  [@@deriving show,eq]
 
 type type_decl = {
-  td_name : string;
-  td_kind : generic_kind with_docstr;
-  td_flvconfigs: [ `type_decl ] flavor_configs;
-}
+  td_name: string;
+  td_configs: [`type_decl] configs;
+  td_kind : type_decl_kind;
+  td_doc: doc;
+} [@@deriving show,eq]
+let string_of_type_decl = show_type_decl
+
+type variant_type = [
+  | `regular (** the default *)
+  | `polymorphic
+(*| `extensible (* future work *) *)
+]
+
+type ('pos, 'kind) config +=
+  | Config_caml_variant_type : variant_type -> ([`type_decl], [`caml_variant_type]) config
+
+module Caml_config = struct
+  let variant_type f = Config_caml_variant_type f
+
+  let get_variant_type configs =
+    Configs.find_or_default ~default:`regular (function | Config_caml_variant_type f -> Some f | _ -> None) configs
+end
+
+let alias_decl ?(doc=`nodoc) ?(configs=Configs.empty) td_name ct =
+  {
+    td_name;
+    td_kind = Alias_decl ct;
+    td_doc = doc;
+    td_configs = configs;
+  }
+
+let record_decl ?(doc=`nodoc) ?(configs=Configs.empty) td_name fields =
+  match fields with
+  | [] -> invalid_arg "no field is given"
+  | _ ->
+    {
+      td_name;
+      td_kind = Record_decl fields;
+      td_doc = doc;
+      td_configs = configs;
+    }
+
+let variant_decl ?variant_type ?(doc=`nodoc) ?(configs=Configs.empty) td_name ctors =
+  let configs =
+    match variant_type with
+    | None -> configs
+    | Some ty -> Caml_config.variant_type ty :: configs
+  in
+  match ctors with
+  | [] -> invalid_arg "no constructor is given"
+  | _ ->
+    {
+      td_name;
+      td_kind = Variant_decl ctors;
+      td_doc = doc;
+      td_configs = configs;
+    }
+
+let fold_coretypes folder state td =
+  match td.td_kind with
+  | Alias_decl ct -> folder state ct
+  | Record_decl fields ->
+    fields |> List.fold_left (fun state field ->
+      folder state field.rf_type
+    ) state
+  | Variant_decl ctors ->
+    ctors |> List.fold_left (fun state ctor ->
+      match ctor.vc_param with
+      | `no_param -> state
+      | `tuple_like ts -> List.fold_left folder state ts
+      | `inline_record fields ->
+        fields |> List.fold_left (fun state field ->
+          folder state field.rf_type
+        ) state
+    ) state
+
+let is_recursive =
+  let check =
+    let open Coretype in
+    fold' (fun state -> function
+      | Self -> `break true
+      | _ -> `continue state
+    ) false
+  in
+  fold_coretypes (fun state t -> state || check t.ct_desc) false

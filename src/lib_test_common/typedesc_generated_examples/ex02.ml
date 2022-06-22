@@ -21,8 +21,8 @@ type t = person =
   | Teacher of { faculty_id: int; name: string; department: string }
   [@@deriving show]
 
-let encode_json = encode_person_json
-let decode_json = decode_person_json
+let to_json = person_to_json
+let of_json = person_of_json
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
 open Sample_value

@@ -38,24 +38,24 @@ let create_test_cases (name: string) (module Ex : T) =
   let check_encoder (value: t Sample_value.t) =
     check Testables.jv (msg "encoding")
       value.jv
-      (encode_json value.orig)
+      (to_json value.orig)
   in
 
   (* decoding *)
   let check_decoder (value: t Sample_value.t) =
     check (option t) (msg "decoding")
       (Some value.orig)
-      (decode_json value.jv)
+      (of_json value.jv)
   in
 
   (* encoding & decoding *)
   let check_combined (value: t Sample_value.t) =
     check (option t) (msg "encoding -> decoding")
       (Some value.orig)
-      (decode_json (encode_json value.orig));
+      (of_json (to_json value.orig));
     check (option Testables.jv) (msg "decoding -> encoding")
       (Some value.jv)
-      (Option.map encode_json (decode_json value.jv))
+      (Option.map to_json (of_json value.jv))
   in
 
   let forall check = fun () -> sample_values |> List.iter check in

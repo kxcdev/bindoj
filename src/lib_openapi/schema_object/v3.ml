@@ -121,7 +121,7 @@ and 't object_fields = {
   properties: 't assoc option [@yojson.option];
   required: string list option [@yojson.option];
   additionalProperties: 't or_false option [@yojson.option];
-  (* `patternProperties` is not supported *)
+  (* patternProperties: 't assoc option [@yojson.option]; *) (* TODO #125: extend map_key *)
 } [@@deriving yojson_of]
 
 and 't structuring_fields = {

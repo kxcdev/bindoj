@@ -15,89 +15,114 @@ limitations under the License. *)
 open Ppxlib
 open Ast_helper
 open Utils
+open Bindoj_typedesc.Type_desc
 
-type variant_type_flavor = [
-  | `regular_variant (** the default *)
-  | `polymorphic_variant
-  (* | `extensible_variant (* future work *) *)
-  ]
-
-type ('pos, 'flavor) flavor_config +=
-  | Flvconfig_variant_flavor :
-    variant_type_flavor
-    -> ([ `type_decl ], [ `variant_flavor ]) flavor_config
-
-let get_variant_type =
-  FlavorConfigs.find_or_default ~default:`regular_variant (function | Flvconfig_variant_flavor f -> Some f | _ -> None)
-
-type generic_kind' = [
-  | `Record_kind  of record_type_desc
-  | `Variant_kind of variant_type_desc * variant_type_flavor
-]
-
-let get_kind_with_flavor (td: type_decl) : generic_kind' with_docstr =
-  let kind, doc = td.td_kind in
-  match kind, get_variant_type td.td_flvconfigs with
-  | Record_kind r, _ -> `Record_kind r, doc
-  | Variant_kind v, f -> `Variant_kind (v, f), doc
-
-let rec type_declaration_of_type_decl : ?show:bool -> type_decl -> type_declaration =
-  fun ?(show=false) td ->
-  let kind, doc = get_kind_with_flavor td in
+let rec type_declaration_of_type_decl :
+          ?type_name:string
+          -> ?show:bool
+          -> type_decl
+          -> type_declaration =
+  fun ?type_name ?(show=false) td ->
+  let self_name = type_name |? td.td_name in
+  let doc = td.td_doc in
   let attrs =
     if show then show_attribute @ doc_attribute doc
     else doc_attribute doc
   in
   Type.mk
-    ~kind:(type_kind_of_generic_kind kind)
-    ?manifest:(type_manifest_of_generic_kind kind)
+    ~kind:(type_kind_of_type_decl_kind ~self_name td)
+    ?manifest:(type_manifest_of_type_decl_kind ~self_name td)
     ~attrs
-    (locmk td.td_name)
+    (locmk self_name)
 
-and type_kind_of_generic_kind : generic_kind' -> type_kind = function
-  | `Record_kind record ->
-    Ptype_record  (record |> label_declarations_of_record_type_desc)
-  | `Variant_kind (variant, `regular_variant) ->
-    Ptype_variant (variant |> constructor_declarations_of_variant_type_desc)
-  | `Variant_kind (_, `polymorphic_variant) ->
-    Ptype_abstract
+and type_kind_of_type_decl_kind : self_name:string -> type_decl -> type_kind =
+  fun ~self_name td ->
+  match td.td_kind with
+  | Alias_decl _cty -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+  | Record_decl fields ->
+    Ptype_record (fields |> label_declarations_of_record_fields ~self_name)
+  | Variant_decl ctors ->
+    match Caml_config.get_variant_type td.td_configs with
+    | `regular ->
+      Ptype_variant (ctors |> constructor_declarations_of_variant_constructors ~self_name)
+    | `polymorphic -> Ptype_abstract
 
-and type_manifest_of_generic_kind : generic_kind' -> core_type option = function
-  | `Record_kind _
-  | `Variant_kind (_, `regular_variant) -> None
-  | `Variant_kind (pvariant, `polymorphic_variant) ->
-    let fields =
-      pvariant |&> fun (ctor, doc) ->
-        match ctor with
-        | Cstr_tuple ct ->
-          Rf.tag ~attrs:(doc_attribute doc)
-            (locmk ct.ct_name)
-            (List.empty ct.ct_args)
-            (match ct.ct_args with
-             | [] -> []
-             | [arg] -> [typcons arg]
-             | args -> [Typ.tuple (args |&> typcons)])
-        | Cstr_record cr ->
-          failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" cr.cr_name
-    in
-    Some (Typ.variant fields Closed None)
+and type_manifest_of_type_decl_kind : self_name:string -> type_decl -> core_type option =
+  fun ~self_name td ->
+  match td.td_kind with
+  | Alias_decl _cty -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+  | Record_decl _ -> None
+  | Variant_decl ctors ->
+    match Caml_config.get_variant_type td.td_configs with
+    | `regular -> None
+    | `polymorphic ->
+      let fields =
+      ctors |&> fun ctor ->
+        match ctor.vc_param with
+        | `no_param ->
+          Rf.tag ~attrs:(doc_attribute ctor.vc_doc)
+            (locmk ctor.vc_name)
+            false
+            []
+        | `tuple_like ts ->
+          Rf.tag ~attrs:(doc_attribute ctor.vc_doc)
+            (locmk ctor.vc_name)
+            true
+            (match ts with
+            | [] -> failwith "impossible"
+            | [arg] -> [type_of_coretype ~self_name arg]
+            | args -> [Typ.tuple (args |&> type_of_coretype ~self_name)])
+        | `inline_record _ ->
+          failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" ctor.vc_name
+      in
+      Some (Typ.variant fields Closed None)
 
-and label_declarations_of_record_type_desc : record_type_desc -> label_declaration list =
-  fun record ->
-  record |&> fun (field, doc) ->
+and label_declarations_of_record_fields ~self_name fields =
+  fields |&> fun field ->
     Type.field
-      ~attrs:(doc_attribute doc)
+      ~attrs:(doc_attribute field.rf_doc)
       (locmk field.rf_name)
-      (typcons field.rf_type)
+      (type_of_coretype ~self_name field.rf_type)
 
-and constructor_declarations_of_variant_type_desc : variant_type_desc -> constructor_declaration list =
-  fun variant ->
-  variant |&> fun (ctor, doc) ->
+and constructor_declarations_of_variant_constructors ~self_name ctors =
+  ctors |&> fun ctor ->
     let name, args =
-      match ctor with
-      | Cstr_tuple  { ct_name; ct_args; _ } ->
-        ct_name, Pcstr_tuple  (ct_args |&> typcons)
-      | Cstr_record { cr_name; cr_fields; _ } ->
-        cr_name, Pcstr_record (cr_fields |> label_declarations_of_record_type_desc)
+      match ctor.vc_param with
+      | `no_param ->
+        ctor.vc_name, Pcstr_tuple []
+      | `tuple_like ts ->
+        ctor.vc_name, Pcstr_tuple (ts |&> type_of_coretype ~self_name)
+      | `inline_record fields ->
+        ctor.vc_name, Pcstr_record (fields |> label_declarations_of_record_fields ~self_name)
     in
-    Type.constructor ~attrs:(doc_attribute doc) ~args (locmk name)
+    Type.constructor ~attrs:(doc_attribute ctor.vc_doc) ~args (locmk name)
+
+and type_of_coretype : self_name:string -> coretype -> core_type =
+  fun ~self_name { ct_desc; _ } ->
+  let open Coretype in
+  let type_of_prim = function
+    | `unit -> typcons "unit"
+    | `bool -> typcons "bool"
+    | `int -> typcons "int"
+    | `float -> typcons "float"
+    | `string -> typcons "string"
+    | `uchar -> typcons "Uchar.t"
+    | `byte -> typcons "char"
+    | `bytes -> typcons "Bytes.t"
+  in
+  let rec go = function
+    | Prim p -> type_of_prim p
+    | Inhabitable -> typcons "unit"
+    | Ident s -> typcons s.id_name
+    | Option t -> typcons "option" ~args:[go t]
+    | List t -> typcons "list" ~args:[go t]
+    | Map (k, v) ->
+      let k = desc_of_map_key k in
+      typcons "list" ~args:[Typ.tuple [go k; go v]]
+    | Tuple ts -> ts |> List.map go |> Typ.tuple
+    | StringEnum cs ->
+      let cases = cs |> List.map (fun k -> Rf.tag (locmk (escape_as_constructor_name k)) true []) in
+      Typ.variant cases Closed None
+    | Self -> typcons self_name
+    in go ct_desc
+

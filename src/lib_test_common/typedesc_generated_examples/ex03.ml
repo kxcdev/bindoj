@@ -19,8 +19,8 @@ type t = int_list =
   | IntCons of int * t
   [@@deriving show]
 
-let encode_json = encode_int_list_json
-let decode_json = decode_int_list_json
+let to_json = int_list_to_json
+let of_json = int_list_of_json
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
 open Sample_value

@@ -16,43 +16,21 @@ open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_test_common
 
 let testable_fwrt =
-  let pp : (unit, unit) fwrt_decl Fmt.t = fun ppf (name, env) ->
-    let ({ fd_name; fd_kind_fname; fd_parent; fd_children; _; }, _) =
-      FwrtTypeEnv.lookup name env in
-    Format.fprintf ppf
-      "{ fd_name = %s; fd_kind_fname = %s; fd_parent = %s; fd_children = %s; }"
-      fd_name
-      fd_kind_fname
-      (match fd_parent with
-       | None -> "None"
-       | Some x -> "Some "^x)
-      (List.fold_right (fun x acc -> x^"; "^acc) fd_children ""
-       |> fun content -> "["^content^"]")
+  let pp : (unit, unit) fwrt_decl Fmt.t =
+    let pp_unit fmt () = Format.pp_print_string fmt "()" in
+    pp_fwrt_decl pp_unit pp_unit
   in
-  let equal : (unit, unit) fwrt_decl -> (unit, unit) fwrt_decl -> bool = fun (name1, env1) (name2, env2) ->
-    let open Kxclib in
-    let ({ fd_children = children1; fd_fields = fields1; _; }, _) =
-      FwrtTypeEnv.lookup name1 env1 in
-    let children1 = List.sort compare children1 in
-    let fields1 =
-      (fields1 |&> fun ({ ff_name; ff_type; _; }, _) ->
-          (ff_name, ff_type))
-      |> List.sort (fun x y -> compare (fst x) (fst y)) in
-    let ({ fd_children = children2; fd_fields = fields2; _; }, _) =
-      FwrtTypeEnv.lookup name2 env2 in
-    let children2 = List.sort compare children2 in
-    let fields2 =
-      (fields2 |&> fun ({ ff_name; ff_type; _; }, _) ->
-          (ff_name, ff_type))
-      |> List.sort (fun x y -> compare (fst x) (fst y)) in
-    fields1 = fields2 && children1 = children2 in
+  let equal : (unit, unit) fwrt_decl -> (unit, unit) fwrt_decl -> bool =
+    let equal_unit () () = true in
+    equal_fwrt_decl equal_unit equal_unit
+  in
   Alcotest.testable pp equal
 
 let create_cases doc (module Ex : Typedesc_examples.T) =
   let open Alcotest in
   let create_test () =
     Alcotest.check testable_fwrt doc
-      (fwrt_decl_of_type_decl `flat_kind Ex.decl) Ex.fwrt in
+      (fwrt_decl_of_type_decl Ex.decl) Ex.fwrt in
   (doc, [test_case "fwrt_decl_of_type_decl works" `Quick create_test])
 
 let () =

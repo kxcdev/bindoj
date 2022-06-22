@@ -17,7 +17,7 @@ open Bindoj_test_common.Typedesc_generated_examples
 let print_json (module Ex : T) =
   Ex.sample_values
   |> List.map Sample_value.orig
-  |> List.map Ex.encode_json
+  |> List.map Ex.to_json
   |> (fun x -> `arr x)
   |> Json.to_yojson
   |> Yojson.Safe.to_string

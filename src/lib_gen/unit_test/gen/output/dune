@@ -7,7 +7,6 @@
  (target ex01_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
  (mode (promote (until-clean))))
-
 (rule
  (target ex01_docstr_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
@@ -17,7 +16,6 @@
  (target ex02_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
  (mode (promote (until-clean))))
-
 (rule
  (target ex02_docstr_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
@@ -27,7 +25,6 @@
  (target ex03_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
  (mode (promote (until-clean))))
-
 (rule
  (target ex03_docstr_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
@@ -37,8 +34,34 @@
  (target ex04_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
  (mode (promote (until-clean))))
-
 (rule
  (target ex04_docstr_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex05_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex05_docstr_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex06_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex06_docstr_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex07_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex07_docstr_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
  (mode (promote (until-clean))))

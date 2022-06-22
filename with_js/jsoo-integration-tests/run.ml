@@ -43,7 +43,7 @@ let create_test_cases name (module Ex : T) =
         |> Js.Json.stringify
         |> Yojson.Safe.from_string
         |> Json.of_yojson
-        |> Ex.decode_json)
+        |> Ex.of_json)
     in
     let values = Ex.sample_values |> List.map Sample_value.orig in
     check (list Ex.t) "same value(s)" values json_samples
@@ -82,7 +82,7 @@ let create_test_cases name (module Ex : T) =
         in
         let json_str = Yojson.Safe.pretty_to_string json in
         let result =
-          json |> Json.of_yojson |> Ex.decode_json
+          json |> Json.of_yojson |> Ex.of_json
         in
         check (notNone Ex.t)
           (sprintf "random example #%d can be parsed: %s" i json_str)

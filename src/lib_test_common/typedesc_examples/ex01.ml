@@ -16,34 +16,27 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
+let cty_int = Coretype.mk_prim `int
+let cty_string = Coretype.mk_prim `string
+
 let decl : type_decl =
-  { td_name = "student";
-    td_kind =
-      Record_kind
-        ([{ rf_name = "admission_year"; rf_type = "int"; rf_codec = `default_codec }, `nodoc;
-          { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec }, `nodoc;]),
-      `nodoc;
-    td_flvconfigs = [];
-  }
+  record_decl "student" [
+    record_field "admission_year" cty_int;
+    record_field "name" cty_string;
+  ]
 
 let decl_with_docstr : type_decl =
-  { td_name = "student";
-    td_kind =
-      Record_kind
-        [{ rf_name = "admission_year"; rf_type = "int"; rf_codec = `default_codec },
-          `docstr "addmission_year field";
-          { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
-          `docstr "name field";],
-      `docstr "definition of student type";
-    td_flvconfigs = [];
-  }
+  record_decl "student" [
+    record_field "admission_year" cty_int ~doc:(`docstr "addmission_year field");
+    record_field "name" cty_string ~doc:( `docstr "name field");
+  ] ~doc:(`docstr "definition of student type")
 
 let fwrt : (unit, unit) fwrt_decl =
   "student", FwrtTypeEnv.(
     init
-    |> bind ~annot:() "student"
-      [ item ~annot:() "admission_year" ["int"];
-        item ~annot:() "name" ["string"]; ]
+    |> bind_object ~annot:() "student"
+      [ field ~annot:() "admission_year" cty_int;
+        field ~annot:() "name" cty_string; ]
   )
 
 let ts_ast : ts_ast option =

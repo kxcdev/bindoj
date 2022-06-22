@@ -13,57 +13,76 @@ See the License for the specific language governing permissions and
 limitations under the License. *)
 
 open Bindoj_typedesc.Type_desc
-open Bindoj_gen.Json_codec
+
+[@@@alert "-equal_configs"]
+
+type 't ignore_order_list = 't list [@@deriving show]
+let equal_ignore_order_list equal_t xs ys =
+  List.equal equal_t (List.sort compare xs) (List.sort compare ys)
 
 type ('ann0, 'ann1) fwrt_desc = {
   fd_name : string;
-  fd_kind_fname : string;
   fd_parent : string option;
-  fd_children : string list;
-  fd_fields : 'ann1 fwrt_field_desc with_docstr list;
+  fd_kind : 'ann1 fwrt_desc_kind;
   fd_annot : 'ann0;
-}
+  fd_doc : doc;
+} [@@deriving show,eq]
+
+and 'ann fwrt_desc_kind =
+  | Fwrt_object of {
+      fo_fields: 'ann fwrt_field_desc ignore_order_list;
+      fo_children : string ignore_order_list;
+      fo_configs: [`type_decl] configs
+    }
+  | Fwrt_alias of {
+      fa_type: coretype;
+      fa_configs: [`type_decl] configs
+    }
+  | Fwrt_constructor of {
+      fc_args: coretype list;
+      fc_fields: 'ann fwrt_field_desc ignore_order_list;
+      fc_configs: [`variant_constructor] configs
+    }
+  [@@deriving show,eq]
+
 and 'ann fwrt_field_desc = {
   ff_name : string;
-  ff_type : string list;
+  ff_type : coretype;
+  ff_configs: [`record_field] configs;
   ff_annot : 'ann;
-}
+  ff_doc : doc;
+} [@@deriving show,eq]
 
 module FwrtTypeEnv = struct
   module StringMap = Map.Make (String)
 
-  type ('ann0, 'ann1) t =  ('ann0, 'ann1) fwrt_desc with_docstr StringMap.t
+  type ('ann0, 'ann1) t =  ('ann0, 'ann1) fwrt_desc StringMap.t
 
   let init : ('ann0, 'ann1) t = StringMap.empty
 
-  let item :
-       ?doc:([`docstr of string | `nodoc]) -> annot:'ann0 -> string -> string list
-    -> 'ann0 fwrt_field_desc with_docstr =
-    fun ?(doc = `nodoc) ~annot name types ->
-    { ff_name = name; ff_type = types; ff_annot = annot }, doc
+  let field ?(doc = `nodoc) ?(configs=Configs.empty) ~annot ff_name ff_type =
+    { ff_name; ff_type; ff_configs = configs; ff_annot = annot; ff_doc = doc }
 
-  let bind :
-    ?doc:([`docstr of string | `nodoc]) -> ?parent:string-> ?kind_fname:string ->
-    annot:'ann0 -> string -> 'ann1 fwrt_field_desc with_docstr list -> ('ann0, 'ann1) t ->
-    ('ann0, 'ann1) t =
-    fun ?(doc = `nodoc) ?parent ?(kind_fname = default_kind_fname) ~annot name fields env ->
+  let bind ?(doc = `nodoc) ?parent ~annot name kind env =
     let register_child parent child env =
       match StringMap.find_opt parent env with
       | None -> failwith "the parent does not exist"
-      | Some ({ fd_children; _; } as desc, doc) ->
-        StringMap.add
-          parent
-          ({ desc with fd_children = child :: fd_children; }, doc)
-          env in
+      | Some desc ->
+        match desc.fd_kind with
+        | Fwrt_object o ->
+          let fd_kind = Fwrt_object { o with fo_children = List.sort String.compare (child :: o.fo_children) } in
+          StringMap.add parent { desc with fd_kind } env
+        | Fwrt_alias _ | Fwrt_constructor _ ->
+          failwith' "the type '%s' cannot have children" desc.fd_name
+    in
     let add_new_type env =
       StringMap.add
         name
-        ({ fd_name = name;
-           fd_kind_fname = kind_fname;
-           fd_parent = parent;
-           fd_children = [];
-           fd_fields = fields;
-           fd_annot = annot; }, doc)
+        { fd_name = name;
+          fd_parent = parent;
+          fd_kind = kind;
+          fd_annot = annot;
+          fd_doc = doc }
         env in
     match parent with
     | None -> add_new_type env
@@ -71,96 +90,120 @@ module FwrtTypeEnv = struct
       register_child parent_name name env
       |> add_new_type
 
-  let lookup : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc with_docstr =
+  let compare_field (f1: _ fwrt_field_desc) (f2: _ fwrt_field_desc) =
+    compare f1.ff_name f2.ff_name
+
+  let bind_object ?doc ?parent ?(configs = Configs.empty) ~annot name fields env =
+    let kind =
+      Fwrt_object {
+        fo_fields = List.sort compare_field fields;
+        fo_configs = configs;
+        fo_children = [];
+      }
+    in
+    bind ?doc ?parent ~annot name kind env
+
+  let bind_alias ?doc ?parent ?(configs=Configs.empty) ~annot name ty env =
+    let kind =
+      Fwrt_alias {
+        fa_type = ty;
+        fa_configs = configs;
+      }
+    in
+    bind ?doc ?parent ~annot name kind env
+
+  let bind_constructor ?doc ?parent ?(configs=Configs.empty) ~annot ?(args=[]) ?(fields=[]) name env =
+    let kind =
+      Fwrt_constructor {
+        fc_args = args;
+        fc_fields = List.sort compare_field fields;
+        fc_configs = configs;
+      }
+    in
+    bind ?doc ?parent ~annot name kind env
+
+  let lookup : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc =
     StringMap.find
 
-  let lookup_opt : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc with_docstr option  =
+  let lookup_opt : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc option  =
     StringMap.find_opt
 
   let bindings = StringMap.bindings
 
-  let annotate : string -> ('ann0 * 'ann0) -> ('ann1 * 'ann1) -> (unit, unit) t -> ('ann0, 'ann1) t =
-    fun typ (ann0, ann0') (ann1, ann1') env ->
-    let ({ fd_fields; _; } as desc, doc) = lookup typ env in
-    bindings env |@> (init, fun (acc, (name, ({ fd_fields; _; } as desc, doc))) ->
-        StringMap.add
-          name
-          ({ desc with
-             fd_fields = (fd_fields |&> fun (field, field_doc) ->
-                 ({ field with ff_annot = ann1' }, field_doc));
-             fd_annot = ann0' }, doc)
-          acc) |>
-    StringMap.add
-      typ
-      ({ desc with
-         fd_annot = ann0;
-         fd_fields = fd_fields |&> fun (field, field_doc) ->
-             ({ field with ff_annot = ann1 }, field_doc); },
-       doc)
+  let annotate_kind ann = function
+    | Fwrt_alias a -> Fwrt_alias a
+    | Fwrt_constructor c ->
+      let fc_fields =
+        c.fc_fields |> List.map (fun field -> { field with ff_annot = ann }) |> List.sort compare_field
+      in
+      Fwrt_constructor { c with fc_fields }
+    | Fwrt_object o ->
+      let fo_fields =
+        o.fo_fields |> List.map (fun field -> { field with ff_annot = ann }) |> List.sort compare_field
+      in
+      Fwrt_object { o with fo_fields }
+
+  let annotate typ (ann0_of_type, ann0_of_other) (ann1_of_typ, ann1_of_other) (env: _ t) =
+    env
+    |> StringMap.mapi (fun name desc ->
+      let ann0, ann1 =
+        if name = typ then ann0_of_type, ann1_of_typ
+        else ann0_of_other, ann1_of_other
+      in
+      { desc with
+          fd_kind = annotate_kind ann1 desc.fd_kind;
+          fd_annot = ann0; })
+
 end
 
 type ('ann0, 'ann1) fwrt_type_env = ('ann0, 'ann1) FwrtTypeEnv.t
 
 type ('ann0, 'ann1) fwrt_decl = string * ('ann0, 'ann1) fwrt_type_env
 
-type flavor = variant_type_flavor
+let pp_fwrt_decl ann0 ann1 ppf (name, env) =
+  let fd = FwrtTypeEnv.lookup name env in
+  pp_fwrt_desc ann0 ann1 ppf fd
 
-module TypeMap = struct
-  module StringMap = Map.Make (String)
-  type t = string StringMap.t
-  let empty : t = StringMap.empty
-  let add_convertion : string -> string -> t -> t = StringMap.add
-  let add_fixed_point : string -> t -> t = fun typ type_map ->
-    add_convertion typ typ type_map
-  let convert_type : t -> string -> string = fun type_map typ ->
-    match StringMap.find_opt typ type_map with
-    | None -> typ
-    | Some typ -> typ
-end
+let show_fwrt_decl ann0 ann1 (name, env) =
+  let fd = FwrtTypeEnv.lookup name env in
+  show_fwrt_desc ann0 ann1 fd
 
-type type_map = TypeMap.t
+let equal_fwrt_decl ann0 ann1 (name1, env1) (name2, env2) =
+  let fd1 = FwrtTypeEnv.lookup name1 env1 in
+  let fd2 = FwrtTypeEnv.lookup name2 env2 in
+  equal_fwrt_desc ann0 ann1 fd1 fd2
 
-let fwrt_decl_of_type_decl : flavor -> type_decl -> (unit, unit) fwrt_decl =
-  function
-  | `flat_kind -> begin function
-      | { td_name; td_kind=(Record_kind record, doc); _ } ->
-        let fields =
-          record |&> fun ({ rf_name; rf_type; _; }, rf_doc) ->
-            ({ ff_name = rf_name;
-               ff_type = [rf_type];
-               ff_annot = (); }, rf_doc) in
-        (td_name,
-         FwrtTypeEnv.init
-         |> FwrtTypeEnv.bind ~doc ~annot:() td_name fields)
-      | { td_name; td_kind=(Variant_kind variant, doc); _ } ->
-        let get_fnames flvconfigs =
-          FlavorConfigs.find_or_default (function
-            | Flvconfig_flat_kind { kind_fname; arg_fname; _ } ->
-              Some (kind_fname_value kind_fname, arg_fname_value arg_fname)
-            | _ -> None
-          ) flvconfigs ~default:(default_kind_fname, default_arg_fname)
-        in
-        let cstrs =
-          variant |&> function
-            | Cstr_tuple { ct_name; ct_args; ct_flvconfigs; _; }, ct_doc ->
-              let kind_fname, arg_fname = get_fnames ct_flvconfigs in
-              let fields = match ct_args with
-                | [] -> []
-                | _ -> [{ ff_name = arg_fname; ff_type = ct_args; ff_annot = (); }, ct_doc] in
-              (ct_name, kind_fname, fields, ct_doc)
-            | Cstr_record { cr_name; cr_fields; cr_flvconfigs; _; }, cr_doc ->
-              let kind_fname, _ = get_fnames cr_flvconfigs in
-              let fields =
-                cr_fields |&> fun ({ rf_name; rf_type; _; }, rf_doc) ->
-                  ({ ff_name = rf_name;
-                     ff_type = [rf_type];
-                     ff_annot = (); }, rf_doc) in
-              (cr_name, kind_fname, fields, cr_doc) in
-        (td_name,
-         FwrtTypeEnv.init
-         |> FwrtTypeEnv.bind ~doc ~annot:() td_name []
-         |> fun env ->
-         List.rev cstrs |@> (env, fun (acc, (name, kind_fname, fields, doc)) ->
-             FwrtTypeEnv.bind
-               ~doc ~annot:() ~kind_fname ~parent:td_name name fields acc))
-    end
+let fwrt_decl_of_type_decl : type_decl -> (unit, unit) fwrt_decl =
+  let conv_fields fields =
+    fields |&> fun { rf_name; rf_type; rf_configs; rf_doc; } -> {
+      ff_name = rf_name;
+      ff_type = rf_type;
+      ff_configs = rf_configs;
+      ff_annot = ();
+      ff_doc = rf_doc
+    }
+  in
+  fun { td_name; td_kind; td_configs = configs; td_doc = doc } ->
+    match td_kind with
+    | Alias_decl typ ->
+      td_name,
+      FwrtTypeEnv.init |> FwrtTypeEnv.bind_alias ~doc ~annot:() ~configs td_name typ
+    | Record_decl fields ->
+      td_name,
+      FwrtTypeEnv.init |> FwrtTypeEnv.bind_object ~doc ~annot:() ~configs td_name (conv_fields fields)
+    | Variant_decl ctors ->
+      let add_ctor parent acc { vc_name; vc_param; vc_configs=configs; vc_doc=doc } =
+        match vc_param with
+        | `no_param ->
+          acc |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs ~annot:() vc_name
+        | `tuple_like args ->
+          acc |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs ~annot:() ~args vc_name
+        | `inline_record fields ->
+          let fields = conv_fields fields in
+          acc |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs ~annot:() ~fields vc_name
+      in
+      td_name,
+      FwrtTypeEnv.init
+      |> FwrtTypeEnv.bind_object ~doc ~annot:() ~configs td_name []
+      |> fun env ->
+        ctors |> List.fold_left (add_ctor td_name) env

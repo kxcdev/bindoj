@@ -25,44 +25,35 @@ limitations under the License. -->
 # open Bindoj.Caml_gen.Datatype;;
 
 # let int_or_string_desc =
-    { td_name = "int_or_string";
-      td_kind =
-        Variant_kind [
-          Cstr_tuple {
-            ct_name = "int";
-            ct_args = ["int"];
-            ct_codec = `default_codec;
-            ct_flvconfigs = []
-          }, `nodoc;
-          Cstr_tuple {
-            ct_name = "string";
-            ct_args = ["string"];
-            ct_codec = `default_codec;
-            ct_flvconfigs = []
-          }, `nodoc;
-        ], `nodoc;
-      td_flvconfigs = [
-        Flvconfig_variant_flavor `polymorphic_variant
-      ] };;
+    variant_decl "int_or_string" [
+      variant_constructor "int" (`tuple_like [Coretype.mk_prim `int]);
+      variant_constructor "string" (`tuple_like [Coretype.mk_prim `string]);
+    ] ~configs:[
+      Caml_config.variant_type `polymorphic
+    ];;
 val int_or_string_desc : type_decl =
   {td_name = "int_or_string";
+   td_configs =
+    Bindoj.Type_desc.Configs.(::)
+     (Bindoj_typedesc.Type_desc.Config_caml_variant_type `polymorphic,
+      Bindoj.Type_desc.Configs.[]);
    td_kind =
-    (Variant_kind
-      [(Cstr_tuple
-         {Bindoj.Type_desc.ct_name = "int"; ct_args = ["int"];
-          ct_codec = `default_codec;
-          ct_flvconfigs = Bindoj.Type_desc.FlavorConfigs.[]},
-        `nodoc);
-       (Cstr_tuple
-         {Bindoj.Type_desc.ct_name = "string"; ct_args = ["string"];
-          ct_codec = `default_codec;
-          ct_flvconfigs = Bindoj.Type_desc.FlavorConfigs.[]},
-        `nodoc)],
-     `nodoc);
-   td_flvconfigs =
-    Bindoj.Type_desc.FlavorConfigs.(::)
-     (Bindoj_gen.Caml_datatype.Flvconfig_variant_flavor `polymorphic_variant,
-      Bindoj.Type_desc.FlavorConfigs.[])}
+    Variant_decl
+     [{vc_name = "int";
+       vc_param =
+        `tuple_like
+          [{Bindoj.Type_desc.Coretype.ct_desc =
+             Bindoj.Type_desc.Coretype.Prim `int;
+            ct_configs = Bindoj_typedesc.Type_desc.Configs.[]}];
+       vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc};
+      {vc_name = "string";
+       vc_param =
+        `tuple_like
+          [{Bindoj.Type_desc.Coretype.ct_desc =
+             Bindoj.Type_desc.Coretype.Prim `string;
+            ct_configs = Bindoj_typedesc.Type_desc.Configs.[]}];
+       vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc}];
+   td_doc = `nodoc}
 
 # Bindoj.(
    let int_or_string_decl = Caml_gen.Datatype.type_declaration_of_type_decl int_or_string_desc in

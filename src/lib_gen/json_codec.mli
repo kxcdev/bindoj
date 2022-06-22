@@ -12,30 +12,82 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-open Ppxlib
+open Bindoj_typedesc.Type_desc
 
-type variant_type_flavor = [
-    `flat_kind
-  (* | `tuple *)
-  (* | `nested_kind *)
-  ]
-type ('pos, 'flavor) flavor_config +=
-   | Flvconfig_flat_kind : {
-       kind_fname : string option;
-       arg_fname : string option;
-     } -> ([ `branch ], [ `flat_kind ]) flavor_config
+type json_variant_style = [
+  | `flatten
+(*| `nested *)
+(*| `tuple *)
+]
 
-val get_variant_type_flavor : [`branch] flavor_configs -> ([`branch], variant_type_flavor) flavor_config
+type ('pos, 'kind) config +=
+  | Config_json_name : string -> ('pos, [`json_name]) config
+  | Config_json_variant_style :
+    json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
+  | Config_json_variant_discriminator :
+    string -> ([`type_decl], [`json_variant_discriminator]) config
+  | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
+  | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
 
-val gen_primitive_encoders : ?attrs:attributes -> codec -> value_binding list
-val gen_primitive_decoders : ?attrs:attributes -> codec -> value_binding list
+module Json_config : sig
+  val name : string -> ([< pos], [`json_name]) config
+  val get_name : string -> [< pos] configs -> string
 
-val gen_json_encoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?codec:codec -> type_decl -> value_binding
-val gen_json_decoder : ?self_contained:bool -> ?flavor:variant_type_flavor -> ?codec:codec -> type_decl -> value_binding
+  (**
+    The default field name for the argument of a variant constructor.
+    Use [Json_config.name] for [variant_constructor .. (`tuple_like ..)] to override.
+  *)
+  val default_name_of_variant_arg : string
+
+  val default_variant_style : json_variant_style
+  val variant_style : json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
+  val get_variant_style : [`variant_constructor] configs -> json_variant_style
+
+  val default_variant_discriminator : string
+  val variant_discriminator : string -> ([`type_decl], [`json_variant_discriminator]) config
+  val get_variant_discriminator : [`type_decl] configs -> string
+
+  val custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
+  val get_custom_encoder : [`coretype] configs -> string option
+
+  val custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
+  val get_custom_decoder : [`coretype] configs -> string option
+end
+
+type builtin_codec = {
+  encoder: Ppxlib.expression;
+  decoder: Ppxlib.expression;
+  (* validator stuffs are meant to go here *)
+}
+
+module Builtin_codecs : sig
+  val unit : builtin_codec
+  val bool : builtin_codec
+  val int : builtin_codec
+  val float : builtin_codec
+  val string : builtin_codec
+  val uchar : builtin_codec
+  val byte : builtin_codec
+  val bytes : builtin_codec
+  val option : builtin_codec
+  val list : builtin_codec
+  val inhabitable : builtin_codec
+  val map : builtin_codec
+  val all : (string * builtin_codec) list
+end
+
+val builtin_codecs : (string * builtin_codec) list
+
+val gen_builtin_encoders :
+  ?attrs:Ppxlib.attributes -> type_decl -> Ppxlib.value_binding list
+val gen_builtin_decoders :
+  ?attrs:Ppxlib.attributes -> type_decl -> Ppxlib.value_binding list
+
+val gen_json_encoder :
+  ?codec:Coretype.codec ->
+  ?self_contained:bool -> type_decl -> Ppxlib.value_binding
+val gen_json_decoder :
+  ?codec:Coretype.codec ->
+  ?self_contained:bool -> type_decl -> Ppxlib.value_binding
 
 val gen_openapi_schema : type_decl -> Json.jv
-
-val kind_fname_value : string option -> string
-val arg_fname_value : string option -> string
-val default_kind_fname : string
-val default_arg_fname : string

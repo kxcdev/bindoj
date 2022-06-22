@@ -12,24 +12,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module type T = sig
-  val name: string
-  val gen:  unit -> unit
-end
+open Bindoj_typedesc.Type_desc
 
-let modules : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex01_docstr", (module Ex01.Docstr);
-  "ex02", (module Ex02);
-  "ex02_docstr", (module Ex02.Docstr);
-  "ex03", (module Ex03);
-  "ex03_docstr", (module Ex03.Docstr);
-  "ex04", (module Ex04);
-  "ex04_docstr", (module Ex04.Docstr);
-]
+let modules =
+  let open Bindoj_test_common_typedesc_examples.All in
+  all |> List.concat_map (fun (name, (module Ex : T)) -> [
+    name, Ex.decl;
+    name ^ "_docstr", Ex.decl_with_docstr;
+  ])
 
 let mapping =
   modules |> List.map (fun (s, m) -> sprintf "%s_gen.ml" s, m)
+
+let gen_with_json_codec ?self_contained decl =
+  let open Ppxlib in
+  let open Ast_helper in
+  let open Bindoj_gen.Caml_datatype in
+  let open Bindoj_gen.Json_codec in
+  let recursive = if is_recursive decl then Recursive else Nonrecursive in
+  Astlib.Pprintast.structure Format.std_formatter [
+    Str.type_ Recursive [type_declaration_of_type_decl decl];
+    Str.value recursive [gen_json_encoder ?self_contained decl];
+    Str.value recursive [gen_json_decoder ?self_contained decl];
+  ]
 
 let () =
   match Array.to_list Sys.argv |> List.tl with
@@ -38,4 +43,4 @@ let () =
   | [name] ->
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some (module Ex : T) -> Ex.gen ()
+    | Some decl -> gen_with_json_codec ~self_contained:true decl

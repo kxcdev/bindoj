@@ -12,25 +12,37 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-include Bindoj_gen_test_gen_output.Ex01_gen
+include Bindoj_gen_test_gen_output.Ex07_gen
 
-type t = student = { admission_year: int; name: string } [@@deriving show]
+type t = customized_union =
+  | Case1 of int
+  | Case2 of { x: int; y: int }
+[@@deriving show]
 
-let to_json = student_to_json
-let of_json = student_of_json
+let to_json = customized_union_to_json
+let of_json = customized_union_of_json
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
-let sample_value01 : t Sample_value.t = {
-  orig = {
-    admission_year = 1984;
-    name = "William Gibson";
-  };
-  jv = `obj [
-    ("admission_year", `num 1984.);
-    ("name", `str "William Gibson")
-  ];
+type sample = t Sample_value.t
+open Sample_value
+open Sample_value.JvHelper
+
+let discriminator = "tag"
+
+let sample_value01 : sample = {
+  orig = Case1 42;
+  jv = ctor1 ~discriminator ~arg:"value" "Case1" (`num 42.);
+}
+
+let sample_value02 : sample = {
+  orig = Case2 { x = 4; y = 2 };
+  jv = ctor_record ~discriminator "Case2" [
+    "x", `num 4.;
+    "y", `num 2.;
+  ]
 }
 
 let sample_values = [
   sample_value01;
+  sample_value02;
 ]

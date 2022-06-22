@@ -33,29 +33,32 @@ converting `Bindoj.Type_desc.type_decl` to `type_declaration`.
 type nonrec type_decl =
   type_decl = {
   td_name : string;
-  td_kind : generic_kind with_docstr;
-  td_flvconfigs : [ `type_decl ] flavor_configs;
+  td_configs : [ `type_decl ] configs;
+  td_kind : type_decl_kind;
+  td_doc : doc;
 }
 # let student_desc =
-    { td_name = "student";
-      td_kind =
-        Record_kind
-          ([{ rf_name = "admission_year"; rf_type = "int"; rf_codec = `default_codec }, `nodoc;
-            { rf_name = "full_name"; rf_type = "string"; rf_codec = `default_codec }, `nodoc;]),
-        `nodoc;
-      td_flvconfigs = [] };;
+    record_decl "student" [
+      record_field "admission_year" (Coretype.mk_prim `int);
+      record_field "full_name" (Coretype.mk_prim `string);
+    ];;
 val student_desc : type_decl =
-  {td_name = "student";
+  {td_name = "student"; td_configs = Bindoj.Type_desc.Configs.[];
    td_kind =
-    (Record_kind
-      [({rf_name = "admission_year"; rf_type = "int";
-         rf_codec = `default_codec},
-        `nodoc);
-       ({rf_name = "full_name"; rf_type = "string";
-         rf_codec = `default_codec},
-        `nodoc)],
-     `nodoc);
-   td_flvconfigs = Bindoj.Type_desc.FlavorConfigs.[]}
+    Record_decl
+     [{rf_name = "admission_year";
+       rf_type =
+        {Bindoj.Type_desc.Coretype.ct_desc =
+          Bindoj.Type_desc.Coretype.Prim `int;
+         ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+       rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
+      {rf_name = "full_name";
+       rf_type =
+        {Bindoj.Type_desc.Coretype.ct_desc =
+          Bindoj.Type_desc.Coretype.Prim `string;
+         ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+       rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc}];
+   td_doc = `nodoc}
 ```
 
 ### simple variant type : person
@@ -65,103 +68,76 @@ val student_desc : type_decl =
 type nonrec type_decl =
   type_decl = {
   td_name : string;
-  td_kind : generic_kind with_docstr;
-  td_flvconfigs : [ `type_decl ] flavor_configs;
+  td_configs : [ `type_decl ] configs;
+  td_kind : type_decl_kind;
+  td_doc : doc;
 }
 # let person_desc =
-    { td_name = "person";
-      td_kind =
-        Variant_kind
-          ([ Cstr_tuple { ct_name = "Anonymous";
-                          ct_args = [];
-                          ct_codec = `default_codec;
-                          ct_flvconfigs = [Flvconfig_flat_kind
-                                             { kind_fname=Some "kind"; arg_fname=None; }]
-                        }, `nodoc;
-             Cstr_tuple { ct_name = "With_id";
-                          ct_args = ["int"];
-                          ct_codec = `default_codec;
-                          ct_flvconfigs = [Flvconfig_flat_kind
-                                             { kind_fname=Some "kind"; arg_fname=Some "arg"; }]
-                        }, `nodoc;
-             Cstr_record { cr_name = "Student";
-                           cr_fields =
-                             [{ rf_name = "student_id"; rf_type = "int"; rf_codec = `default_codec; }, `nodoc;
-                              { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc];
-                           cr_codec = `default_codec;
-                           cr_flvconfigs = [Flvconfig_flat_kind
-                                              { kind_fname=Some "kind"; arg_fname=None; }]
-                         }, `nodoc;
-             Cstr_record { cr_name = "Teacher";
-                           cr_fields =
-                             [{ rf_name = "faculty_id"; rf_type = "int"; rf_codec = `default_codec; }, `nodoc;
-                              { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc;
-                              { rf_name = "department"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc ];
-                           cr_codec = `default_codec;
-                           cr_flvconfigs = [Flvconfig_flat_kind
-                                              { kind_fname=Some "kind"; arg_fname=None; }]
-                         }, `nodoc]),
-        `nodoc;
-      td_flvconfigs = [] };;
+    variant_decl "person" [
+      variant_constructor "Anonymous" `no_param;
+      variant_constructor "With_id" (`tuple_like [Coretype.mk_prim `int]);
+      variant_constructor "Student" (`inline_record [
+        record_field "student_id" (Coretype.mk_prim `int);
+        record_field "name" (Coretype.mk_prim `string);
+      ]);
+      variant_constructor "Teacher" (`inline_record [
+        record_field "faculty_id" (Coretype.mk_prim `int);
+        record_field "name" (Coretype.mk_prim `string);
+        record_field "department" (Coretype.mk_prim `string);
+      ])
+    ];;
 val person_desc : type_decl =
-  {td_name = "person";
+  {td_name = "person"; td_configs = Bindoj.Type_desc.Configs.[];
    td_kind =
-    (Variant_kind
-      [(Cstr_tuple
-         {Bindoj.Type_desc.ct_name = "Anonymous"; ct_args = [];
-          ct_codec = `default_codec;
-          ct_flvconfigs =
-           Bindoj.Type_desc.FlavorConfigs.(::)
-            (Bindoj_gen.Json_codec.Flvconfig_flat_kind
-              {kind_fname = Some "kind"; arg_fname = None},
-             Bindoj.Type_desc.FlavorConfigs.[])},
-        `nodoc);
-       (Cstr_tuple
-         {Bindoj.Type_desc.ct_name = "With_id"; ct_args = ["int"];
-          ct_codec = `default_codec;
-          ct_flvconfigs =
-           Bindoj.Type_desc.FlavorConfigs.(::)
-            (Bindoj_gen.Json_codec.Flvconfig_flat_kind
-              {kind_fname = Some "kind"; arg_fname = Some "arg"},
-             Bindoj.Type_desc.FlavorConfigs.[])},
-        `nodoc);
-       (Cstr_record
-         {Bindoj.Type_desc.cr_name = "Student";
-          cr_fields =
-           [({rf_name = "student_id"; rf_type = "int";
-              rf_codec = `default_codec},
-             `nodoc);
-            ({rf_name = "name"; rf_type = "string";
-              rf_codec = `default_codec},
-             `nodoc)];
-          cr_codec = `default_codec;
-          cr_flvconfigs =
-           Bindoj.Type_desc.FlavorConfigs.(::)
-            (Bindoj_gen.Json_codec.Flvconfig_flat_kind
-              {kind_fname = Some "kind"; arg_fname = None},
-             Bindoj.Type_desc.FlavorConfigs.[])},
-        `nodoc);
-       (Cstr_record
-         {Bindoj.Type_desc.cr_name = "Teacher";
-          cr_fields =
-           [({rf_name = "faculty_id"; rf_type = "int";
-              rf_codec = `default_codec},
-             `nodoc);
-            ({rf_name = "name"; rf_type = "string";
-              rf_codec = `default_codec},
-             `nodoc);
-            ({rf_name = "department"; rf_type = "string";
-              rf_codec = `default_codec},
-             `nodoc)];
-          cr_codec = `default_codec;
-          cr_flvconfigs =
-           Bindoj.Type_desc.FlavorConfigs.(::)
-            (Bindoj_gen.Json_codec.Flvconfig_flat_kind
-              {kind_fname = Some "kind"; arg_fname = None},
-             Bindoj.Type_desc.FlavorConfigs.[])},
-        `nodoc)],
-     `nodoc);
-   td_flvconfigs = Bindoj.Type_desc.FlavorConfigs.[]}
+    Variant_decl
+     [{vc_name = "Anonymous"; vc_param = `no_param;
+       vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc};
+      {vc_name = "With_id";
+       vc_param =
+        `tuple_like
+          [{Bindoj.Type_desc.Coretype.ct_desc =
+             Bindoj.Type_desc.Coretype.Prim `int;
+            ct_configs = Bindoj_typedesc.Type_desc.Configs.[]}];
+       vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc};
+      {vc_name = "Student";
+       vc_param =
+        `inline_record
+          [{rf_name = "student_id";
+            rf_type =
+             {Bindoj.Type_desc.Coretype.ct_desc =
+               Bindoj.Type_desc.Coretype.Prim `int;
+              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
+           {rf_name = "name";
+            rf_type =
+             {Bindoj.Type_desc.Coretype.ct_desc =
+               Bindoj.Type_desc.Coretype.Prim `string;
+              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc}];
+       vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc};
+      {vc_name = "Teacher";
+       vc_param =
+        `inline_record
+          [{rf_name = "faculty_id";
+            rf_type =
+             {Bindoj.Type_desc.Coretype.ct_desc =
+               Bindoj.Type_desc.Coretype.Prim `int;
+              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
+           {rf_name = "name";
+            rf_type =
+             {Bindoj.Type_desc.Coretype.ct_desc =
+               Bindoj.Type_desc.Coretype.Prim `string;
+              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
+           {rf_name = "department";
+            rf_type =
+             {Bindoj.Type_desc.Coretype.ct_desc =
+               Bindoj.Type_desc.Coretype.Prim `string;
+              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc}];
+       vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc}];
+   td_doc = `nodoc}
 ```
 
 ### `Bindoj.Caml_gen`
@@ -173,20 +149,15 @@ module Caml_gen :
     module Caml = Bindoj.Versioned.V0.Caml
     module Datatype = Bindoj_gen.Caml_datatype
     module Json_codec = Bindoj_gen.Json_codec
+    module Type_module : sig ... end
   end
 # #show_module Bindoj.Caml_gen.Datatype;;
 module Datatype = Bindoj_gen.Caml_datatype
 module Datatype = Bindoj_gen.Caml_datatype
 module Datatype :
   sig
-    type variant_type_flavor = [ `polymorphic_variant | `regular_variant ]
-    type ('pos, 'flavor) Bindoj_base.Type_desc.flavor_config +=
-        Flvconfig_variant_flavor :
-          variant_type_flavor -> ([ `type_decl ], [ `variant_flavor ])
-                                 flavor_config
-    val get_variant_type :
-      [ `type_decl ] flavor_configs -> variant_type_flavor
     val type_declaration_of_type_decl :
+      ?type_name:string ->
       ?show:bool -> type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
   end
 # #show_module Bindoj.Caml;;
@@ -201,6 +172,7 @@ module Caml :
     type structure = structure_item list
     type value_binding = CommonTypes.value_binding
     type type_declaration = CommonTypes.type_declaration
+    type core_type = CommonTypes.core_type
     module Structure : sig ... end
   end
 ```

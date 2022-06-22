@@ -5,6 +5,4 @@
  (preprocess
   (pps ppxlib.metaquot))
  (private_modules utils)
- (flags (:standard
-          -open Kxclib
-          -open Bindoj_base.Type_desc)))
+ (flags (:standard -open Kxclib)))

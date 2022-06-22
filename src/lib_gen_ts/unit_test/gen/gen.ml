@@ -12,17 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module type T = sig
-  val name: string
-  val gen:  unit -> unit
-end
+open Bindoj_typedesc.Type_desc
+open Bindoj_gen_ts.Typescript_datatype
+open Bindoj_test_common
 
-let modules : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex02", (module Ex02);
-  "ex03", (module Ex03);
-  "ex04", (module Ex04);
-]
+let modules =
+  let open Typedesc_examples in
+  all |> List.map (fun (name, (module Ex : T)) ->
+    let gen () =
+      print_endline (gen_ts_type ~export:true Ex.decl);
+      match Ex.decl.td_kind with
+      | Variant_decl _ ->
+        print_endline (gen_ts_case_analyzer ~export:true Ex.decl)
+      | Record_decl _ -> ()
+      | Alias_decl _ -> ()
+      in
+    name, gen
+  )
 
 let mapping =
   modules |> List.map (fun (s, m) -> sprintf "%s_gen.ts" s, m)
@@ -34,4 +40,4 @@ let () =
   | [name] ->
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some (module Ex : T) -> Ex.gen ()
+    | Some gen -> gen ()

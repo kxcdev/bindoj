@@ -16,6 +16,12 @@ module Versioned = struct
   module V0 = struct
     module Type_desc = Bindoj_base.Type_desc
 
+    open struct
+      let loc = Location.none
+      let mknoloc = Location.mknoloc
+      let lid str = Ppxlib.Longident.parse str |> mknoloc
+    end
+
     module Caml = struct
       module Ppxlib = Ppxlib
       module Astlib = Astlib
@@ -26,6 +32,7 @@ module Versioned = struct
         type structure = structure_item list
         type value_binding = Ppxlib.value_binding
         type type_declaration = Ppxlib.type_declaration
+        type core_type = Ppxlib.core_type
       end
       include CommonTypes
 
@@ -34,9 +41,6 @@ module Versioned = struct
         type t = structure
         type rec_flag = Ppxlib.rec_flag
         open Ppxlib.Ast_builder.Default
-        open struct
-          let loc = Location.none
-        end
 
         let binding : ?rec_flag:rec_flag -> value_binding -> structure_item =
           fun ?rec_flag:(rf=Nonrecursive) item ->
@@ -46,14 +50,91 @@ module Versioned = struct
           fun ?rec_flag:(rf=Recursive) item ->
           pstr_type ~loc rf [item]
 
+        let type_alias : string -> core_type -> structure_item =
+          fun name core_type ->
+          let open Ppxlib_ast.Ast_helper in
+          pstr_type ~loc Nonrecursive [Type.mk (mknoloc name) ~manifest:core_type]
+
+        let modul : string -> structure -> structure_item =
+          fun module_name items ->
+          let open Ppxlib_ast.Ast_helper in
+          Mod.structure items |> Mb.mk (module_name |> mknoloc %some)
+          |> Str.module_
+
+        let modul' : string -> structure list -> structure_item =
+          modul %% List.flatten
+
+        let open_utils : structure -> structure_item =
+          let open Ppxlib_ast.Ast_helper in
+          Str.open_ % Opn.mk % Mod.structure
+
+        let open_utils' : structure list -> structure_item =
+          open_utils % List.flatten
+
         let pp_caml : Format.formatter -> t -> unit = Pprintast.structure
       end
+
     end
 
     module Caml_gen = struct
+      open Ppxlib_ast.Ast_helper
+      open Caml.CommonTypes
+
       module Caml = Caml
       module Datatype = Bindoj_gen.Caml_datatype
       module Json_codec = Bindoj_gen.Json_codec
+
+      module Type_module = struct
+        let datatype_module'
+              ?module_name
+              ?(gen_json_codec=false)
+              type_decl
+            : structure_item*core_type =
+          let open Caml.Structure in
+          let ty = Datatype.type_declaration_of_type_decl ~type_name:"t" type_decl in
+          let module_name = module_name |? String.capitalize_ascii type_decl.td_name in
+          let may_append cond gfunc (items : structure) =
+            if cond then items @ (gfunc()) else items in
+          let tyref = Typ.constr (lid (module_name^".t")) [] in
+          let items =
+            [ (* type t = ... *)
+              declaration ty;
+
+              ( (* open struct type [td_name] = t end *)
+                [ declaration
+                   (Type.mk ~manifest:(Typ.constr (lid "t") [])
+                      (mknoloc type_decl.td_name)) ]
+                |> Caml.Structure.open_utils);
+            ]
+            |> may_append gen_json_codec (fun() ->
+                   [ Json_codec.gen_json_encoder type_decl
+                       ~codec:(`in_module module_name) |> binding;
+                     Json_codec.gen_json_decoder type_decl
+                       ~codec:(`in_module module_name) |> binding;
+                     [%stri let jv_codec = to_json, of_json];
+                 ])
+          in
+          let modul =
+            Mod.structure items
+            |> Mb.mk (module_name |> mknoloc % some)
+            |> Str.module_ in
+          modul, tyref
+        let datatype_module
+              ?module_name
+              ?gen_json_codec
+              type_decl
+            : structure_item =
+          datatype_module' ?module_name ?gen_json_codec type_decl |> fst
+        let datatype_module_and_binding
+              ?module_name
+              ?gen_json_codec
+              ?(binding_name:string option)
+              type_decl
+            : structure =
+          let modul, tyref = datatype_module' ?module_name ?gen_json_codec type_decl in
+          let name = binding_name |? type_decl.td_name in
+          [ modul; Caml.Structure.type_alias name tyref ]
+      end
     end
 
     module TypeScript_gen = struct

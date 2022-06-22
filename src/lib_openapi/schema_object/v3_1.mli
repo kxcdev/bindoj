@@ -217,7 +217,9 @@ val obj :
   ?defs:(string * t) list ->
   ?discriminator:discriminator -> ?externalDocs:externalDocs ->
   ?properties:(string * t) list ->
-  ?required:string list -> ?additionalProperties:[`T of t | `False] ->
+  ?required:string list ->
+  ?additionalProperties:[`T of t | `False] ->
+  (* ?patternProperties: (string * t) list -> *) (* TODO #125: extend map_key *)
   unit -> t
 
 (** https://json-schema.org/understanding-json-schema/reference/combining.html#allof *)

@@ -13,110 +13,74 @@ See the License for the specific language governing permissions and
 limitations under the License. *)
 
 open Bindoj_base.Type_desc
-open Bindoj_gen.Json_codec
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
-let kind_fname = "kind"
+let discriminator = "kind"
+
+let cty_int = Coretype.mk_prim `int
+let cty_string = Coretype.mk_prim `string
 
 let decl : type_decl =
-{ td_name = "person";
-  td_kind =
-    Variant_kind
-      ([ Cstr_tuple { ct_name = "Anonymous";
-                        ct_args = [];
-                        ct_codec = `default_codec;
-                        ct_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some kind_fname; arg_fname=None; }]
-              }, `nodoc;
-            Cstr_tuple { ct_name = "With_id";
-                        ct_args = ["int"];
-                        ct_codec = `default_codec;
-                        ct_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some kind_fname; arg_fname=Some "arg"; }]
-              }, `nodoc;
-            Cstr_record { cr_name = "Student";
-                          cr_fields =
-                            [{ rf_name = "student_id"; rf_type = "int"; rf_codec = `default_codec; }, `nodoc;
-                            { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc];
-                          cr_codec = `default_codec;
-                          cr_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some kind_fname; arg_fname=None; }]
-              }, `nodoc;
-            Cstr_record { cr_name = "Teacher";
-                          cr_fields =
-                            [{ rf_name = "faculty_id"; rf_type = "int"; rf_codec = `default_codec; }, `nodoc;
-                            { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc;
-                            { rf_name = "department"; rf_type = "string"; rf_codec = `default_codec; }, `nodoc ];
-                          cr_codec = `default_codec;
-                          cr_flvconfigs = [Flvconfig_flat_kind
-                                            { kind_fname=Some kind_fname; arg_fname=None; }]
-              }, `nodoc]),
-      `nodoc;
-    td_flvconfigs = [];
-  }
+  variant_decl "person" [
+    variant_constructor "Anonymous" `no_param;
+    variant_constructor "With_id" (`tuple_like [cty_int]);
+    variant_constructor "Student" (`inline_record [
+      record_field "student_id" cty_int;
+      record_field "name" cty_string;
+    ]);
+    variant_constructor "Teacher" (`inline_record [
+      record_field "faculty_id" cty_int;
+      record_field "name" cty_string;
+      record_field "department" cty_string;
+    ])
+  ]
 
 let decl_with_docstr : type_decl =
-  { td_name = "person";
-    td_kind =
-      Variant_kind
-        [ Cstr_tuple { ct_name = "Anonymous";
-                        ct_args = [];
-                        ct_codec = `default_codec;
-                        ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some kind_fname; arg_fname=None; }]
-            }, `docstr "Anonymous constructor";
-          Cstr_tuple { ct_name = "With_id";
-                        ct_args = ["int"];
-                        ct_codec = `default_codec;
-                        ct_flvconfigs = [Flvconfig_flat_kind
-                                          { kind_fname=Some kind_fname; arg_fname=Some "arg"; }]
-            }, `docstr "With_id constructor";
-          Cstr_record {
-              cr_name = "Student";
-              cr_fields = [
-                  { rf_name = "student_id"; rf_type = "int"; rf_codec = `default_codec },
-                  `docstr "student_id field in Student constructor";
-                  { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
-                  `docstr "name field in Student constructor";
-                ];
-              cr_codec = `default_codec;
-              cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some kind_fname; arg_fname=None; }];
-            }, `docstr "Student constructor";
-          Cstr_record {
-              cr_name = "Teacher";
-              cr_fields = [
-                  { rf_name = "faculty_id"; rf_type = "int"; rf_codec = `default_codec },
-                  `docstr "faculty_id field in Teacher constructor";
-                  { rf_name = "name"; rf_type = "string"; rf_codec = `default_codec },
-                  `docstr "name field in Teacher constructor";
-                  { rf_name = "department"; rf_type = "string"; rf_codec = `default_codec },
-                  `docstr "dapartment field in Teacher constructor";
-                ];
-              cr_codec = `default_codec;
-              cr_flvconfigs = [Flvconfig_flat_kind { kind_fname=Some kind_fname; arg_fname=None; }]
-            }, `docstr "Teacher constructor"], `docstr "definition of person type";
-    td_flvconfigs = [];
-  }
+  variant_decl "person" [
+    variant_constructor "Anonymous" `no_param
+      ~doc:(`docstr "Anonymous constructor");
+
+    variant_constructor "With_id" (`tuple_like [cty_int])
+      ~doc:(`docstr "With_id constructor");
+
+    variant_constructor "Student" (`inline_record [
+      record_field "student_id" cty_int
+        ~doc:(`docstr "student_id field in Student constructor");
+      record_field "name" cty_string
+        ~doc:(`docstr "name field in Student constructor");
+    ]) ~doc:(`docstr "Student constructor");
+
+    variant_constructor "Teacher" (`inline_record [
+      record_field "faculty_id" cty_int
+        ~doc:(`docstr "faculty_id field in Teacher constructor");
+      record_field "name" cty_string
+        ~doc:(`docstr "name field in Teacher constructor");
+      record_field "department" cty_string
+        ~doc:(`docstr "dapartment field in Teacher constructor");
+    ]) ~doc:(`docstr "Teacher constructor")
+
+  ] ~doc:(`docstr "definition of person type")
 
 let fwrt : (unit, unit) fwrt_decl =
+  let parent = "person" in
+  let annot = () in
   "person", FwrtTypeEnv.(
     init
-    |> bind ~annot:() "person" []
-    |> bind ~parent:"person" ~annot:() ~kind_fname "Teacher"
-      [ item ~annot:() "faculty_id" ["int"];
-        item ~annot:() "name" ["string"];
-        item ~annot:() "department" ["string"]; ]
-    |> bind ~parent:"person" ~annot:() ~kind_fname "Student"
-      [ item ~annot:() "student_id" ["int"];
-        item ~annot:() "name" ["string"]; ]
-    |> bind ~parent:"person" ~annot:() ~kind_fname "With_id"
-      [ item ~annot:() "arg" ["int"]; ]
-    |> bind ~parent:"person" ~annot:() ~kind_fname "Anonymous" []
+    |> bind_object ~annot "person" []
+    |> bind_constructor ~parent ~annot "Anonymous"
+    |> bind_constructor ~parent ~annot "With_id" ~args:[cty_int]
+    |> bind_constructor ~parent ~annot "Student" ~fields:[
+      field ~annot "student_id" cty_int;
+      field ~annot "name" cty_string]
+    |> bind_constructor ~parent ~annot "Teacher" ~fields:[
+      field ~annot "faculty_id" cty_int;
+      field ~annot "name" cty_string;
+      field ~annot "department" cty_string]
   )
 
 let ts_ast : ts_ast option =
-  let kind_fname = "kind" in
+  let discriminator = "kind" in
   let arg_fname = "arg" in
   let var_v = "__bindoj_v" in
   let var_x = "__bindoj_x" in
@@ -125,12 +89,12 @@ let ts_ast : ts_ast option =
   let anonymous =
     `type_literal
       [ { tsps_modifiers = [];
-          tsps_name = kind_fname;
+          tsps_name = discriminator;
           tsps_type_desc = `literal_type (`string_literal "Anonymous"); } ] in
   let with_id =
     `type_literal
       [ { tsps_modifiers = [];
-          tsps_name = kind_fname;
+          tsps_name = discriminator;
           tsps_type_desc = `literal_type (`string_literal "With_id"); };
         { tsps_modifiers = [];
           tsps_name = arg_fname;
@@ -138,7 +102,7 @@ let ts_ast : ts_ast option =
   let student =
     `type_literal
       [ { tsps_modifiers = [];
-          tsps_name = kind_fname;
+          tsps_name = discriminator;
           tsps_type_desc = `literal_type (`string_literal "Student"); };
         { tsps_modifiers = [];
           tsps_name = "student_id";
@@ -149,7 +113,7 @@ let ts_ast : ts_ast option =
   let teacher =
     `type_literal
       [ { tsps_modifiers = [];
-          tsps_name = kind_fname;
+          tsps_name = discriminator;
           tsps_type_desc = `literal_type (`string_literal "Teacher"); };
         { tsps_modifiers = [];
           tsps_name = "faculty_id";
@@ -160,19 +124,24 @@ let ts_ast : ts_ast option =
         { tsps_modifiers = [];
           tsps_name = "department";
           tsps_type_desc = `type_reference "string"; } ] in
-  let people = [anonymous; with_id; student; teacher] in
+  let person = [
+    "With_id", with_id;
+    "Teacher", teacher;
+    "Student", student;
+    "Anonymous", anonymous;
+  ] in
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
           tsa_name = "person";
           tsa_type_parameters = [];
-          tsa_type_desc = `union people; };
+          tsa_type_desc = `union (List.map snd person); };
       `function_declaration
         { tsf_modifiers = [`export];
           tsf_name = "analyze_person";
           tsf_type_parameters = [ret];
           tsf_parameters =
-            Util.Ts_ast.(case_analyzer_parameters { kind_fname; var_x; var_v; var_fns; ret; } people);
+            Util.Ts_ast.(case_analyzer_parameters { discriminator; var_x; var_v; var_fns; ret; } person);
           tsf_type_desc =
             `func_type
               { tsft_parameters =
@@ -180,4 +149,6 @@ let ts_ast : ts_ast option =
                       tsp_type_desc = `type_reference "person"; } ];
                 tsft_type_desc = `type_reference ret; };
           tsf_body =
-            Util.Ts_ast.(case_analyzer_body "person" { kind_fname; var_x; var_v; var_fns; ret; } people); } ]
+            Util.Ts_ast.(case_analyzer_body "person" { discriminator; var_x; var_v; var_fns; ret; } person); } ]
+
+module Typescript_datatype = Bindoj_gen_ts.Typescript_datatype

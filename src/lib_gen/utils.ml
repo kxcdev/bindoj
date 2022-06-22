@@ -19,7 +19,7 @@ let locmk ?loc txt = { txt; loc = loc |? !Ast_helper.default_loc }
 let strloc ?loc x : label with_loc = locmk ?loc x
 let lidloc ?loc x = locmk ?loc (Longident.parse x)
 
-let typcons ?loc ?attrs x = Typ.constr ?loc ?attrs (lidloc ?loc x) []
+let typcons ?loc ?attrs ?(args=[]) x = Typ.constr ?loc ?attrs (lidloc ?loc x) args
 let pvar ?loc ?attrs s = Pat.var ?loc ?attrs (strloc s)
 let evar ?loc ?attrs s = Exp.ident ?loc ?attrs (lidloc s)
 
@@ -33,3 +33,7 @@ let show_attribute = [attr "deriving" (Exp.ident (lidloc "show"))]
 let warning_attribute str = [attr "warning" (Exp.constant (Const.string str))]
 
 let sprintf fmt = Format.asprintf fmt
+
+let escape_as_constructor_name (s: string) =
+  (* TODO #128: proper escaping *)
+  s

@@ -14,10 +14,10 @@ limitations under the License. *)
 
 include Bindoj_gen_test_gen_output.Ex04_gen
 
-type t = foo [@@deriving show]
+type t = [ `Foo0  | `Foo1 of int  | `Foo2 of (int * int) ] [@@deriving show]
 
-let encode_json = encode_foo_json
-let decode_json = decode_foo_json
+let to_json = foo_to_json
+let of_json = foo_of_json
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
 type sample = t Sample_value.t

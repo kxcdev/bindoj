@@ -12,15 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module Ex = Bindoj_test_common_typedesc_examples.Ex02
 open Bindoj_base.Type_desc
-open Bindoj_gen.Caml_datatype
-open Bindoj_gen.Json_codec
+open Bindoj_gen_foreign.Foreign_datatype
+open Bindoj_gen_ts.Typescript_datatype
 
-let name = "ex02"
-let gen () = Utils.gen_with_json_codec ~self_contained:true Ex.decl
-
-module Docstr = struct
-  let name = "ex02_docstr"
-  let gen () = Utils.gen_with_json_codec ~self_contained:true Ex.decl_with_docstr
+(** each example module should have this module type *)
+module type T = sig
+  val decl: type_decl
+  val decl_with_docstr: type_decl
+  val fwrt: (unit, unit) fwrt_decl
+  val ts_ast: ts_ast option
 end
+
+(** this should contain all the example modules. *)
+let all : (string * (module T)) list = [
+  "ex01", (module Ex01);
+  "ex02", (module Ex02);
+  "ex03", (module Ex03);
+  "ex04", (module Ex04);
+  "ex05", (module Ex05);
+  "ex06", (module Ex06);
+  "ex07", (module Ex07);
+]
