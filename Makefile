@@ -18,6 +18,7 @@ build:
 	dune build
 
 test:
+	(cd with_js && yarn clean)
 	dune runtest
 
 doc:
