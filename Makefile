@@ -18,7 +18,7 @@ build:
 	dune build
 
 test:
-	(cd with_js && yarn clean)
+	yarn --cwd with_js clean || echo "yarn clean failed... you probably does not have a complete setup yet"
 	dune runtest
 
 doc:
