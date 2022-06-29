@@ -63,6 +63,8 @@ type string_format = [
   | `ipv4 | `ipv6
   (* resource identifiers *)
   | `uri
+  (* OpenAPI extensions: https://spec.openapis.org/oas/v3.0.3.html#data-types *)
+  | `date | `byte | `binary | `password
 ]
 
 (** https://json-schema.org/understanding-json-schema/reference/string.html *)

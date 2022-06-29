@@ -134,10 +134,11 @@ module Builtin_codecs = struct
         | (_ : Kxclib.Json.jv) -> None
       ];
     }
-  let bytes = { (* TODO #129: encode/decode as base64 string? *)
-      encoder = [%expr fun (x : Bytes.t) -> (`str (Bytes.to_string x) : Kxclib.Json.jv)];
+  let bytes = {
+      encoder = [%expr fun (x : Bytes.t) -> (`str (Kxclib.Base64.encode x) : Kxclib.Json.jv)];
       decoder = [%expr function
-        | (`str x : Kxclib.Json.jv) -> Some (Bytes.of_string x)
+        | (`str x : Kxclib.Json.jv) ->
+          (try Some (Kxclib.Base64.decode x) with Invalid_argument _msg -> None)
         | _ -> None
       ];
     }
@@ -633,6 +634,8 @@ let gen_json_decoder :
 
 open Bindoj_openapi.V3
 
+let base64_regex = {|^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/][AQgw]==|[A-Za-z0-9+\/]{2}[AEIMQUYcgkosw048]=)?$|}
+
 let gen_openapi_schema : type_decl -> Json.jv =
   let schema = Schema_object.schema in
 
@@ -649,7 +652,7 @@ let gen_openapi_schema : type_decl -> Json.jv =
       | Prim `string -> Schema_object.string ?description ()
       | Prim `uchar -> Schema_object.string ~minLength:1 ~maxLength:1 ?description ()
       | Prim `byte -> Schema_object.integer ~minimum:0 ~maximum:255 ?description ()
-      | Prim `bytes -> Schema_object.string ?description () (* TODO #129: encode/decode as base64 string? *)
+      | Prim `bytes -> Schema_object.string ~format:`byte ~pattern:base64_regex ?description ()
       | Inhabitable -> Schema_object.null ?description ()
       | Ident id -> Schema_object.ref ("#" ^ id.id_name)
       | Option t ->

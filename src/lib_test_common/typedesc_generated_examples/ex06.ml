@@ -45,7 +45,7 @@ let sample_value01 : sample = {
     string = "foo";
     uchar = Uchar.of_char 'a';
     byte = 'b';
-    bytes = Bytes.of_string "bar";
+    bytes = Bytes.of_string "Hello, world!";
   };
   jv = `obj [
     "unit", `null;
@@ -55,7 +55,7 @@ let sample_value01 : sample = {
     "string", `str "foo";
     "uchar", `str (String.of_seq (List.to_seq ['a']));
     "byte", `num (float_of_int (int_of_char 'b'));
-    "bytes", `str (Bytes.to_string (Bytes.of_string "bar"));
+    "bytes", `str "SGVsbG8sIHdvcmxkIQ==";
   ]
 }
 

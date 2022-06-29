@@ -69,6 +69,38 @@ type generic_fields = {
   externalDocs: externalDocs option [@yojson.option];
 } [@@deriving yojson_of]
 
+(* https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats *)
+type string_format = [
+  (* dates and times *)
+  | `date_time | `time | `date | `duration
+  (* email addresses *)
+  | `email | `idn_email
+  (* host names *)
+  | `hostname | `idn_hostname
+  (* IP addresses *)
+  | `ipv4 | `ipv6
+  (* resource identifiers *)
+  | `uuid | `uri | `uri_reference | `iri | `iri_reference
+  (* URI template *)
+  | `uri_template
+  (* regex *)
+  | `regex
+  (* OpenAPI extensions: https://spec.openapis.org/oas/v3.1.0#data-types *)
+  | `password
+]
+let yojson_of_string_format (sf: string_format) =
+  let str =
+    match sf with
+    | `date_time -> "date_time" | `time -> "time" | `date -> "date" | `duration -> "duration"
+    | `email -> "email" | `idn_email -> "idn-email"
+    | `hostname -> "hostname" | `idn_hostname -> "idn-hostname"
+    | `ipv4 -> "ipv4" | `ipv6 -> "ipv6"
+    | `uuid -> "uuid" | `uri -> "uri" | `uri_reference -> "uri-reference" | `iri -> "iri" | `iri_reference -> "iri-reference"
+    | `uri_template -> "uri-template"
+    | `regex -> "regex"
+    | `password -> "password"
+  in `String str
+
 (* https://json-schema.org/understanding-json-schema/reference/string.html *)
 type string_fields = {
   minLength: int option [@yojson.option];
@@ -76,23 +108,6 @@ type string_fields = {
   pattern: string option [@yojson.option];
   format: string_format option [@yojson.option];
 } [@@deriving yojson_of]
-(* https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats *)
-and string_format = [
-  (* dates and times *)
-  | `date_time [@name "date-time"] | `time | `date | `duration
-  (* email addresses *)
-  | `email | `idn_email [@name "idn-email"]
-  (* host names *)
-  | `hostname | `idn_hostname [@name "idn-hostname"]
-  (* IP addresses *)
-  | `ipv4 | `ipv6
-  (* resource identifiers *)
-  | `uuid | `uri | `uri_reference [@name "uri-reference"] | `iri | `iri_reference [@name "iri-reference"]
-  (* URI template *)
-  | `uri_template [@name "uri-template"]
-  (* regex *)
-  | `regex
-] [@@deriving yojson_of]
 
 (* https://json-schema.org/understanding-json-schema/reference/numeric.html *)
 type 'a number_base = {

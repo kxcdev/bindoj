@@ -75,17 +75,10 @@ type generic_fields = {
   externalDocs: externalDocs option [@yojson.option];
 } [@@deriving yojson_of]
 
-(* https://json-schema.org/understanding-json-schema/reference/string.html *)
-type string_fields = {
-  minLength: int option [@yojson.option];
-  maxLength: int option [@yojson.option];
-  pattern: string option [@yojson.option];
-  format: string_format option [@yojson.option];
-} [@@deriving yojson_of]
 (* https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats *)
-and string_format = [
+type string_format = [
   (* dates and times *)
-  | `date_time [@name "date-time"]
+  | `date_time
   (* email addresses *)
   | `email
   (* host names *)
@@ -94,7 +87,31 @@ and string_format = [
   | `ipv4 | `ipv6
   (* resource identifiers *)
   | `uri
-] [@@deriving yojson_of]
+  (* OpenAPI extensions: https://spec.openapis.org/oas/v3.0.3.html#data-types *)
+  | `date | `byte | `binary | `password
+]
+let yojson_of_string_format (sf: string_format) =
+  let str =
+    match sf with
+    | `date_time -> "date_time"
+    | `email -> "email"
+    | `hostname -> "hostname"
+    | `ipv4 -> "ipv4"
+    | `ipv6 -> "ipv6"
+    | `uri -> "uri"
+    | `date -> "date"
+    | `byte -> "byte"
+    | `binary -> "binary"
+    | `password -> "password"
+  in `String str
+
+(* https://json-schema.org/understanding-json-schema/reference/string.html *)
+type string_fields = {
+  minLength: int option [@yojson.option];
+  maxLength: int option [@yojson.option];
+  pattern: string option [@yojson.option];
+  format: string_format option [@yojson.option];
+} [@@deriving yojson_of]
 
 (* https://json-schema.org/understanding-json-schema/reference/numeric.html *)
 type 'a number_base = {

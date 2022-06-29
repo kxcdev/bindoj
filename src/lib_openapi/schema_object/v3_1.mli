@@ -82,6 +82,8 @@ type string_format = [
   | `uri_template
   (* regex *)
   | `regex
+  (* OpenAPI extensions: https://spec.openapis.org/oas/v3.1.0#data-types *)
+  | `password
 ]
 
 (** https://json-schema.org/understanding-json-schema/reference/string.html *)
