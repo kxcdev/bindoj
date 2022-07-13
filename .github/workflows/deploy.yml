@@ -58,7 +58,8 @@ jobs:
           opam exec -- dune build @doc
           make doc
 
-      - uses: amondnet/vercel-action@v20.0.1
+      # https://github.com/amondnet/vercel-action/issues/170 が解決したら最新のタグに更新
+      - uses: amondnet/vercel-action@1d26fa06fdab094080b48d33eea2031cee54724d
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
