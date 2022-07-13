@@ -12,7 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-module StringMap = Bindoj_typedesc.Utils.StringMap
+module StringMap = struct
+  include Map.Make(String)
 
-module Type_desc = Bindoj_typedesc.Type_desc
-module Typed_type_desc = Bindoj_typedesc.Typed_type_desc
+  let of_list xs = List.fold_left (fun m (k,v) -> add k v m) empty xs
+  let to_list t = to_seq t |> List.of_seq
+end

@@ -1,0 +1,5 @@
+(library
+ (name bindoj_codec)
+ (public_name bindoj.codec)
+ (libraries kxclib bindoj_base ppx_deriving.show)
+ (flags (:standard -open Kxclib)))

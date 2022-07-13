@@ -12,7 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-open Bindoj_typedesc.Type_desc
+open Bindoj_base
+open Bindoj_base.Type_desc
 
 let modules =
   let open Bindoj_test_common_typedesc_examples.All in
@@ -24,17 +25,19 @@ let modules =
 let mapping =
   modules |> List.map (fun (s, m) -> sprintf "%s_gen.ml" s, m)
 
-let gen_with_json_codec ?self_contained decl =
-  let open Ppxlib in
-  let open Ast_helper in
+let gen_with_json_codec ?self_contained ?codec decl =
   let open Bindoj_gen.Caml_datatype in
   let open Bindoj_gen.Json_codec in
-  let recursive = if is_recursive decl then Recursive else Nonrecursive in
-  Astlib.Pprintast.structure Format.std_formatter [
-    Str.type_ Recursive [type_declaration_of_type_decl decl];
-    Str.value recursive [gen_json_encoder ?self_contained decl];
-    Str.value recursive [gen_json_decoder ?self_contained decl];
-  ]
+  let structure =
+    gen_structure
+      ?codec
+      ~generators:[
+        gen_json_encoder ?self_contained;
+        gen_json_decoder ?self_contained;
+      ]
+      decl
+  in
+  Astlib.Pprintast.structure Format.std_formatter structure
 
 let () =
   match Array.to_list Sys.argv |> List.tl with

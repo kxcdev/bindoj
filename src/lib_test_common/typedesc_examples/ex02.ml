@@ -150,5 +150,3 @@ let ts_ast : ts_ast option =
                 tsft_type_desc = `type_reference ret; };
           tsf_body =
             Util.Ts_ast.(case_analyzer_body "person" { discriminator; var_x; var_v; var_fns; ret; } person); } ]
-
-module Typescript_datatype = Bindoj_gen_ts.Typescript_datatype

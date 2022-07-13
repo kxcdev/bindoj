@@ -121,7 +121,8 @@ module Coretype : sig
 
   (** returns the name of the constructor e.g. [`int -> "int", `string -> "string", ... ]*)
   val string_of_prim : prim -> string
-
+  val string_of_desc : desc -> string
+  val to_string : t -> string
   val is_option : t -> bool
 end
 type coretype = Coretype.t

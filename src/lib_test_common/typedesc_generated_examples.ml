@@ -14,9 +14,12 @@ limitations under the License. *)
 
 include Bindoj_test_common_typedesc_generated_examples
 
+open Bindoj_base
+
 (** each example module should have this module type *)
 module type T = sig
   type t
+  include Typed_type_desc.T with type t := t
   val pp : ppf -> t -> unit
   val t : t Alcotest.testable
   val sample_values : t Sample_value.t list

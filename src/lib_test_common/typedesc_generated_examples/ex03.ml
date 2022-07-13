@@ -18,6 +18,8 @@ type t = int_list =
   | IntNil
   | IntCons of int * t
   [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex03.decl
+let reflect = int_list_reflect
 
 let to_json = int_list_to_json
 let of_json = int_list_of_json

@@ -12,7 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. *)
 
-open Bindoj_typedesc.Type_desc
+open Bindoj_base
+open Bindoj_base.Type_desc
 
 [@@@alert "-equal_configs"]
 
@@ -54,8 +55,6 @@ and 'ann fwrt_field_desc = {
 } [@@deriving show,eq]
 
 module FwrtTypeEnv = struct
-  module StringMap = Map.Make (String)
-
   type ('ann0, 'ann1) t =  ('ann0, 'ann1) fwrt_desc StringMap.t
 
   let init : ('ann0, 'ann1) t = StringMap.empty

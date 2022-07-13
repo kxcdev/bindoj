@@ -21,6 +21,8 @@ type t = complex_types = {
   nested: (int option * int list * (int * int));
   map: (string * int) list;
 } [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex05.decl
+let reflect = complex_types_reflect
 
 let to_json = complex_types_to_json
 let of_json = complex_types_of_json

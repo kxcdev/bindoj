@@ -14,45 +14,7 @@ limitations under the License. *)
 
 open Bindoj_typedesc.Type_desc
 
-type json_variant_style = [
-  | `flatten
-(*| `nested *)
-(*| `tuple *)
-]
-
-type ('pos, 'kind) config +=
-  | Config_json_name : string -> ('pos, [`json_name]) config
-  | Config_json_variant_style :
-    json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
-  | Config_json_variant_discriminator :
-    string -> ([`type_decl], [`json_variant_discriminator]) config
-  | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
-  | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
-
-module Json_config : sig
-  val name : string -> ([< pos], [`json_name]) config
-  val get_name : string -> [< pos] configs -> string
-
-  (**
-    The default field name for the argument of a variant constructor.
-    Use [Json_config.name] for [variant_constructor .. (`tuple_like ..)] to override.
-  *)
-  val default_name_of_variant_arg : string
-
-  val default_variant_style : json_variant_style
-  val variant_style : json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
-  val get_variant_style : [`variant_constructor] configs -> json_variant_style
-
-  val default_variant_discriminator : string
-  val variant_discriminator : string -> ([`type_decl], [`json_variant_discriminator]) config
-  val get_variant_discriminator : [`type_decl] configs -> string
-
-  val custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
-  val get_custom_encoder : [`coretype] configs -> string option
-
-  val custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
-  val get_custom_decoder : [`coretype] configs -> string option
-end
+include module type of Bindoj_codec.Json.Config
 
 type builtin_codec = {
   encoder: Ppxlib.expression;
@@ -84,10 +46,12 @@ val gen_builtin_decoders :
   ?attrs:Ppxlib.attributes -> type_decl -> Ppxlib.value_binding list
 
 val gen_json_encoder :
-  ?codec:Coretype.codec ->
-  ?self_contained:bool -> type_decl -> Ppxlib.value_binding
+  ?self_contained:bool
+  -> ?codec:Coretype.codec
+  -> type_decl -> Ppxlib.value_binding
 val gen_json_decoder :
-  ?codec:Coretype.codec ->
-  ?self_contained:bool -> type_decl -> Ppxlib.value_binding
+  ?self_contained:bool
+  -> ?codec:Coretype.codec
+  -> type_decl -> Ppxlib.value_binding
 
 val gen_openapi_schema : type_decl -> Json.jv

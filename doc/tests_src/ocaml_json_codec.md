@@ -149,6 +149,7 @@ let student_to_json =
      `obj
        [("admission_year", (int_to_json x0));
        ("full_name", (string_to_json x1))] : student -> Kxclib.Json.jv)
+  [@@warning "-39"]
 - : unit = ()
 # Bindoj.(
    let student_decoder = Caml_gen.Json_codec.gen_json_decoder student_desc in
@@ -161,7 +162,7 @@ let student_of_json =
          ((fun x0 ->
              ((List.assoc_opt "full_name" param) >>= string_of_json) >>=
                (fun x1 -> Some { admission_year = x0; full_name = x1 })))
-   | _ -> None : Kxclib.Json.jv -> student option)
+   | _ -> None : Kxclib.Json.jv -> student option)[@@warning "-39"]
 - : unit = ()
 # Bindoj.(
    let person_encoder = Caml_gen.Json_codec.gen_json_encoder person_desc in
@@ -182,6 +183,7 @@ let person_to_json =
          ("faculty_id", (int_to_json x0));
          ("name", (string_to_json x1));
          ("department", (string_to_json x2))] : person -> Kxclib.Json.jv)
+  [@@warning "-39"]
 - : unit = ()
 # Bindoj.(
    let person_decoder = Caml_gen.Json_codec.gen_json_decoder person_desc in
@@ -217,6 +219,6 @@ let person_of_json =
                                    name = x1;
                                    department = x2
                                  })))))
-        | _ -> None) : Kxclib.Json.jv -> person option)
+        | _ -> None) : Kxclib.Json.jv -> person option)[@@warning "-39"]
 - : unit = ()
 ```

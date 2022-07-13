@@ -27,6 +27,8 @@ type t = various_prim_types = {
   byte:   char;
   bytes:  Bytes.t;
 } [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex06.decl
+let reflect = various_prim_types_reflect
 
 let to_json = various_prim_types_to_json
 let of_json = various_prim_types_of_json

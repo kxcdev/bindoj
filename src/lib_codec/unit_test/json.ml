@@ -14,6 +14,7 @@ limitations under the License. *)
 
 open Alcotest
 open Kxclib
+open Bindoj_base
 open Bindoj_test_common.Typedesc_generated_examples
 
 module Testables : sig
@@ -32,7 +33,12 @@ end
 
 let create_test_cases (name: string) (module Ex : T) =
   let open Ex in
+  let open Bindoj_codec in
   let msg msg = sprintf "%s %s" name msg in
+  let env = StringMap.empty in
+  let typed_decl = Typed_type_desc.Typed.mk Ex.decl Ex.reflect in
+  let to_json = Json.to_json ~env typed_decl in
+  let of_json = Json.of_json ~env typed_decl in
 
   (* encoding *)
   let check_encoder (value: t Sample_value.t) =
@@ -60,12 +66,12 @@ let create_test_cases (name: string) (module Ex : T) =
 
   let forall check = fun () -> sample_values |> List.iter check in
   name, [
-    test_case "[compiled] encoder works" `Quick (forall check_encoder);
-    test_case "[compiled] decoder works" `Quick (forall check_decoder);
-    test_case "[compiled] works in both direction" `Quick (forall check_combined);
+    test_case "[interpreted] encoder works" `Quick (forall check_encoder);
+    test_case "[interpreted] decoder works" `Quick (forall check_decoder);
+    test_case "[interpreted] works in both direction" `Quick (forall check_combined);
   ]
 
 let () =
   all
   |> List.map (fun (name, m) -> create_test_cases name m)
-  |> Alcotest.run "lib_gen.json_codec"
+  |> Alcotest.run "lib_codec.json"

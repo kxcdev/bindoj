@@ -17,6 +17,7 @@ module Import = Bindoj_withjs_import
 module Ts = Bindoj_withjs_import.Ts2ocaml
 module Faker = Bindoj_withjs_import.Json_schema_faker
 
+open Bindoj_base
 open Bindoj_test_common.Typedesc_generated_examples
 
 let notNone (_: 'a Alcotest.testable) : 'a option Alcotest.testable =
@@ -33,7 +34,7 @@ let create_test_cases name (module Ex : T) =
   let json = Js.require (sprintf "../compile-tests/%s_examples.json" name) in
   let schema = Js.require (sprintf "../compile-tests/%s_schema.json" name) in
 
-  let test_decode_json () =
+  let test_decode_json of_json () =
     let json_samples =
       json
       |> Js.to_array
@@ -43,13 +44,13 @@ let create_test_cases name (module Ex : T) =
         |> Js.Json.stringify
         |> Yojson.Safe.from_string
         |> Json.of_yojson
-        |> Ex.of_json)
+        |> of_json)
     in
     let values = Ex.sample_values |> List.map Sample_value.orig in
     check (list Ex.t) "same value(s)" values json_samples
   in
 
-  let test_schema_generate () =
+  let test_schema_generate of_json () =
     let module F = Faker.JSONSchemaFaker in
     let open Bindoj_withjs_import.Jsonschema in
 
@@ -82,7 +83,7 @@ let create_test_cases name (module Ex : T) =
         in
         let json_str = Yojson.Safe.pretty_to_string json in
         let result =
-          json |> Json.of_yojson |> Ex.of_json
+          json |> Json.of_yojson |> of_json
         in
         check (notNone Ex.t)
           (sprintf "random example #%d can be parsed: %s" i json_str)
@@ -91,9 +92,19 @@ let create_test_cases name (module Ex : T) =
     done
   in
 
+  let interpreted =
+    let open Typed_type_desc in
+    let env = StringMap.empty in
+    let typed_decl = Typed.mk Ex.decl Ex.reflect in
+    Bindoj_codec.Json.of_json ~env typed_decl
+  in
+  let compiled = Ex.of_json in
+
   name, [
-    test_case "can decode example JSONs" `Quick test_decode_json;
-    test_case "can decode randomly generated JSONs" `Quick test_schema_generate;
+    test_case "[interpreted] can decode example JSONs" `Quick (test_decode_json interpreted);
+    test_case "[interpreted] can decode random JSONs" `Quick (test_schema_generate interpreted);
+    test_case "[compiled] can decode example JSONs" `Quick (test_decode_json compiled);
+    test_case "[compiled] can decode random JSONs" `Quick (test_schema_generate compiled);
   ]
 
 let () =

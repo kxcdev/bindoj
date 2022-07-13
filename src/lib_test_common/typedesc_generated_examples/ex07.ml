@@ -18,6 +18,8 @@ type t = customized_union =
   | Case1 of int
   | Case2 of { x: int; y: int }
 [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex07.decl
+let reflect = customized_union_reflect
 
 let to_json = customized_union_to_json
 let of_json = customized_union_of_json

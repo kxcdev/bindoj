@@ -16,56 +16,10 @@ open Ppxlib
 open Ast_builder.Default
 open Ast_helper
 open Utils
-open Bindoj_typedesc.Type_desc
+open Bindoj_base
+open Bindoj_base.Type_desc
 
-type json_variant_style = [
-  | `flatten
-(*| `nested *)
-(*| `tuple *)
-]
-
-type ('pos, 'kind) config +=
-  | Config_json_name : string -> ('pos, [`json_name]) config
-  | Config_json_variant_style :
-    json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
-  | Config_json_variant_discriminator :
-    string -> ([`type_decl], [`json_variant_discriminator]) config
-  | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
-  | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
-
-module Json_config = struct
-  let name name = Config_json_name name
-  let get_name default =
-    Configs.find_or_default ~default (function
-      | Config_json_name s -> Some s
-      | _ -> None
-    )
-  let default_name_of_variant_arg = "arg"
-
-  let default_variant_style : json_variant_style = `flatten
-  let variant_style style = Config_json_variant_style style
-  let get_variant_style =
-    Configs.find_or_default ~default:default_variant_style (function
-      | Config_json_variant_style s -> Some s
-      | _ -> None
-    )
-
-  let default_variant_discriminator = "kind"
-  let variant_discriminator discriminator = Config_json_variant_discriminator discriminator
-  let get_variant_discriminator =
-    Configs.find_or_default ~default:default_variant_discriminator (function
-      | Config_json_variant_discriminator s -> Some s
-      | _ -> None
-    )
-
-  let custom_encoder encoder_name = Config_json_custom_encoder encoder_name
-  let get_custom_encoder =
-    Configs.find (function | Config_json_custom_encoder s -> Some s | _ -> None)
-
-  let custom_decoder decoder_name = Config_json_custom_decoder decoder_name
-  let get_custom_decoder =
-    Configs.find (function | Config_json_custom_decoder s -> Some s | _ -> None)
-end
+include Bindoj_codec.Json.Config
 
 let get_encoder_name type_name = function
   | `default -> type_name^"_to_json"
@@ -212,8 +166,6 @@ module Builtin_codecs = struct
 end
 
 let builtin_codecs = Builtin_codecs.all
-
-module StringMap = Map.Make (String)
 
 let builtin_codecs_map =
   builtin_codecs |> List.to_seq |> StringMap.of_seq
@@ -363,11 +315,11 @@ let gen_builtin_decoders : ?attrs:attrs -> type_decl -> value_binding list =
   gen_builtin_codecs ~get_name:get_decoder_name ~get_codec:(fun x -> x.decoder)
 
 let gen_json_encoder :
-      ?codec:Coretype.codec
-      -> ?self_contained:bool
+      ?self_contained:bool
+      -> ?codec:Coretype.codec
       -> type_decl
       -> value_binding =
-  fun ?(codec=`default) ?(self_contained=false) td ->
+  fun ?(self_contained=false) ?(codec=`default) td ->
   let { td_name; td_kind=kind; td_configs; _ } = td in
   let loc = Location.none in
   let self_name =
@@ -383,7 +335,7 @@ let gen_json_encoder :
   let wrap_self_contained e =
     if self_contained then
       pexp_let ~loc Nonrecursive
-        (gen_builtin_encoders td ~attrs:(warning_attribute "-26"))
+        (gen_builtin_encoders td)
         e
     else e
   in
@@ -460,31 +412,35 @@ let gen_json_encoder :
   match kind with
   | Alias_decl _cty -> failwith "TODO" (* TODO #127: implement Alias_decl *)
   | Record_decl fields ->
-     let params = record_params fields in
-     let body = record_body fields in
-     value_binding ~loc
-       ~pat:self_pname
-       ~expr:(pexp_constraint ~loc
-                (wrap_self_contained [%expr fun [%p params] -> [%e body]])
-                [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
+    let params = record_params fields in
+    let body = record_body fields in
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      self_pname
+      (pexp_constraint ~loc
+        (wrap_self_contained [%expr fun [%p params] -> [%e body]])
+        [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
   | Variant_decl ctors ->
-     let params = variant_params ctors in
-     let body = variant_body ctors in
-     let cases = List.map2 (fun p b ->
-                     case ~lhs:p ~rhs:b ~guard:None)
-                   params body in
-     value_binding ~loc
-       ~pat:self_pname
-       ~expr:(pexp_constraint ~loc
-                (wrap_self_contained (pexp_function ~loc cases))
-                [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
+    let params = variant_params ctors in
+    let body = variant_body ctors in
+    let cases =
+      List.map2
+        (fun p b -> case ~lhs:p ~rhs:b ~guard:None)
+        params body
+    in
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      self_pname
+      (pexp_constraint ~loc
+        (wrap_self_contained (pexp_function ~loc cases))
+        [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
 
 let gen_json_decoder :
-      ?codec:Coretype.codec
-      -> ?self_contained:bool
+      ?self_contained:bool
+      -> ?codec:Coretype.codec
       -> type_decl
       -> value_binding =
-  fun ?(codec=`default) ?(self_contained=false) td ->
+  fun ?(self_contained=false) ?(codec=`default) td ->
   let { td_name; td_kind=kind; td_configs; _ } = td in
   let loc = Location.none in
   let self_name =
@@ -502,7 +458,7 @@ let gen_json_decoder :
   let wrap_self_contained e =
     if self_contained then
       pexp_let ~loc Nonrecursive
-        (gen_builtin_decoders td ~attrs:(warning_attribute "-26"))
+        (gen_builtin_decoders td)
         e
     else e
   in
@@ -606,30 +562,32 @@ let gen_json_decoder :
   | Record_decl fields ->
     let bindings = record_bindings fields in
     let body = record_body fields in
-    value_binding ~loc
-      ~pat:self_pname
-      ~expr:(pexp_constraint ~loc
-              (wrap_self_contained
-                  [%expr function
-                      | `obj [%p param_p] -> [%e bind_options bindings [%expr Some [%e body]]]
-                      | _ -> None])
-              [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      self_pname
+      (pexp_constraint ~loc
+        (wrap_self_contained
+            [%expr function
+                | `obj [%p param_p] -> [%e bind_options bindings [%expr Some [%e body]]]
+                | _ -> None])
+        [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   | Variant_decl ctors ->
     let params = variant_params ctors in
     let body = variant_body ctors in
     let discriminator = Json_config.get_variant_discriminator td_configs in
     let cases =
-      List.map2 (fun p b ->
-          case ~lhs:p ~rhs:b ~guard:None)
+      List.map2
+        (fun p b -> case ~lhs:p ~rhs:b ~guard:None)
         params body
       @ [(case ~lhs:(ppat_any ~loc) ~rhs:[%expr None] ~guard:None)] in
-    value_binding ~loc
-      ~pat:self_pname
-      ~expr:(pexp_constraint ~loc
-              [%expr fun __bindoj_orig ->
-                  Kxclib.Jv.pump_field [%e estring ~loc discriminator ] __bindoj_orig
-                  |> [%e (wrap_self_contained (pexp_function ~loc cases))]]
-              [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      self_pname
+      (pexp_constraint ~loc
+        [%expr fun __bindoj_orig ->
+            Kxclib.Jv.pump_field [%e estring ~loc discriminator ] __bindoj_orig
+            |> [%e (wrap_self_contained (pexp_function ~loc cases))]]
+        [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   end
 
 open Bindoj_openapi.V3

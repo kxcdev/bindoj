@@ -5,6 +5,7 @@
   js_of_ocaml
   bindoj_test_common
   bindoj_base
+  bindoj_codec
   alcotest
   yojson
   kxclib

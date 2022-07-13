@@ -179,6 +179,8 @@ module Coretype = struct
     | `uchar -> "uchar"
     | `byte -> "byte"
     | `bytes -> "bytes"
+  let string_of_desc : desc -> string = show_desc
+  let to_string : t -> string = show
 end
 
 type coretype = Coretype.t [@@deriving show,eq]

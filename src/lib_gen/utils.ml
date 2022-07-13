@@ -23,6 +23,19 @@ let typcons ?loc ?attrs ?(args=[]) x = Typ.constr ?loc ?attrs (lidloc ?loc x) ar
 let pvar ?loc ?attrs s = Pat.var ?loc ?attrs (strloc s)
 let evar ?loc ?attrs s = Exp.ident ?loc ?attrs (lidloc s)
 
+let elist ?(loc=Location.none) =
+  let rec go acc = function
+    | [] -> acc
+    | x :: xs -> go [%expr [%e x] :: [%e acc]] xs
+  in
+  fun xs -> List.rev xs |> go [%expr []]
+let plist ?(loc=Location.none) =
+  let rec go acc = function
+    | [] -> acc
+    | x :: xs -> go [%pat? [%p x] :: [%p acc]] xs
+  in
+  fun xs -> List.rev xs |> go [%pat? []]
+
 let attr name value =
   Attr.mk (locmk name) (PStr [Str.eval value])
 let doc_attribute = function

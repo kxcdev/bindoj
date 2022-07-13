@@ -15,6 +15,8 @@ limitations under the License. *)
 include Bindoj_gen_test_gen_output.Ex01_gen
 
 type t = student = { admission_year: int; name: string } [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex01.decl
+let reflect = student_reflect
 
 let to_json = student_to_json
 let of_json = student_of_json

@@ -20,6 +20,8 @@ type t = person =
   | Student of { student_id: int; name: string }
   | Teacher of { faculty_id: int; name: string; department: string }
   [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex02.decl
+let reflect = person_reflect
 
 let to_json = person_to_json
 let of_json = person_of_json

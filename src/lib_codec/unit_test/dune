@@ -1,6 +1,6 @@
 (tests
  (names
-  json_codec)
+  json)
  (libraries alcotest bindoj_test_common bindoj_codec bindoj_base kxclib yojson jsonm)
  (flags (:standard -open Kxclib))
  (preprocess (pps ppx_deriving.show)))

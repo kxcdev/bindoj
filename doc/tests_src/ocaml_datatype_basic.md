@@ -158,7 +158,20 @@ module Datatype :
   sig
     val type_declaration_of_type_decl :
       ?type_name:string ->
-      ?show:bool -> type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
+      ?attrs:Ppxlib.attribute list ->
+      type_decl -> Bindoj.Versioned.V0.Caml.type_declaration
+    val gen_reflect :
+      ?codec:Coretype.codec ->
+      type_decl -> Bindoj.Versioned.V0.Caml.value_binding
+    val gen_structure :
+      ?type_name:string ->
+      ?attrs:Ppxlib.attribute list ->
+      ?codec:Coretype.codec ->
+      ?generators:(?codec:Coretype.codec ->
+                   type_decl -> Bindoj.Versioned.V0.Caml.value_binding)
+                  list ->
+      ?type_decl:[ `expr of Ppxlib.expression | `path of string ] ->
+      type_decl -> Ppxlib.structure
   end
 # #show_module Bindoj.Caml;;
 module Caml = Bindoj.Versioned.V0.Caml
