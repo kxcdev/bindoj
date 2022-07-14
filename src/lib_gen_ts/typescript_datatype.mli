@@ -119,5 +119,17 @@ open Bindoj_gen_foreign.Foreign_datatype
 val ts_ast_of_fwrt_decl : (ts_modifier list, [`read_only] list) fwrt_decl -> ts_ast
 val annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`read_only] list) fwrt_decl
 
+module Rope : sig
+  type t
+  val to_string : t -> string
+end
+
+module Internals : sig
+  val rope_of_ts_ast : ts_ast -> Rope.t
+  val rope_of_ts_statement : ts_statement -> Rope.t
+  val rope_of_ts_type_desc : ts_type_desc -> Rope.t
+  val rope_of_ts_expression : ts_expression -> Rope.t
+end
+
 val gen_ts_type : ?export:bool -> type_decl -> string
 val gen_ts_case_analyzer : ?export:bool -> ?name:string -> type_decl -> string

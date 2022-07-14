@@ -373,20 +373,18 @@ and rope_of_ts_statement : ts_statement -> Rope.t =
   | `return_statement expr ->
     "return " @+ rope_of_ts_expression expr
   | `if_statement (test, then_stat, else_stat) ->
-    "if (" @+
-    rope_of_ts_expression test
-    +@ ") {\n" ++
-    rope_of_ts_statement then_stat
-    +@ "\n} else " ++
+    "if " @+
+    (rope_of_ts_expression test |> between "(" ")") ++
+    (rope_of_ts_statement then_stat |> between "{\n" "\n} else ") ++
     (match else_stat with
      | `if_statement _ ->
        rope_of_ts_statement else_stat
      | _ ->
-       "{\n" @+ rope_of_ts_statement else_stat +@ "\n}")
+       rope_of_ts_statement else_stat |> between "{\n" "\n}")
   | `throw_statement expr ->
     "throw " @+ rope_of_ts_expression expr
   | `block body ->
-    between "{\n" "\n}" (rope_of_ts_ast body)
+    rope_of_ts_ast body |> between "{\n" "\n}"
 
 and rope_of_ts_type_alias_decl : ts_type_alias_decl -> Rope.t =
   fun { tsa_modifiers; tsa_name; tsa_type_parameters; tsa_type_desc; } ->
@@ -413,9 +411,12 @@ and rope_of_ts_func_decl : ts_func_decl -> Rope.t =
       rope "" in
   let name = rope tsf_name in
   let type_parameters =
-    tsf_type_parameters |&> rope
-    |> comma_separated_list
-    |> between "<" ">" in
+    match tsf_type_parameters with
+    | [] -> rope ""
+    | _ ->
+      tsf_type_parameters |&> rope
+      |> comma_separated_list
+      |> between "<" ">" in
   let parameters =
     (tsf_parameters |&> fun { tsp_name; tsp_type_desc; } ->
         tsp_name @+ " :\n" @+ rope_of_ts_type_desc tsp_type_desc)
@@ -453,15 +454,13 @@ and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
     |> comma_separated_list
     |> between "[" "]"
   | `union type_descs ->
-    type_descs |&> rope_of_ts_type_desc
+    type_descs |&> rope_of_ts_type_desc_with_paren
     |> concat_str "\n| "
-    |> between "(" ")"
   | `intersection type_descs ->
-    type_descs |&> rope_of_ts_type_desc
+    type_descs |&> rope_of_ts_type_desc_with_paren
     |> concat_str "\n& "
-    |> between "(" ")"
   | `array t ->
-    rope_of_ts_type_desc t +@ "[]"
+    rope_of_ts_type_desc_with_paren t +@ "[]"
   | `record (k, v) -> (* Record<K, V> *)
     "Record<" @+ rope_of_ts_type_desc k +@ "," ++ rope_of_ts_type_desc v +@ ">"
   | `func_type { tsft_parameters;
@@ -474,6 +473,13 @@ and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
     let type_desc = rope_of_ts_type_desc tsft_type_desc in
     parameters +@ " => " ++ type_desc
 
+and rope_of_ts_type_desc_with_paren : ts_type_desc -> Rope.t = fun type_desc ->
+  let open RopeUtil in
+  match type_desc with
+  | `type_reference _ | `literal_type _ | `type_literal _
+  | `tuple _ | `array _ | `record _ -> rope_of_ts_type_desc type_desc
+  | _ -> rope_of_ts_type_desc type_desc |> between "(" ")"
+
 and rope_of_ts_expression : ts_expression -> Rope.t =
   let open RopeUtil in
   function
@@ -482,19 +488,19 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
       | `string_literal s -> between "\"" "\"" (rope s)
     end
   | `call_expression { tsce_expression; tsce_arguments; } ->
-    rope_of_ts_expression tsce_expression
-    +@ "(" ++
-    (tsce_arguments |&> rope_of_ts_expression |> comma_separated_list)
-    +@ ")"
+    rope_of_ts_expression_with_paren tsce_expression ++
+    (tsce_arguments |&> rope_of_ts_expression
+     |> comma_separated_list
+     |> between "(" ")")
   | `element_access_expression { tsea_expression; tsea_argument; } ->
-    rope_of_ts_expression tsea_expression
+    rope_of_ts_expression_with_paren tsea_expression
     ++ between "[" "]" (rope_of_ts_expression tsea_argument)
   | `property_access_expression { tspa_expression; tspa_name; } ->
-    rope_of_ts_expression tspa_expression +@ "." +@ tspa_name
+    rope_of_ts_expression_with_paren tspa_expression +@ "." +@ tspa_name
   | `binary_expression { tsbe_left; tsbe_operator_token; tsbe_right; } ->
-    rope_of_ts_expression tsbe_left
+    rope_of_ts_expression_with_paren tsbe_left
     +@ " " +@ tsbe_operator_token +@ " " ++
-    rope_of_ts_expression tsbe_right
+    rope_of_ts_expression_with_paren tsbe_right
   | `arrow_function { tsaf_parameters; tsaf_body; } ->
     (tsaf_parameters |&> fun { tsp_name; tsp_type_desc; } ->
         tsp_name @+ " : " @+ rope_of_ts_type_desc tsp_type_desc)
@@ -503,9 +509,22 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
     |> fun param -> param +@ " => " ++ between "{\n" "\n}" (rope_of_ts_ast tsaf_body)
   | `new_expression { tsne_expression; tsne_arguments; } ->
     "new " @+
-    rope_of_ts_expression tsne_expression ++
+    rope_of_ts_expression_with_paren tsne_expression ++
     between "(" ")" (tsne_arguments |&> rope_of_ts_expression |> comma_separated_list)
 
+and rope_of_ts_expression_with_paren : ts_expression -> Rope.t = fun expr ->
+  let open RopeUtil in
+  match expr with
+  | `identifier _ -> rope_of_ts_expression expr
+  | _ -> rope_of_ts_expression expr |> between "(" ")"
+
+
+module Internals = struct
+  let rope_of_ts_ast = rope_of_ts_ast
+  let rope_of_ts_statement = rope_of_ts_statement
+  let rope_of_ts_type_desc = rope_of_ts_type_desc
+  let rope_of_ts_expression = rope_of_ts_expression
+end
 
 let gen_ts_type : ?export:bool -> type_decl -> string =
   fun ?(export=true) type_decl ->
