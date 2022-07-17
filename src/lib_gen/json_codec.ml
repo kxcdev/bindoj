@@ -334,9 +334,11 @@ let gen_json_encoder :
   let pvari i = pvar ~loc (vari i) in
   let wrap_self_contained e =
     if self_contained then
-      pexp_let ~loc Nonrecursive
-        (gen_builtin_encoders td)
-        e
+      match gen_builtin_encoders td with
+      | [] -> e
+      | es ->
+         pexp_let ~loc Nonrecursive
+           es e
     else e
   in
   let record_params : record_field list -> pattern = fun fields ->
@@ -457,9 +459,11 @@ let gen_json_decoder :
   let param_p = pvar ~loc "param" in
   let wrap_self_contained e =
     if self_contained then
-      pexp_let ~loc Nonrecursive
-        (gen_builtin_decoders td)
-        e
+      match gen_builtin_decoders td with
+      | [] -> e
+      | es ->
+         pexp_let ~loc Nonrecursive
+           es e
     else e
   in
   let bind_options : (pattern * expression) list -> expression -> expression = fun bindings body ->
