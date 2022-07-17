@@ -165,6 +165,7 @@ module Datatype :
       type_decl -> Bindoj.Versioned.V0.Caml.value_binding
     val gen_structure :
       ?type_name:string ->
+      ?refl:bool ->
       ?attrs:Ppxlib.attribute list ->
       ?codec:Coretype.codec ->
       ?generators:(?codec:Coretype.codec ->

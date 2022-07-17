@@ -412,12 +412,13 @@ and gen_reflect_variant ~self_name ?(poly=false) (ctors: variant_constructor lis
 
 let gen_structure :
   ?type_name:string
+  -> ?refl:bool
   -> ?attrs:attribute list
   -> ?codec:Coretype.codec
   -> ?generators:(?codec:Coretype.codec -> type_decl -> value_binding) list
   -> ?type_decl:[`path of string | `expr of expression]
   -> type_decl -> structure =
-  fun ?type_name ?attrs ?(codec=`default) ?(generators=[]) ?type_decl td ->
+  fun ?type_name ?(refl=true) ?attrs ?(codec=`default) ?(generators=[]) ?type_decl td ->
     let decl =
       Str.type_ Recursive [type_declaration_of_type_decl ?type_name ?attrs td]
     in
@@ -427,6 +428,7 @@ let gen_structure :
         Str.value Recursive [gen ?codec:(Some codec) td]
       )
     in
+    let mayappend cond x xs = if cond then xs@[x] else xs in
     let type_decl =
       match type_decl with
       | None -> []
@@ -448,11 +450,12 @@ let gen_structure :
         in
         let mk name expr = Str.value Nonrecursive [Vb.mk (pvar name) expr] in
         let loc = Location.none in
-        [
-          mk (get_name "decl") decl_expr;
-          mk (get_name "typed_decl") [%expr
-            Bindoj_base.Typed_type_desc.Typed.mk [%e decl_expr] [%e reflect]
-          ]
-        ]
+        [ mk (get_name "decl") decl_expr ]
+        |> mayappend refl
+             (mk (get_name "typed_decl")
+                [%expr
+                    Bindoj_base.Typed_type_desc.Typed.mk [%e decl_expr] [%e reflect]])
     in
-    [decl; Str.value Recursive [reflect]] @ generators @ type_decl
+    ([decl]
+     |> mayappend refl (Str.value Recursive [reflect]))
+    @ generators @ type_decl

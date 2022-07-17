@@ -28,6 +28,10 @@ val gen_reflect :
 (**
   generate the whole structure containing the results of [type_declaration_of_type_decl] and [gen_reflect].
 
+  @param refl if [true], a field [type_name_reflect] will be generated.
+              if additionally [?type_decl] is given, then a field [typed_decl]
+              will also be generated.
+
   @param generators additional generators e.g. [Json_codec.gen_json_encoder].
 
   @param type_decl the expression of / the path to the [type_decl] value.
@@ -36,6 +40,7 @@ val gen_reflect :
 *)
 val gen_structure :
   ?type_name:string
+  -> ?refl:bool
   -> ?attrs:Ppxlib.attribute list
   -> ?codec:Coretype.codec
   -> ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.value_binding) list
