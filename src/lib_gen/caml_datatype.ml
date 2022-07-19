@@ -163,8 +163,7 @@ and get_refl (id: Coretype.ident) : expression =
     | `default -> Longident.parse (id.id_name ^ "_reflect")
     | `in_module m -> Longident.(Ldot (Lident m, "reflect"))
   in
-  let loc = Location.none in
-  [%expr Refl.mk [%e Exp.ident (locmk name)]]
+  Exp.ident (locmk name)
 
 and coretype_of_expr ~self_name (ct: coretype) =
   let loc = Location.none in
