@@ -25,6 +25,7 @@ type ts_ast = ts_statement list [@@deriving show, eq]
 and ts_statement = [
   | `type_alias_declaration of ts_type_alias_decl
   | `function_declaration of ts_func_decl
+  | `module_declaration of ts_mod_decl
   | `return_statement of ts_expression
   | `if_statement of ts_expression * ts_statement * ts_statement
   | `throw_statement of ts_expression
@@ -47,6 +48,12 @@ and ts_func_decl = {
   tsf_body : ts_ast;
 }
 
+and ts_mod_decl = {
+  tsm_modifiers : [ `export ] list;
+  tsm_name : string;
+  tsm_body : ts_ast;
+}
+
 and ts_type_desc = [
   | `type_reference of string (* includes primitive types *)
   | `type_literal of ts_property_signature ignore_order_list
@@ -60,7 +67,7 @@ and ts_type_desc = [
 ]
 
 and ts_property_signature = {
-  tsps_modifiers : [ `read_only ] ignore_order_list;
+  tsps_modifiers : [ `readonly ] ignore_order_list;
   tsps_name : string;
   tsps_type_desc : ts_type_desc;
 }
@@ -68,6 +75,7 @@ and ts_property_signature = {
 and ts_literal_type = [
   | `numeric_literal of float
   | `string_literal of string
+  | `template_literal of string
 ]
 
 and ts_parameter = {
@@ -89,10 +97,13 @@ and ts_expression = [
   | `binary_expression of ts_binary_expression
   | `arrow_function of ts_arrow_function
   | `new_expression of ts_new_expression
+  | `await_expression of ts_expression
 ]
 
 and ts_literal_expression = [
+  | `numeric_literal of float
   | `string_literal of string
+  | `template_literal of string
 ]
 
 and ts_call_expression = {
@@ -128,18 +139,20 @@ and ts_new_expression = {
 
 and ts_modifier = [
   | `export
+  | `async
+  | `readonly
 ]
 
 open Bindoj_typedesc.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 
-let annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`read_only] list) fwrt_decl =
-  fun export read_only (name, env) ->
+let annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`readonly] list) fwrt_decl =
+  fun export readonly (name, env) ->
   (name,
    FwrtTypeEnv.annotate
      name
      (if export then ([`export], []) else ([], []))
-     (if read_only then ([`read_only], []) else ([], []))
+     (if readonly then ([`readonly], []) else ([], []))
      env)
 
 let type_of_prim : Coretype.prim -> ts_type_desc = function
@@ -166,7 +179,7 @@ let type_of_coretype : self_type_name:string -> coretype -> ts_type_desc =
   in go ct_desc
 
 let rec ts_ast_of_fwrt_decl :
-  (ts_modifier list, [`read_only] list) fwrt_decl -> ts_ast =
+  (ts_modifier list, [`readonly] list) fwrt_decl -> ts_ast =
   fun fwrt_decl ->
   let self_type_name = fst fwrt_decl in
   match FwrtTypeEnv.lookup (fst fwrt_decl) (snd fwrt_decl) with
@@ -177,7 +190,7 @@ let rec ts_ast_of_fwrt_decl :
     [ `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl) ]
 
 and ts_type_alias_decl_of_fwrt_decl :
-  self_type_name:string -> (ts_modifier list, [`read_only] list) fwrt_decl -> ts_type_alias_decl =
+  self_type_name:string -> (ts_modifier list, [`readonly] list) fwrt_decl -> ts_type_alias_decl =
   fun ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _ } = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
@@ -241,7 +254,7 @@ and ts_type_alias_decl_of_fwrt_decl :
     tsa_type_desc = desc }
 
 and ts_func_decl_of_fwrt_decl :
-  self_type_name:string -> (ts_modifier list, [`read_only] list) fwrt_decl -> ts_func_decl =
+  self_type_name:string -> (ts_modifier list, [`readonly] list) fwrt_decl -> ts_func_decl =
   fun ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _; } = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
@@ -370,6 +383,8 @@ and rope_of_ts_statement : ts_statement -> Rope.t =
     rope_of_ts_type_alias_decl type_alias_decl
   | `function_declaration func_decl ->
     rope_of_ts_func_decl func_decl
+  | `module_declaration ts_mod_decl ->
+    rope_of_ts_mod_decl ts_mod_decl
   | `return_statement expr ->
     "return " @+ rope_of_ts_expression expr
   | `if_statement (test, then_stat, else_stat) ->
@@ -389,26 +404,18 @@ and rope_of_ts_statement : ts_statement -> Rope.t =
 and rope_of_ts_type_alias_decl : ts_type_alias_decl -> Rope.t =
   fun { tsa_modifiers; tsa_name; tsa_type_parameters; tsa_type_desc; } ->
   let open RopeUtil in
-  let export =
-    if List.exists (( = ) `export) tsa_modifiers then
-      rope "export "
-    else
-      rope "" in
+  let modifiers = rope_of_modifiers (tsa_modifiers :> ts_modifier list) in
   let name = rope tsa_name in
   let type_parameters =
     tsa_type_parameters |&> rope
     |> comma_separated_list in
   let type_desc = rope_of_ts_type_desc tsa_type_desc in
-  export +@ "type " ++ name +@ " = " ++ type_parameters ++ type_desc
+  modifiers +@ "type " ++ name +@ " = " ++ type_parameters ++ type_desc
 
 and rope_of_ts_func_decl : ts_func_decl -> Rope.t =
   fun { tsf_modifiers; tsf_name; tsf_type_parameters; tsf_parameters; tsf_type_desc; tsf_body; } ->
   let open RopeUtil in
-  let export =
-    if List.exists (( = ) `export) tsf_modifiers then
-      rope "export "
-    else
-      rope "" in
+  let modifiers = rope_of_modifiers (tsf_modifiers :> ts_modifier list) in
   let name = rope tsf_name in
   let type_parameters =
     match tsf_type_parameters with
@@ -426,7 +433,21 @@ and rope_of_ts_func_decl : ts_func_decl -> Rope.t =
   let body =
     rope_of_ts_ast tsf_body
     |> between "{\n" "\n}" in
-  export +@ "function " ++ name ++ type_parameters ++ parameters ++ (" : " @+ type_desc +@ "\n") ++ body
+  modifiers +@ "function " ++ name ++ type_parameters ++ parameters ++ (" : " @+ type_desc +@ "\n") ++ body
+
+and rope_of_ts_mod_decl : ts_mod_decl -> Rope.t =
+  fun { tsm_modifiers; tsm_name; tsm_body; } ->
+  let open RopeUtil in
+  let modifiers = rope_of_modifiers (tsm_modifiers :> ts_modifier list) in
+  let name = rope tsm_name in
+  let body = rope_of_ts_ast tsm_body |> between " {\n" "\n}" in
+  modifiers +@ "namespace " ++ name ++ body
+
+and rope_of_modifiers : ts_modifier list -> Rope.t = fun modifiers ->
+  let open RopeUtil in
+  (if List.mem `export modifiers then rope "export " else rope "") ++
+  (if List.mem `async modifiers then rope "async " else rope "") ++
+  (if List.mem `readonly modifiers then rope "readonly " else rope "")
 
 and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
   let open RopeUtil in
@@ -435,20 +456,22 @@ and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
     rope s
   | `type_literal members ->
     (members |&> fun { tsps_modifiers; tsps_name; tsps_type_desc; } ->
-        let read_only =
-          if List.exists (( = ) `read_only) tsps_modifiers then
+        let readonly =
+          if List.exists (( = ) `readonly) tsps_modifiers then
             rope "readonly "
           else
             rope "" in
         let name = rope tsps_name in
         let type_desc = rope_of_ts_type_desc tsps_type_desc in
-        read_only ++ (name +@ " : ") ++ type_desc)
+        readonly ++ (name +@ " : ") ++ type_desc)
     |> comma_separated_list
     |> between "{ " " }"
   | `literal_type (`numeric_literal f) ->
     rope (string_of_float f)
   | `literal_type (`string_literal s) ->
     between "\"" "\"" (rope s)
+  | `literal_type (`template_literal s) ->
+    between "`" "`" (rope s)
   | `tuple type_descs ->
     type_descs |&> rope_of_ts_type_desc
     |> comma_separated_list
@@ -485,7 +508,9 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
   function
   | `identifier id -> rope id
   | `literal_expression lit -> begin match lit with
+      | `numeric_literal f -> rope (string_of_float f)
       | `string_literal s -> between "\"" "\"" (rope s)
+      | `template_literal s -> between "`" "`" (rope s)
     end
   | `call_expression { tsce_expression; tsce_arguments; } ->
     rope_of_ts_expression_with_paren tsce_expression ++
@@ -511,6 +536,8 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
     "new " @+
     rope_of_ts_expression_with_paren tsne_expression ++
     between "(" ")" (tsne_arguments |&> rope_of_ts_expression |> comma_separated_list)
+  | `await_expression expr ->
+    "await " @+ rope_of_ts_expression expr
 
 and rope_of_ts_expression_with_paren : ts_expression -> Rope.t = fun expr ->
   let open RopeUtil in

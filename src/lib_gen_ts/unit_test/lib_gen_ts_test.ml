@@ -103,6 +103,7 @@ module Code = struct
     let type_A = "A" in
     let type_B = "B" in
     let type_C = "C" in
+    let mod_A = "A" in
 
     let expression_cases = [
       test_case'
@@ -113,8 +114,20 @@ module Code = struct
          |> Rope.to_string);
       test_case'
         "rope_of_ts_expression"
+        "42."
+        (`literal_expression (`numeric_literal 42.)
+         |> rope_of_ts_expression
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_expression"
         "\"strlit\""
         (`literal_expression (`string_literal "strlit")
+         |> rope_of_ts_expression
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_expression"
+        "`${number}-${number}-${number}`"
+        (`literal_expression (`template_literal "${number}-${number}-${number}")
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
@@ -218,6 +231,12 @@ module Code = struct
 
     let type_desc_cases = [
       test_case'
+        "rope_of_ts_expression"
+        ("await " ^ var_x)
+        (`await_expression (`identifier var_x)
+         |> rope_of_ts_expression
+         |> Rope.to_string);
+      test_case'
         "rope_of_ts_type_desc"
         number
         (`type_reference number
@@ -246,6 +265,12 @@ module Code = struct
         "rope_of_ts_type_desc"
         "\"foo\""
         (`literal_type (`string_literal "foo")
+         |> rope_of_ts_type_desc
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_type_desc"
+        "`${number}-${number}-${number}`"
+        (`literal_type (`template_literal "${number}-${number}-${number}")
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
@@ -382,6 +407,42 @@ module Code = struct
                     tsbe_operator_token = plus;
                     tsbe_right = `identifier var_y;
                   })
+            ];
+          }
+         |> rope_of_ts_statement
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_statement"
+        ("async function " ^ var_f ^ "<" ^ type_A ^ "> (" ^ var_x ^ ": " ^ type_A ^ "): " ^ type_A ^
+         " { " ^ "return await " ^ var_x ^ " }")
+        (`function_declaration {
+            tsf_modifiers = [`async];
+            tsf_name = var_f;
+            tsf_type_parameters = [type_A];
+            tsf_parameters = [
+              { tsp_name = var_x;
+                tsp_type_desc = `type_reference type_A; }
+            ];
+            tsf_type_desc = `type_reference type_A;
+            tsf_body = [
+              `return_statement (`await_expression (`identifier var_x))
+            ]
+          }
+         |> rope_of_ts_statement
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_statment"
+        ("namespace " ^ mod_A ^ "{ " ^ "type " ^ type_A ^ " = " ^ type_B ^ " }")
+        (`module_declaration {
+            tsm_modifiers = [];
+            tsm_name = mod_A;
+            tsm_body = [
+              `type_alias_declaration {
+                tsa_modifiers = [];
+                tsa_name = type_A;
+                tsa_type_parameters = [];
+                tsa_type_desc = `type_reference type_B;
+              }
             ];
           }
          |> rope_of_ts_statement
