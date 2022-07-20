@@ -608,6 +608,16 @@ let gen_json_decoder :
         [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   end
 
+let gen_json_codec ?self_contained ?codec td =
+  let rec_flag = match td.td_kind with
+    | Alias_decl _ -> Nonrecursive
+    | Record_decl _ | Variant_decl _ -> Recursive
+  in
+  [Str.value rec_flag [
+       gen_json_encoder ?self_contained ?codec td;
+       gen_json_decoder ?self_contained ?codec td;
+  ]]
+
 open Bindoj_openapi.V3
 
 let base64_regex = {|^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/][AQgw]==|[A-Za-z0-9+\/]{2}[AEIMQUYcgkosw048]=)?$|}

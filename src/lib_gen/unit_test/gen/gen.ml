@@ -34,8 +34,7 @@ let gen_with_json_codec ?self_contained ?codec decl =
     gen_structure
       ?codec
       ~generators:[
-        gen_json_encoder ?self_contained;
-        gen_json_decoder ?self_contained;
+        gen_json_codec ?self_contained;
       ]
       decl
   in

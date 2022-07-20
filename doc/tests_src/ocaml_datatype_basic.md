@@ -173,8 +173,7 @@ module Datatype :
       ?refl:bool ->
       ?attrs:Ppxlib.attribute list ->
       ?codec:Coretype.codec ->
-      ?generators:(?codec:Coretype.codec ->
-                   type_decl -> Bindoj.Versioned.V0.Caml.value_binding)
+      ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.structure)
                   list ->
       ?type_decl:[ `expr of Ppxlib.expression | `path of string ] ->
       type_decl -> Ppxlib.structure

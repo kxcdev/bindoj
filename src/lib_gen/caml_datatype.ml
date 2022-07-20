@@ -423,7 +423,7 @@ let gen_structure :
   -> ?refl:bool
   -> ?attrs:attribute list
   -> ?codec:Coretype.codec
-  -> ?generators:(?codec:Coretype.codec -> type_decl -> value_binding) list
+  -> ?generators:(?codec:Coretype.codec -> type_decl -> structure) list
   -> ?type_decl:[`path of string | `expr of expression]
   -> type_decl -> structure =
   fun ?type_name ?(refl=true) ?attrs ?(codec=`default) ?(generators=[]) ?type_decl td ->
@@ -436,12 +436,7 @@ let gen_structure :
     in
     let reflect = gen_reflect ~codec td in
     let generators =
-      generators |> List.map (fun gen ->
-        (* TODO #177 - make generators return structure and prevent
-                       recursive json_codec for Alias_decl  *)
-        Str.value Recursive [gen ?codec:(Some codec) td]
-      )
-    in
+      generators |> List.concat_map (fun gen -> gen ?codec:(Some codec) td) in
     let mayappend cond x xs = if cond then xs@[x] else xs in
     let type_decl =
       match type_decl with

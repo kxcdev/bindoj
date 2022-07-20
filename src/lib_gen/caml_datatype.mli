@@ -45,6 +45,6 @@ val gen_structure :
   -> ?refl:bool
   -> ?attrs:Ppxlib.attribute list
   -> ?codec:Coretype.codec
-  -> ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.value_binding) list
+  -> ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.structure) list
   -> ?type_decl:[`path of string | `expr of Ppxlib.expression]
   -> type_decl -> Ppxlib.structure

@@ -56,4 +56,9 @@ val gen_json_decoder :
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.value_binding
 
+val gen_json_codec :
+  ?self_contained:bool
+  -> ?codec:Coretype.codec
+  -> type_decl -> Ppxlib.structure
+
 val gen_openapi_schema : type_decl -> Json.jv
