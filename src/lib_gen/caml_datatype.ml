@@ -427,12 +427,18 @@ let gen_structure :
   -> ?type_decl:[`path of string | `expr of expression]
   -> type_decl -> structure =
   fun ?type_name ?(refl=true) ?attrs ?(codec=`default) ?(generators=[]) ?type_decl td ->
+    let rec_flag = match td.td_kind with
+      | Alias_decl _ -> Nonrecursive
+      | Record_decl _ | Variant_decl _ -> Recursive
+    in
     let decl =
-      Str.type_ Recursive [type_declaration_of_type_decl ?type_name ?attrs td]
+      Str.type_ rec_flag [type_declaration_of_type_decl ?type_name ?attrs td]
     in
     let reflect = gen_reflect ~codec td in
     let generators =
       generators |> List.map (fun gen ->
+        (* TODO #177 - make generators return structure and prevent
+                       recursive json_codec for Alias_decl  *)
         Str.value Recursive [gen ?codec:(Some codec) td]
       )
     in
@@ -465,5 +471,5 @@ let gen_structure :
                     Bindoj_base.Typed_type_desc.Typed.mk [%e decl_expr] [%e reflect]])
     in
     ([decl]
-     |> mayappend refl (Str.value Recursive [reflect]))
+     |> mayappend refl (Str.value rec_flag [reflect]))
     @ generators @ type_decl
