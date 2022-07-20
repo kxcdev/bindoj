@@ -414,7 +414,12 @@ let gen_json_encoder :
       end
   in
   match kind with
-  | Alias_decl _cty -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+  | Alias_decl cty ->
+    Vb.mk
+      self_pname
+      (pexp_constraint ~loc
+         (wrap_self_contained (encoder_of_coretype self_ename cty))
+         [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
   | Record_decl fields ->
     let params = record_params fields in
     let body = record_body fields in
@@ -564,7 +569,12 @@ let gen_json_decoder :
         end
   in
   begin match kind with
-  | Alias_decl _cty -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+  | Alias_decl cty ->
+    Vb.mk
+      self_pname
+      (pexp_constraint ~loc
+         (wrap_self_contained (decoder_of_coretype self_ename cty))
+         [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
   | Record_decl fields ->
     let bindings = record_bindings fields in
     let body = record_body fields in
@@ -689,6 +699,7 @@ let gen_openapi_schema : type_decl -> Json.jv =
           ?description:(docopt doc)
           ~id
           (ctors |> List.map ctor_to_t)
-      | Alias_decl _ -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+      | Alias_decl cty ->
+        convert_coretype ~self_id ?description:(docopt doc) cty
     in
     Schema_object.to_json so

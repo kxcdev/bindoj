@@ -38,7 +38,7 @@ let rec type_declaration_of_type_decl :
 and type_kind_of_type_decl_kind : self_name:string -> type_decl -> type_kind =
   fun ~self_name td ->
   match td.td_kind with
-  | Alias_decl _cty -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+  | Alias_decl _ -> Ptype_abstract
   | Record_decl fields ->
     Ptype_record (fields |> label_declarations_of_record_fields ~self_name)
   | Variant_decl ctors ->
@@ -50,7 +50,7 @@ and type_kind_of_type_decl_kind : self_name:string -> type_decl -> type_kind =
 and type_manifest_of_type_decl_kind : self_name:string -> type_decl -> core_type option =
   fun ~self_name td ->
   match td.td_kind with
-  | Alias_decl _cty -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+  | Alias_decl cty -> Some (type_of_coretype ~self_name cty)
   | Record_decl _ -> None
   | Variant_decl ctors ->
     match Caml_config.get_variant_type td.td_configs with
@@ -141,7 +141,7 @@ let rec gen_reflect ?(codec=(`default : Coretype.codec)) td : value_binding =
   in
   let body =
     match td.td_kind with
-    | Alias_decl _ -> failwith "TODO" (* TODO #127: implement Alias_decl *)
+    | Alias_decl cty -> gen_reflect_alias ~self_name cty
     | Record_decl fields -> gen_reflect_record ~self_name fields
     | Variant_decl ctors ->
       let vty = Caml_config.get_variant_type td.td_configs in
@@ -249,6 +249,13 @@ and coretype_to_expr ~self_name (ct: coretype) =
     | Ident i -> [%expr Expr.of_refl [%e get_refl i]]
   in
   go ct.ct_desc
+
+and gen_reflect_alias ~self_name (ct: coretype) : expression =
+  let loc = Location.none in
+  [%expr Refl.Alias {
+    get = [%e coretype_to_expr ~self_name ct];
+    mk = [%e coretype_of_expr ~self_name ct]
+  }]
 
 and gen_reflect_record ~self_name (fields: record_field list) : expression =
   let (get_pat, get_expr), mk = gen_reflect_record_impl  ~self_name fields in
