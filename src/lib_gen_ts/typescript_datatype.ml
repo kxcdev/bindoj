@@ -155,7 +155,7 @@ let type_of_coretype : self_type_name:string -> coretype -> ts_type_desc =
     let open Coretype in
     function
     | Prim p -> type_of_prim p
-    | Inhabitable -> `type_reference "never"
+    | Uninhabitable -> `type_reference "never"
     | Ident s -> `type_reference s.id_name
     | Option t -> `union [go t; `type_reference "null"; `type_reference "undefined"]
     | List t -> `array (go t)
@@ -545,4 +545,3 @@ let gen_ts_case_analyzer : ?export:bool -> ?name:string -> type_decl -> string =
     | Some tsf_name -> { ts_func_decl with tsf_name } in
   let rope = rope_of_ts_func_decl ts_func_decl in
   Rope.to_string rope
-

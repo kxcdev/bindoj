@@ -121,7 +121,7 @@ module Builtin_codecs = struct
         | _ -> None
       ];
     }
-  let inhabitable = {
+  let uninhabitable = {
       encoder = [%expr fun () -> (`null : Kxclib.Json.jv)];
       decoder = [%expr function `null -> Some () | _ -> None];
     }
@@ -160,7 +160,7 @@ module Builtin_codecs = struct
       "bytes", bytes;
       "option", option;
       "list", list;
-      "inhabitable", inhabitable;
+      "uninhabitable", uninhabitable;
       "map", map;
     ]
 end
@@ -181,7 +181,7 @@ let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case
     in
     let rec go = function
       | Prim p -> evar_name (Coretype.string_of_prim p)
-      | Inhabitable -> evar_name "inhabitable"
+      | Uninhabitable -> evar_name "uninhabitable"
       | Ident i -> evar_name ~codec:i.id_codec i.id_name
       | Option t -> [%expr [%e evar_name "option"] [%e go t]] (* option_of_json t_of_json *)
       | List t -> [%expr [%e evar_name "list"] [%e go t]] (* list_of_json t_of_json *)
@@ -198,7 +198,7 @@ let collect_builtin_codecs (td: type_decl) =
       let add name = state |> StringMap.add name (builtin_codecs_map |> StringMap.find name) in
       function
       | Prim p -> add (Coretype.string_of_prim p)
-      | Inhabitable -> add "inhabitable"
+      | Uninhabitable -> add "uninhabitable"
       | Option _ -> add "option"
       | List _ -> add "list"
       | Map _ -> add "map"
@@ -615,7 +615,7 @@ let gen_openapi_schema : type_decl -> Json.jv =
       | Prim `uchar -> Schema_object.string ~minLength:1 ~maxLength:1 ?description ()
       | Prim `byte -> Schema_object.integer ~minimum:0 ~maximum:255 ?description ()
       | Prim `bytes -> Schema_object.string ~format:`byte ~pattern:base64_regex ?description ()
-      | Inhabitable -> Schema_object.null ?description ()
+      | Uninhabitable -> Schema_object.null ?description ()
       | Ident id -> Schema_object.ref ("#" ^ id.id_name)
       | Option t ->
         Schema_object.oneOf ?description [go t; Schema_object.null ()]

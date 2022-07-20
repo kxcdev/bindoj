@@ -87,7 +87,7 @@ module Coretype = struct
 
   type desc =
     | Prim of prim (** primitive types *)
-    | Inhabitable (** an inhabitable type; [Kxclib.null] in ocaml *)
+    | Uninhabitable (** an uninhabitable type; [Kxclib.null] in ocaml *)
     | Ident of ident (** user-defined types *)
     | Option of desc (** [t option] in ocaml *)
     | Tuple of desc list (** invariant: list len >= 2; [t1*t2*..] in ocaml *)
@@ -123,7 +123,7 @@ module Coretype = struct
   let list t = List t
   let map k v = Map (k, v)
   let string_enum cases = StringEnum cases
-  let inhabitable = Inhabitable
+  let uninhabitable = Uninhabitable
   let self = Self
 
   type t = {
@@ -141,7 +141,7 @@ module Coretype = struct
       | List desc -> fold' f state desc
       | Map (_, v_desc) -> fold' f state v_desc
       | Tuple descs -> List.fold_left (fold' f) state descs
-      | Prim _ | Inhabitable | Ident _ | StringEnum _ | Self -> state
+      | Prim _ | Uninhabitable | Ident _ | StringEnum _ | Self -> state
       end
 
   let fold f state desc = fold' (fun state x -> `continue (f state x)) state desc
@@ -152,7 +152,7 @@ module Coretype = struct
     | List desc -> List (map_ident f desc)
     | Map (k_desc, v_desc) -> Map (k_desc, map_ident f v_desc)
     | Tuple descs -> Tuple (List.map (map_ident f) descs)
-    | (Prim _ | Inhabitable | Self | StringEnum _) as x -> x
+    | (Prim _ | Uninhabitable | Self | StringEnum _) as x -> x
 
   let mk ?(configs=Configs.([])) desc = { ct_desc = desc; ct_configs=configs }
   let mk_impl ?configs ~f = f (fun ct_desc -> mk ?configs ct_desc)
@@ -164,7 +164,7 @@ module Coretype = struct
   let mk_list = mk_impl ~f:(fun mk t -> mk (list t))
   let mk_map = mk_impl ~f:(fun mk k v -> mk (map k v))
   let mk_string_enum = mk_impl ~f:(fun mk cs -> mk (string_enum cs))
-  let mk_inhabitable = mk_impl ~f:(fun mk () -> mk inhabitable)
+  let mk_uninhabitable = mk_impl ~f:(fun mk () -> mk uninhabitable)
   let mk_self = mk_impl ~f:(fun mk () -> mk self)
 
   let is_option { ct_desc; _ } =

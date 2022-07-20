@@ -66,7 +66,7 @@ module Coretype : sig
 
   type desc =
     | Prim of prim (** primitive types *)
-    | Inhabitable (** an inhabitable type; [Kxclib.null] in ocaml *)
+    | Uninhabitable (** an uninhabitable type; [Kxclib.null] in ocaml *)
     | Ident of ident (** user-defined types *)
     | Option of desc (** [t option] in ocaml *)
     | Tuple of desc list (** invariant: list len >= 2; [t1*t2*..] in ocaml *)
@@ -90,7 +90,7 @@ module Coretype : sig
   val desc_of_map_key : map_key -> desc
 
   val prim : prim -> desc
-  val inhabitable : desc
+  val uninhabitable : desc
   val ident : ?codec:codec -> string -> desc
   val option : desc -> desc
   val tuple : desc list -> desc
@@ -116,7 +116,7 @@ module Coretype : sig
   val mk_tuple : ?configs:[`coretype] configs -> desc list -> t
   val mk_map : ?configs:[`coretype] configs -> map_key -> desc -> t
   val mk_string_enum : ?configs:[`coretype] configs -> string list -> t
-  val mk_inhabitable : ?configs:[`coretype] configs -> unit -> t
+  val mk_uninhabitable : ?configs:[`coretype] configs -> unit -> t
   val mk_self : ?configs:[`coretype] configs -> unit -> t
 
   (** returns the name of the constructor e.g. [`int -> "int", `string -> "string", ... ]*)

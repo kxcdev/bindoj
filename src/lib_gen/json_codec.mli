@@ -33,7 +33,7 @@ module Builtin_codecs : sig
   val bytes : builtin_codec
   val option : builtin_codec
   val list : builtin_codec
-  val inhabitable : builtin_codec
+  val uninhabitable : builtin_codec
   val map : builtin_codec
   val all : (string * builtin_codec) list
 end

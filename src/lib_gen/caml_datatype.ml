@@ -110,7 +110,7 @@ and type_of_coretype : self_name:string -> coretype -> core_type =
   in
   let rec go = function
     | Prim p -> type_of_prim p
-    | Inhabitable -> typcons "unit"
+    | Uninhabitable -> typcons "unit"
     | Ident s -> typcons s.id_name
     | Option t -> typcons "option" ~args:[go t]
     | List t -> typcons "list" ~args:[go t]
@@ -170,7 +170,7 @@ and coretype_of_expr ~self_name (ct: coretype) =
   let open MonadOps(Option) in
   let rec go =
     function
-    | Coretype.Inhabitable
+    | Coretype.Uninhabitable
     | Prim `unit   -> [%expr Expr.to_unit]
     | Prim `bool   -> [%expr Expr.to_bool]
     | Prim `int    -> [%expr Expr.to_int]
@@ -217,7 +217,7 @@ and coretype_to_expr ~self_name (ct: coretype) =
   let loc = Location.none in
   let rec go =
     function
-    | Coretype.Inhabitable
+    | Coretype.Uninhabitable
     | Prim `unit   -> [%expr Expr.of_unit]
     | Prim `bool   -> [%expr Expr.of_bool]
     | Prim `int    -> [%expr Expr.of_int]

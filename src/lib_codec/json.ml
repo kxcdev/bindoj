@@ -95,7 +95,7 @@ let rec of_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
         else None
       | Prim `bytes,  `str s ->
         try_opt (fun () -> Expr.Bytes (Kxclib.Base64.decode s) |> some)
-      | Inhabitable, `null -> Expr.Unit |> some
+      | Uninhabitable, `null -> Expr.Unit |> some
       | Ident i, _ ->
         begin match StringMap.find_opt i.id_name env with
         | Some boxed ->
@@ -187,7 +187,7 @@ let rec to_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
       | Prim `uchar,  Expr.Uchar c -> `str (String.of_list [Uchar.to_char c])
       | Prim `byte,   Expr.Byte c -> `num (float_of_int (int_of_char c))
       | Prim `bytes,  Expr.Bytes bs -> `str (Kxclib.Base64.encode bs)
-      | Inhabitable, Expr.Unit -> `null
+      | Uninhabitable, Expr.Unit -> `null
       | Ident i, Expr.Refl (_, x) ->
         begin match StringMap.find_opt i.id_name env with
         | Some boxed -> to_json ~env (Typed.unbox boxed) (Obj.magic x)
