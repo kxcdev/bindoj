@@ -37,6 +37,20 @@ module Ast = struct
 end
 
 module Code = struct
+  module CharStream : sig
+    type t
+    val peek : t -> char option
+    val junk : t -> unit
+    val of_string : string -> t
+  end = struct
+    type t = { mutable count : int; len : int; data : string; }
+    let peek stream =
+      if stream.count < stream.len then Some (String.get stream.data stream.count) else None
+    let junk stream =
+      if stream.count < stream.len then stream.count <- stream.count + 1 else ()
+    let of_string s = { count = 0; len = (String.length s); data = s; }
+  end
+
   let tokenize : string -> string list = fun code ->
     let whitespace : char list =
       [' '; '\n'; '\t'] in
@@ -47,16 +61,16 @@ module Code = struct
       List.mem c whitespace in
     let is_delimiter : char -> bool = fun c ->
       List.mem c delimiters in
-    let rec aux : char list -> string list -> char Stream.t -> string list = fun looking acc src ->
+    let rec aux : char list -> string list -> CharStream.t -> string list = fun looking acc src ->
       let string_of_chars chars =
         let buf = Buffer.create 16 in
         List.iter (Buffer.add_char buf) (List.rev chars);
         Buffer.contents buf in
-      match Stream.peek src with
+      match CharStream.peek src with
       | None ->
         List.rev_append acc [string_of_chars (List.rev looking)]
       | Some head ->
-        Stream.junk src;
+        CharStream.junk src;
         if is_whitespace head then
           if looking = [] then
             aux [] acc src
@@ -69,7 +83,7 @@ module Code = struct
             aux [] (String.make 1 head :: string_of_chars looking :: acc) src
         else
           aux (head :: looking) acc src in
-    aux [] [] (Stream.of_string code)
+    aux [] [] (CharStream.of_string code)
 
   let testable_code =
     let pp : string list Fmt.t = fun ppf strs ->
@@ -105,6 +119,7 @@ module Code = struct
     let type_A = "A" in
     let type_B = "B" in
     let type_C = "C" in
+    let mod_A = "A" in
 
     let expression_cases = [
       test_case'
@@ -115,8 +130,20 @@ module Code = struct
          |> Rope.to_string);
       test_case'
         "rope_of_ts_expression"
+        "42."
+        (`literal_expression (`numeric_literal 42.)
+         |> rope_of_ts_expression
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_expression"
         "\"strlit\""
         (`literal_expression (`string_literal "strlit")
+         |> rope_of_ts_expression
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_expression"
+        "`${number}-${number}-${number}`"
+        (`literal_expression (`template_literal "${number}-${number}-${number}")
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
@@ -220,6 +247,12 @@ module Code = struct
 
     let type_desc_cases = [
       test_case'
+        "rope_of_ts_expression"
+        ("await " ^ var_x)
+        (`await_expression (`identifier var_x)
+         |> rope_of_ts_expression
+         |> Rope.to_string);
+      test_case'
         "rope_of_ts_type_desc"
         number
         (`type_reference number
@@ -248,6 +281,12 @@ module Code = struct
         "rope_of_ts_type_desc"
         "\"foo\""
         (`literal_type (`string_literal "foo")
+         |> rope_of_ts_type_desc
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_type_desc"
+        "`${number}-${number}-${number}`"
+        (`literal_type (`template_literal "${number}-${number}-${number}")
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
@@ -384,6 +423,42 @@ module Code = struct
                     tsbe_operator_token = plus;
                     tsbe_right = `identifier var_y;
                   })
+            ];
+          }
+         |> rope_of_ts_statement
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_statement"
+        ("async function " ^ var_f ^ "<" ^ type_A ^ "> (" ^ var_x ^ ": " ^ type_A ^ "): " ^ type_A ^
+         " { " ^ "return await " ^ var_x ^ " }")
+        (`function_declaration {
+            tsf_modifiers = [`async];
+            tsf_name = var_f;
+            tsf_type_parameters = [type_A];
+            tsf_parameters = [
+              { tsp_name = var_x;
+                tsp_type_desc = `type_reference type_A; }
+            ];
+            tsf_type_desc = `type_reference type_A;
+            tsf_body = [
+              `return_statement (`await_expression (`identifier var_x))
+            ]
+          }
+         |> rope_of_ts_statement
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_statment"
+        ("namespace " ^ mod_A ^ "{ " ^ "type " ^ type_A ^ " = " ^ type_B ^ " }")
+        (`module_declaration {
+            tsm_modifiers = [];
+            tsm_name = mod_A;
+            tsm_body = [
+              `type_alias_declaration {
+                tsa_modifiers = [];
+                tsa_name = type_A;
+                tsa_type_parameters = [];
+                tsa_type_desc = `type_reference type_B;
+              }
             ];
           }
          |> rope_of_ts_statement
