@@ -416,6 +416,7 @@ let gen_json_encoder :
   match kind with
   | Alias_decl cty ->
     Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
       self_pname
       (pexp_constraint ~loc
          (wrap_self_contained (encoder_of_coretype self_ename cty))
@@ -571,6 +572,7 @@ let gen_json_decoder :
   begin match kind with
   | Alias_decl cty ->
     Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
       self_pname
       (pexp_constraint ~loc
          (wrap_self_contained (decoder_of_coretype self_ename cty))
