@@ -1,0 +1,36 @@
+name: Audit
+
+on:
+  push:
+
+jobs:
+  audit:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        node-version:
+          - lts/fermium # v14 Maintenance LTS
+          ## we only test all versions at the [all-variants] flow
+          # - lts/gallium # v16 Active LTS
+          # - 17
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: yarn
+          cache-dependency-path: 'with_js/yarn.lock'
+
+      - name: Audit code
+        run: make audit

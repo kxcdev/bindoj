@@ -50,4 +50,10 @@ Yarn version | 1.22.17
 
 yarn!
 
-## Contribution Guide 
+## Contribution Guide
+
+TODO
+
+## Acknowledgements
+
+This software is initially funded and developed to suit the needs of AnchorZ Inc.

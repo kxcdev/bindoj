@@ -4,10 +4,11 @@
 
 (license Apache-2.0)
 (maintainers
-  "Hirotetsu Hongo <hg@kxc.io>"
-  "Haochen Xie <hx@kxc.io>"
-  "Shiya Yamaguchi <wd@kxc.io>"
-  "KXC Members <info@kxc.io>")
+  "Hirotetsu Hongo <hg@kxc.inc>"
+  "Haochen Xie <hx@kxc.inc>"
+  "Shiya Yamaguchi <wd@kxc.inc>"
+  "Yuta Sato <cr@kxc.inc>"
+  "KXC Members <info@kxc.inc>")
 (authors
   "Hirotetsu Hongo"
   "Haochen Xie"
