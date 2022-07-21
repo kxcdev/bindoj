@@ -105,3 +105,16 @@ type ('type_decl, 't) generic_typed_type_decl =
 val mk_generic_typed_type_decl :
   'type_decl -> 't Refl.t
   -> ('type_decl, 't) generic_typed_type_decl
+
+module Reflects : sig
+  val reflect_of_alias :
+    ('a -> Expr.t) -> (Expr.t -> 'a option) -> 'a Refl.t
+  val unit_reflect : unit Refl.t
+  val bool_reflect : bool Refl.t
+  val int_reflect : int Refl.t
+  val float_reflect : float Refl.t
+  val string_reflect : string Refl.t
+  val uchar_reflect : Uchar.t Refl.t
+  val byte_reflect : char Refl.t
+  val bytes_reflect : bytes Refl.t
+end

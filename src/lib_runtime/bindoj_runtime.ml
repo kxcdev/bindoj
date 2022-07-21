@@ -135,3 +135,35 @@ let mk_generic_typed_type_decl
       let decl = decl
       let reflect = refl
     end)
+
+module Reflects = struct
+  open Refl
+
+  let reflect_of_alias get mk : _ Refl.t =
+    lazy (Alias { get; mk })
+
+  let unit_reflect =
+    Expr.(reflect_of_alias
+            of_unit to_unit)
+  let bool_reflect =
+    Expr.(reflect_of_alias
+            of_bool to_bool)
+  let int_reflect =
+    Expr.(reflect_of_alias
+            of_int to_int)
+  let float_reflect =
+    Expr.(reflect_of_alias
+            of_float to_float)
+  let string_reflect =
+    Expr.(reflect_of_alias
+            of_string to_string)
+  let uchar_reflect =
+    Expr.(reflect_of_alias
+            of_uchar to_uchar)
+  let byte_reflect =
+    Expr.(reflect_of_alias
+            of_byte to_byte)
+  let bytes_reflect =
+    Expr.(reflect_of_alias
+            of_bytes to_bytes)
+end
