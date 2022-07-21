@@ -14,4 +14,5 @@ The initial version or a significant portion of this file is developed
 under the funding of AnchorZ Inc. to satisfy its needs in
 product development. *)
 
+module External_documentation_object = Bindoj_openapi_external_documentation_object.V3
 module Schema_object = Bindoj_openapi_schema_object.V3

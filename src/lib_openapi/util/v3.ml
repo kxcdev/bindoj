@@ -14,26 +14,27 @@ The initial version or a significant portion of this file is developed
 under the funding of AnchorZ Inc. to satisfy its needs in
 product development. *)
 
-open Bindoj_test_common.Typedesc_examples
-open Bindoj_gen
-open Bindoj_openapi.V3
+type jv = Json.jv
 
-let print_json (module Ex : T) =
-  Ex.decl_with_docstr
-  |> Json_codec.gen_openapi_schema
-  |> Schema_object.to_json
-  |> Json.to_yojson
-  |> Yojson.Safe.to_string
-  |> print_endline
+type yojson = Json.yojson
 
-let mapping =
-  all |> List.map (fun (s, m) -> sprintf "%s_schema.json" s, m)
+let pp_either vppl vppr ppf either =
+  let open Either in
+  match either with
+  | Left x -> Format.fprintf ppf "Left(%a)" vppl x
+  | Right x -> Format.fprintf ppf "Right(%a)" vppr x
 
-let () =
-  match Array.to_list Sys.argv |> List.tl with
-  | [] | _ :: _ :: _ ->
-    failwith "usage: gen <filename>"
-  | [name] ->
-    match List.assoc_opt name mapping with
-    | None -> failwith (sprintf "unknown example %s" name)
-    | Some m -> print_json m
+let pp_jv ppf jv =
+  Yojson.pp ppf (Json.to_yojson jv :> Yojson.t)
+
+let pp_yojson ppf (yojson : yojson) =
+  Yojson.pp ppf (yojson :> Yojson.t)
+
+let yojson_of_jv = Json.to_yojson
+
+let yojson_of_either : ('a -> yojson) -> ('b -> yojson) -> ('a, 'b) either -> yojson =
+  fun yojson_of_a yojson_of_b ->
+  let open Either in
+  function
+  | Left x -> yojson_of_a x
+  | Right x -> yojson_of_b x

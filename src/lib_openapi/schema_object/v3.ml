@@ -14,22 +14,24 @@ The initial version or a significant portion of this file is developed
 under the funding of AnchorZ Inc. to satisfy its needs in
 product development. *)
 
+open Bindoj_openapi_util.V3
+
 let schema = "http://json-schema.org/draft-04/schema#"
 
 type yojson = Kxclib.Json.yojson
 let yojson_of_yojson : yojson -> yojson = identity
 
-type 'a assoc = (string * 'a) list
+type 'a assoc = (string * 'a) list [@@deriving show]
 let yojson_of_assoc yojson_of_a fields : yojson =
   `Assoc (fields |&> fun (k, v) -> (k, yojson_of_a v))
 
-type 't or_false = [`T of 't | `False]
+type 't or_false = [`T of 't | `False] [@@deriving show]
 let yojson_of_or_false yojson_of_t (x: 't or_false) : yojson =
   match x with
   | `T t -> yojson_of_t t
   | `False -> yojson_of_bool false
 
-type 't or_list = [`T of 't | `TList of 't list]
+type 't or_list = [`T of 't | `TList of 't list] [@@deriving show]
 let yojson_of_or_list yojson_of_t (x: 't or_list) : yojson =
   match x with
   | `T t -> yojson_of_t t
@@ -41,13 +43,10 @@ let yojson_of_or_list yojson_of_t (x: 't or_list) : yojson =
 type discriminator = {
   propertyName: string;
   mapping: (string * string) list
-}
+} [@@deriving show]
 
 (* https://spec.openapis.org/oas/v3.0.3html#external-documentation-object *)
-type externalDocs = {
-  ed_description: string option [@name "description"] [@yojson.option];
-  ed_url: string [@name "url"];
-} [@@deriving yojson_of]
+module External_documentation_object = Bindoj_openapi_external_documentation_object.V3
 
 let yojson_of_discriminator (d: discriminator) : yojson =
   let base = ["propertyName", yojson_of_string d.propertyName] in
@@ -74,8 +73,8 @@ type generic_fields = {
   deprecated: bool option [@yojson.option];
   example: yojson option [@yojson.option];
   discriminator: discriminator option [@yojson.option];
-  externalDocs: externalDocs option [@yojson.option];
-} [@@deriving yojson_of]
+  externalDocs: External_documentation_object.t option [@yojson.option];
+} [@@deriving show, yojson_of]
 
 (* https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats *)
 type string_format = [
@@ -91,7 +90,7 @@ type string_format = [
   | `uri
   (* OpenAPI extensions: https://spec.openapis.org/oas/v3.0.3.html#data-types *)
   | `date | `byte | `binary | `password
-]
+] [@@deriving show]
 let yojson_of_string_format (sf: string_format) =
   let str =
     match sf with
@@ -113,7 +112,7 @@ type string_fields = {
   maxLength: int option [@yojson.option];
   pattern: string option [@yojson.option];
   format: string_format option [@yojson.option];
-} [@@deriving yojson_of]
+} [@@deriving show, yojson_of]
 
 (* https://json-schema.org/understanding-json-schema/reference/numeric.html *)
 type 'a number_base = {
@@ -122,7 +121,7 @@ type 'a number_base = {
   maximum: 'a option [@yojson.option];
   exclusiveMinimum: bool option [@yojson.option];
   exclusiveMaximum: bool option [@yojson.option];
-} [@@deriving yojson_of]
+} [@@deriving show, yojson_of]
 and integer_fields = int number_base [@@deriving yojson_of]
 and number_fields = float number_base [@@deriving yojson_of]
 
@@ -133,7 +132,7 @@ type 't array_fields = {
   minItems: int option [@yojson.option];
   maxItems: int option [@yojson.option];
   (* `contains` is not supported *)
-} [@@deriving yojson_of]
+} [@@deriving show, yojson_of]
 
 (* https://json-schema.org/understanding-json-schema/reference/object.html *)
 and 't object_fields = {
@@ -141,7 +140,7 @@ and 't object_fields = {
   required: string list option [@yojson.option];
   additionalProperties: 't or_false option [@yojson.option];
   (* patternProperties: 't assoc option [@yojson.option]; *) (* TODO #125: extend map_key *)
-} [@@deriving yojson_of]
+} [@@deriving show, yojson_of]
 
 and 't structuring_fields = {
   (** https://json-schema.org/understanding-json-schema/structuring.html#id *)
@@ -149,7 +148,7 @@ and 't structuring_fields = {
 
   (** https://json-schema.org/understanding-json-schema/structuring.html#defs *)
   definitions: 't assoc option [@yojson.option];
-} [@@deriving yojson_of]
+} [@@deriving show, yojson_of]
 
 type 't typ =
   | Ref of string
@@ -164,13 +163,14 @@ type 't typ =
   | AnyOf of 't list (* OR *)
   | OneOf of 't list (* XOR *)
   | Not of 't        (* NOT *)
+[@@deriving show]
 
 type t = {
   schema: string option;
   generic_fields: generic_fields;
   structuring_fields: t structuring_fields;
   typ: t typ
-}
+} [@@deriving show]
 
 let rec yojson_of_t (t: t) : yojson =
   let schema = t.schema |> Option.map (fun s -> ["$schema", yojson_of_string s]) |? [] in
@@ -230,9 +230,6 @@ let mk
     };
     typ;
   })
-
-let externalDocs ?description url =
-  { ed_description = description; ed_url = url }
 
 let discriminator ?mapping propertyName =
   { propertyName; mapping = Option.value ~default:[] mapping }

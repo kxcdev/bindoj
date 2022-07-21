@@ -61,4 +61,6 @@ val gen_json_codec :
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.structure
 
-val gen_openapi_schema : type_decl -> Json.jv
+open Bindoj_openapi.V3
+
+val gen_openapi_schema : type_decl -> Schema_object.t

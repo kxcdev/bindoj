@@ -14,26 +14,17 @@ The initial version or a significant portion of this file is developed
 under the funding of AnchorZ Inc. to satisfy its needs in
 product development. *)
 
-open Bindoj_test_common.Typedesc_examples
-open Bindoj_gen
-open Bindoj_openapi.V3
+open Bindoj_openapi_util.V3
 
-let print_json (module Ex : T) =
-  Ex.decl_with_docstr
-  |> Json_codec.gen_openapi_schema
-  |> Schema_object.to_json
-  |> Json.to_yojson
-  |> Yojson.Safe.to_string
-  |> print_endline
+type t = {
+  description : string option [@yojson.option];
+  url : string;
+} [@@deriving show, yojson_of]
 
-let mapping =
-  all |> List.map (fun (s, m) -> sprintf "%s_schema.json" s, m)
+let mk ?description url = {
+  description = description;
+  url = url;
+}
 
-let () =
-  match Array.to_list Sys.argv |> List.tl with
-  | [] | _ :: _ :: _ ->
-    failwith "usage: gen <filename>"
-  | [name] ->
-    match List.assoc_opt name mapping with
-    | None -> failwith (sprintf "unknown example %s" name)
-    | Some m -> print_json m
+let to_json : t -> jv = fun t ->
+  t |> yojson_of_t |> Json.of_yojson

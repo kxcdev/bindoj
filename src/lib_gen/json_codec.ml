@@ -622,7 +622,7 @@ open Bindoj_openapi.V3
 
 let base64_regex = {|^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/][AQgw]==|[A-Za-z0-9+\/]{2}[AEIMQUYcgkosw048]=)?$|}
 
-let gen_openapi_schema : type_decl -> Json.jv =
+let gen_openapi_schema : type_decl -> Schema_object.t =
   let schema = Schema_object.schema in
 
   let docopt = function `docstr s -> Some s | `nodoc -> None in
@@ -674,20 +674,19 @@ let gen_openapi_schema : type_decl -> Json.jv =
   fun { td_name = name; td_kind; td_doc = doc; td_configs } ->
     let self_id = "#" ^ name in
     let id = self_id in
-    let so =
-      match td_kind with
-      | Record_decl fields ->
-        record_to_t ~schema ~self_id ~id ~name ~doc fields
-      | Variant_decl ctors ->
-        let discriminator = Json_config.get_variant_discriminator td_configs in
-        let ctor_to_t { vc_name = name; vc_param; vc_doc = doc; vc_configs } =
-          let discriminator_field =
-            let enum = [`str name] in
-            [discriminator, Schema_object.string ~enum ()]
-          in
-          match Json_config.get_variant_style vc_configs with
-          | `flatten ->
-            begin match vc_param with
+    match td_kind with
+    | Record_decl fields ->
+      record_to_t ~schema ~self_id ~id ~name ~doc fields
+    | Variant_decl ctors ->
+      let discriminator = Json_config.get_variant_discriminator td_configs in
+      let ctor_to_t { vc_name = name; vc_param; vc_doc = doc; vc_configs } =
+        let discriminator_field =
+          let enum = [`str name] in
+          [discriminator, Schema_object.string ~enum ()]
+        in
+        match Json_config.get_variant_style vc_configs with
+        | `flatten ->
+          begin match vc_param with
             | `no_param | `tuple_like [] ->
               Schema_object.record ?description:(docopt doc) ~title:name discriminator_field
             | `tuple_like (t :: ts) ->
@@ -713,5 +712,3 @@ let gen_openapi_schema : type_decl -> Json.jv =
           (ctors |> List.map ctor_to_t)
       | Alias_decl cty ->
         convert_coretype ~self_id ?description:(docopt doc) cty
-    in
-    Schema_object.to_json so

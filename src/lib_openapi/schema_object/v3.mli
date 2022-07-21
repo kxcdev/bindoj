@@ -28,10 +28,7 @@ val discriminator :
   ?mapping:(string * string) list -> (* property name *) string -> discriminator
 
 (** https://spec.openapis.org/oas/v3.0.3.html#external-documentation-object *)
-type externalDocs
-
-(** https://spec.openapis.org/oas/v3.0.3.html#external-documentation-object *)
-val externalDocs : ?description:string -> (* url *) string -> externalDocs
+module External_documentation_object = Bindoj_openapi_external_documentation_object.V3
 
 (* シグネチャのコピペ用
   ?schema:string ->
@@ -83,7 +80,7 @@ val string :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   ?minLength:int -> ?maxLength:int ->
   ?pattern:string -> ?format:string_format -> unit -> t
 
@@ -101,7 +98,7 @@ val integer :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   ?multipleOf:int ->
   ?minimum:int ->
   ?maximum:int ->
@@ -121,7 +118,7 @@ val number :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   ?multipleOf:float ->
   ?minimum:float ->
   ?maximum:float ->
@@ -141,7 +138,7 @@ val boolean :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   unit -> t
 
 (** https://json-schema.org/understanding-json-schema/reference/null.html *)
@@ -158,7 +155,7 @@ val null :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   unit -> t
 
 (** https://json-schema.org/understanding-json-schema/reference/array.html *)
@@ -175,7 +172,7 @@ val array :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   ?items:[`T of t | `TList of t list] ->
   ?additionalItems:t list ->
   ?minItems:int -> ?maxItems:int -> unit -> t
@@ -194,7 +191,7 @@ val obj :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   ?properties:(string * t) list ->
   ?required:string list ->
   ?additionalProperties:[`T of t | `False] ->
@@ -215,7 +212,7 @@ val allOf :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   t list -> t
 
 (** https://json-schema.org/understanding-json-schema/reference/combining.html#anyof *)
@@ -232,7 +229,7 @@ val anyOf :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   t list -> t
 
 (** https://json-schema.org/understanding-json-schema/reference/combining.html#oneof *)
@@ -249,7 +246,7 @@ val oneOf :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   t list -> t
 
 (** https://json-schema.org/understanding-json-schema/reference/combining.html#not *)
@@ -266,7 +263,7 @@ val not :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   t -> t
 
 (** Helper for OCaml: array, fixed length and specific types *)
@@ -283,7 +280,7 @@ val tuple :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   t list -> t
 
 (** Helper for OCaml: object, all fields are required and additional fields are disallowed *)
@@ -300,11 +297,15 @@ val record :
   ?writeOnly:bool ->
   ?id:string ->
   ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   ?additionalProperties:[`T of t | `False] ->
   (string * t) list -> t
 
 (** Replaces all the appearances of [ref s] with [ref (f s)].*)
 val map_ref : (string -> string) -> t -> t
 
+val pp : ppf -> t -> unit
+
 val to_json : t -> Json.jv
+
+val yojson_of_t : t -> Json.yojson
