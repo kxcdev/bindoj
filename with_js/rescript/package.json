@@ -1,6 +1,6 @@
 {
   "name": "bindoj-runtime-re",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "ReScript runtime library for Bindoj -- A generative datatype toolkit for OCaml centric workflows",
   "keywords": ["bindoj", "rescript", "ocaml"],
   "main": "generated/bindoj_runtime.bs.js",
