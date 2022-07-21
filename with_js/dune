@@ -17,3 +17,5 @@
   (alias compile-tests/gen)
   (source_tree unit-tests))
  (action (run yarn test)))
+
+(dirs :standard \ node_modules)
