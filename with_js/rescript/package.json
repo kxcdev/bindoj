@@ -1,0 +1,29 @@
+{
+  "name": "bindoj-runtime-re",
+  "version": "0.1.1",
+  "description": "ReScript runtime library for Bindoj -- A generative datatype toolkit for OCaml centric workflows",
+  "keywords": ["bindoj", "rescript", "ocaml"],
+  "main": "generated/bindoj_runtime.bs.js",
+  "scripts": {
+    "build": "dune build && yarn re:compile",
+    "re:compile": "npx rescript build -with-deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kxcdev/bindoj.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/kxcdev/bindoj/issues"
+  },
+  "homepage": "https://github.com/kxcdev/bindoj",
+  "devDependencies": {
+    "bs-platform": "^9.0.2",
+    "gentype": "^4.4.0",
+    "rescript": "^9.1.4"
+  },
+  "peerDependencies": {
+    "bs-platform": "9.x"
+  }
+}

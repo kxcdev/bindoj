@@ -1,0 +1,31 @@
+{
+  "name": "bindoj-runtime-re",
+  "bs-dependencies": [
+    "kxclib-re"
+  ],
+  "bsc-flags": [ "-open Kxclib" ],
+  "ppx-flags": [
+  ],
+  "sources": [
+    {
+      "dir": "generated",
+      "subdirs": true,
+      "public": ["Bindoj_runtime"]
+    }
+  ],
+  "package-specs": [
+    {
+      "module": "commonjs",
+      "in-source": true
+    }
+  ],
+  "gentypeconfig": {
+    "language": "typescript",
+    "generatedFileExtension": ".gen.ts",
+    "module": "commonjs",
+    "shims": []
+  },
+  "suffix": ".bs.js",
+  "warnings": {
+  }
+}

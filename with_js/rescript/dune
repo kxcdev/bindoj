@@ -1,0 +1,34 @@
+(rule
+ (target bindoj_runtime.ml)
+ (deps %{lib-private:bindoj_runtime:runtime.ml})
+ (action
+  (with-stdout-to %{target}
+   (progn
+    (echo "[%%define os_type \"re\"]\n")
+    (cat %{deps})))))
+
+(rule
+ (target bindoj_runtime.mli)
+ (deps %{lib-private:bindoj_runtime:runtime.mli})
+ (action
+  (with-stdout-to %{target}
+   (progn
+    (echo "[%%define os_type \"re\"]\n")
+    (cat %{deps})))))
+
+(rule
+ (target utils.ml)
+ (deps %{lib-private:bindoj_runtime:utils.ml})
+ (action
+  (with-stdout-to %{target}
+   (progn
+    (echo "[%%define os_type \"re\"]\n")
+    (cat %{deps})))))
+
+(library
+ (name bindoj_runtime_re)
+ (modules utils bindoj_runtime
+ )
+ (libraries kxclib)
+ (preprocess (pps ppx_optcomp))
+ (flags :standard -open Kxclib))
