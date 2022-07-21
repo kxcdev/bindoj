@@ -18,6 +18,8 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex02"
+
 let discriminator = "kind"
 
 let cty_int = Coretype.mk_prim `int

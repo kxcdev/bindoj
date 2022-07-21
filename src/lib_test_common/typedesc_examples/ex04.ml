@@ -18,6 +18,8 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex04"
+
 let cty_int = Coretype.mk_prim `int
 
 let decl : type_decl =

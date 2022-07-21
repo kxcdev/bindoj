@@ -1,6 +1,6 @@
 (library
  (name bindoj_gen_test_gen_output)
- (libraries alcotest bindoj_base kxclib yojson jsonm)
+ (libraries alcotest bindoj_runtime kxclib yojson jsonm)
  (preprocess (pps ppx_deriving.show)))
 
 (rule

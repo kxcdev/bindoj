@@ -1,4 +1,4 @@
 (library
  (name bindoj_base)
  (public_name bindoj.base)
- (libraries kxclib bindoj_typedesc))
+ (libraries kxclib bindoj_typedesc bindoj_runtime))

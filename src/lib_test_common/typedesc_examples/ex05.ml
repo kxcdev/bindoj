@@ -18,6 +18,8 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05"
+
 let decl : type_decl =
   record_decl "complex_types" [
     record_field "option" (Coretype.(mk_option (prim `int)));

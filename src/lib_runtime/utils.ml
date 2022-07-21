@@ -14,8 +14,9 @@ The initial version or a significant portion of this file is developed
 under the funding of AnchorZ Inc. to satisfy its needs in
 product development. *)
 
-module StringMap = Bindoj_runtime.StringMap
+module StringMap = struct
+  include Map.Make(String)
 
-module Type_desc = Bindoj_typedesc.Type_desc
-module Typed_type_desc = Bindoj_typedesc.Typed_type_desc
-module Runtime = Bindoj_runtime
+  let of_list xs = List.fold_left (fun m (k,v) -> add k v m) empty xs
+  let to_list t = fold (fun k v acc -> (k, v) :: acc) t []
+end

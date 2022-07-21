@@ -21,7 +21,9 @@ open Bindoj_base
 (** each example module should have this module type *)
 module type T = sig
   type t
-  include Typed_type_desc.T with type t := t
+  include Runtime.Generic_typed_type_decl
+          with type type_decl := Type_desc.type_decl
+           and type t := t
   val pp : ppf -> t -> unit
   val t : t Alcotest.testable
   val sample_values : t Sample_value.t list

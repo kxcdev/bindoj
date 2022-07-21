@@ -20,18 +20,23 @@ open Bindoj_base.Type_desc
 let modules =
   let open Bindoj_test_common_typedesc_examples.All in
   all |> List.concat_map (fun (name, (module Ex : T)) -> [
-    name, Ex.decl;
-    name ^ "_docstr", Ex.decl_with_docstr;
+    name, Ex.decl, Ex.example_module_path;
+    name ^ "_docstr", Ex.decl_with_docstr, Ex.example_module_path;
   ])
 
 let mapping =
-  modules |> List.map (fun (s, m) -> sprintf "%s_gen.ml" s, m)
+  modules |> List.map (fun (s, m, p) -> sprintf "%s_gen.ml" s, (m, p))
 
-let gen_with_json_codec ?self_contained ?codec decl =
+let gen_with_json_codec ?self_contained ?codec ~gen_type_decl (decl, emp) =
   let open Bindoj_gen.Caml_datatype in
   let open Bindoj_gen.Json_codec in
+  let type_decl =
+    if gen_type_decl then (
+      `path (emp^".decl") |> some
+    ) else none in
   let structure =
     gen_structure
+      ?type_decl
       ?codec
       ~generators:[
         gen_json_codec ?self_contained;
@@ -41,10 +46,11 @@ let gen_with_json_codec ?self_contained ?codec decl =
   Astlib.Pprintast.structure Format.std_formatter structure
 
 let () =
+  let gen_type_decl = ArgOptions.has_flag "-gen-type-decl" in
   match Array.to_list Sys.argv |> List.tl with
-  | [] | _ :: _ :: _ ->
-    failwith "usage: gen <filename>"
-  | [name] ->
+  | [] ->
+    failwith "usage: gen <filename> [-gen-type-decl]"
+  | name :: _ ->
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some decl -> gen_with_json_codec ~self_contained:true decl
+    | Some decl -> gen_with_json_codec ~self_contained:true decl ~gen_type_decl

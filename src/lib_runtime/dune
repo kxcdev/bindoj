@@ -1,0 +1,6 @@
+(library
+ (name bindoj_runtime)
+ (public_name bindoj.runtime)
+ (flags (:standard -open Kxclib))
+ (libraries kxclib))
+

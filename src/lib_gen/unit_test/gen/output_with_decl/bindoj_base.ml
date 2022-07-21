@@ -14,9 +14,5 @@ The initial version or a significant portion of this file is developed
 under the funding of AnchorZ Inc. to satisfy its needs in
 product development. *)
 
-module StringMap = struct
-  include Map.Make(String)
-
-  let of_list xs = List.fold_left (fun m (k,v) -> add k v m) empty xs
-  let to_list t = to_seq t |> List.of_seq
-end
+(* restrict access to Bindoj_base *)
+module Type_desc = Bindoj_typedesc.Type_desc

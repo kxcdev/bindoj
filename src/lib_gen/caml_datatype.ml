@@ -149,14 +149,13 @@ let rec gen_reflect ?(codec=(`default : Coretype.codec)) td : value_binding =
       gen_reflect_variant ~self_name ~poly ctors
   in
   let with_opens e = [%expr
-    let open Bindoj_base in
-    let open Bindoj_base.Typed_type_desc in
-    let open Kxclib.MonadOps(Kxclib.Option) in
+    let open Bindoj_runtime in
+    let open Kxclib.Option.Ops_monad in
     [%e e]]
   in
   Vb.mk
     ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
-    [%pat? ([%p pvar self_name] : _ Bindoj_base.Typed_type_desc.Refl.t)]
+    [%pat? ([%p pvar self_name] : _ Bindoj_runtime.Refl.t)]
     [%expr lazy [%e with_opens body]]
 
 and get_refl (id: Coretype.ident) : expression =
@@ -453,17 +452,20 @@ let gen_structure :
           | `in_module _ -> suffix
         in
         let reflect =
-          match reflect.pvb_pat.ppat_desc with
-          | Ppat_var l -> evar l.txt
-          | _ -> failwith "impossible"
+          let rec go = function
+            | Ppat_var l -> evar l.txt
+            | Ppat_constraint (p, _) -> go p.ppat_desc
+            | _ -> failwith' "impossible @%s: %a" __LOC__
+                     Pprintast.pattern reflect.pvb_pat
+          in
+          go reflect.pvb_pat.ppat_desc
         in
         let mk name expr = Str.value Nonrecursive [Vb.mk (pvar name) expr] in
         let loc = Location.none in
         [ mk (get_name "decl") decl_expr ]
         |> mayappend refl
              (mk (get_name "typed_decl")
-                [%expr
-                    Bindoj_base.Typed_type_desc.Typed.mk [%e decl_expr] [%e reflect]])
+                [%expr Bindoj_runtime.mk_generic_typed_type_decl [%e decl_expr] [%e reflect]])
     in
     ([decl]
      |> mayappend refl (Str.value rec_flag [reflect]))

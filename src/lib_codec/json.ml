@@ -16,6 +16,7 @@ product development. *)
 
 open Bindoj_base
 open Typed_type_desc
+open Runtime
 
 module Config = struct
   type json_variant_style = [

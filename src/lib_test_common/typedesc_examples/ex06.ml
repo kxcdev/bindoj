@@ -18,6 +18,8 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex06"
+
 let prims =
   [`unit; `bool; `int; `float; `string; `uchar; `byte; `bytes]
   |> List.map (fun p -> Coretype.string_of_prim p, Coretype.mk_prim p)
