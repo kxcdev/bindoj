@@ -1,6 +1,6 @@
 (rule
  (target bindoj_runtime.ml)
- (deps %{lib-private:bindoj_runtime:runtime.ml})
+ (deps %{lib-private:bindoj_runtime:bindoj_runtime.ml})
  (action
   (with-stdout-to %{target}
    (progn
@@ -9,7 +9,7 @@
 
 (rule
  (target bindoj_runtime.mli)
- (deps %{lib-private:bindoj_runtime:runtime.mli})
+ (deps %{lib-private:bindoj_runtime:bindoj_runtime.mli})
  (action
   (with-stdout-to %{target}
    (progn
