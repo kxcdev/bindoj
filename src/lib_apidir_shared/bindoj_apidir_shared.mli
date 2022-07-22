@@ -98,6 +98,12 @@ module type MakeRegistryS = sig
   (** TODO - allow specifying multiple response types *)
   (** TODO - allow specifying examples for req/resp  *)
 
+  val register_type_decl_info :
+    ?name:string
+    -> ?doc:string
+    -> 'a typed_type_decl
+    -> unit
+
   val register_get :
     ?summary:string
     -> ?description:string

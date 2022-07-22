@@ -102,6 +102,12 @@ module type MakeRegistryS = sig
   (** TODO - allow specifying multiple response types *)
   (** TODO - allow specifying examples for req/resp  *)
 
+  val register_type_decl_info :
+    ?name:string
+    -> ?doc:string
+    -> 'a typed_type_decl
+    -> unit
+
   val register_get :
     ?summary:string
     -> ?description:string
@@ -138,6 +144,15 @@ module MakeRegistry () : MakeRegistryS = struct
   let register : type_decl_info list -> ('reqty, 'respty) invocation_point_info -> unit = fun typs invp ->
     refappend invp_registry (Invp invp);
     refupdate type_registry (( @ ) typs)
+
+  let register_type_decl_info ?name ?doc ttd =
+    let td = Typed.decl ttd in
+    let tdi_name = name |? td.td_name in
+    let tdi_doc = doc |? (match td.td_doc with
+                          | `nodoc -> tdi_name
+                          | `docstr str -> str ) in
+    { tdi_name; tdi_doc; tdi_decl = Boxed ttd; }
+    |> refappend type_registry
 
   let register_get :
     ?summary:string
