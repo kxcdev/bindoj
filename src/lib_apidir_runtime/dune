@@ -1,0 +1,6 @@
+(library
+ (name bindoj_apidir_runtime)
+ (public_name bindoj.apidir_runtime)
+ (libraries kxclib bindoj_typedesc (re_export bindoj.runtime))
+ (flags (:standard
+          -open Kxclib)))
