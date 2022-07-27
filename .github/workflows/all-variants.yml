@@ -1,7 +1,6 @@
 name: Matrix Check
 
 on:
-  workflow_dispatch:
   pull_request_review:
     types: [submitted]
 
@@ -21,6 +20,7 @@ jobs:
           - lts/gallium # v16 Active LTS
           - 17
 
+    if: github.event.review.state == 'approved'
     runs-on: ${{ matrix.os }}
 
     steps:
