@@ -154,7 +154,7 @@ let rec gen_reflect ?(codec=(`default : Coretype.codec)) td : value_binding =
     [%e e]]
   in
   Vb.mk
-    ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+    ~attrs:(warning_attribute "-33-39") (* suppress unused rec & open warning *)
     [%pat? ([%p pvar self_name] : _ Bindoj_runtime.Refl.t)]
     [%expr lazy [%e with_opens body]]
 
