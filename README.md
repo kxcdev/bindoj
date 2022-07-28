@@ -30,6 +30,7 @@ use one of the following options:
   ```bash
   $ mkdir vendors
   $ git submodule add https://github.com/kxcdev/bindoj.git vendors/bindoj
+  $ git submodule update --init --recursive
   $ echo (vendored_dirs vendors) >> dune
   ```
 * Use `opam pin`.
