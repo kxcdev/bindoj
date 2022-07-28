@@ -35,7 +35,7 @@ use one of the following options:
   ```
 * Use `opam pin`.
   ```bash
-  $ opam pin add bindoj git@github.com:kxcteam/kxclib-ocaml.git
+  $ opam pin add kxclib git@github.com:kxcteam/kxclib-ocaml.git
   $ opam pin add bindoj git@github.com:kxcdev/bindoj.git
   ```
 
