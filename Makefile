@@ -1,4 +1,4 @@
-.PHONY: default info setup build test doc clean audit
+.PHONY: default info setup build test doc clean audit promote-audit promote-test promote
 
 default: info build
 
@@ -19,6 +19,14 @@ build:
 
 audit:
 	node ./scripts/audit_banner.js
+
+promote-audit:
+	node ./scripts/audit_banner.js update
+
+promote-test:
+	dune runtest --auto-promote
+
+promote: promote-audit promote-test
 
 test: audit
 	yarn --cwd with_js clean || echo "yarn clean failed... you probably does not have a complete setup yet"
