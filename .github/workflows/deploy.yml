@@ -25,6 +25,7 @@ jobs:
         ocaml-version:
           - 4.12.1
 
+    if: github.repository == 'kxcteam/bindoj'
     runs-on: ${{ matrix.os }}
 
     steps:

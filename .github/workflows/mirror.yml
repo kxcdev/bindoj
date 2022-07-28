@@ -1,0 +1,25 @@
+name: Mirror to kxcdev/bindoj
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  mirror:
+    if: github.repository == 'kxcteam/bindoj'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push to kxcdev/bindoj
+        env:
+          BRANCH: ${{ github.ref_name }}
+          SSH_KEY: ${{ secrets.SSH_KEY_KXCDEV_BINDOJ_DEPLOYMENT }}
+        run: |
+          eval `ssh-agent -s`
+          ssh-add - <<< "${SSH_KEY}"
+          git push -f git@github.com:kxcdev/bindoj.git --set-upstream "$BRANCH"

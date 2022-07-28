@@ -20,7 +20,9 @@ jobs:
           - lts/gallium # v16 Active LTS
           - 17
 
-    if: github.event.review.state == 'approved'
+    if: |
+      github.event.review.state == 'approved' &&
+      github.repository == 'kxcteam/bindoj'
     runs-on: ${{ matrix.os }}
 
     steps:
