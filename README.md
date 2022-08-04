@@ -11,7 +11,7 @@ Bindoj -- A generative datatype toolkit for OCaml centric workflows.
   - A detailed documentation may not be available yet.
   - The current API is unstable, and is subject to change.
 * As such, we **do not accept contributions** for the time being.
-  - All pull requests will be summarily closed.
+  - All pull requests other than internal contributations will be summarily closed.
   - Feature requests may or may not be respected, according to our internal design goals.
   - Feel free to open an issue. We will work on a fix internally if appropriate.
 
