@@ -1,0 +1,36 @@
+name: ocaml-general CI workflow
+
+on: push
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        ocaml-version:
+          #- 4.11.2
+          - 4.12.1
+          #- 4.13.1
+          #- 4.14.0
+
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
+      volumes:
+        - bindoj:/home/ocaml-general/kxcdev/ocaml-general
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetdh-depth: 2
+
+      - name: check OCaml version and workspace info
+        run: ./scripts/ci_print_env.sh
+
+      - name: Install dependencies
+        run: opam exec -- opam install . --deps-only --with-test
+
+      - name: build
+        run: |
+          opam exec -- dune build
