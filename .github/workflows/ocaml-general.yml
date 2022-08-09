@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
+      options: --user root
 
     steps:
       - name: Checkout code
