@@ -27,6 +27,9 @@ jobs:
           submodules: recursive
           fetdh-depth: 2
 
+      - name: Change user
+        run: su ocaml-general
+
       - name: check OCaml version and workspace info
         run: ./scripts/ci_print_env.sh
 
