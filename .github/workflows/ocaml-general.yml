@@ -2,6 +2,9 @@ name: ocaml-general CI workflow
 
 on: push
 
+env:
+  WORKDIR: /home/ocaml-general/kxcdev
+
 jobs:
   build:
     strategy:
@@ -17,7 +20,7 @@ jobs:
     container:
       image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
       volumes:
-        - bindoj:/home/ocaml-general/kxcdev/ocaml-general
+        - bindoj:/home/ocaml-general/kxcdev/bindoj
       options: --user root
 
     steps:
@@ -27,15 +30,12 @@ jobs:
           submodules: recursive
           fetdh-depth: 2
 
-      - name: Change user
-        run: su ocaml-general
-
       - name: check OCaml version and workspace info
-        run: ./scripts/ci_print_env.sh
+        run: sudo -u ocaml-general ${{ WORKDIR }}/scripts/ci_print_env.sh
 
       - name: Install dependencies
-        run: opam exec -- opam install . --yes --deps-only --with-test
+        run: sudo -u ocaml-general opam exec -- opam install ${{ WORKDIR }} --yes --deps-only --with-test
 
       - name: build
         run: |
-          opam exec -- dune build
+          sudo -u ocaml-general opam exec -- (cd ${{ WORKDIR }} && dune build)
