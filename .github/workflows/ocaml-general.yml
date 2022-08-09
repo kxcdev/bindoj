@@ -21,10 +21,18 @@ jobs:
       options: --user root
 
     steps:
-      - run: pwd && ls && whoami && id -u
-      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           submodules: recursive
           fetdh-depth: 2
+
+      - name: check OCaml version and workspace info
+        run: ./scripts/ci_print_env.sh
+
+      - name: Install dependencies
+        run: opam exec -- opam install . --yes --deps-only --with-test
+
+      - name: build
+        run: |
+          opam exec -- dune build
