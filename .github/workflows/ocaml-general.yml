@@ -13,8 +13,8 @@ jobs:
         ocaml-version:
           #- 4.11.2
           - 4.12.1
-          #- 4.13.1
-          #- 4.14.0
+            #- 4.13.1
+            #- 4.14.0
 
     runs-on: ubuntu-latest
     container:
@@ -35,5 +35,4 @@ jobs:
         run: opam exec -- opam install . --yes --deps-only --with-test
 
       - name: build
-        run: |
-          opam exec -- dune build
+        run: opam exec -- dune build
