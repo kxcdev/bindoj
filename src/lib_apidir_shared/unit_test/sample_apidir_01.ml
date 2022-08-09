@@ -17,51 +17,9 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-[@@@warning "-33-32"]
-
 open Bindoj_apidir_shared
-open Bindoj_typedesc
-open Bindoj_typedesc.Typed_type_desc
-open Test_utils
-
-module SampleApiDir = struct
-
-  module Types = struct
-    open Bindoj_test_common
-    module ExD = Typedesc_examples
-    module ExG = Typedesc_generated_examples
-
-    type student = ExG.Ex01.student
-    let student : student typed_type_decl = Typed.mk ExG.Ex01.decl ExG.Ex01.reflect
-
-    type person = ExG.Ex02.person
-    let person : person typed_type_decl = Typed.mk ExG.Ex02.decl ExG.Ex02.reflect
-  end
-
-  open struct
-    module R = MakeRegistry()
-    module T = Types
-  end
-
-  let get_any_student =
-    R.register_get "get-any-student"
-      ~urlpath:"/student/any-one"
-      ~resp_type:T.student
-      ~resp_name:"student"
-      ~resp_doc:"a student record (could be anyone) in the database"
-
-  let get_student_from_person =
-    R.register_post "get-student-from-person"
-      ~urlpath:"/student/from-person"
-      ~req_type:T.person
-      ~req_name:"person"
-      ~req_doc:"a person record identifying a student"
-      ~resp_type:T.student
-      ~resp_name:"student"
-      ~resp_doc:"the student record corresponding to the supplied person"
-
-  include R.Public
-end
+open Bindoj_test_common.Apidir_examples.Utils
+module SampleApiDir = Bindoj_test_common.Apidir_examples.Sample_apidir_01
 
 open Alcotest
 

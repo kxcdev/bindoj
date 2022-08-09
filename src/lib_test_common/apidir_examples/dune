@@ -1,0 +1,9 @@
+(library
+ (name bindoj_test_common_apidir_examples)
+ (libraries
+  alcotest
+  bindoj_test_common_typedesc_generated_examples
+  bindoj_apidir_shared bindoj_typedesc
+  kxclib yojson jsonm)
+ (preprocess (pps ppx_deriving.show))
+ (flags (:standard -open Kxclib)))

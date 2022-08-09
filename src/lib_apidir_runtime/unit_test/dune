@@ -1,0 +1,9 @@
+(test
+ (name lib_apidir_runtime_test)
+ (libraries
+  bindoj_apidir_runtime
+  bindoj_test_common
+  alcotest
+  kxclib)
+ (preprocess (pps ppx_deriving.show))
+ (flags (:standard -open Kxclib)))

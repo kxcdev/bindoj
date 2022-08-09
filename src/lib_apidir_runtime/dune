@@ -1,6 +1,15 @@
 (library
  (name bindoj_apidir_runtime)
  (public_name bindoj.apidir_runtime)
- (libraries kxclib bindoj_typedesc (re_export bindoj.runtime))
+ (libraries
+  kxclib
+  bindoj_base
+  bindoj_codec
+  bindoj_typedesc
+  bindoj_apidir_shared
+  brr
+  yojson
+  jsonm
+  (re_export bindoj.runtime))
  (flags (:standard
           -open Kxclib)))

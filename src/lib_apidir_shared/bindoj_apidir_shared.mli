@@ -96,6 +96,11 @@ type untyped_invocation_point_info =
 
 type invocation_point_collection = untyped_invocation_point_info list
 
+module type RegistryInfo = sig
+  type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
+  val registry_info : unit -> invocation_point_collection * type_decl_collection
+end
+
 module type MakeRegistryS = sig
 
   (** TODO - allow specifying multiple response types *)
@@ -130,10 +135,7 @@ module type MakeRegistryS = sig
     -> string (* name of the invocation point *)
     -> ('reqty, 'respty) invocation_point_info
 
-  module Public : sig
-    type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
-    val registry_info : unit -> invocation_point_collection * type_decl_collection
-  end
+  module Public : RegistryInfo
 end
 
 module MakeRegistry () : MakeRegistryS
