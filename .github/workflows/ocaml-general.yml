@@ -5,6 +5,7 @@ on: push
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         ocaml-version:
           #- 4.11.2
@@ -29,7 +30,7 @@ jobs:
         run: ./scripts/ci_print_env.sh
 
       - name: Install dependencies
-        run: opam exec -- opam install . --deps-only --with-test
+        run: opam exec -- opam install . --yes --deps-only --with-test
 
       - name: build
         run: |
