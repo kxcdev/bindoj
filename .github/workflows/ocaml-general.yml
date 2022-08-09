@@ -18,6 +18,7 @@ jobs:
       image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
       volumes:
         - bindoj:/home/ocaml-general/kxcdev/ocaml-general
+      options: --user root
 
     steps:
       - run: pwd && ls && whoami && id -u
