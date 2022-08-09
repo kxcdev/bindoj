@@ -38,4 +38,4 @@ jobs:
 
       - name: build
         run: |
-          sudo -u ocaml-general opam exec -- (cd ${{ WORKDIR }} && dune build)
+          sudo -u ocaml-general opam exec -- dune build ${{ WORKDIR }}
