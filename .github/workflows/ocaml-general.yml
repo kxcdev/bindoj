@@ -18,6 +18,7 @@ jobs:
       image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
       volumes:
         - bindoj:/home/ocaml-general/kxcdev/bindoj
+      options: --user root
 
     steps:
       - name: Checkout code
@@ -25,3 +26,16 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 2
+
+          #- name: add sudo
+          #  run: apt install sudo
+
+          #- name: check OCaml version and workspace info
+          #  run: ./scripts/ci_print_env.sh
+
+          #- name: Install dependencies
+          #  run: opam exec -- opam install $WORKDIR --yes --deps-only --with-test
+
+          #- name: build
+          #  run: |
+          #    opam exec -- dune build $WORKDIR
