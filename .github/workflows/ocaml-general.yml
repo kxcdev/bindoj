@@ -2,9 +2,6 @@ name: ocaml-general CI workflow
 
 on: push
 
-env:
-  WORKDIR: /home/ocaml-general/kxcdev
-
 jobs:
   build:
     strategy:
@@ -28,14 +25,4 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetdh-depth: 2
-
-      - name: check OCaml version and workspace info
-        run: sudo -u ocaml-general ${{ WORKDIR }}/scripts/ci_print_env.sh
-
-      - name: Install dependencies
-        run: sudo -u ocaml-general opam exec -- opam install ${{ WORKDIR }} --yes --deps-only --with-test
-
-      - name: build
-        run: |
-          sudo -u ocaml-general opam exec -- dune build ${{ WORKDIR }}
+          fetch-depth: 2
