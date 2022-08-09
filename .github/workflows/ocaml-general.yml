@@ -18,7 +18,6 @@ jobs:
       image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
       volumes:
         - bindoj:/home/ocaml-general/kxcdev/bindoj
-      options: --user root
 
     steps:
       - name: Checkout code
