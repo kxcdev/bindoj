@@ -20,6 +20,8 @@ jobs:
         - bindoj:/home/ocaml-general/kxcdev/ocaml-general
 
     steps:
+      - run: pwd && ls && whoami && id -u
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Checkout code
         uses: actions/checkout@v3
         with:
