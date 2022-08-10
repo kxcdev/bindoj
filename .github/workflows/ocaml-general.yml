@@ -36,14 +36,15 @@ jobs:
           which ocaml
           opam env --root /root/.opam
 
-          #- name: check OCaml version and workspace info
-          #  run: ./scripts/ci_print_env.sh
+      - name: check OCaml version and workspace info
+        run: ./scripts/ci_print_env.sh
 
-      - run: git config --global --add safe.directory /__w/bindoj/bindoj
-      - run: git ls-files
+      # https://github.blog/2022-04-12-git-security-vulnerability-announced/
+      - name: Safe directory
+        run: git config --global --add safe.directory /__w/bindoj/bindoj
 
       - name: Install dependencies
         run: opam install . --yes --deps-only --with-test --verbose
 
       - name: build
-        run: dune build
+        run: opam exec -- dune build
