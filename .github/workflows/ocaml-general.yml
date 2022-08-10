@@ -33,11 +33,14 @@ jobs:
           which ocaml
           opam env --root /root/.opam
 
+      - name: OPAM environment
+        run: eval $(opam env --root /root/.opam)
+
           #- name: check OCaml version and workspace info
           #  run: ./scripts/ci_print_env.sh
 
       - name: Install dependencies
-        run: opam exec --root /root/.opam -- opam install . --yes --deps-only --with-test
+        run: opam exec -- opam install . --yes --deps-only --with-test
 
       - name: build
-        run: opam exec --root /root/.opam -- dune build
+        run: opam exec -- dune build
