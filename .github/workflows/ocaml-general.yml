@@ -2,9 +2,6 @@ name: ocaml-general CI workflow
 
 on: push
 
-env:
-  OPAMROOT: /root/.opam
-
 jobs:
   build:
     strategy:
