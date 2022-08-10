@@ -2,6 +2,9 @@ name: ocaml-general CI workflow
 
 on: push
 
+env:
+  OPAMROOT: /root/.opam
+
 jobs:
   build:
     strategy:
@@ -32,9 +35,6 @@ jobs:
           which opam
           which ocaml
           opam env --root /root/.opam
-
-      - name: OPAM environment
-        run: eval $(opam env --root /root/.opam)
 
           #- name: check OCaml version and workspace info
           #  run: ./scripts/ci_print_env.sh
