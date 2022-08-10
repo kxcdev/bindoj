@@ -39,6 +39,8 @@ jobs:
           #- name: check OCaml version and workspace info
           #  run: ./scripts/ci_print_env.sh
 
+      - run: git ls-files
+
       - name: Install dependencies
         run: opam install . --yes --deps-only --with-test --verbose
 
