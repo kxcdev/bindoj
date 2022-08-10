@@ -11,15 +11,14 @@ jobs:
       fail-fast: false
       matrix:
         ocaml-version:
-          - 4.11.2
+          #- 4.11.2
           - 4.12.1
-          - 4.13.1
-          - 4.14.0
+            #- 4.13.1
+            #- 4.14.0
 
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
-      options: --user root
 
     steps:
       - name: Checkout code
@@ -28,8 +27,8 @@ jobs:
           submodules: recursive
           fetch-depth: 2
 
-      - name: check OCaml version and workspace info
-        run: ./scripts/ci_print_env.sh
+          #- name: check OCaml version and workspace info
+          #  run: ./scripts/ci_print_env.sh
 
       - name: Install dependencies
         run: opam exec -- opam install . --yes --deps-only --with-test
