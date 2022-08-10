@@ -2,9 +2,6 @@ name: ocaml-general CI workflow
 
 on: push
 
-env:
-  workdir: /home/ocaml-general/kxcdev/bindoj
-
 jobs:
   build:
     strategy:
@@ -26,6 +23,8 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 2
+
+      - run: ls && pwd && id && uname -a
 
           #- name: check OCaml version and workspace info
           #  run: ./scripts/ci_print_env.sh
