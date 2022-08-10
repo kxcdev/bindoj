@@ -36,8 +36,8 @@ jobs:
           which ocaml
           opam env --root /root/.opam
 
-      - name: check OCaml version and workspace info
-        run: ./scripts/ci_print_env.sh
+          #- name: check OCaml version and workspace info
+          #  run: ./scripts/ci_print_env.sh
 
       # https://github.blog/2022-04-12-git-security-vulnerability-announced/
       - name: Safe directory
