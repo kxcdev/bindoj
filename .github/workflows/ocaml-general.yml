@@ -40,7 +40,7 @@ jobs:
           #  run: ./scripts/ci_print_env.sh
 
       - name: Install dependencies
-        run: opam exec -- opam install . --yes --deps-only --with-test
+        run: opam install . --yes --deps-only --with-test
 
       - name: build
-        run: opam exec -- dune build
+        run: dune build
