@@ -24,7 +24,8 @@ jobs:
           submodules: recursive
           fetch-depth: 2
 
-      - run: ls && pwd && id && uname -a
+      - run: ls && pwd && id && uname -a && which opam && which ocaml
+      - run: opam env
 
           #- name: check OCaml version and workspace info
           #  run: ./scripts/ci_print_env.sh
