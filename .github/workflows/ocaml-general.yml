@@ -1,0 +1,37 @@
+name: ocaml-general CI workflow
+
+on: push
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        ocaml-version:
+          - 4.12.1
+          - 4.13.1
+          - 4.14.0
+
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/kxcteam/ocaml-general:${{ matrix.ocaml-version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 2
+
+      # https://github.blog/2022-04-12-git-security-vulnerability-announced/
+      - name: Safe directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: check OCaml version and workspace info
+        run: ./scripts/ci_print_env.sh
+
+      - name: Install dependencies
+        run: opam install . --yes --deps-only --with-test --verbose
+
+      - name: build
+        run: opam exec -- dune build
