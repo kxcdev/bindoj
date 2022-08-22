@@ -241,7 +241,7 @@ let encoder_of_coretype =
     let cases =
       cs |> List.map (fun c ->
         let pat = Pat.variant (Utils.escape_as_constructor_name c) None in
-        let expr = Exp.constant (Const.string c) in
+        let expr = [%expr `str [%e Exp.constant (Const.string c)]] in
         Exp.case pat expr
       )
     in
