@@ -1,5 +1,5 @@
-Bindoj
-======
+Bindoj ::= Binding-OCaml with Joy!
+=================================
 
 Bindoj -- A generative datatype toolkit for OCaml centric workflows.
 
