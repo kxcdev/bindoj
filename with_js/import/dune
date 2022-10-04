@@ -1,10 +1,9 @@
 (library
  (name bindoj_withjs_import)
  (libraries
-  js_of_ocaml
-  gen_js_api
-  ojs)
- (preprocess (pps gen_js_api.ppx))
+  lwt
+  js_of_ocaml gen_js_api ojs)
+ (preprocess (pps gen_js_api.ppx js_of_ocaml-ppx))
  (js_of_ocaml
   (javascript_files stub.js))
  (flags (:standard -w -58)))

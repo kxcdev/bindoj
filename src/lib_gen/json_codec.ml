@@ -191,7 +191,7 @@ let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case
       | Option t -> [%expr [%e evar_name "option"] [%e go t]] (* option_of_json t_of_json *)
       | List t -> [%expr [%e evar_name "list"] [%e go t]] (* list_of_json t_of_json *)
       | Map (k, v) -> [%expr [%e evar_name "map"] [%e map_key_converter k] [%e go v]] (* map_of_json key_of_string t_of_json *)
-      | Tuple ts -> tuple_case go ts
+      | Tuple ts -> tuple_case ct.ct_configs go ts
       | StringEnum cs -> string_enum_case cs
       | Self -> self_ename
     in
@@ -218,7 +218,7 @@ let encoder_of_coretype =
   let loc = Location.none in
   let evari i = evar (vari i) in
   let pvari i = pvar (vari i) in
-  let tuple_case (go: desc -> expression) (ts: desc list) =
+  let tuple_case (configs: [`coretype] configs) (go: desc -> expression) (ts: desc list) =
     let args =
       ts |> List.mapi (fun i _ -> pvari i)
          |> Pat.tuple
@@ -228,10 +228,21 @@ let encoder_of_coretype =
       | x :: xs -> mk_list [%expr [%e x] :: [%e acc]] xs
     in
     let ret =
-      ts |> List.mapi (fun i t -> [%expr [%e go t] [%e evari i]])
-         |> List.rev |> mk_list [%expr []]
+      let style = Json_config.get_tuple_style configs in
+      ts
+      |> List.mapi (fun i t ->
+        match style with
+        | `obj `default ->
+          let label = estring ~loc (tuple_index_to_field_name i) in
+          [%expr ([%e label], [%e go t] [%e evari i])]
+        | `arr -> [%expr [%e go t] [%e evari i]])
+      |> List.rev |> mk_list [%expr []]
+      |> (fun ret ->
+        match style with
+        | `obj `default -> [%expr `obj [%e ret]]
+        | `arr -> [%expr `arr [%e ret]])
     in
-    [%expr fun [%p args] -> (`arr [%e ret] : Kxclib.Json.jv)]
+    [%expr fun [%p args] -> ([%e ret] : Kxclib.Json.jv)]
   in
   let map_key_converter (k: map_key) = (* key_to_string *)
     match k with
@@ -258,14 +269,10 @@ let decoder_of_coretype =
   let loc = Location.none in
   let evari i = evar (vari i) in
   let pvari i = pvar (vari i) in
-  let tuple_case (go: desc -> expression) (ts: desc list) =
+  let tuple_case (configs: [`coretype] configs) (go: desc -> expression) (ts: desc list) =
     let rec mk_list acc = function
       | [] -> acc
       | x :: xs -> mk_list [%pat? [%p x] :: [%p acc]] xs
-    in
-    let args =
-      ts |> List.mapi (fun i _ -> pvari i)
-         |> List.rev |> mk_list [%pat? []]
     in
     let ret =
       let tmp, args, ret =
@@ -275,10 +282,30 @@ let decoder_of_coretype =
       in
       [%expr match [%e tmp] with [%p args] -> Some [%e ret] | _ -> None]
     in
-    [%expr function
-      | (`arr [%p args] : Kxclib.Json.jv) -> [%e ret]
-      | _ -> None
-    ]
+    match Json_config.get_tuple_style configs with
+    | `arr ->
+      let args =
+        ts |> List.mapi (fun i _ -> pvari i)
+           |> List.rev |> mk_list [%pat? []]
+      in
+      [%expr function
+        | (`arr [%p args] : Kxclib.Json.jv) -> [%e ret]
+        | _ -> None]
+    | `obj `default ->
+      let body =
+        ts
+        |> List.mapi (fun i _ -> i)
+        |> List.foldr (fun i ret ->
+          let label = estring ~loc (tuple_index_to_field_name i) in
+          [%expr
+            Bindoj_runtime.StringMap.find_opt [%e label] fields
+            >>= fun [%p pvari i] -> [%e ret]]) ret
+      in
+      [%expr function
+        | (`obj fields : Kxclib.Json.jv) ->
+          let fields = Bindoj_runtime.StringMap.of_list fields in
+          [%e body]
+        | _ -> None]
   in
   let map_key_converter (k: map_key) = (* key_of_string *)
     match k with
@@ -404,10 +431,17 @@ let gen_json_encoder :
             List.mapi (fun i typ ->
                 [%expr [%e encoder_of_coretype self_ename typ] [%e evari i]])
               args in
-          begin match args with
-          | [] -> [%expr `obj [[%e cstr]]]
-          | [arg] -> [%expr `obj [[%e cstr]; ([%e arg_fname], [%e arg])]]
-          | _ -> [%expr `obj [[%e cstr]; ([%e arg_fname], `arr [%e elist ~loc args])]]
+          begin match args, Json_config.get_tuple_style vc_configs with
+          | [], _ -> [%expr `obj [[%e cstr]]]
+          | [arg], _ -> [%expr `obj [[%e cstr]; ([%e arg_fname], [%e arg])]]
+          | _, `arr -> [%expr `obj [[%e cstr]; ([%e arg_fname], `arr [%e elist ~loc args])]]
+          | _, `obj `default ->
+            let fields =
+              args |> List.mapi (fun i arg ->
+                let label = estring ~loc (tuple_index_to_field_name i) in
+                [%expr ([%e label], [%e arg])])
+            in
+            [%expr `obj ([%e cstr] :: [%e elist ~loc fields])]
           end
         | `inline_record fields ->
           let discriminator = estring ~loc discriminator in
@@ -523,10 +557,11 @@ let gen_json_decoder :
           let arg_fname = pstring ~loc arg_fname in
           let cstr = [%pat? ([%p discriminator], `str [%p pstring ~loc vc_name])] in
           let args = List.mapi (fun i _ -> pvari i) args in
-          begin match args with
-          | [] -> [%pat? `obj [[%p cstr]]]
-          | [arg] -> [%pat? `obj [[%p cstr]; ([%p arg_fname], [%p arg])]]
-          | _ -> [%pat? `obj [[%p cstr]; ([%p arg_fname], `arr [%p plist ~loc args])]]
+          begin match args, Json_config.get_tuple_style vc_configs with
+          | [], _ -> [%pat? `obj [[%p cstr]]]
+          | [arg], _ -> [%pat? `obj [[%p cstr]; ([%p arg_fname], [%p arg])]]
+          | _, `arr -> [%pat? `obj [[%p cstr]; ([%p arg_fname], `arr [%p plist ~loc args])]]
+          | _, `obj `default -> [%pat? `obj ([%p cstr] :: fields)]
           end
         | `inline_record _ ->
           let discriminator = pstring ~loc discriminator in
@@ -540,24 +575,34 @@ let gen_json_decoder :
       | `regular -> Exp.construct (lidloc name) args
       | `polymorphic -> Exp.variant name args
     in
-    cstrs |&> fun { vc_name; vc_param; _ } ->
+    cstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
       match vc_param with
       | `no_param -> [%expr Some [%e construct vc_name None]]
       | `tuple_like args ->
+        let style = Json_config.get_tuple_style vc_configs in
         begin match args with
         | [] -> [%expr Some [%e construct vc_name None]]
         | _ ->
+          let len = List.length args in
           let bindings : (pattern * expression) list =
             List.mapi (fun i arg ->
-                (pvari i,
-                  [%expr [%e decoder_of_coretype self_ename arg] [%e evari i]]))
-              args in
+              match style with
+              | `obj `default when len > 1 -> (
+                let label = estring ~loc (tuple_index_to_field_name i) in
+                pvari i, [%expr
+                  Bindoj_runtime.StringMap.find_opt [%e label] fields >>= [%e decoder_of_coretype self_ename arg]
+                ])
+              | _ -> (pvari i, [%expr [%e decoder_of_coretype self_ename arg] [%e evari i]])
+            ) args in
           let body : expression =
             [%expr Some
                 [%e construct
                     vc_name
                     (Some (pexp_tuple ~loc (List.mapi (fun i _ -> evari i) args)))]] in
-          bind_options bindings body
+          match style with
+          | `obj `default when len > 1 ->
+            [%expr let fields = Bindoj_runtime.StringMap.of_list fields in [%e bind_options bindings body]]
+          | _ -> bind_options bindings body
         end
       | `inline_record fields ->
         begin match fields with
@@ -623,14 +668,17 @@ let gen_json_codec ?self_contained ?codec td =
 
 open Bindoj_openapi.V3
 
+exception Incompatible_with_openapi_v3 of string
+
 let base64_regex = {|^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/][AQgw]==|[A-Za-z0-9+\/]{2}[AEIMQUYcgkosw048]=)?$|}
 
-let gen_openapi_schema : type_decl -> Schema_object.t =
-  let schema = Schema_object.schema in
+let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
+  fun ?(openapi=false) ->
 
   let docopt = function `docstr s -> Some s | `nodoc -> None in
 
-  let convert_coretype ~self_id ?description (ct: coretype) =
+  let convert_coretype ~self_name ?description (ct: coretype) =
+    let tuple_style = Json_config.get_tuple_style ct.ct_configs in
     let rec go =
       let open Coretype in
       function
@@ -643,11 +691,26 @@ let gen_openapi_schema : type_decl -> Schema_object.t =
       | Prim `byte -> Schema_object.integer ~minimum:0 ~maximum:255 ?description ()
       | Prim `bytes -> Schema_object.string ~format:`byte ~pattern:base64_regex ?description ()
       | Uninhabitable -> Schema_object.null ?description ()
-      | Ident id -> Schema_object.ref ("#" ^ id.id_name)
+      | Ident id ->
+        if openapi then (* in OpenAPI, types live in #/components/schemas/ *)
+          Schema_object.ref ("#/components/schemas/" ^ id.id_name)
+        else
+          Schema_object.ref ("#" ^ id.id_name)
       | Option t ->
         Schema_object.oneOf ?description [go t; Schema_object.null ()]
       | Tuple ts ->
-        Schema_object.tuple ?description (ts |> List.map go )
+        begin match tuple_style with
+        | `arr ->
+          if openapi then
+            raise (Incompatible_with_openapi_v3 (
+              sprintf "OpenAPI v3 does not support tuple validation (in type '%s')" self_name))
+          else
+            Schema_object.tuple ?description (ts |> List.map go)
+        | `obj `default ->
+          Schema_object.record ?description (ts |> List.mapi (fun i x ->
+            tuple_index_to_field_name i, go x
+          ))
+        end
       | List t ->
         Schema_object.array ?description ~items:(`T (go t)) ()
       | Map (`string, t) ->
@@ -655,15 +718,19 @@ let gen_openapi_schema : type_decl -> Schema_object.t =
       | StringEnum cases ->
         let enum = cases |> List.map (fun case -> `str case) in
         Schema_object.string ~enum ()
-      | Self -> Schema_object.ref self_id
+      | Self ->
+        if openapi then (* in OpenAPI, types live in #/components/schemas/ *)
+          Schema_object.ref ("#/components/schemas/" ^ self_name)
+        else
+          Schema_object.ref ("#" ^ self_name)
     in
     go ct.ct_desc
   in
 
-  let record_to_t ?schema ~self_id ?id ?(additional_fields = []) ~name ~doc fields =
+  let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc fields =
     let field_to_t field =
       field.rf_name,
-      convert_coretype ~self_id ?description:(docopt field.rf_doc) field.rf_type
+      convert_coretype ~self_name ?description:(docopt field.rf_doc) field.rf_type
     in
     let fields = fields |> List.map field_to_t in
     Schema_object.record
@@ -675,11 +742,19 @@ let gen_openapi_schema : type_decl -> Schema_object.t =
   in
 
   fun { td_name = name; td_kind; td_doc = doc; td_configs } ->
-    let self_id = "#" ^ name in
-    let id = self_id in
+    let self_name = name in
+
+    let schema =
+      if openapi then None (* OpenAPI v3 does not support `$schema` *)
+      else Some Schema_object.schema in
+
+    let id =
+      if openapi then None (* OpenAPI v3 does not support `id` *)
+      else Some ("#" ^ name) in
+
     match td_kind with
     | Record_decl fields ->
-      record_to_t ~schema ~self_id ~id ~name ~doc fields
+      record_to_t ?schema ?id ~name ~self_name ~doc fields
     | Variant_decl ctors ->
       let discriminator = Json_config.get_variant_discriminator td_configs in
       let ctor_to_t { vc_name = name; vc_param; vc_doc = doc; vc_configs } =
@@ -695,23 +770,33 @@ let gen_openapi_schema : type_decl -> Schema_object.t =
             | `tuple_like (t :: ts) ->
               let arg_name = Json_config.get_name Json_config.default_name_of_variant_arg vc_configs in
               let arg_field =
-                match ts with
-                | [] -> [arg_name, convert_coretype ~self_id t]
-                | _ ->
-                  let ts = (t :: ts) |> List.map (convert_coretype ~self_id) in
-                  [arg_name, Schema_object.tuple ts]
+                match ts, Json_config.get_tuple_style vc_configs with
+                | [], _ -> [arg_name, convert_coretype ~self_name t]
+                | _, `arr ->
+                  if openapi then
+                    raise (Incompatible_with_openapi_v3 (
+                      sprintf "OpenAPI v3 does not support tuple validation (in type '%s')" self_name))
+                  else
+                    let ts = t :: ts |> List.map (convert_coretype ~self_name) in
+                    [arg_name, Schema_object.tuple ts]
+                | _, `obj `default ->
+                  t :: ts |> List.mapi (fun i t ->
+                    tuple_index_to_field_name i, convert_coretype ~self_name t
+                  )
               in
               let fields = discriminator_field @ arg_field in
               Schema_object.record ?description:(docopt doc) ~title:name fields
             | `inline_record fields ->
-              record_to_t ~self_id ~additional_fields:discriminator_field ~name ~doc fields
+              record_to_t ~additional_fields:discriminator_field ~name ~self_name ~doc fields
             end
         in
         Schema_object.oneOf
-          ~schema
+          ?schema
           ~title:name
           ?description:(docopt doc)
-          ~id
+          ?id
           (ctors |> List.map ctor_to_t)
       | Alias_decl cty ->
-        convert_coretype ~self_id ?description:(docopt doc) cty
+        convert_coretype ~self_name ?description:(docopt doc) cty
+
+let gen_openapi_schema : type_decl -> Schema_object.t = gen_json_schema ~openapi:true

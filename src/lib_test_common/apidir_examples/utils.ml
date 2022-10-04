@@ -19,3 +19,10 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 type http_method = [ `get | `post ] [@@deriving show]
 let http_method = Alcotest.of_pp pp_http_method
+
+let check_invp name invp ~ip_name ~ip_urlpath ~ip_method =
+  let open Alcotest in
+  let open Bindoj_apidir_shared in
+  check string (sprintf "%s.ip_name" name) ip_name invp.ip_name;
+  check string (sprintf "%s.ip_urlpath" name) ip_urlpath invp.ip_urlpath;
+  check http_method (sprintf "%s.ip_method" name) ip_method invp.ip_method

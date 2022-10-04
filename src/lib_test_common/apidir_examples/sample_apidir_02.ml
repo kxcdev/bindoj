@@ -21,24 +21,17 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 
 open Bindoj_apidir_shared
 open Bindoj_typedesc.Typed_type_desc
-open Utils
 
 module Types = struct
   open Bindoj_test_common_typedesc_generated_examples
   open Bindoj_runtime
 
-  type int_list = Ex03.int_list
-  let int_list : int_list typed_type_decl = Typed.mk Ex03.decl Ex03.reflect
+  type int_list = Ex03_objtuple.int_list
+  let int_list : int_list typed_type_decl = Typed.mk Ex03_objtuple.decl Ex03_objtuple.reflect
 
   let int : int typed_type_decl =
     let decl = alias_decl "int" (Coretype.mk_prim `int) in
-    let reflect =
-      lazy Refl.(Alias {
-          get = (fun n -> Int n);
-          mk = (function
-              | Int n -> Some n
-              | _ -> None);
-        }) in
+    let reflect = Reflects.int_reflect in
     Typed.mk decl reflect
 end
 
@@ -75,3 +68,40 @@ let sum_of_int_list =
     ~resp_doc:"sum of the supplied int list"
 
 include R.Public
+
+open Alcotest
+open Utils
+
+let test_individual_invocation_points() = begin
+  check_invp "get_any_int_list" get_any_int_list
+    ~ip_name:"get-any-int-list"
+    ~ip_urlpath:"/int-list/any-one"
+    ~ip_method:`get;
+
+  check_invp "inc_int_list" inc_int_list
+    ~ip_name:"inc-int-list"
+    ~ip_urlpath:"/int-list/inc"
+    ~ip_method:`post;
+
+  check_invp "sum_of_int_list" sum_of_int_list
+    ~ip_name:"sum-of-int-list"
+    ~ip_urlpath:"/int-list/sum"
+    ~ip_method:`post
+end
+
+let test_invocation_point_collection() = begin
+    let invps, _ =  registry_info() in
+    check (list string) "registry_info has all invp listed"
+      (List.sort compare
+         ["get-any-int-list";
+          "inc-int-list";
+          "sum-of-int-list"])
+      (List.sort compare (invps |&> (fun (Invp invp) -> invp.ip_name)))
+  end
+
+let tests =  [
+  test_case "individual_invocation_points" `Quick
+    test_individual_invocation_points;
+  test_case "invocation_point_collection" `Quick
+    test_invocation_point_collection;
+]

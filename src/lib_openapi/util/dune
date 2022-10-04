@@ -4,6 +4,6 @@
  (libraries
   bindoj_base kxclib)
  (preprocess
-  (pps ppx_yojson_conv))
+  (pps ppx_deriving.std ppx_yojson_conv))
  (flags (:standard -open Kxclib)))
 

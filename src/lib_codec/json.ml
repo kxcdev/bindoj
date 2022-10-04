@@ -28,14 +28,23 @@ module Config = struct
   (*| `tuple *)
   ]
 
+  type json_tuple_style = [
+    | `arr
+    | `obj of [`default]
+  ]
+
   type ('pos, 'kind) config +=
     | Config_json_name : string -> ('pos, [`json_name]) config
     | Config_json_variant_style :
       json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
     | Config_json_variant_discriminator :
       string -> ([`type_decl], [`json_variant_discriminator]) config
+    | Config_json_tuple_style :
+      json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
     | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
+
+  let tuple_index_to_field_name i = "_" ^ string_of_int i
 
   module Json_config = struct
     let name name = Config_json_name name
@@ -62,6 +71,14 @@ module Config = struct
         | _ -> None
       )
 
+    let default_tuple_style = `arr
+    let tuple_style style = Config_json_tuple_style style
+    let get_tuple_style configs =
+      Configs.find_or_default ~default:default_tuple_style (function
+        | Config_json_tuple_style s -> Some s
+        | _ -> None
+      ) configs
+
     let custom_encoder encoder_name = Config_json_custom_encoder encoder_name
     let get_custom_encoder =
       Configs.find (function | Config_json_custom_encoder s -> Some s | _ -> None)
@@ -81,6 +98,13 @@ open MonadOps(Option)
 let rec of_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) (jv: jv) : 'a option =
   let { td_configs; td_kind; _ } = Typed.decl a in
   let try_opt f = try f () with Invalid_argument _msg -> None in
+  let parse_obj_style_tuple (conv: _ -> jv -> Expr.t option) (ts: _ list) (fields: jv StringMap.t) =
+    ts
+    |> List.mapi (fun i t ->
+      fields |> StringMap.find_opt (tuple_index_to_field_name i)
+      >>= fun jv -> conv t jv)
+    |> sequence_list
+  in
   let expr_of_json (ct: coretype) (jv: jv) : Expr.t option =
     let rec go (d: Coretype.desc) (jv: jv) =
       match d, jv with
@@ -113,8 +137,14 @@ let rec of_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
         of_json ~env a jv >>= fun value -> Expr.Refl (Typed.to_refl a, value) |> some
       | List t, `arr xs ->
         xs |> List.map (go t) >>=* fun xs -> Expr.List xs |> some
-      | Tuple ts, `arr xs ->
-        try_opt (fun () -> List.map2 go ts xs >>=* fun xs -> Expr.Tuple xs |> some)
+      | Tuple ts, _ ->
+        try_opt (fun () ->
+          match jv, Json_config.get_tuple_style ct.ct_configs with
+          | `arr xs, `arr -> List.map2 go ts xs >>=* fun xs -> Expr.Tuple xs |> some
+          | `obj fields, `obj `default ->
+            parse_obj_style_tuple go ts (StringMap.of_list fields) |> Option.map (fun xs -> Expr.Tuple xs)
+          | _, _ -> None
+        )
       | Map (`string, t), `obj fields ->
         fields |> List.map (fun (name, x) -> go t x |> Option.map (fun v -> name, v))
         >>=* fun fields -> Expr.Map fields |> some
@@ -153,13 +183,18 @@ let rec of_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
             begin match ctor.vc_param, ref_ctor with
             | `no_param, NoParam { value } -> Some value
             | `tuple_like ts, TupleLike { mk; _ } ->
-              obj |> StringMap.find_opt arg_fname >>= (fun arg ->
-                match ts, arg with
-                | [], _ -> mk []
-                | [t], _ -> expr_of_json t arg >>= fun expr -> mk [expr]
-                | ts, `arr xs -> try_opt (fun () -> List.map2 expr_of_json ts xs >>=* mk)
-                | _ -> None
-              )
+              begin match Json_config.get_tuple_style ctor.vc_configs, ts with
+              | `obj `default, _ :: _ :: _ ->
+                parse_obj_style_tuple expr_of_json ts obj >>= mk
+              | _, _ ->
+                obj |> StringMap.find_opt arg_fname >>= (fun arg ->
+                  match ts, arg with
+                  | [], _ -> mk []
+                  | [t], _ -> expr_of_json t arg >>= fun expr -> mk [expr]
+                  | ts, `arr xs -> try_opt (fun () -> List.map2 expr_of_json ts xs >>=* mk)
+                  | _ -> None
+                )
+              end
             | `inline_record fields, InlineRecord { mk; _ } ->
               record_fields_of_json fields jv >>= mk
             | _ -> fail ()
@@ -202,7 +237,12 @@ let rec to_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
       | Self, Expr.Refl (_, x) -> to_json ~env a (Obj.magic x)
       | List t, Expr.List xs -> `arr (List.map (go t) xs)
       | Tuple ts, Expr.Tuple xs ->
-        begin try `arr (List.map2 go ts xs) with
+        begin try
+          match Json_config.get_tuple_style ct.ct_configs with
+          | `arr -> `arr (List.map2 go ts xs)
+          | `obj `default ->
+            `obj (List.combine ts xs |> List.mapi (fun i (t, x) -> tuple_index_to_field_name i, go t x))
+        with
           Invalid_argument _msg -> fail "tuple length mismatch"
         end
       | Map (`string, t), Expr.Map xs -> `obj (List.map (fun (k, v) -> k, go t v) xs)
@@ -232,14 +272,17 @@ let rec to_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
         let fields = record_to_json_fields fields (get value) in
         `obj (discriminator_field @ fields)
       | `tuple_like ts, TupleLike { get; _ } ->
-        begin match ts, get value with
-        | [], [] -> `obj discriminator_field
-        | [t], [e] ->
+        begin match ts, get value, Json_config.get_tuple_style ctor.vc_configs with
+        | [], [], _ -> `obj discriminator_field
+        | [t], [e], _ ->
           let value = expr_to_json t e in
           `obj (discriminator_field @ [arg_fname, value])
-        | ts, es ->
+        | ts, es, `arr ->
           let value = `arr (List.map2 expr_to_json ts es) in
           `obj (discriminator_field @ [arg_fname, value])
+        | ts, es, `obj `default ->
+          let fields = List.combine ts es |> List.mapi (fun i (t, x) -> tuple_index_to_field_name i, expr_to_json t x) in
+          `obj (discriminator_field @ fields)
         end
       | _, _ -> fail "param style mismatch"
       end

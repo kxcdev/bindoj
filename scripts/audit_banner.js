@@ -30,12 +30,12 @@ const sourceDirs = [
   "./doc/tests_src",
   "./src",
   "./with_js/src",
+  "./with_js/apidir-tests",
   "./with_js/compile-tests",
-  "./with_js/jsoo-integration-tests"
+  "./with_js/jsoo-integration-tests",
 ]
 
 const ignorePatterns = [
-  /.*with_js\/jsoo-integration-tests\/import\/.+$/,
   /.+_gen\.[A-Za-z]+$/,
   /.*README\.md$/,
 ]

@@ -16,6 +16,9 @@
   (alias node_modules)
   (alias compile-tests/gen)
   (source_tree unit-tests))
- (action (run yarn test)))
+ (action
+  (progn
+   (run yarn install --frozen-lockfile)
+   (run yarn test))))
 
 (dirs :standard \ node_modules)

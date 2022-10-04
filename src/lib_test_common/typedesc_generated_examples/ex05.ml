@@ -23,6 +23,7 @@ type t = complex_types = {
   option: int option;
   list:   int list;
   tuple:  (int * int);
+  objtuple: (int * int);
   nested: (int option * int list * (int * int));
   map: (string * int) list;
 } [@@deriving show]
@@ -41,6 +42,7 @@ let sample_value01 : sample = {
     option = Some 42;
     list = [1;2;3;4];
     tuple = (4, 2);
+    objtuple = (4, 2);
     nested = (Some 42, [4;2], (4,2));
     map = ["foo", 4; "bar", 2]
   };
@@ -48,6 +50,7 @@ let sample_value01 : sample = {
     "option", `num 42.;
     "list", `arr [`num 1.; `num 2.; `num 3.; `num 4.];
     "tuple", `arr [`num 4.; `num 2.];
+    "objtuple", `obj ["_0", `num 4.; "_1", `num 2.];
     "nested", `arr [
       `num 42.;
       `arr [`num 4.; `num 2.];
@@ -62,6 +65,7 @@ let sample_value02 : sample = {
     option = None;
     list = [];
     tuple = (0, 0);
+    objtuple = (0, 0);
     nested = (None, [], (0,0));
     map = [];
   };
@@ -69,6 +73,7 @@ let sample_value02 : sample = {
     "option", `null;
     "list", `arr [];
     "tuple", `arr [`num 0.; `num 0.];
+    "objtuple", `obj ["_0", `num 0.; "_1", `num 0.];
     "nested", `arr [
       `null;
       `arr [];

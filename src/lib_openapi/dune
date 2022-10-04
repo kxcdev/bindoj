@@ -3,8 +3,22 @@
  (public_name bindoj.openapi)
  (libraries
   bindoj_openapi_util
-  bindoj_openapi_schema_object
+  bindoj_openapi_info_object
+  bindoj_openapi_server_object
+  bindoj_openapi_components_object
+  bindoj_openapi_path_item_object
   bindoj_openapi_external_documentation_object
+  bindoj_openapi_parameter_object
+  bindoj_openapi_request_body_object
+  bindoj_openapi_response_object
+  bindoj_openapi_example_object
+  bindoj_openapi_link_object
+  bindoj_openapi_header_object
+  bindoj_openapi_tag_object
+  bindoj_openapi_reference_object
+  bindoj_openapi_schema_object
+  bindoj_openapi_security_scheme_object
+  bindoj_openapi_style_value
   bindoj_base yojson kxclib)
  (preprocess
   (pps ppx_deriving.std ppx_yojson_conv))

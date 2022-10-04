@@ -1,0 +1,12 @@
+(test
+ (name lib_apidir_generative_test)
+ (libraries
+  alcotest
+  bindoj_base
+  bindoj_typedesc
+  bindoj_apidir_shared
+  bindoj_openapi
+  bindoj_apidir_generative
+  bindoj_gen
+  bindoj_test_common)
+ (flags (:standard -open Kxclib)))

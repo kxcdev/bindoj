@@ -1,0 +1,8 @@
+(executable
+ (name gen)
+ (libraries
+   bindoj_openapi
+   bindoj_test_common bindoj_base
+   bindoj_apidir_shared bindoj_apidir_generative
+   kxclib)
+ (flags (:standard -open Kxclib)))

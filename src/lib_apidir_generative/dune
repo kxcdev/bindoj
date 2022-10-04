@@ -1,0 +1,13 @@
+(library
+ (name bindoj_apidir_generative)
+ (public_name bindoj.apidir_generative)
+ (libraries
+  kxclib
+  uri
+  bindoj_typedesc
+  bindoj_gen
+  bindoj_apidir_shared
+  bindoj_openapi)
+ (flags (:standard
+          -open Kxclib)))
+

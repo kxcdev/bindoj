@@ -17,24 +17,34 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-[@@@ocaml.warning "-32-33"]
+open Bindoj_openapi_util.V3
 
-open Js_of_ocaml
+module Example_object = Bindoj_openapi_example_object.V3
+module Header_object = Bindoj_openapi_header_object.V3
+module Reference_object = Bindoj_openapi_reference_object.V3
+module Schema_object = Bindoj_openapi_schema_object.V3
+module Style_value = Bindoj_openapi_style_value.V3
 
-include Js
+type parameter_location = Query | Header | Path | Cookie
 
-type any = Unsafe.any
+type t
 
-let require specifier = Js.Unsafe.eval_string (Format.sprintf "require('%s')" specifier)
+val mk :
+  ?description:string ->
+  ?required:bool ->
+  ?deprecated:bool ->
+  ?allow_empty_value:bool ->
+  ?style:Style_value.t ->
+  ?explode:bool ->
+  ?allow_reserved:bool ->
+  ?schema:(Schema_object.t, Reference_object.t) either ->
+  ?example:jv ->
+  ?examples:(string * (Example_object.t, Reference_object.t) either) list ->
+  ?content:(string * Header_object.media_type_object) list ->
+  string -> parameter_location -> t
 
-let clone (obj: 'a) : 'a = _JSON##parse (_JSON##stringify obj)
+val pp : ppf -> t -> unit
 
-module Json = struct
-  let stringify (obj: 'a) : string = _JSON##stringify obj |> to_string
+val to_json : t -> jv
 
-  let parse (str: string) : 'a = _JSON##parse (string str)
-end
-
-module Console = struct
-  let log (x: 'a) = Firebug.console##log x
-end
+val yojson_of_t : t -> yojson

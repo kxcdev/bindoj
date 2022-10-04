@@ -23,10 +23,6 @@ open Bindoj_apidir_shared
 
 module Typed_type_desc = Bindoj_typedesc.Typed_type_desc
 
-open[@warning "-33"] Log0
-
-(* TODO - port back to bindoj *)
-
 module type ApiDirManifest = sig
   val registry_info : unit -> invocation_point_collection * type_decl_collection
 end
@@ -69,15 +65,10 @@ module MakeApiClient
           ('reqty -> 'respty io)
         -> handler
 
-  (* TODO - common code with ApiServerBridge *)
+  (* TODO.future - common code with ApiServerBridge #218 *)
   let registry_info = Dir.registry_info()
   let invocation_points, type_decls =
     let invocation_points, type_decls = registry_info in
-    let type_decls =
-      type_decls
-      |-> (fun tdis ->
-        tdis |&> (fun tdi -> tdi.tdi_name) |>
-          verbose "type_decls: %a" List.(pp pp_string)) in
     invocation_points, type_decls
 
   let tdenv :
@@ -103,11 +94,9 @@ module MakeApiClient
     let post_index = Hashtbl.create invp_count in
     let get_index = Hashtbl.create invp_count in
     invocation_points |!> (fun ((Invp invp) as invp') ->
-      let path = invp.ip_urlpath in
-      let index, index_label = match invp.ip_method with
-        | `post -> post_index, "post"
-        | `get -> get_index, "get " in
-      verbose "invp.%s added: [%s]" path index_label;
+      let index= match invp.ip_method with
+        | `post -> post_index
+        | `get -> get_index in
       Hashtbl.replace index invp.ip_urlpath invp'
     );
     get_index, post_index
@@ -151,7 +140,7 @@ module MakeApiClient
          let ttd = ttd_of_media_type desc.rq_media_type in
          reqbody |> Bindoj_codec.Json.to_json ~env:tdenv ttd in
     let resp_ttd =
-      (* TODO - now assuming there is one and exactly one response desc *)
+      (* TODO.future - now assuming there is one and exactly one response desc #216 *)
       match invp.ip_responses with
       | [`default, desc] -> ttd_of_media_type desc.rs_media_type
       | _ -> failwith' "panic @%s" __LOC__ in
@@ -168,7 +157,7 @@ module MakeApiClient
         -> (unit, 'resp) invp -> 'resp io =
     fun ?additional_headers ?additional_query_params invp ->
     let resp_ttd =
-      (* TODO - now assuming there is one and exactly one response desc *)
+      (* TODO.future - now assuming there is one and exactly one response desc #216 *)
       match invp.ip_responses with
       | [`default, desc] -> ttd_of_media_type desc.rs_media_type
       | _ -> failwith' "panic @%s" __LOC__ in
@@ -178,5 +167,5 @@ module MakeApiClient
     Fetcher.perform_get ~urlpath ~headers ~query_params
     >>= process_response resp_ttd
 
-  (* TODO - add method to check completeness of type_decl_collection *)
+  (* TODO.future - add method to check completeness of type_decl_collection #219 *)
 end

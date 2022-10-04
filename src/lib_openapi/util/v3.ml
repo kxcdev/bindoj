@@ -41,3 +41,7 @@ let yojson_of_either : ('a -> yojson) -> ('b -> yojson) -> ('a, 'b) either -> yo
   function
   | Left x -> yojson_of_a x
   | Right x -> yojson_of_b x
+
+type 'a assoc = (string * 'a) list [@@deriving show]
+let yojson_of_assoc yojson_of_a fields : yojson =
+  `Assoc (fields |&> fun (k, v) -> (k, yojson_of_a v))

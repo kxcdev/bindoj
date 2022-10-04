@@ -25,5 +25,6 @@
   (alias ../compile-tests/gen))
  (action
   (progn
-    (run yarn build)
-    (run node %{test}))))
+   (run yarn --cwd ../ install --frozen-lockfile)
+   (run yarn build)
+   (run node %{test}))))

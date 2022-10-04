@@ -20,21 +20,30 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_base
 open Typed_type_desc
 
-type json_variant_style = [
-  | `flatten
-(*| `nested *)
-(*| `tuple *)
-]
-
 module Config : sig
+  type json_variant_style = [
+    | `flatten
+  (*| `nested *)
+  (*| `tuple *)
+  ]
+
+  type json_tuple_style = [
+    | `arr
+    | `obj of [`default]
+  ]
+
   type ('pos, 'kind) config +=
     | Config_json_name : string -> ('pos, [`json_name]) config
     | Config_json_variant_style :
       json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
     | Config_json_variant_discriminator :
       string -> ([`type_decl], [`json_variant_discriminator]) config
+    | Config_json_tuple_style :
+      json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
     | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
+
+  val tuple_index_to_field_name : int -> string
 
   module Json_config : sig
     val name : string -> ([< pos], [`json_name]) config
@@ -53,6 +62,10 @@ module Config : sig
     val default_variant_discriminator : string
     val variant_discriminator : string -> ([`type_decl], [`json_variant_discriminator]) config
     val get_variant_discriminator : [`type_decl] configs -> string
+
+    val default_tuple_style : json_tuple_style
+    val tuple_style : json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
+    val get_tuple_style : [< `coretype | `variant_constructor] configs -> json_tuple_style
 
     val custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     val get_custom_encoder : [`coretype] configs -> string option

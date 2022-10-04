@@ -17,10 +17,10 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-module Import = Bindoj_withjs_import
+open Bindoj_withjs_import
 
-module Ts = Bindoj_withjs_import.Ts2ocaml
-module Faker = Bindoj_withjs_import.Json_schema_faker
+module Ts = Ts2ocaml
+module Faker = Json_schema_faker
 
 open Bindoj_base
 open Bindoj_test_common.Typedesc_generated_examples

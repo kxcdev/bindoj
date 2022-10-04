@@ -21,7 +21,6 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 
 open Bindoj_apidir_shared
 open Bindoj_typedesc.Typed_type_desc
-open Utils
 
 module Types = struct
   open Bindoj_test_common_typedesc_generated_examples
@@ -56,3 +55,34 @@ let get_student_from_person =
     ~resp_doc:"the student record corresponding to the supplied person"
 
 include R.Public
+
+open Alcotest
+open Utils
+
+let test_individual_invocation_points() = begin
+    check_invp "get_any_student" get_any_student
+      ~ip_name:"get-any-student"
+      ~ip_urlpath:"/student/any-one"
+      ~ip_method:`get;
+
+    check_invp "get_student_from_person" get_student_from_person
+      ~ip_name:"get-student-from-person"
+      ~ip_urlpath:"/student/from-person"
+      ~ip_method:`post
+  end
+
+let test_invocation_point_collection() = begin
+    let invps, _ =  registry_info() in
+    check (list string) "registry_info has all invp listed"
+      (List.sort compare
+         ["get-any-student";
+          "get-student-from-person"])
+      (List.sort compare (invps |&> (fun (Invp invp) -> invp.ip_name)))
+  end
+
+let tests =  [
+  test_case "individual_invocation_points" `Quick
+    test_individual_invocation_points;
+  test_case "invocation_point_collection" `Quick
+    test_invocation_point_collection;
+]

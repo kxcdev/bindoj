@@ -306,6 +306,10 @@ module[@js.scope "Promise"] Promise : sig
   val t_to_js: ('T -> Ojs.t) -> 'T t -> Ojs.t
   val t_of_js: (Ojs.t -> 'T) -> Ojs.t -> 'T t
 
+  type error = private Ojs.t
+  val error_to_js: error -> Ojs.t
+  val error_of_js: Ojs.t -> error
+
   (**
     language version: ES2018
     Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -313,7 +317,7 @@ module[@js.scope "Promise"] Promise : sig
     @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
     @return A Promise for the completion of the callback.
   *)
-  val finally: 'T t -> ?onfinally:([`Null | `Undefined of undefined | `U1 of (unit -> unit)] [@js.union]) -> unit -> 'T t [@@js.call "finally"]
+  val finally: 'T t -> ?onfinally:(unit -> unit) -> unit -> 'T t [@@js.call "finally"]
   (* [Symbol.toStringTag]: unit -> string *)
 
   (**
@@ -322,14 +326,14 @@ module[@js.scope "Promise"] Promise : sig
     @param onrejected The callback to execute when the Promise is rejected.
     @return A Promise for the completion of which ever callback is executed.
   *)
-  val then_: 'T t -> ?onfulfilled:([`Null | `Undefined of undefined | `U1 of ('T -> ([`U1 of 'TResult1 | `U2 of 'TResult1 t] [@js.union]))] [@js.union]) -> ?onrejected:([`Null | `Undefined of undefined | `U1 of (any -> ([`U1 of 'TResult2 | `U2 of 'TResult2 t] [@js.union]))] [@js.union]) -> unit -> ('TResult1, 'TResult2) union2 t [@@js.call "then"]
+  val then_: 'T t -> ?onfulfilled:('T -> ([`U1 of 'TResult1 | `U2 of 'TResult1 t] [@js.union])) -> ?onrejected:(error -> ([`U1 of 'TResult2 | `U2 of 'TResult2 t] [@js.union])) -> unit -> ('TResult1, 'TResult2) union2 t [@@js.call "then"]
 
   (**
     Attaches a callback for only the rejection of the Promise.
     @param onrejected The callback to execute when the Promise is rejected.
     @return A Promise for the completion of the callback.
   *)
-  val catch: 'T t -> ?onrejected:([`Null | `Undefined of undefined | `U1 of (any -> ([`U1 of 'TResult | `U2 of 'TResult t] [@js.union]))] [@js.union]) -> unit -> ('T, 'TResult) union2 t [@@js.call "catch"]
+  val catch: 'T t -> ?onrejected:(error -> ([`U1 of 'TResult | `U2 of 'TResult t] [@js.union])) -> unit -> ('T, 'TResult) union2 t [@@js.call "catch"]
 
   (**
     Creates a new Promise.
@@ -337,5 +341,5 @@ module[@js.scope "Promise"] Promise : sig
     a resolve callback used to resolve the promise with a value or the result of another promise,
     and a reject callback used to reject the promise with a provided reason or error.
   *)
-  val create: (resolve:(([`U1 of 'T | `U2 of 'T t] [@js.union]) -> unit) -> reject:(?reason:any -> unit -> unit) -> unit) -> 'T t [@@js.create]
+  val create: (resolve:(([`U1 of 'T | `U2 of 'T t] [@js.union]) -> unit) -> reject:(?reason:error -> unit -> unit) -> unit) -> 'T t [@@js.create]
 end

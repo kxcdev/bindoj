@@ -1,9 +1,8 @@
-(tests
- (names
-  sample_apidir_01)
+(test
+ (name run)
  (libraries
    alcotest
    bindoj_test_common bindoj_apidir_shared bindoj_base
+   js_of_ocaml
    kxclib yojson jsonm)
- (flags (:standard -open Kxclib))
- (preprocess (pps ppx_deriving.show)))
+ (flags (:standard -open Kxclib)))

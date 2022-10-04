@@ -60,7 +60,7 @@ and external_doc = {
   ed_description : string option;
 }
 
-(* future work
+(* TODO.future #222
 and parameter = {
   pr_name : string;
   pr_loc : parameter_location;
@@ -78,7 +78,7 @@ and 't media_type = {
   mt_type : 't typed_type_decl;
   mt_examples : (string * 't) list;
   mt_external_examples : (string * string) list;
-  (* mt_encoding : encoding; *) (* assume that encoding codec is UTF8 *)
+  (* mt_encoding : encoding; *) (* TODO.future - assume that encoding codec is UTF8 #223 *)
 }
 
 and 't header = {
@@ -100,15 +100,18 @@ type untyped_invocation_point_info =
 
 type invocation_point_collection = untyped_invocation_point_info list
 
+type registry_info = invocation_point_collection * type_decl_collection
+
 module type RegistryInfo = sig
   type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
-  val registry_info : unit -> invocation_point_collection * type_decl_collection
+  type nonrec registry_info = registry_info
+  val registry_info : unit -> registry_info
 end
 
 module type MakeRegistryS = sig
 
-  (** TODO - allow specifying multiple response types *)
-  (** TODO - allow specifying examples for req/resp  *)
+  (** TODO.future - allow specifying multiple response types #216 *)
+  (** TODO.future - allow specifying examples for req/resp #221 *)
 
   val register_type_decl_info :
     ?name:string
@@ -258,6 +261,7 @@ module MakeRegistry () : MakeRegistryS = struct
 
   module Public = struct
     type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
+    type registry_info = invocation_point_collection * type_decl_collection
     let registry_info () = (!invp_registry, !type_registry)
   end
 end

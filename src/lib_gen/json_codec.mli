@@ -66,4 +66,8 @@ val gen_json_codec :
 
 open Bindoj_openapi.V3
 
+exception Incompatible_with_openapi_v3 of string
+
+val gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t
+
 val gen_openapi_schema : type_decl -> Schema_object.t

@@ -23,6 +23,10 @@ open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05"
 
+let tuple_configs : [`coretype] configs =
+  let open Bindoj_codec.Json in
+  [Json_config.tuple_style (`obj `default)]
+
 let decl : type_decl =
   record_decl "complex_types" [
     record_field "option" (Coretype.(mk_option (prim `int)));
@@ -30,6 +34,8 @@ let decl : type_decl =
     record_field "list" (Coretype.(mk_list (prim `int)));
 
     record_field "tuple" (Coretype.(mk_tuple [prim `int; prim `int]));
+
+    record_field "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]));
 
     record_field "nested" (Coretype.(
       mk_tuple [
@@ -53,6 +59,9 @@ let decl_with_docstr : type_decl =
     record_field "tuple" (Coretype.(mk_tuple [prim `int; prim `int]))
       ~doc:(`docstr "(int * int)");
 
+    record_field "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]))
+      ~doc:(`docstr "(int * int) (as object)");
+
     record_field "nested" (Coretype.(
       mk_tuple [
         option (prim `int);
@@ -73,6 +82,7 @@ let fwrt : (unit, unit) fwrt_decl =
       field ~annot "option" (Coretype.(mk_option (prim `int)));
       field ~annot "list"   (Coretype.(mk_list (prim `int)));
       field ~annot "tuple"  (Coretype.(mk_tuple [prim `int; prim `int]));
+      field ~annot "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]));
       field ~annot "nested" (
         Coretype.(
           mk_tuple [

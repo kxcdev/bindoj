@@ -168,7 +168,7 @@ let type_of_prim : Coretype.prim -> ts_type_desc = function
   | `bytes -> `type_reference "string" (* base64 *)
 
 let type_of_coretype : self_type_name:string -> coretype -> ts_type_desc =
-  fun ~self_type_name { ct_desc; _ } ->
+  fun ~self_type_name { ct_desc; ct_configs; _ } ->
   let rec go =
     let open Coretype in
     function
@@ -177,7 +177,20 @@ let type_of_coretype : self_type_name:string -> coretype -> ts_type_desc =
     | Ident s -> `type_reference s.id_name
     | Option t -> `union [go t; `type_reference "null"; `type_reference "undefined"]
     | List t -> `array (go t)
-    | Tuple ts -> `tuple (ts |> List.map go)
+    | Tuple ts ->
+      let open Bindoj_codec.Json in
+      begin match Json_config.get_tuple_style ct_configs with
+      | `arr -> `tuple (ts |> List.map go)
+      | `obj `default ->
+        let fields =
+          ts |> List.mapi (fun i t -> {
+            tsps_modifiers = [];
+            tsps_name = tuple_index_to_field_name i;
+            tsps_type_desc = go t
+          })
+        in
+        `type_literal fields
+      end
     | Map (k, v) -> `record (go (Coretype.desc_of_map_key k), go v)
     | Self -> `type_reference self_type_name
     | StringEnum cs -> `union (cs |> List.map (fun c -> `literal_type (`string_literal c)))
@@ -237,19 +250,29 @@ and ts_type_alias_decl_of_fwrt_decl :
               tsps_name = ff_name;
               tsps_type_desc = type_of_coretype ~self_type_name ff_type }
         in
-        match fc_args with
-        | [] -> tmp
-        | [arg] ->
+        let open Bindoj_codec.Json in
+        match fc_args, Json_config.get_tuple_style fc_configs with
+        | [], _ -> tmp
+        | [arg], _ ->
           { tsps_modifiers = [];
             tsps_name = arg_name;
             tsps_type_desc = type_of_coretype ~self_type_name arg } :: tmp
-        | args ->
+        | args, `arr ->
           let desc =
             `tuple (args |> List.map (type_of_coretype ~self_type_name))
           in
           { tsps_modifiers = [];
             tsps_name = arg_name;
             tsps_type_desc = desc } :: tmp
+        | args, `obj `default ->
+          let fields =
+            args |> List.mapi (fun i t -> {
+              tsps_modifiers = [];
+              tsps_name = tuple_index_to_field_name i;
+              tsps_type_desc = type_of_coretype ~self_type_name t
+            })
+          in
+          tmp @ fields
       in
       `type_literal members
   in

@@ -30,3 +30,9 @@ val pp_yojson : ppf -> yojson -> unit
 val yojson_of_jv : jv -> yojson
 
 val yojson_of_either : ('a -> yojson) -> ('b -> yojson) -> ('a, 'b) either -> yojson
+
+type 'a assoc = (string * 'a) list
+
+val pp_assoc: (ppf -> 'a -> unit) -> ppf -> 'a assoc -> unit
+
+val yojson_of_assoc: ('a -> yojson) -> 'a assoc -> yojson

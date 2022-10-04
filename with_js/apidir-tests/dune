@@ -1,0 +1,27 @@
+(rule
+ (alias gen)
+ (target sample_apidir_01.json)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target sample_apidir_02.json)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias runtest)
+ (deps
+  (sandbox none)
+  (:outputs
+    sample_apidir_01.json
+    sample_apidir_02.json
+  )
+  (file ../.redocly.yaml)
+  (alias ../node_modules))
+ (action
+  (progn
+   (run yarn --cwd ../ install --frozen-lockfile)
+   (with-accepted-exit-codes 0
+    (run npx redocly lint --config ../.redocly.yaml %{outputs})))))

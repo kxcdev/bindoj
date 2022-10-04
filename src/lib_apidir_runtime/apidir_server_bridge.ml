@@ -21,15 +21,11 @@ open Kxclib.Json
 open Kxclib
 open Bindoj_apidir_shared
 
-open[@warning "-33"] Log0
-
-(* TODO - port back to bindoj *)
-
 module type ApiDirManifest = sig
   val registry_info : unit -> invocation_point_collection * type_decl_collection
 end
 
-(* TODO - make it take a Configurator, or make it generative *)
+(* TODO.future - make it take a Configurator, or make it generative #220 *)
 module ApiHandlerBridge
          (Dir : ApiDirManifest)
          (IoStyle : sig
@@ -76,11 +72,6 @@ module ApiHandlerBridge
   let registry_info = Dir.registry_info()
   let invocation_points, type_decls =
     let invocation_points, type_decls = registry_info in
-    let type_decls =
-      type_decls
-      |-> (fun tdis ->
-        tdis |&> (fun tdi -> tdi.tdi_name) |>
-          verbose "type_decls: %a" List.(pp pp_string)) in
     invocation_points, type_decls
 
   let tdenv :
@@ -106,11 +97,9 @@ module ApiHandlerBridge
     let post_index = Hashtbl.create invp_count in
     let get_index = Hashtbl.create invp_count in
     invocation_points |!> (fun ((Invp invp) as invp') ->
-      let path = invp.ip_urlpath in
-      let index, index_label = match invp.ip_method with
-        | `post -> post_index, "post"
-        | `get -> get_index, "get " in
-      verbose "invp.%s added: [%s]" path index_label;
+      let index = match invp.ip_method with
+        | `post -> post_index
+        | `get -> get_index in
       Hashtbl.replace index invp.ip_urlpath invp'
     );
     get_index, post_index
@@ -138,7 +127,7 @@ module ApiHandlerBridge
                          (ttd_name ttd) Utils.pp_jv reqbody
              | Some req -> req) in
        let resp_ttd =
-         (* TODO - now assuming there is one and exactly one response desc *)
+         (* TODO.future - now assuming there is one and exactly one response desc #216 *)
          match invp.ip_responses with
          | [`default, desc] -> ttd_of_media_type desc.rs_media_type
          | _ -> failwith' "panic @%s" __LOC__ in
@@ -156,7 +145,7 @@ module ApiHandlerBridge
         | `get -> ()
         | _ -> .);
        let resp_ttd =
-         (* TODO - now assuming there is one and exactly one response desc *)
+         (* TODO.future - now assuming there is one and exactly one response desc #216 *)
          match invp.ip_responses with
          | [`default, desc] -> ttd_of_media_type desc.rs_media_type
          | _ -> failwith' "panic @%s" __LOC__ in
@@ -173,6 +162,6 @@ module ApiHandlerBridge
     | None -> raise (Utils.Exceptions.Unrecognized_route path)
     | Some invp -> handle_json_get invp
 
-  (* TODO - add method to check completeness of handles *)
-  (* TODO - add method to check completeness of type_decl_collection *)
+  (* TODO.future - add method to check completeness of handles #219 *)
+  (* TODO.future - add method to check completeness of type_decl_collection #219 *)
 end

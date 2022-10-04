@@ -171,36 +171,36 @@ let make_examples () =
         | "sample_apidir_02" ->
           begin match invp.ip_name with
             | "get-any-int-list" ->
-              let ExG.Sample_value.{ orig; jv; } = ExG.Ex03.sample_value03 in
+              let ExG.Sample_value.{ orig; jv; } = ExG.Ex03_objtuple.sample_value03 in
               Examples.register_get examples
                 invp.ip_urlpath uinvp
-                ~orig ~jv ~pp:ExG.Ex03.pp;
+                ~orig ~jv ~pp:ExG.Ex03_objtuple.pp;
               Bridge.register_get_handler
                 (Obj.magic invp)
                 (fun () -> Io.return orig)
 
             | "inc-int-list" ->
-              let rec inc_int_list = ExG.Ex03.(function
+              let rec inc_int_list = ExG.Ex03_objtuple.(function
                   | IntNil -> IntNil
                   | IntCons (n, ns) -> IntCons (n + 1, inc_int_list ns)) in
 
-              let ExG.Sample_value.{ orig=orig1; jv=jv1; } = ExG.Ex03.sample_value01 in
+              let ExG.Sample_value.{ orig=orig1; jv=jv1; } = ExG.Ex03_objtuple.sample_value01 in
               Examples.register_post examples
                 invp.ip_urlpath uinvp
                 ~orig_resp:(inc_int_list orig1)
                 ~orig_req:orig1
-                ~jv_resp:(inc_int_list orig1 |> ExG.Ex03.int_list_to_json)
+                ~jv_resp:(inc_int_list orig1 |> ExG.Ex03_objtuple.int_list_to_json)
                 ~jv_req:jv1
-                ~pp:ExG.Ex03.pp;
+                ~pp:ExG.Ex03_objtuple.pp;
 
-              let ExG.Sample_value.{ orig=orig2; jv=jv2; } = ExG.Ex03.sample_value03 in
+              let ExG.Sample_value.{ orig=orig2; jv=jv2; } = ExG.Ex03_objtuple.sample_value03 in
               Examples.register_post examples
                 invp.ip_urlpath uinvp
                 ~orig_resp:(inc_int_list orig2)
                 ~orig_req:orig2
-                ~jv_resp:(inc_int_list orig2 |> ExG.Ex03.int_list_to_json)
+                ~jv_resp:(inc_int_list orig2 |> ExG.Ex03_objtuple.int_list_to_json)
                 ~jv_req:jv2
-                ~pp:ExG.Ex03.pp;
+                ~pp:ExG.Ex03_objtuple.pp;
 
               Bridge.register_post_handler
                 (Obj.magic invp)
@@ -208,10 +208,10 @@ let make_examples () =
 
             | "sum-of-int-list" ->
               let rec sum_of_int_list = function
-                | ExG.Ex03.IntNil -> 0
-                | ExG.Ex03.IntCons (n, ns) -> n + sum_of_int_list ns in
+                | ExG.Ex03_objtuple.IntNil -> 0
+                | ExG.Ex03_objtuple.IntCons (n, ns) -> n + sum_of_int_list ns in
 
-              let ExG.Sample_value.{ orig=orig1; jv=jv1; } = ExG.Ex03.sample_value01 in
+              let ExG.Sample_value.{ orig=orig1; jv=jv1; } = ExG.Ex03_objtuple.sample_value01 in
               Examples.register_post examples
                 invp.ip_urlpath uinvp
                 ~orig_resp:(sum_of_int_list orig1)
@@ -220,7 +220,7 @@ let make_examples () =
                 ~jv_req:jv1
                 ~pp:pp_int;
 
-              let ExG.Sample_value.{ orig=orig2; jv=jv2; } = ExG.Ex03.sample_value03 in
+              let ExG.Sample_value.{ orig=orig2; jv=jv2; } = ExG.Ex03_objtuple.sample_value03 in
               Examples.register_post examples
                 invp.ip_urlpath uinvp
                 ~orig_resp:(sum_of_int_list orig2)

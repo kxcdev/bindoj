@@ -23,7 +23,7 @@ open Bindoj_openapi.V3
 
 let print_json (module Ex : T) =
   Ex.decl_with_docstr
-  |> Json_codec.gen_openapi_schema
+  |> Json_codec.gen_json_schema
   |> Schema_object.to_json
   |> Json.to_yojson
   |> Yojson.Safe.to_string

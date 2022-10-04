@@ -22,6 +22,8 @@ include Bindoj_test_common_apidir_examples
 
 module type T = sig
   include Bindoj_apidir_shared.RegistryInfo
+
+  val tests: unit Alcotest.test_case list
 end
 
 let all : (string * (module T)) list = [

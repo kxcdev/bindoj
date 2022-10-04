@@ -1,0 +1,7 @@
+# https://redocly.com/docs/cli/configuration/#lint-object
+lint:
+  extends:
+    - recommended
+  rules:
+    operation-summary: warn
+    no-empty-servers: warn

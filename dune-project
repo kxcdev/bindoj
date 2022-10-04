@@ -38,4 +38,6 @@
   (alcotest :with-test)
   (brr (>= 0.0.3))
   (ppx_inline_test :with-test)
+  (lwt :with-test)
+  (uri (>= 4.2.0))
   (ocaml (>= 4.12))))

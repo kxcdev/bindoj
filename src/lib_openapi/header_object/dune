@@ -1,0 +1,12 @@
+(library
+ (name bindoj_openapi_header_object)
+ (public_name bindoj.openapi.header_object)
+ (libraries
+  bindoj_openapi_reference_object
+  bindoj_openapi_schema_object
+  bindoj_openapi_example_object
+  bindoj_openapi_style_value
+  bindoj_base kxclib)
+ (preprocess
+  (pps ppx_deriving.std ppx_yojson_conv))
+ (flags (:standard -open Kxclib)))
