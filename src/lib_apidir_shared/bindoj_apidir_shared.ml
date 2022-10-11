@@ -40,7 +40,7 @@ type ('reqty, 'respty) invocation_point_info = {
   ip_urlpath : string;
   ip_method : [ `get | `post ];
   ip_request_body : 'reqty request_body option;
-  ip_responses : ([`status_code of int | `default] * 'respty response) list;
+  ip_responses : ([`status_code of int | `status_range of [`_1XX | `_2XX | `_3XX | `_4XX | `_5XX] | `default] * 'respty response) list;
   ip_deprecated : bool;
   ip_summary : string option;
   ip_description : string option;

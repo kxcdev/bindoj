@@ -25,7 +25,13 @@ module Reference_object = Bindoj_openapi_reference_object.V3
 
 type t
 
-type responses_object = ([`default | `status_code of int] * (t, Reference_object.t) either) list
+type responses_object_key = [
+  | `default
+  | `status_range of [`_1XX | `_2XX | `_3XX | `_4XX | `_5XX]
+  | `status_code of int
+]
+
+type responses_object = (responses_object_key * (t, Reference_object.t) either) list
 
 val mk :
   ?headers:(string * (Header_object.t, Reference_object.t) either) list

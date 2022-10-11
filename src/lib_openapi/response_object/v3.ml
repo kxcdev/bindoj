@@ -30,13 +30,27 @@ type t = {
   links : (Link_object.t, Reference_object.t) either assoc option [@yojson.option];
 } [@@deriving show, yojson_of]
 
-type responses_object = ([`default | `status_code of int] * (t, Reference_object.t) either) list [@@deriving show]
+type responses_object_key = [
+  | `default
+  | `status_range of [`_1XX | `_2XX | `_3XX | `_4XX | `_5XX]
+  | `status_code of int
+] [@@deriving show]
+
+type responses_object = (responses_object_key * (t, Reference_object.t) either) list [@@deriving show]
 
 let yojson_of_responses_object : responses_object -> yojson = fun resps ->
   let yojson_of_resp resp = yojson_of_either yojson_of_t Reference_object.yojson_of_t resp in
+  let key_of_range = function
+    | `_1XX -> "1XX"
+    | `_2XX -> "2XX"
+    | `_3XX -> "3XX"
+    | `_4XX -> "4XX"
+    | `_5XX -> "5XX"
+  in
   `Assoc (resps |&> function
       | (`default, resp) -> ("default", yojson_of_resp resp)
-      | (`status_code n, resp) -> (string_of_int n, yojson_of_resp resp))
+      | (`status_code n, resp) -> (string_of_int n, yojson_of_resp resp)
+      | (`status_range r, resp) -> (key_of_range r, yojson_of_resp resp))
 
 let mk ?headers ?content ?links description = {
   description = description;
