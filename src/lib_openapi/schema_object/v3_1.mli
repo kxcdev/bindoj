@@ -301,6 +301,46 @@ val not :
   ?discriminator:discriminator -> ?externalDocs:externalDocs ->
   t -> t
 
+(** Accept any valid JSON. If other fields are empty, the whole object will be converted to `true`.
+
+https://json-schema.org/understanding-json-schema/basics.html#hello-world *)
+val any :
+  ?schema:string ->
+  ?title:string ->
+  ?description:string ->
+  ?default:Json.jv ->
+  ?examples:Json.jv list ->
+  ?enum:Json.jv list ->
+  ?const:Json.jv ->
+  ?deprecated:bool ->
+  ?readOnly:bool ->
+  ?writeOnly:bool ->
+  ?id:string ->
+  ?anchor:string ->
+  ?defs:(string * t) list ->
+  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  unit -> t
+
+(** Reject any valid JSON. If other fields are empty, the whole object will be converted to `false`.
+
+https://json-schema.org/understanding-json-schema/basics.html#hello-world *)
+val never :
+  ?schema:string ->
+  ?title:string ->
+  ?description:string ->
+  ?default:Json.jv ->
+  ?examples:Json.jv list ->
+  ?enum:Json.jv list ->
+  ?const:Json.jv ->
+  ?deprecated:bool ->
+  ?readOnly:bool ->
+  ?writeOnly:bool ->
+  ?id:string ->
+  ?anchor:string ->
+  ?defs:(string * t) list ->
+  ?discriminator:discriminator -> ?externalDocs:externalDocs ->
+  unit -> t
+
 (** Helper for OCaml: array, fixed length and specific types *)
 val tuple :
   ?schema:string ->

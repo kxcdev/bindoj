@@ -155,6 +155,7 @@ type 't typ =
   | AnyOf of 't list (* OR *)
   | OneOf of 't list (* XOR *)
   | Not of 't        (* NOT *)
+  | Any (* matches everything: https://json-schema.org/understanding-json-schema/basics.html#hello-world *)
 
 type t = {
   schema: string option;
@@ -184,7 +185,19 @@ let rec yojson_of_t (t: t) : yojson =
   let generic_fields = yojson_of_generic_fields t.generic_fields in
   let structuring_fields = yojson_of_structuring_fields t.structuring_fields in
   match generic_fields, structuring_fields with
-  | `Assoc xs, `Assoc ys -> `Assoc (schema @ xs @ ys @ typ_to_fields t.typ)
+  | `Assoc xs, `Assoc ys ->
+    let fields = schema @ xs @ ys @ typ_to_fields t.typ in
+    (*
+      https://json-schema.org/understanding-json-schema/basics.html#hello-world
+      New in draft 6: You can also use true in place of the empty object to
+      represent a schema that matches anything, or false for a schema that
+      matches nothing.
+    *)
+    begin match t.typ, fields with
+    | Any, [] -> `Bool true
+    | Not { typ = Any; _ }, [] -> `Bool false
+    | _, _ -> `Assoc (schema @ xs @ ys @ typ_to_fields t.typ)
+    end
   | _ -> failwith "impossible"
 
 and yojson_of_structuring_fields (x: structuring_fields) : yojson =
@@ -213,6 +226,7 @@ and typ_to_fields (t: t typ) : (string * yojson) list =
   | AnyOf ts -> ["anyOf", yojson_of_list yojson_of_t ts]
   | OneOf ts -> ["oneOf", yojson_of_list yojson_of_t ts]
   | Not t -> ["not", yojson_of_t t]
+  | Any -> []
 
 let mk
   ?schema
@@ -276,6 +290,7 @@ module TypImpl = struct
   let anyOf ts ~cont = AnyOf ts |> cont
   let oneOf ts ~cont = OneOf ts |> cont
   let not t ~cont = Not t |> cont
+  let any () ~cont = cont Any
 end
 
 let ref = mk ~f:(fun cont s -> TypImpl.ref s ~cont)
@@ -290,6 +305,10 @@ let allOf = mk ~f:(fun cont -> TypImpl.allOf ~cont)
 let anyOf = mk ~f:(fun cont -> TypImpl.anyOf ~cont)
 let oneOf = mk ~f:(fun cont -> TypImpl.oneOf ~cont)
 let not = mk ~f:(fun cont -> TypImpl.not ~cont)
+let any = mk ~f:(fun cont -> TypImpl.any ~cont)
+
+(* Helper to express `never` *)
+let never = mk ~f:(fun cont () -> TypImpl.not ~cont (any ()))
 
 (* OCaml helpers *)
 let tuple =
@@ -323,6 +342,7 @@ let rec map_ref (f: string -> string) (t: t) : t =
     | OneOf ts -> OneOf (List.map (map_ref f) ts)
     | Not t -> Not (map_ref f t)
     | (String _ | Integer _ | Number _ | Boolean | Null) as x -> x
+    | Any -> Any
   in
   { t with
     typ = map t.typ;

@@ -269,6 +269,23 @@ val not :
   ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
   t -> t
 
+(** Accept any valid JSON: https://json-schema.org/understanding-json-schema/basics.html#hello-world *)
+val any :
+  ?schema:string ->
+  ?title:string ->
+  ?description:string ->
+  ?default:Json.jv ->
+  ?example:Json.jv ->
+  ?enum:Json.jv list ->
+  ?nullable:bool ->
+  ?deprecated:bool ->
+  ?readOnly:bool ->
+  ?writeOnly:bool ->
+  ?id:string ->
+  ?definitions:(string * t) list ->
+  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
+  unit -> t
+
 (** Helper for OCaml: array, fixed length and specific types *)
 val tuple :
   ?schema:string ->

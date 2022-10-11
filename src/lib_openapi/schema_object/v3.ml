@@ -166,6 +166,7 @@ type 't typ =
   | AnyOf of 't list (* OR *)
   | OneOf of 't list (* XOR *)
   | Not of 't        (* NOT *)
+  | Any (* matches everything: https://json-schema.org/understanding-json-schema/basics.html#hello-world *)
 [@@deriving show]
 
 type t = {
@@ -202,7 +203,7 @@ and typ_to_fields (t: t typ) : (string * yojson) list =
   | AnyOf ts -> ["anyOf", yojson_of_list yojson_of_t ts]
   | OneOf ts -> ["oneOf", yojson_of_list yojson_of_t ts]
   | Not t -> ["not", yojson_of_t t]
-
+  | Any -> []
 
 let mk
   ?schema
@@ -263,6 +264,7 @@ module TypImpl = struct
   let anyOf ts ~cont = AnyOf ts |> cont
   let oneOf ts ~cont = OneOf ts |> cont
   let not t ~cont = Not t |> cont
+  let any () ~cont = cont Any
 end
 
 let ref s = mk ~f:(fun cont s -> TypImpl.ref s ~cont) s (* in draft-04, $ref does not allow generic properties *)
@@ -277,6 +279,7 @@ let allOf = mk ~f:(fun cont -> TypImpl.allOf ~cont)
 let anyOf = mk ~f:(fun cont -> TypImpl.anyOf ~cont)
 let oneOf = mk ~f:(fun cont -> TypImpl.oneOf ~cont)
 let not = mk ~f:(fun cont -> TypImpl.not ~cont)
+let any = mk ~f:(fun cont -> TypImpl.any ~cont)
 
 (* OCaml helpers *)
 let tuple =
@@ -311,6 +314,7 @@ let rec map_ref (f: string -> string) (t: t) : t =
     | OneOf ts -> OneOf (List.map (map_ref f) ts)
     | Not t -> Not (map_ref f t)
     | (String _ | Integer _ | Number _ | Boolean | Null) as x -> x
+    | Any -> Any
   in
   { t with
     typ = map t.typ;
