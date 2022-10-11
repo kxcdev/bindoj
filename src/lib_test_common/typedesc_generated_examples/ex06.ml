@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_gen_test_gen_output.Ex06_gen
+open Bindoj_base
 
 type uchar = Uchar.t
 let pp_uchar ppf x = Format.pp_print_char ppf (Uchar.to_char x)
@@ -37,6 +38,7 @@ let reflect = various_prim_types_reflect
 
 let to_json = various_prim_types_to_json
 let of_json = various_prim_types_of_json
+let env = empty_tdenv
 
 let t : t Alcotest.testable = Alcotest.of_pp pp
 

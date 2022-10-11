@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_gen_test_gen_output.Ex03_gen
+open Bindoj_base
 
 type t = int_list =
   | IntNil
@@ -28,6 +29,7 @@ let reflect = int_list_reflect
 
 let to_json = int_list_to_json
 let of_json = int_list_of_json
+let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
 open Sample_value

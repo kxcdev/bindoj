@@ -17,9 +17,9 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-module Ts_config : sig
-  include module type of Bindoj_gen.Json_codec.Json_config
-end
+open Bindoj_runtime
+open Bindoj_typedesc.Type_desc
+open Bindoj_gen_foreign.Foreign_datatype
 
 type 't ignore_order_list = 't list [@@deriving show]
 
@@ -146,12 +146,22 @@ and ts_modifier = [
   | `readonly
 ]
 
+type typescript
+type ('tag, 'datatype_expr) foreign_language +=
+   | Foreign_language_TypeScript :
+       (typescript, ts_type_desc) foreign_language
+
+val typescript : (typescript, ts_type_desc) foreign_language
+
+module Ts_config : sig
+  include module type of Bindoj_gen.Json_codec.Json_config
+  val typescript_type :
+    ts_type_desc -> ([`coretype], [`foreign_type_expression]) config
+end
+
 val pp_ts_ast : ppf -> ts_ast -> unit
 val show_ts_ast : ts_ast -> string
 val equal_ts_ast : ts_ast -> ts_ast -> bool
-
-open Bindoj_typedesc.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 
 val ts_ast_of_fwrt_decl : (ts_modifier list, [`readonly] list) fwrt_decl -> ts_ast
 val annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`readonly] list) fwrt_decl

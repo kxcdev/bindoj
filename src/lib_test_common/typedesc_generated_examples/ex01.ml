@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_gen_test_gen_output.Ex01_gen
+open Bindoj_base
 
 type t = student = { admission_year: int; name: string } [@@deriving show]
 let decl = Bindoj_test_common_typedesc_examples.Ex01.decl
@@ -25,6 +26,7 @@ let reflect = student_reflect
 
 let to_json = student_to_json
 let of_json = student_of_json
+let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
 let sample_value01 : t Sample_value.t = {

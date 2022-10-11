@@ -23,10 +23,6 @@ open Bindoj_apidir_shared
 
 module Typed_type_desc = Bindoj_typedesc.Typed_type_desc
 
-module type ApiDirManifest = sig
-  val registry_info : unit -> invocation_point_collection * type_decl_collection
-end
-
 exception Bad_response of jv*Typed_type_desc.boxed_type_decl*string option
 
 module type ScopedJsonFetcher = sig
@@ -70,13 +66,7 @@ module MakeApiClient
   let invocation_points, type_decls =
     let invocation_points, type_decls = registry_info in
     invocation_points, type_decls
-
-  let tdenv :
-        Typed_type_desc.boxed_type_decl StringMap.t =
-    type_decls
-    |> foldl (fun acc info ->
-           acc |> StringMap.add info.tdi_name info.tdi_decl
-         ) StringMap.empty
+  let tdenv = Utils.tdenv_of_registry_info registry_info
 
   let invp_count =
     let counter = ref 0 in

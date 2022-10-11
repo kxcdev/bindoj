@@ -17,10 +17,6 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-module Ts_config = struct
-  include Bindoj_gen.Json_codec.Json_config
-end
-
 type 't ignore_order_list = 't list [@@deriving show]
 let equal_ignore_order_list equal_t xs ys =
   List.equal equal_t (List.sort compare xs) (List.sort compare ys)
@@ -148,8 +144,21 @@ and ts_modifier = [
   | `readonly
 ]
 
+open Bindoj_runtime
 open Bindoj_typedesc.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
+
+type typescript
+type ('tag, 'datatype_expr) foreign_language +=
+   | Foreign_language_TypeScript :
+       (typescript, ts_type_desc) foreign_language
+let typescript = Foreign_language_TypeScript
+
+module Ts_config = struct
+  include Bindoj_gen.Json_codec.Json_config
+  let typescript_type expr =
+    Configs.Config_foreign_type_expression (typescript, expr)
+end
 
 let annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`readonly] list) fwrt_decl =
   fun export readonly (name, env) ->
@@ -167,8 +176,11 @@ let type_of_prim : Coretype.prim -> ts_type_desc = function
   | `string | `uchar -> `type_reference "string"
   | `bytes -> `type_reference "string" (* base64 *)
 
-let type_of_coretype : self_type_name:string -> coretype -> ts_type_desc =
-  fun ~self_type_name { ct_desc; ct_configs; _ } ->
+let type_of_coretype :
+      ?definitive:bool
+      -> self_type_name:string
+      -> coretype -> ts_type_desc =
+  fun ?(definitive = false) ~self_type_name { ct_desc; ct_configs; _ } ->
   let rec go =
     let open Coretype in
     function
@@ -194,7 +206,16 @@ let type_of_coretype : self_type_name:string -> coretype -> ts_type_desc =
     | Map (k, v) -> `record (go (Coretype.desc_of_map_key k), go v)
     | Self -> `type_reference self_type_name
     | StringEnum cs -> `union (cs |> List.map (fun c -> `literal_type (`string_literal c)))
-  in go ct_desc
+  in
+  if definitive then (
+    ct_configs |>
+      Configs.find (function
+          | Configs.Config_foreign_type_expression (lang, expr)
+               when lang == (Obj.magic typescript) ->
+             Some (Obj.magic expr : ts_type_desc)
+          | _ -> None)
+    |? go ct_desc)
+  else go ct_desc
 
 let rec ts_ast_of_fwrt_decl :
   (ts_modifier list, [`readonly] list) fwrt_decl -> ts_ast =
@@ -240,7 +261,7 @@ and ts_type_alias_decl_of_fwrt_decl :
         | [], _ -> `union children
         | _ -> `intersection [`type_literal members; `union children] in
       desc
-    | Fwrt_alias { fa_type; _ } -> type_of_coretype ~self_type_name fa_type
+    | Fwrt_alias { fa_type; _ } -> type_of_coretype ~definitive:true ~self_type_name fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs } ->
       let arg_name = Ts_config.get_name Ts_config.default_name_of_variant_arg fc_configs in
       let members =

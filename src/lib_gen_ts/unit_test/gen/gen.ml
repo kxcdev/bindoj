@@ -17,23 +17,34 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_base
 open Bindoj_typedesc.Type_desc
 open Bindoj_gen_ts.Typescript_datatype
 open Bindoj_test_common
 
 let modules =
-  let open Typedesc_examples in
-  all |> List.map (fun (name, (module Ex : T)) ->
+  let module ExG = Typedesc_generated_examples in
+  ExG.all |&> (fun (name, (module G: ExG.T)) ->
     let gen () =
-      print_endline (gen_ts_type ~export:true Ex.decl);
-      match Ex.decl.td_kind with
+      let types = ref [ G.decl.td_name ] in
+      StringMap.iter (fun name boxed ->
+          let typed_decl = Typed_type_desc.Typed.unbox boxed in
+          let decl = Typed_type_desc.Typed.decl typed_decl in
+          if List.mem name !types then ()
+          else begin
+              print_endline
+                (gen_ts_type ~export:false decl);
+              refappend types name
+            end)
+        G.env.alias_ident_typemap;
+      print_endline (gen_ts_type ~export:true G.decl);
+      match G.decl.td_kind with
       | Variant_decl _ ->
-        print_endline (gen_ts_case_analyzer ~export:true Ex.decl)
+         print_endline (gen_ts_case_analyzer ~export:true G.decl)
       | Record_decl _ -> ()
       | Alias_decl _ -> ()
-      in
-    name, gen
-  )
+    in
+    name, gen)
 
 let mapping =
   modules |> List.map (fun (s, m) -> sprintf "%s_gen.ts" s, m)

@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_base
 open Bindoj_typedesc.Typed_type_desc
 open Bindoj_apidir_generative
 open Bindoj_apidir_generative.Internals
@@ -54,6 +55,7 @@ module type Ex = sig
   val decl : type_decl
   type typ
   val typed : typ typed_type_decl
+  val env : tdenv
   val sample_values : (string * typ) list
   val sample_jsons : (string * Json.jv) list
 end
@@ -68,6 +70,7 @@ let all =
         let decl = D.decl
         type typ = G.t
         let typed = Typed.mk decl G.reflect
+        let env = G.env
         let sample_values =
           List.mapi (fun i ExG.Sample_value.{ orig; _; } ->
               ("ex" ^ string_of_int i, orig))
@@ -77,8 +80,7 @@ let all =
               ("ex" ^ string_of_int i, jv))
           G.sample_values
       end : Ex))
-    ExD.all
-    ExG.all
+    ExD.all ExG.all
 
 let content_type = "application/json"
 
@@ -103,6 +105,15 @@ let create_cases ex =
 
   let registry_info =
     let module R = MakeRegistry () in
+    let types = ref [] in
+    let _ =
+      StringMap.iter (fun name boxed ->
+          if List.mem name !types then ()
+          else begin
+            R.register_type_decl_info ~name (Typed.unbox boxed);
+            refappend types name
+          end)
+        Ex.env.alias_ident_typemap in
     let _ =
       R.register_post "post"
         ~urlpath:post_urlpath
@@ -115,6 +126,9 @@ let create_cases ex =
         ~urlpath:get_urlpath
         ~resp_name:get_name
         ~resp_type:Ex.typed in
+    let _ =
+      R.add_type_decl_environment_wrapper
+        Bindoj_std.Tdenv_wrappers.json in
     R.Public.registry_info () in
 
   let invocation_point_collection_cases =

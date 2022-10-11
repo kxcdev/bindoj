@@ -19,6 +19,31 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Utils
 
+type 'camlrepr external_format = ..
+type ('tag, 'datatype_expr) foreign_language = ..
+
+type external_format_label = External_format : _ external_format -> external_format_label
+type foreign_language_label = Foreign_language : _ foreign_language -> foreign_language_label
+
+module External_format = struct
+  module LabelOrdered = struct
+    type t = external_format_label
+    let compare x y = Stdlib.compare x y
+  end
+  module LabelSet = Set.Make(LabelOrdered)
+  module LabelMap = Map.Make(LabelOrdered)
+  type label_set = LabelSet.t
+  type 'x label_map = 'x LabelMap.t
+
+  type ('t, 'ext) codec = {
+      encode : 't -> 'ext;
+      decode : 'ext -> 't option;
+    }
+  type 't codec' =
+    Codec : 'ext external_format*('t, 'ext) codec -> 't codec'
+  type 't codecs = 't codec' LabelMap.t
+end
+
 module rec Refl : sig
   type 't constructor =
     | InlineRecord of {
@@ -169,4 +194,11 @@ module Reflects = struct
   let bytes_reflect =
     Expr.(reflect_of_alias
             of_bytes to_bytes)
+end
+
+module Wellknown = struct
+  type _ external_format +=
+     | External_format_json : Kxclib.Json.jv external_format
+  let json_format = External_format_json
+  let json_format' = External_format json_format
 end

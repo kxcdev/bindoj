@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_gen_test_gen_output.Ex02_gen
+open Bindoj_base
 
 type t = person =
   | Anonymous
@@ -30,6 +31,7 @@ let reflect = person_reflect
 
 let to_json = person_to_json
 let of_json = person_of_json
+let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
 open Sample_value

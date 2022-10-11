@@ -1,5 +1,5 @@
 (library
  (name bindoj_test_common_typedesc_examples)
- (libraries bindoj_gen bindoj_gen_foreign bindoj_gen_ts bindoj_base ppxlib)
+ (libraries bindoj_gen bindoj_gen_foreign bindoj_gen_ts bindoj_base bindoj_std ppxlib)
  (preprocess (pps ppxlib.metaquot))
  (flags (:standard -open Kxclib)))

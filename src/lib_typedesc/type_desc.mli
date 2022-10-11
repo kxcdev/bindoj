@@ -17,6 +17,8 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_runtime
+
 type pos = [
   | `type_decl
   | `record_field
@@ -41,6 +43,11 @@ module Configs : sig
   val get :
     ?default:('pos, 'kind) config ->
     (('pos, 'kind) config -> bool) -> 'pos t -> ('pos, 'kind) config
+
+  type (_, _) config +=
+     | Config_foreign_type_expression :
+         ('tag, 'datatype_expr) foreign_language * 'datatype_expr ->
+         ([`coretype], [`foreign_type_expression]) config
 end
 type 'pos configs = 'pos Configs.t constraint 'pos = [< pos]
 

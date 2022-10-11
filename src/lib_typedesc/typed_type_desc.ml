@@ -46,3 +46,41 @@ module Typed = struct
 
   let unbox (Boxed a) : 'a typed_type_decl = Obj.magic a
 end
+
+module Type_decl_environment = struct
+
+  type 'camlrepr user_primitive_descriptor = {
+      external_format_codecs :
+        ('camlrepr External_format.codec')
+          External_format.label_map
+    }
+
+  type boxed_user_primitive_descriptor =
+    | Boxed_prim :
+        'camlrepr user_primitive_descriptor*'camlrepr typed_type_decl
+        -> boxed_user_primitive_descriptor
+
+  type env = {
+      prim_ident_typemap : boxed_user_primitive_descriptor StringMap.t;
+      (** definition for user defined primitives, that is,
+          coretypes with Ident desc that denotate a user defined primitive type *)
+
+      alias_ident_typemap : boxed_type_decl StringMap.t;
+      (** definition for user defined aliases, that is,
+          coretypes with Ident desc that refers to another type_decl *)
+
+    (* TODO.future
+      codec_override :
+        Coretype.desc -> external_format_label -> [ `decoder | `encoder ]
+        -> default:generated_codec_descriptor_caml
+        -> generated_codec_descriptor_caml option;
+      (** overrider for codec in generated OCaml code  *)
+     *)
+    }
+
+  let empty = {
+      prim_ident_typemap = StringMap.empty;
+      alias_ident_typemap = StringMap.empty;
+    }
+end
+type tdenv = Type_decl_environment.env

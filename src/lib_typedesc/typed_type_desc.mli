@@ -41,3 +41,30 @@ module Typed : sig
 
   val unbox : boxed_type_decl -> 'a typed_type_decl
 end
+
+module Type_decl_environment : sig
+
+  type 'camlrepr user_primitive_descriptor = {
+      external_format_codecs :
+        ('camlrepr External_format.codec')
+          External_format.label_map
+    }
+
+  type boxed_user_primitive_descriptor =
+    | Boxed_prim :
+        'camlrepr user_primitive_descriptor*'camlrepr typed_type_decl
+        -> boxed_user_primitive_descriptor
+
+  type env = {
+      prim_ident_typemap : boxed_user_primitive_descriptor StringMap.t;
+      (** definition for user defined primitives, that is,
+          coretypes with Ident desc that denotate a user defined primitive type *)
+
+      alias_ident_typemap : boxed_type_decl StringMap.t;
+      (** definition for user defined aliases, that is,
+          coretypes with Ident desc that refers to another type_decl *)
+    }
+
+  val empty : env
+end
+type tdenv = Type_decl_environment.env

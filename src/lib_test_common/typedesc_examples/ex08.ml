@@ -21,25 +21,43 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
-(** each example module should have this module type *)
-module type T = sig
-  val decl: type_decl
-  val example_module_path: string
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex08"
 
-  val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) fwrt_decl
-  val ts_ast: ts_ast option
-end
+let cty_string = Coretype.mk_prim `string
+let cty_json = Bindoj_std.Coretypes.json
 
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex02", (module Ex02);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-]
+let decl : type_decl =
+  record_decl "named_json" [
+    record_field "name" cty_string;
+    record_field "json" cty_json;
+  ]
+
+let decl_with_docstr : type_decl =
+  record_decl "named_json" [
+    record_field "name" cty_string ~doc:(`docstr "a name of datum");
+    record_field "json" cty_json ~doc:(`docstr "a json datum");
+  ] ~doc:(`docstr "record of name and json datum")
+
+let fwrt : (unit, unit) fwrt_decl =
+  "named_json", FwrtTypeEnv.(
+      init
+      |> bind_object ~annot:() "named_json"
+        [ field ~annot:() "name" cty_string;
+          field ~annot:() "json" cty_json; ]
+    )
+
+let ts_ast : ts_ast option = Some [
+    `type_alias_declaration {
+        tsa_modifiers = [`export];
+        tsa_name = "named_json";
+        tsa_type_parameters = [];
+        tsa_type_desc =
+          `type_literal [
+              { tsps_modifiers = [];
+                tsps_name = "json";
+                tsps_type_desc = `type_reference "json_value"; };
+              { tsps_modifiers = [];
+                tsps_name = "name";
+                tsps_type_desc = `type_reference "string"; };
+            ];};
+  ]

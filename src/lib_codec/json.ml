@@ -95,7 +95,32 @@ type jv = Kxclib.Json.jv
 
 open MonadOps(Option)
 
-let rec of_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) (jv: jv) : 'a option =
+type unsafe_primitive_codec = {
+    encode : Expr.t -> jv;
+    decode : jv -> Expr.t option;
+  }
+let lookup_primitive_codec ~(env: tdenv) ident_name : unsafe_primitive_codec option =
+  StringMap.find_opt ident_name env.prim_ident_typemap
+  >>? (fun (Boxed_prim ({ external_format_codecs }, ttd)) ->
+       External_format.LabelMap.find_opt Wellknown.json_format' external_format_codecs
+       >? (function
+           | (Codec (fmt, codec)) when External_format fmt = Wellknown.json_format' ->
+              let codec : ((_, jv) External_format.codec)  = Obj.magic codec in
+              let open struct
+                    open (val ttd)
+                    let proj x = Expr.to_refl reflect x |> Option.get
+                    let inj x = Expr.of_refl reflect x
+                  end in
+              let encode (x : Expr.t) : jv =
+                codec.encode (proj x) in
+              let decode (y : jv) : Expr.t option =
+                codec.decode y >? inj in
+              { encode; decode }
+           | _ -> failwith' "panic: %s" __LOC__
+      )
+  )
+
+let rec of_json ~(env: tdenv) (a: 'a typed_type_decl) (jv: jv) : 'a option =
   let { td_configs; td_kind; _ } = Typed.decl a in
   let try_opt f = try f () with Invalid_argument _msg -> None in
   let parse_obj_style_tuple (conv: _ -> jv -> Expr.t option) (ts: _ list) (fields: jv StringMap.t) =
@@ -127,11 +152,14 @@ let rec of_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
         try_opt (fun () -> Expr.Bytes (Kxclib.Base64.decode s) |> some)
       | Uninhabitable, `null -> Expr.Unit |> some
       | Ident i, _ ->
-        begin match StringMap.find_opt i.id_name env with
-        | Some boxed ->
-          let t = Typed.unbox boxed in
-          of_json ~env t jv >>= fun value -> Expr.Refl (Typed.to_refl t, value) |> some
-        | None -> invalid_arg' "type '%s' not found in env" i.id_name
+        begin match lookup_primitive_codec ~env i.id_name with
+        | Some codec -> codec.decode jv
+        | _ -> (
+          match StringMap.find_opt i.id_name env.alias_ident_typemap with
+          | Some boxed ->
+             let t = Typed.unbox boxed in
+             of_json ~env t jv >>= fun value -> Expr.Refl (Typed.to_refl t, value) |> some
+          | None -> invalid_arg' "type '%s' not found in env" i.id_name)
         end
       | Self, _ ->
         of_json ~env a jv >>= fun value -> Expr.Refl (Typed.to_refl a, value) |> some
@@ -213,7 +241,7 @@ let rec of_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
     constructor_of_json ctors constructors jv
   | _, _ -> fail ()
 
-let rec to_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) (value: 'a) : jv =
+let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
   let fail msg = invalid_arg' "inconsistent type_decl and reflection result (%s)" msg in
   let { td_configs; td_kind; _ } = Typed.decl a in
 
@@ -230,9 +258,13 @@ let rec to_json ~env:(env: boxed_type_decl StringMap.t) (a: 'a typed_type_decl) 
       | Prim `bytes,  Expr.Bytes bs -> `str (Kxclib.Base64.encode bs)
       | Uninhabitable, Expr.Unit -> `null
       | Ident i, Expr.Refl (_, x) ->
-        begin match StringMap.find_opt i.id_name env with
-        | Some boxed -> to_json ~env (Typed.unbox boxed) (Obj.magic x)
-        | None -> invalid_arg' "type '%s' not found in env" i.id_name
+        begin match lookup_primitive_codec ~env i.id_name with
+        | Some codec -> codec.encode e
+        | _ -> (
+          match StringMap.find_opt i.id_name env.alias_ident_typemap with
+          | Some boxed -> to_json ~env (Typed.unbox boxed) (Obj.magic x)
+          | None -> invalid_arg' "type '%s' not found in env" i.id_name
+        )
         end
       | Self, Expr.Refl (_, x) -> to_json ~env a (Obj.magic x)
       | List t, Expr.List xs -> `arr (List.map (go t) xs)

@@ -19,7 +19,11 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_typedesc.Typed_type_desc
 
-type type_decl_collection = type_decl_info list
+(** TODO.future - temporary solution before the arrival of type cosmos *)
+type type_decl_collection = {
+    type_declarations : type_decl_info list;
+    type_decl_environment_wrappers : tdenv endo list;
+  }
 and type_decl_info = {
   tdi_name : string;
   tdi_doc : string;
@@ -102,10 +106,14 @@ type invocation_point_collection = untyped_invocation_point_info list
 
 type registry_info = invocation_point_collection * type_decl_collection
 
+module type ApiDirManifest = sig
+  val registry_info : unit -> registry_info
+end
+
 module type RegistryInfo = sig
   type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
   type nonrec registry_info = registry_info
-  val registry_info : unit -> registry_info
+  include ApiDirManifest
 end
 
 module type MakeRegistryS = sig
@@ -118,6 +126,10 @@ module type MakeRegistryS = sig
     -> ?doc:string
     -> 'a typed_type_decl
     -> unit
+
+  (** TODO.future - temporary solution before the arrival of type cosmos *)
+  val add_type_decl_environment_wrapper :
+    (tdenv -> tdenv) -> unit
 
   val register_get :
     ?summary:string
@@ -147,7 +159,8 @@ end
 
 module MakeRegistry () : MakeRegistryS = struct
   let invp_registry : invocation_point_collection ref = ref []
-  let type_registry : type_decl_collection ref = ref []
+  let type_registry : type_decl_info list ref = ref []
+  let tdenv_wrappers : tdenv endo list ref = ref []
 
   let register : type_decl_info list -> ('reqty, 'respty) invocation_point_info -> unit = fun typs invp ->
     refappend invp_registry (Invp invp);
@@ -161,6 +174,8 @@ module MakeRegistry () : MakeRegistryS = struct
                           | `docstr str -> str ) in
     { tdi_name; tdi_doc; tdi_decl = Boxed ttd; }
     |> refappend type_registry
+
+  let add_type_decl_environment_wrapper wrapper = refappend tdenv_wrappers wrapper
 
   let register_get :
     ?summary:string
@@ -262,6 +277,11 @@ module MakeRegistry () : MakeRegistryS = struct
   module Public = struct
     type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
     type registry_info = invocation_point_collection * type_decl_collection
-    let registry_info () = (!invp_registry, !type_registry)
+    let registry_info () : registry_info =
+      let tdcoll = {
+          type_declarations = !type_registry;
+          type_decl_environment_wrappers = !tdenv_wrappers;
+        } in
+      (!invp_registry, tdcoll)
   end
 end

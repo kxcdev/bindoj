@@ -22,3 +22,5 @@ module StringMap = Bindoj_runtime.StringMap
 module Type_desc = Bindoj_typedesc.Type_desc
 module Typed_type_desc = Bindoj_typedesc.Typed_type_desc
 module Runtime = Bindoj_runtime
+type tdenv = Typed_type_desc.tdenv
+let empty_tdenv = Typed_type_desc.Type_decl_environment.empty

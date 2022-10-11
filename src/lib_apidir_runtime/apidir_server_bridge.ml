@@ -21,10 +21,6 @@ open Kxclib.Json
 open Kxclib
 open Bindoj_apidir_shared
 
-module type ApiDirManifest = sig
-  val registry_info : unit -> invocation_point_collection * type_decl_collection
-end
-
 (* TODO.future - make it take a Configurator, or make it generative #220 *)
 module ApiHandlerBridge
          (Dir : ApiDirManifest)
@@ -39,6 +35,7 @@ module ApiHandlerBridge
   open IoOps
 
   open Bindoj_base
+  open Typed_type_desc
 
   type ('reqty, 'respty) invp =
     ('reqty, 'respty) invocation_point_info
@@ -73,13 +70,7 @@ module ApiHandlerBridge
   let invocation_points, type_decls =
     let invocation_points, type_decls = registry_info in
     invocation_points, type_decls
-
-  let tdenv :
-        Typed_type_desc.boxed_type_decl StringMap.t =
-    type_decls
-    |> foldl (fun acc info ->
-           acc |> StringMap.add info.tdi_name info.tdi_decl
-         ) StringMap.empty
+  let tdenv = Utils.tdenv_of_registry_info registry_info
 
   let invp_count =
     let counter = ref 0 in

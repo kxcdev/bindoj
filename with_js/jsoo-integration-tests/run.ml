@@ -32,7 +32,7 @@ let notNone (_: 'a Alcotest.testable) : 'a option Alcotest.testable =
       | Some _ -> Format.pp_print_string ppf "Some _")
     (fun x y -> match x, y with | (Some _, Some _) -> true | _ -> false)
 
-let create_test_cases name (module Ex : T) =
+let create_test_cases name (module Ex : T) filter =
   let open Alcotest in
 
   (* let gen  = Js.require (sprintf "../compile-tests/%s_gen" name) in *)
@@ -99,20 +99,33 @@ let create_test_cases name (module Ex : T) =
 
   let interpreted =
     let open Typed_type_desc in
-    let env = StringMap.empty in
+    let env = Ex.env in
     let typed_decl = Typed.mk Ex.decl Ex.reflect in
-    Bindoj_codec.Json.of_json ~env typed_decl
-  in
+    Bindoj_codec.Json.of_json ~env typed_decl in
   let compiled = Ex.of_json in
 
   name, [
+    (`interpreted, `examples),
     test_case "[interpreted] can decode example JSONs" `Quick (test_decode_json interpreted);
+
+    (`interpreted, `random),
     test_case "[interpreted] can decode random JSONs" `Quick (test_schema_generate interpreted);
+
+    (`compiled, `examples),
     test_case "[compiled] can decode example JSONs" `Quick (test_decode_json compiled);
+
+    (`compiled, `random),
     test_case "[compiled] can decode random JSONs" `Quick (test_schema_generate compiled);
-  ]
+  ] |> List.filter (fun (variant, _) -> filter (name, variant))
+    |&> snd
 
 let () =
   all
-  |> List.map (fun (name, m) -> create_test_cases name m)
+  |> List.map (fun (name, m) ->
+         create_test_cases name m
+           (function
+            (* TODO.future - fix random example generation for Bindoj_std.Json_value *)
+            | ("ex08", (_, `random)) -> false
+            | _ -> true
+       ))
   |> Alcotest.run "with_js.jsoo_integration"

@@ -77,5 +77,5 @@ end
 
 include module type of Config
 
-val of_json : env:boxed_type_decl StringMap.t -> 'a typed_type_decl -> Kxclib.Json.jv -> 'a option
-val to_json : env:boxed_type_decl StringMap.t -> 'a typed_type_decl -> 'a -> Kxclib.Json.jv
+val of_json : env:tdenv -> 'a typed_type_decl -> Kxclib.Json.jv -> 'a option
+val to_json : env:tdenv -> 'a typed_type_decl -> 'a -> Kxclib.Json.jv

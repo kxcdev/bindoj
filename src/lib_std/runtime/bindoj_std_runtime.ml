@@ -17,39 +17,39 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-include Bindoj_gen_test_gen_output.Ex04_gen
-open Bindoj_base
+open Bindoj_runtime
+open Kxclib.Json
 
-type t = [ `Foo0  | `Foo1 of int  | `Foo2 of (int * int) ] [@@deriving show]
-let decl = Bindoj_test_common_typedesc_examples.Ex04.decl
-let reflect = foo_reflect
+module Json_value : sig
+  type t = jv
+  val to_json : t -> jv
+  val of_json : jv -> t option
+  val reflect : t Refl.t
 
-let to_json = foo_to_json
-let of_json = foo_of_json
-let env = empty_tdenv
-let t : t Alcotest.testable = Alcotest.of_pp pp
+  val json_codec : (t, t) External_format.codec
+  val external_format_codecs : t External_format.codecs
+end = struct
+  type t = Json.jv
+  let of_json x = Some x
+  let to_json = identity
+  let rec reflect : t Refl.t = lazy (
+    Refl.Alias {
+        get = (fun x -> Expr.Refl (reflect, x));
+        mk = (function
+             | Refl (refl, x) when refl == (Obj.magic reflect)
+               -> Some (Obj.magic x)
+             | _ -> None);
+      })
 
-type sample = t Sample_value.t
-open Sample_value
-open Sample_value.JvHelper
+  let json_codec : (t, jv) External_format.codec =
+    { encode = to_json; decode = of_json }
 
-let sample_value01 : sample = {
-  orig = `Foo0;
-  jv = ctor0 "Foo0";
-}
+  let external_format_codecs : t External_format.codecs =
+    let module Map = External_format.LabelMap in
+    Map.empty
+    |> Map.add Wellknown.json_format' (
+           External_format.Codec
+             (Wellknown.json_format, json_codec))
+end
 
-let sample_value02 : sample = {
-  orig = `Foo1 1;
-  jv = ctor1 "Foo1" (`num 1.);
-}
-
-let sample_value03 : sample = {
-  orig = `Foo2 (1, 2);
-  jv = ctor2 "Foo2" (`num 1.) (`num 2.);
-}
-
-let sample_values = [
-  sample_value01;
-  sample_value02;
-  sample_value03;
-]
+type json_value = Json_value.t

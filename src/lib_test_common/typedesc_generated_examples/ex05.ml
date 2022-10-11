@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_gen_test_gen_output.Ex05_gen
+open Bindoj_base
 
 type t = complex_types = {
   option: int option;
@@ -32,6 +33,7 @@ let reflect = complex_types_reflect
 
 let to_json = complex_types_to_json
 let of_json = complex_types_of_json
+let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
 type sample = t Sample_value.t

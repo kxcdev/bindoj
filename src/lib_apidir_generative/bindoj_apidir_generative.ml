@@ -49,7 +49,7 @@ let rec gen_openapi_document_object :
 
 and openapi_components_object_of_type_decl_collection :
   registry_info -> OpenApi.Components_object.t =
-  fun (_, tds) ->
+  fun (_, { type_declarations = tds; _ }) ->
   let decls =
     tds |> List.map (fun { tdi_decl = Boxed decl; _ } -> Typed.decl decl) in
   let decl_schemas =
@@ -150,12 +150,26 @@ and openapi_header_object_of_header : registry_info -> 't header -> OpenApi.Head
 and openapi_media_type_object_of_media_type :
   registry_info -> 't media_type -> OpenApi.Header_object.media_type_object =
   fun reg_info { mt_type; mt_examples; mt_external_examples; } ->
+  let _, {
+      type_declarations;
+      type_decl_environment_wrappers
+    } = reg_info in
+  let alias_ident_typemap =
+    type_declarations
+    |> foldl (fun acc info ->
+           acc |> StringMap.add info.tdi_name info.tdi_decl
+         ) StringMap.empty in
+  let env0 = Type_decl_environment.{
+        alias_ident_typemap;
+        prim_ident_typemap = StringMap.empty;
+             } in
+  let env = type_decl_environment_wrappers |> List.foldl (|>) env0 in
   let type_decl = Typed.decl mt_type in
   let examples =
     (mt_examples |&> fun (ex_name, ex_val) ->
         (ex_name,
          OpenApi.Example_object.mk
-           ~value:(Codec.Json.to_json ~env:StringMap.empty mt_type ex_val)
+           ~value:(Codec.Json.to_json ~env mt_type ex_val)
            ()
          |> Either.left)) @
     (mt_external_examples |&> fun (ex_name, ex_url) ->
@@ -178,9 +192,9 @@ and openapi_external_documentation_object_of_external_doc :
 and openapi_schema_object_of_type_decl : type_decl -> OpenApi.Schema_object.t = gen_openapi_schema
 
 and openapi_schema_or_reference_of_type_decl : registry_info -> type_decl -> (OpenApi.Schema_object.t, OpenApi.Reference_object.t) either =
-  fun (_, decls) td ->
+  fun (_, tdcoll) td ->
     let tdi =
-      decls |> List.find_opt (fun tdi ->
+      tdcoll.type_declarations |> List.find_opt (fun tdi ->
         let (Boxed ttd) = tdi.tdi_decl in
         let td' = Typed.decl ttd in
         td.td_name = td'.td_name

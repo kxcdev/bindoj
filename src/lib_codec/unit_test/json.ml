@@ -40,7 +40,6 @@ let create_test_cases (name: string) (module Ex : T) =
   let open Ex in
   let open Bindoj_codec in
   let msg msg = sprintf "%s %s" name msg in
-  let env = StringMap.empty in
   let typed_decl = Typed_type_desc.Typed.mk Ex.decl Ex.reflect in
   let to_json = Json.to_json ~env typed_decl in
   let of_json = Json.of_json ~env typed_decl in

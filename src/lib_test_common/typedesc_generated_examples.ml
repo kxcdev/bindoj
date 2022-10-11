@@ -32,6 +32,7 @@ module type T = sig
   val sample_values : t Sample_value.t list
   val to_json : t -> Kxclib.Json.jv
   val of_json : Kxclib.Json.jv -> t option
+  val env : tdenv
 end
 
 (** this should contain all the example modules. *)
@@ -44,4 +45,5 @@ let all : (string * (module T)) list = [
   "ex05", (module Ex05);
   "ex06", (module Ex06);
   "ex07", (module Ex07);
+  "ex08", (module Ex08);
 ]

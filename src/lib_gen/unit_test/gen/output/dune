@@ -1,7 +1,8 @@
 (library
  (name bindoj_gen_test_gen_output)
- (libraries alcotest bindoj_runtime kxclib yojson jsonm)
- (preprocess (pps ppx_deriving.show)))
+ (libraries alcotest bindoj_runtime bindoj_std_runtime kxclib yojson jsonm)
+ (preprocess (pps ppx_deriving.show))
+ (flags (:standard -open Bindoj_std_runtime)))
 
 (rule
  (target ex01_gen.ml)
@@ -72,5 +73,14 @@
  (mode (promote (until-clean))))
 (rule
  (target ex07_docstr_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex08_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex08_docstr_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
  (mode (promote (until-clean))))
