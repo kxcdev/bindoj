@@ -65,6 +65,14 @@ module Configs = struct
     in
     go configs
 
+  let find_foreign_type_expr
+    (lang: ('tag, 'datatype_expr) foreign_language)
+    (configs: [`coretype] t) : 'datatype_expr option =
+    find (function
+      | Config_foreign_type_expression (lang', expr') when lang' == (Obj.magic lang) ->
+        Some (Obj.magic expr' : 'datatype_expr)
+      | _ -> None
+    ) configs
 end
 type 'pos configs = 'pos Configs.t constraint 'pos = [< pos]
 

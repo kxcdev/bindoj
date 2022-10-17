@@ -67,6 +67,7 @@ let create_test_cases name (module Ex : T) filter =
         ~fillProperties:false
         ~failOnInvalidTypes:true
         ~failOnInvalidFormat:true
+        ~replaceEmptyByRandomValue:true
         ()
     );
 
@@ -122,10 +123,6 @@ let create_test_cases name (module Ex : T) filter =
 let () =
   all
   |> List.map (fun (name, m) ->
-         create_test_cases name m
-           (function
-            (* TODO.future - fix random example generation for Bindoj_std.Json_value *)
-            | ("ex08", (_, `random)) -> false
-            | _ -> true
-       ))
+    create_test_cases name m
+      (function | _ -> true))
   |> Alcotest.run "with_js.jsoo_integration"

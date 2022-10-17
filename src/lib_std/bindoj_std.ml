@@ -45,10 +45,13 @@ end = struct
 
   module Type_decl = struct
     let coretype : coretype =
+      let open Bindoj_gen_ts.Typescript_datatype in
       Coretype.mk_ident
         ~configs:Configs.[
-          Bindoj_gen_ts.Typescript_datatype.Ts_config.typescript_type
-            (`type_reference "any")
+          Ts_config.typescript_type (`type_reference "any");
+          Ts_config.custom_json_schema (
+            Bindoj_openapi.V3.Schema_object.any ()
+          );
         ]
         ~codec:(`in_module "Bindoj_std_runtime.Json_value")
         type_name

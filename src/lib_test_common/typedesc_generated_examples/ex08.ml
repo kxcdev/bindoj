@@ -95,9 +95,23 @@ let sample_value04 : t Sample_value.t =
       ]
   }
 
+let sample_value05 : t Sample_value.t =
+  let jv_null = `null in
+  {
+    orig = {
+      name = "null_val";
+      json = jv_null;
+    };
+    jv = `obj [
+        ("name", `str "null_val");
+        ("json", jv_null);
+      ]
+  }
+
 let sample_values = [
   sample_value01;
   sample_value02;
   sample_value03;
   sample_value04;
+  sample_value05;
 ]

@@ -207,14 +207,8 @@ let type_of_coretype :
     | Self -> `type_reference self_type_name
     | StringEnum cs -> `union (cs |> List.map (fun c -> `literal_type (`string_literal c)))
   in
-  if definitive then (
-    ct_configs |>
-      Configs.find (function
-          | Configs.Config_foreign_type_expression (lang, expr)
-               when lang == (Obj.magic typescript) ->
-             Some (Obj.magic expr : ts_type_desc)
-          | _ -> None)
-    |? go ct_desc)
+  if definitive then
+    ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
 
 let rec ts_ast_of_fwrt_decl :

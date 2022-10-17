@@ -21,10 +21,24 @@ open Ppxlib
 open Ast_builder.Default
 open Ast_helper
 open Utils
+open Bindoj_runtime
 open Bindoj_base
 open Bindoj_base.Type_desc
 
 include Bindoj_codec.Json.Config
+
+type json_schema
+type ('tag, 'datatype_expr) foreign_language +=
+  | Foreign_language_JSON_Schema :
+    (json_schema, Bindoj_openapi.V3.Schema_object.t) foreign_language
+let json_schema = Foreign_language_JSON_Schema
+
+module Json_config = struct
+  include Bindoj_codec.Json.Config.Json_config
+
+  let custom_json_schema schema =
+    Configs.Config_foreign_type_expression (json_schema, schema)
+end
 
 let get_encoder_name type_name = function
   | `default -> type_name^"_to_json"
@@ -724,7 +738,9 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         else
           Schema_object.ref ("#" ^ self_name)
     in
-    go ct.ct_desc
+    match ct.ct_configs |> Configs.find_foreign_type_expr json_schema with
+    | Some schema -> schema
+    | None -> go ct.ct_desc
   in
 
   let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc fields =

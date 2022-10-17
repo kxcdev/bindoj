@@ -48,6 +48,10 @@ module Configs : sig
      | Config_foreign_type_expression :
          ('tag, 'datatype_expr) foreign_language * 'datatype_expr ->
          ([`coretype], [`foreign_type_expression]) config
+
+  val find_foreign_type_expr :
+    ('tag, 'datatype_expr) foreign_language -> [`coretype] t
+    -> 'datatype_expr option
 end
 type 'pos configs = 'pos Configs.t constraint 'pos = [< pos]
 

@@ -18,8 +18,24 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_typedesc.Type_desc
+open Bindoj_runtime
 
 include module type of Bindoj_codec.Json.Config
+
+type json_schema
+type ('tag, 'datatype_expr) foreign_language +=
+  | Foreign_language_JSON_Schema :
+    (json_schema, Bindoj_openapi.V3.Schema_object.t) foreign_language
+val json_schema :
+  (json_schema, Bindoj_openapi.V3.Schema_object.t) foreign_language
+
+module Json_config : sig
+  include module type of Bindoj_codec.Json.Config.Json_config
+
+  val custom_json_schema :
+    Bindoj_openapi.V3.Schema_object.t
+    -> ([`coretype], [`foreign_type_expression]) config
+end
 
 type builtin_codec = {
   encoder: Ppxlib.expression;
