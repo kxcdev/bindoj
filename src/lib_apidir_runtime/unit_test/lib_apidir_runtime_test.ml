@@ -31,14 +31,10 @@ module MakeTest (Dir : Samples.T) (Io : IoStyle) = struct
 
   module Io = Io
 
-  module Bridge =
-    Apidir_server_bridge.ApiHandlerBridge
-      (Dir)
-      (Io)
+  module Bridge = Apidir_server_bridge.Make (Dir) (Io)
 
   module Client =
-    Apidir_client.MakeApiClient
-      (Dir) (struct
+    Apidir_client.Make (Dir) (struct
         module IoStyle = Io
         let assert_empty_header, assert_empty_query_params =
           (function [] -> ()
@@ -62,33 +58,16 @@ module MakeTest (Dir : Samples.T) (Io : IoStyle) = struct
       end)
 
   let invps, _ = Dir.registry_info ()
-  let get_paths = Hashtbl.to_seq_keys Bridge.path_index_get |> List.of_seq
-  let post_paths = Hashtbl.to_seq_keys Bridge.path_index_post |> List.of_seq
+  let get_paths = Hashtbl.to_seq_keys Bridge.index_get |> List.of_seq
+  let post_paths = Hashtbl.to_seq_keys Bridge.index_post |> List.of_seq
 end
 
 module type TestS = sig
   module Dir : Samples.T
   module Io : IoStyle
-  module Bridge : sig
-    val register_get_handler : (unit, 'resp) invocation_point_info -> (unit -> 'resp Io.t) -> unit
-    val register_post_handler : ('req, 'resp) invocation_point_info -> ('req -> 'resp Io.t) -> unit
-    val handle_json_get : untyped_invocation_point_info -> Json.jv Io.t
-    val handle_json_post : untyped_invocation_point_info -> Json.jv -> Json.jv Io.t
-    val handle_path_json_get : string -> Json.jv Io.t
-    val handle_path_json_post : string -> Json.jv -> Json.jv Io.t
-  end
-  module Client : sig
-    val perform_json_get :
-      ?additional_headers:string list
-      -> ?additional_query_params:(string*string) list
-      -> (unit, 'resp) invocation_point_info -> 'resp Io.t
-    val perform_json_post :
-      ?additional_headers:string list
-      -> ?additional_query_params:(string*string) list
-      -> ('req, 'resp) invocation_point_info
-      -> 'req
-      -> 'resp Io.t
-  end
+  module Bridge : Apidir_server_bridge.T with type 'resp io = 'resp Io.t
+  module Client : Apidir_client.T with type 'resp io = 'resp Io.t
+
   val invps : invocation_point_collection
   val get_paths : string list
   val post_paths : string list

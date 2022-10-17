@@ -76,3 +76,10 @@ let tdenv_of_registry_info registry_info =
         prim_ident_typemap = StringMap.empty;
              } in
   type_decl_environment_wrappers |> List.foldl (|>) env0
+
+open Bindoj_typedesc
+
+let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =
+  Td.decl.td_name
+
+let ttd_of_media_type ({ mt_type; _ }) = mt_type

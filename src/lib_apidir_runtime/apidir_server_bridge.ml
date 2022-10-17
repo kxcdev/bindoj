@@ -17,38 +17,38 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Kxclib.Json
 open Kxclib
+open Kxclib.Json
 open Bindoj_apidir_shared
 
+module type T = sig
+  type 'resp io
+
+  val register_get_handler :
+    (unit, 'respty) invocation_point_info -> (unit -> 'respty io) -> unit
+  val register_post_handler :
+    ('reqty, 'respty) invocation_point_info -> ('reqty -> 'respty io) -> unit
+
+  val handle_json_get : untyped_invocation_point_info  -> Json.jv io
+  val handle_json_post : untyped_invocation_point_info  -> Json.jv -> Json.jv io
+
+  val handle_path_json_get : string -> Json.jv io
+  val handle_path_json_post : string -> Json.jv -> Json.jv io
+end
+
 (* TODO.future - make it take a Configurator, or make it generative #220 *)
-module ApiHandlerBridge
-         (Dir : ApiDirManifest)
-         (IoStyle : sig
-            type 'x t
-            val return : 'x -> 'x t
-            val bind : 'x t -> ('x -> 'y t) -> 'y t
-          end)
-= struct
-  type 'x io = 'x IoStyle.t
-  module IoOps = MonadOps(IoStyle)
+module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
+  include Apidir_base.Make(Dir)(IoStyle)
   open IoOps
 
-  open Bindoj_base
-  open Typed_type_desc
-
-  type ('reqty, 'respty) invp =
-    ('reqty, 'respty) invocation_point_info
+  type ('reqty, 'respty) invp = ('reqty, 'respty) invocation_point_info
   type invp' = untyped_invocation_point_info
 
   type handler =
-    | Handler :
-        ('reqty, 'respty) invp *
-          ('reqty -> 'respty io)
-        -> handler
+    | Handler : ('reqty, 'respty) invp * ('reqty -> 'respty io) -> handler
 
-  let handler_registry_post = Hashtbl.create 0
-  let handler_registry_get = Hashtbl.create 0
+  let handler_registry_post : (invp', handler) Hashtbl.t = Hashtbl.create 0
+  let handler_registry_get : (invp', handler) Hashtbl.t = Hashtbl.create 0
 
   let register_post_handler (type reqty) (type respty) :
      (reqty, respty) invp ->
@@ -66,41 +66,6 @@ module ApiHandlerBridge
       (Invp invp)
       (Handler (invp, func))
 
-  let registry_info = Dir.registry_info()
-  let invocation_points, type_decls =
-    let invocation_points, type_decls = registry_info in
-    invocation_points, type_decls
-  let tdenv = Utils.tdenv_of_registry_info registry_info
-
-  let invp_count =
-    let counter = ref 0 in
-    invocation_points |!> (fun (Invp invp) ->
-      incr counter;
-      match invp.ip_responses with
-      | [`default, _resp] -> ()
-      | _ -> failwith' "ApiHandlerBridge: panic - we currently could only \
-                        handle invp with exactly one default response type desc: \
-                        name=%s; urlpath=%s;"
-               invp.ip_name invp.ip_urlpath);
-    !counter
-
-  let path_index_get, path_index_post =
-    let post_index = Hashtbl.create invp_count in
-    let get_index = Hashtbl.create invp_count in
-    invocation_points |!> (fun ((Invp invp) as invp') ->
-      let index = match invp.ip_method with
-        | `post -> post_index
-        | `get -> get_index in
-      Hashtbl.replace index invp.ip_urlpath invp'
-    );
-    get_index, post_index
-
-  module Internals = struct
-    let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =
-      Td.decl.td_name
-    let ttd_of_media_type ({ mt_type; _ }) = mt_type
-  end open Internals
-
   let handle_json_post : invp' -> jv -> jv io =
     fun invp reqbody ->
     match Hashtbl.find_opt handler_registry_post invp with
@@ -112,15 +77,15 @@ module ApiHandlerBridge
          | `get, _ -> invalid_arg' "handle_json_post got GET invp: %s" invp.ip_name
          | `post, None -> invalid_arg' "POST method must have a request body definition: %s" invp.ip_name
          | `post, Some desc ->
-            let ttd = ttd_of_media_type desc.rq_media_type in
+            let ttd = Utils.ttd_of_media_type desc.rq_media_type in
             (match reqbody |> Bindoj_codec.Json.of_json ~env:tdenv ttd with
              | None -> Utils.bad_request "invalid json format for type %s: %a"
-                         (ttd_name ttd) Utils.pp_jv reqbody
+                         (Utils.ttd_name ttd) Utils.pp_jv reqbody
              | Some req -> req) in
        let resp_ttd =
          (* TODO.future - now assuming there is one and exactly one response desc #216 *)
          match invp.ip_responses with
-         | [`default, desc] -> ttd_of_media_type desc.rs_media_type
+         | [`default, desc] -> Utils.ttd_of_media_type desc.rs_media_type
          | _ -> failwith' "panic @%s" __LOC__ in
        handler req >|= (Bindoj_codec.Json.to_json ~env:tdenv resp_ttd)
 
@@ -138,21 +103,21 @@ module ApiHandlerBridge
        let resp_ttd =
          (* TODO.future - now assuming there is one and exactly one response desc #216 *)
          match invp.ip_responses with
-         | [`default, desc] -> ttd_of_media_type desc.rs_media_type
+         | [`default, desc] -> Utils.ttd_of_media_type desc.rs_media_type
          | _ -> failwith' "panic @%s" __LOC__ in
        handler (() |> Obj.magic) >|= (Bindoj_codec.Json.to_json ~env:tdenv resp_ttd)
 
   let handle_path_json_post : string -> jv -> jv io =
     fun path reqbody ->
-    match Hashtbl.find_opt path_index_post path with
+    match Hashtbl.find_opt index_post path with
     | None -> raise (Utils.Exceptions.Unrecognized_route path)
     | Some invp -> handle_json_post invp reqbody
+
   let handle_path_json_get : string -> jv io =
     fun path ->
-    match Hashtbl.find_opt path_index_get path with
+    match Hashtbl.find_opt index_get path with
     | None -> raise (Utils.Exceptions.Unrecognized_route path)
     | Some invp -> handle_json_get invp
 
   (* TODO.future - add method to check completeness of handles #219 *)
-  (* TODO.future - add method to check completeness of type_decl_collection #219 *)
 end
