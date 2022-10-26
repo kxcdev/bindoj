@@ -26,3 +26,37 @@ let check_invp name invp ~ip_name ~ip_urlpath ~ip_method =
   check string (sprintf "%s.ip_name" name) ip_name invp.ip_name;
   check string (sprintf "%s.ip_urlpath" name) ip_urlpath invp.ip_urlpath;
   check http_method (sprintf "%s.ip_method" name) ip_method invp.ip_method
+
+module type MockServerBuilder = sig
+  open Bindoj_apidir_shared
+
+  module Io : Kxclib.Monadic
+
+  val register_get_handler :
+    (unit, 'respty) invocation_point_info ->
+    (unit -> (int * 'respty) Io.t) ->
+    unit
+
+  val register_post_handler :
+    ('reqty, 'respty) invocation_point_info ->
+    ('reqty -> (int * 'respty) Io.t) ->
+    unit
+
+  val register_get_example :
+    string ->
+    untyped_invocation_point_info ->
+    orig:'a ->
+    jv:Json.jv ->
+    pp:(ppf -> 'a -> unit) ->
+    unit
+
+  val register_post_example :
+    string ->
+    untyped_invocation_point_info ->
+    orig_resp:'a ->
+    orig_req:'b ->
+    jv_resp:Json.jv ->
+    jv_req:Json.jv ->
+    pp:(ppf -> 'a -> unit) ->
+    unit
+end

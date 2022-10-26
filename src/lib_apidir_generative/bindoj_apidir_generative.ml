@@ -106,9 +106,9 @@ and openapi_path_item_object_of_invocation_point_info :
   let request_body =
     (Obj.magic ip_request_body) |> Option.map (openapi_request_body_object_of_request_body reg_info) in
   let responses =
-    ip_responses |&> fun (st, resp) ->
-      let response = openapi_response_object_of_response reg_info resp in
-      (st, Either.left response) in
+    ip_responses |&> function Response_case { status; response; _ } ->
+      let response = openapi_response_object_of_response reg_info (Obj.magic response) in
+      (status, Either.left response) in
   let operation = mk_operation_object request_body responses in
   mk_path_item_object operation
 

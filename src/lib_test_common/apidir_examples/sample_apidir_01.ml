@@ -86,3 +86,49 @@ let tests =  [
   test_case "invocation_point_collection" `Quick
     test_invocation_point_collection;
 ]
+
+let build_mock_server (module M: MockServerBuilder) =
+  let open M.Io in
+  let open Bindoj_test_common_typedesc_generated_examples in
+  let open Sample_value in
+
+  let () (* get-any-student *) =
+    let invp = get_any_student in
+    let { orig; jv } = Ex01.sample_value01 in
+    M.register_get_handler invp (fun () -> return (200, orig));
+    M.register_get_example invp.ip_urlpath (Invp invp) ~orig ~jv ~pp:Ex01.pp
+  in
+
+  let () (* get-student-from-person *) =
+    let invp = get_student_from_person in
+
+    let student_of_person = function
+      (** returns ``response'' from ``request'' *)
+      | Ex02.Student { student_id; name; } -> Ex01.{ admission_year = student_id; name; }
+      | Anonymous -> failwith "anonymous, not student"
+      | With_id _ -> failwith "with_id, not student"
+      | Teacher _ -> failwith "teacher, not student" in
+
+    let reg_sample { orig; jv } =
+      M.register_post_example invp.ip_urlpath (Invp invp)
+        ~orig_resp:(student_of_person orig) ~orig_req:orig
+        ~jv_resp:(student_of_person orig |> Ex01.student_to_json) ~jv_req:jv
+        ~pp:Ex01.pp in
+
+    reg_sample Ex02.sample_value03;
+    let sample =
+      let orig =
+        Ex02.(Student {
+            student_id = 1984;
+            name = "William Gibson";
+          }) in
+      let jv =
+        JvHelper.ctor_record
+          "Student" [
+          ("student_id", `num 1984.);
+          ("name", `str "William Gibson");
+        ] in
+      { orig; jv } in
+    reg_sample sample;
+    M.register_post_handler invp (fun x -> return (200, student_of_person x))
+  in ()

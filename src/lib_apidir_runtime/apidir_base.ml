@@ -20,6 +20,16 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Kxclib
 open Bindoj_apidir_shared
 
+module type JsonResponse = sig
+  type t
+
+  (** The HTTP status code of the response *)
+  val status : t -> int
+
+  (** The body of the response in JSON *)
+  val body : t -> Json.jv
+end
+
 module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
   type 'x io = 'x IoStyle.t
   module IoOps = MonadOps(IoStyle)
@@ -32,15 +42,7 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
 
   let invp_count =
     let counter = ref 0 in
-    invocation_points |!> (fun (Invp invp) ->
-      incr counter;
-      (* TODO.future - now assuming there is one and exactly one response desc #216 *)
-      match invp.ip_responses with
-      | [`default, _resp] -> ()
-      | _ -> failwith' "ApiHandlerBridge: panic - we currently could only \
-                        handle invp with exactly one default response type desc: \
-                        name=%s; urlpath=%s;"
-               invp.ip_name invp.ip_urlpath);
+    invocation_points |!> (fun _ -> incr counter;);
     !counter
 
   let index_get, index_post =

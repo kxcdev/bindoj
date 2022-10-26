@@ -197,18 +197,16 @@ let create_cases ex =
 
   let invocation_point_info_cases =
     let resp_desc = "response description in invocation_point_info" in
-    let resp_status = `status_code 200 in
+    let resp_status = `default in
+    let resp =
+      make_response_case ~status:resp_status ~doc:resp_desc ~pack:(fun x -> x) ~unpack:some Ex.typed
+    in
     let invocation_point_info =
       { ip_name = name;
         ip_urlpath = url ^ get_path;
         ip_method = `get;
         ip_request_body = None;
-        ip_responses = [(resp_status,
-                         { rs_media_type = { mt_type = Ex.typed;
-                                             mt_examples = [];
-                                             mt_external_examples = []; };
-                           rs_description = resp_desc;
-                           rs_headers = []; })];
+        ip_responses = [resp];
         ip_deprecated = false;
         ip_summary = None;
         ip_description = None;

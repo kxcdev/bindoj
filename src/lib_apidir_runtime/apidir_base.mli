@@ -19,6 +19,16 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_apidir_shared
 
+module type JsonResponse = sig
+  type t
+
+  (** The HTTP status code of the response *)
+  val status : t -> int
+
+  (** The body of the response in JSON *)
+  val body : t -> Json.jv
+end
+
 module Make :
   functor (Dir : ApiDirManifest) (IoStyle : Monadic) ->
     sig

@@ -35,12 +35,27 @@ let type_decl_info_of_typed_decl : string -> string -> 't typed_type_decl -> typ
     tdi_doc = doc;
     tdi_decl = Boxed decl; }
 
+type http_status = [
+  | `default
+  | `status_code of int
+  | `status_range of [`_1XX | `_2XX | `_3XX | `_4XX | `_5XX]
+]
+
+let string_of_http_status : http_status -> string = function
+  | `default -> "default"
+  | `status_code code -> string_of_int code
+  | `status_range `_1XX -> "1XX"
+  | `status_range `_2XX -> "2XX"
+  | `status_range `_3XX -> "3XX"
+  | `status_range `_4XX -> "4XX"
+  | `status_range `_5XX -> "5XX"
+
 type ('reqty, 'respty) invocation_point_info = {
   ip_name : string;
   ip_urlpath : string;
   ip_method : [ `get | `post ];
   ip_request_body : 'reqty request_body option;
-  ip_responses : ([`status_code of int | `status_range of [`_1XX | `_2XX | `_3XX | `_4XX | `_5XX] | `default] * 'respty response) list;
+  ip_responses : 'respty response_case list;
   ip_deprecated : bool;
   ip_summary : string option;
   ip_description : string option;
@@ -58,6 +73,16 @@ and 't response = {
   rs_description : string;
   rs_headers : 't header list;
 }
+
+and 't response_case =
+  | Response_case : {
+      name: string;
+      doc: string;
+      status: http_status;
+      response: 'a response;
+      pack: 'a -> 't;
+      unpack: 't -> 'a option;
+    } -> 't response_case
 
 and external_doc = {
   ed_urlpath : string;
@@ -99,6 +124,29 @@ and external_example = {
   description : string;
 }
 
+let make_response_case ?(status=`default) ?name ?doc ~pack ~unpack resp_type =
+  let resp_name =
+    match name with
+    | None -> (Typed.decl resp_type).td_name
+    | Some name -> name in
+  let resp_doc =
+    match doc with
+    | None -> resp_name
+    | Some doc -> doc in
+  let response = {
+    rs_media_type = {
+      mt_type = resp_type;
+      mt_examples = [];
+      mt_external_examples = [];
+    };
+    rs_description = resp_doc;
+    rs_headers = [];
+  } in
+  Response_case {
+    name = resp_name; doc = resp_doc;
+    status; response; pack; unpack
+  }
+
 type untyped_invocation_point_info =
   | Invp : (_, _) invocation_point_info -> untyped_invocation_point_info
 
@@ -118,7 +166,6 @@ end
 
 module type MakeRegistryS = sig
 
-  (** TODO.future - allow specifying multiple response types #216 *)
   (** TODO.future - allow specifying examples for req/resp #221 *)
 
   val register_type_decl_info :
@@ -141,6 +188,14 @@ module type MakeRegistryS = sig
     -> string (** name of the invocation point *)
     -> (unit, 'respty) invocation_point_info
 
+  val register_get' :
+    ?summary:string
+    -> ?description:string
+    -> urlpath:string
+    -> string (** name of the invocation point *)
+    -> 'respty response_case list
+    -> (unit, 'respty) invocation_point_info
+
   val register_post :
     ?summary:string
     -> ?description:string
@@ -152,6 +207,17 @@ module type MakeRegistryS = sig
     -> req_type:('reqty typed_type_decl)
     -> resp_type:('respty typed_type_decl)
     -> string (** name of the invocation point *)
+    -> ('reqty, 'respty) invocation_point_info
+
+  val register_post' :
+    ?summary:string
+    -> ?description:string
+    -> ?req_name:string
+    -> ?req_doc:string
+    -> urlpath:string
+    -> req_type:('reqty typed_type_decl)
+    -> string (** name of the invocation point *)
+    -> 'respty response_case list
     -> ('reqty, 'respty) invocation_point_info
 
   module Public : RegistryInfo
@@ -177,78 +243,58 @@ module MakeRegistry () : MakeRegistryS = struct
 
   let add_type_decl_environment_wrapper wrapper = refappend tdenv_wrappers wrapper
 
-  let register_get :
+  let register_get' :
     ?summary:string
     -> ?description:string
-    -> ?resp_name:string
-    -> ?resp_doc:string
     -> urlpath:string
-    -> resp_type:('respty typed_type_decl)
     -> string (* name *)
+    -> 'respty response_case list
     -> (unit, 'respty) invocation_point_info =
-    fun ?summary ?description ?resp_name ?resp_doc ~urlpath ~resp_type name ->
-    let resp_name = match resp_name with
-      | None -> (Typed.decl resp_type).td_name
-      | Some name -> name in
-    let resp_doc = match resp_doc with
-      | None -> resp_name
-      | Some doc -> doc in
-    let response = {
-      rs_media_type = {
-        mt_type = resp_type;
-        mt_examples = [];
-        mt_external_examples = [];
-      };
-      rs_description = resp_doc;
-      rs_headers = [];
-    } in
+    fun ?summary ?description ~urlpath name responses ->
     let invp = {
       ip_name = name;
       ip_urlpath = urlpath;
       ip_method = `get;
       ip_request_body = None;
-      ip_responses = [`default, response];
+      ip_responses = responses;
       ip_deprecated = false;
       ip_summary = summary;
       ip_description = description;
       ip_external_doc = None;
     } in
-    register [type_decl_info_of_typed_decl resp_name resp_doc resp_type] invp; invp
+    let decls =
+      responses |> List.map (function Response_case { name; doc; response; _ } ->
+        type_decl_info_of_typed_decl name doc response.rs_media_type.mt_type
+      )
+    in
+    register decls invp; invp
 
-  let register_post :
+  let register_get ?summary ?description ?resp_name ?resp_doc ~urlpath ~resp_type name =
+    let resp_case =
+      make_response_case ?name:resp_name ?doc:resp_doc
+        ~pack:(fun x -> x) ~unpack:(fun x -> Some x) resp_type
+    in
+    register_get' ?summary ?description ~urlpath name [resp_case]
+
+  let register_post' :
     ?summary:string
     -> ?description:string
     -> ?req_name:string
     -> ?req_doc:string
-    -> ?resp_name:string
-    -> ?resp_doc:string
     -> urlpath:string
     -> req_type:('reqty typed_type_decl)
-    -> resp_type:('respty typed_type_decl)
     -> string (* name *)
+    -> 'respty response_case list
     -> ('reqty, 'respty) invocation_point_info =
-    fun ?summary ?description ?req_name ?req_doc ?resp_name ?resp_doc ~urlpath ~req_type ~resp_type name ->
-    let req_name = match req_name with
+    fun ?summary ?description ?req_name ?req_doc ~urlpath ~req_type name responses ->
+    let req_name =
+      match req_name with
       | None -> (Typed.decl req_type).td_name
       | Some name -> name in
-    let req_doc = match req_doc with
+    let req_doc =
+      match req_doc with
       | None -> req_name
       | Some doc -> doc in
-    let resp_name = match resp_name with
-      | None -> (Typed.decl resp_type).td_name
-      | Some name -> name in
-    let resp_doc = match resp_doc with
-      | None -> resp_name
-      | Some doc -> doc in
-    let response = {
-      rs_media_type = {
-        mt_type = resp_type;
-        mt_examples = [];
-        mt_external_examples = [];
-      };
-      rs_description = resp_doc;
-      rs_headers = [];
-    } in
     let request_body = {
       rq_media_type = {
         mt_type = req_type;
@@ -263,16 +309,26 @@ module MakeRegistry () : MakeRegistryS = struct
       ip_urlpath = urlpath;
       ip_method = `post;
       ip_request_body = Some request_body;
-      ip_responses = [`default, response];
+      ip_responses = responses;
       ip_deprecated = false;
       ip_summary = summary;
       ip_description = description;
       ip_external_doc = None;
     } in
-    register [type_decl_info_of_typed_decl req_name req_doc req_type;
-              type_decl_info_of_typed_decl resp_name resp_doc resp_type;]
-      invp;
+    let decls =
+      responses |> List.map (function Response_case { name; doc; response; _ } ->
+        type_decl_info_of_typed_decl name doc response.rs_media_type.mt_type
+      )
+    in
+    register (type_decl_info_of_typed_decl req_name req_doc req_type :: decls) invp;
     invp
+
+  let register_post ?summary ?description ?req_name ?req_doc ?resp_name ?resp_doc ~urlpath ~req_type ~resp_type name =
+    let resp_case =
+      make_response_case ?name:resp_name ?doc:resp_doc
+        ~pack:(fun x -> x) ~unpack:(fun x -> Some x) resp_type
+    in
+    register_post' ?summary ?description ?req_name ?req_doc ~urlpath ~req_type name [resp_case]
 
   module Public = struct
     type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info

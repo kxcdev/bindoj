@@ -21,24 +21,34 @@ open Kxclib
 open Bindoj_base
 open Bindoj_apidir_shared
 
-exception Bad_response of
-  Json.jv * Typed_type_desc.boxed_type_decl * string option
+type error =
+  | Unexpected_response of { status: int; body: Json.jv }
+  | Bad_response of {
+      body: Json.jv;
+      desc: Typed_type_desc.boxed_type_decl;
+      msg: string option
+    }
+
+exception Apidir_client_error of error
+
+module type JsonResponse = Apidir_base.JsonResponse
 
 module type ScopedJsonFetcher = sig
-  module IoStyle: Utils.IoStyle
+  module IoStyle : Utils.IoStyle
+  module Response : JsonResponse
 
   val perform_get :
     urlpath:string
     -> headers:string list
     -> query_params:(string*string) list
-    -> Json.jv IoStyle.t
+    -> Response.t IoStyle.t
 
   val perform_post :
     urlpath:string
     -> headers:string list
     -> query_params:(string*string) list
     -> body:Json.jv
-    -> Json.jv IoStyle.t
+    -> Response.t IoStyle.t
 end
 
 module type T = sig

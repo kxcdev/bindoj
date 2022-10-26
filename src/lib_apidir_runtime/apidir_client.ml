@@ -22,21 +22,34 @@ open Kxclib.Json
 open Bindoj_base
 open Bindoj_apidir_shared
 
-exception Bad_response of jv * Typed_type_desc.boxed_type_decl * string option
+type error =
+  | Unexpected_response of { status: int; body: jv }
+  | Bad_response of {
+      body: jv;
+      desc: Typed_type_desc.boxed_type_decl;
+      msg: string option
+    }
+
+exception Apidir_client_error of error
+
+module type JsonResponse = Apidir_base.JsonResponse
 
 module type ScopedJsonFetcher = sig
-  module IoStyle: Utils.IoStyle
+  module IoStyle : Utils.IoStyle
+  module Response : JsonResponse
+
   val perform_get :
     urlpath:string
     -> headers:string list
     -> query_params:(string*string) list
-    -> jv IoStyle.t
+    -> Response.t IoStyle.t
+
   val perform_post :
     urlpath:string
     -> headers:string list
     -> query_params:(string*string) list
     -> body:jv
-    -> jv IoStyle.t
+    -> Response.t IoStyle.t
 end
 
 module type T = sig
@@ -62,19 +75,50 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
     let resp_type_name = (Typed_type_desc.Typed.decl ttd).td_name in
     match Bindoj_codec.Json.of_json ~env:tdenv ttd jv with
     | exception exn ->
-        Bad_response (
-            jv,
-            Typed_type_desc.Boxed ttd,
-            Printexc.to_string exn |> some
-          ) |> IoStyle.inject_error
+      Apidir_client_error (
+        Bad_response {
+          body = jv;
+          desc = Typed_type_desc.Boxed ttd;
+          msg  = Printexc.to_string exn |> some;
+        }
+      )|> IoStyle.inject_error
     | None ->
-        Bad_response (
-            jv,
-            Typed_type_desc.Boxed ttd,
+      Apidir_client_error (
+        Bad_response {
+          body = jv;
+          desc = Typed_type_desc.Boxed ttd;
+          msg =
             sprintf "Bindoj_codec.Json.to_json (%s) returns None"
-              resp_type_name |> some
-          ) |> IoStyle.inject_error
+              resp_type_name |> some;
+        }
+      ) |> IoStyle.inject_error
     | Some x -> return x
+
+  let match_response (responses: 'respty response_case list) (resp: Fetcher.Response.t) =
+    let resp_status, resp_body = Fetcher.Response.(status resp, body resp) in
+    let case =
+      responses |> List.find_opt (function Response_case { status; _ } ->
+        match status with
+        | `default -> true
+        | `status_code status when status = resp_status -> true
+        | `status_range `_1XX when 100 <= resp_status && resp_status < 200 -> true
+        | `status_range `_2XX when 200 <= resp_status && resp_status < 300 -> true
+        | `status_range `_3XX when 300 <= resp_status && resp_status < 400 -> true
+        | `status_range `_4XX when 400 <= resp_status && resp_status < 500 -> true
+        | `status_range `_5XX when 500 <= resp_status && resp_status < 600 -> true
+        | _ -> false
+      )
+    in
+    match case with
+    | None ->
+      Apidir_client_error (
+        Unexpected_response { status = resp_status; body = resp_body }
+      ) |> IoStyle.inject_error
+    | Some (Response_case { response; pack; _ }) ->
+      process_response
+        (Utils.ttd_of_media_type response.rs_media_type)
+        resp_body
+      >|= pack
 
   let perform_json_post :
         'req 'resp.
@@ -90,16 +134,11 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
       | `post, Some desc ->
          let ttd = Utils.ttd_of_media_type desc.rq_media_type in
          reqbody |> Bindoj_codec.Json.to_json ~env:tdenv ttd in
-    let resp_ttd =
-      (* TODO.future - now assuming there is one and exactly one response desc #216 *)
-      match invp.ip_responses with
-      | [`default, desc] -> Utils.ttd_of_media_type desc.rs_media_type
-      | _ -> failwith' "panic @%s" __LOC__ in
     let urlpath = invp.ip_urlpath in
     let query_params = additional_query_params |? [] in
     let headers = additional_headers |? [] in
     Fetcher.perform_post ~urlpath ~headers ~query_params ~body:req
-    >>= process_response resp_ttd
+    >>= match_response invp.ip_responses
 
   let perform_json_get :
         'resp.
@@ -107,14 +146,9 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
         -> ?additional_query_params:(string*string) list
         -> (unit, 'resp) invocation_point_info -> 'resp io =
     fun ?additional_headers ?additional_query_params invp ->
-    let resp_ttd =
-      (* TODO.future - now assuming there is one and exactly one response desc #216 *)
-      match invp.ip_responses with
-      | [`default, desc] -> Utils.ttd_of_media_type desc.rs_media_type
-      | _ -> failwith' "panic @%s" __LOC__ in
     let urlpath = invp.ip_urlpath in
     let query_params = additional_query_params |? [] in
     let headers = additional_headers |? [] in
     Fetcher.perform_get ~urlpath ~headers ~query_params
-    >>= process_response resp_ttd
+    >>= match_response invp.ip_responses
 end

@@ -20,19 +20,21 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Kxclib
 open Bindoj_apidir_shared
 
+module TupleJsonResponse : (Apidir_base.JsonResponse with type t = int * Json.jv)
+
 module type T = sig
   type 'resp io
 
   val register_get_handler :
-    (unit, 'respty) invocation_point_info -> (unit -> 'respty io) -> unit
+    (unit, 'respty) invocation_point_info -> (unit -> (int * 'respty) io) -> unit
   val register_post_handler :
-    ('reqty, 'respty) invocation_point_info -> ('reqty -> 'respty io) -> unit
+    ('reqty, 'respty) invocation_point_info -> ('reqty -> (int * 'respty) io) -> unit
 
-  val handle_json_get : untyped_invocation_point_info -> Json.jv io
-  val handle_json_post : untyped_invocation_point_info -> Json.jv -> Json.jv io
+  val handle_json_get : untyped_invocation_point_info -> TupleJsonResponse.t io
+  val handle_json_post : untyped_invocation_point_info -> Json.jv -> TupleJsonResponse.t io
 
-  val handle_path_json_get : string -> Json.jv io
-  val handle_path_json_post : string -> Json.jv -> Json.jv io
+  val handle_path_json_get : string -> TupleJsonResponse.t io
+  val handle_path_json_post : string -> Json.jv -> TupleJsonResponse.t io
 end
 
 module Make :
@@ -42,7 +44,7 @@ module Make :
 
       type handler =
         | Handler : ('reqty, 'respty) invocation_point_info
-                  * ('reqty -> 'respty io) -> handler
+                  * ('reqty -> (int * 'respty) io) -> handler
 
       val handler_registry_get :
         (untyped_invocation_point_info, handler) Hashtbl.t

@@ -30,12 +30,20 @@ and type_decl_info = {
   tdi_decl : boxed_type_decl;
 }
 
+type http_status = [
+  | `default
+  | `status_code of int
+  | `status_range of [`_1XX | `_2XX | `_3XX | `_4XX | `_5XX]
+]
+
+val string_of_http_status : http_status -> string
+
 type ('reqty, 'respty) invocation_point_info = {
   ip_name : string;
   ip_urlpath : string;
   ip_method : [ `get | `post ];
   ip_request_body : 'reqty request_body option;
-  ip_responses : ([`status_code of int | `status_range of [`_1XX | `_2XX | `_3XX | `_4XX | `_5XX] | `default] * 'respty response) list;
+  ip_responses : 'respty response_case list;
   ip_deprecated : bool;
   ip_summary : string option;
   ip_description : string option;
@@ -53,6 +61,16 @@ and 't response = {
   rs_description : string;
   rs_headers : 't header list;
 }
+
+and 't response_case =
+  | Response_case : {
+      name: string;
+      doc: string;
+      status: http_status;
+      response: 'a response;
+      pack: 'a -> 't;
+      unpack: 't -> 'a option;
+    } -> 't response_case
 
 and external_doc = {
   ed_urlpath : string;
@@ -95,6 +113,15 @@ and external_example = {
   description : string;
 }
 
+val make_response_case :
+  ?status:http_status
+  -> ?name:string
+  -> ?doc:string
+  -> pack:('a -> 'respty)
+  -> unpack:('respty -> 'a option)
+  -> 'a typed_type_decl
+  -> 'respty response_case
+
 type untyped_invocation_point_info =
   | Invp : (_, _) invocation_point_info -> untyped_invocation_point_info
 
@@ -114,7 +141,6 @@ end
 
 module type MakeRegistryS = sig
 
-  (** TODO.future - allow specifying multiple response types #216 *)
   (** TODO.future - allow specifying examples for req/resp #221 *)
 
   val register_type_decl_info :
@@ -137,6 +163,14 @@ module type MakeRegistryS = sig
     -> string (* name of the invocation point *)
     -> (unit, 'respty) invocation_point_info
 
+  val register_get' :
+    ?summary:string
+    -> ?description:string
+    -> urlpath:string
+    -> string (** name of the invocation point *)
+    -> 'respty response_case list
+    -> (unit, 'respty) invocation_point_info
+
   val register_post :
     ?summary:string
     -> ?description:string
@@ -148,6 +182,17 @@ module type MakeRegistryS = sig
     -> req_type:('reqty typed_type_decl)
     -> resp_type:('respty typed_type_decl)
     -> string (* name of the invocation point *)
+    -> ('reqty, 'respty) invocation_point_info
+
+  val register_post' :
+    ?summary:string
+    -> ?description:string
+    -> ?req_name:string
+    -> ?req_doc:string
+    -> urlpath:string
+    -> req_type:('reqty typed_type_decl)
+    -> string (** name of the invocation point *)
+    -> 'respty response_case list
     -> ('reqty, 'respty) invocation_point_info
 
   module Public : RegistryInfo
