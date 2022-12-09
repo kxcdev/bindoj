@@ -88,9 +88,10 @@ and openapi_paths_object_of_invocation_point_collection :
 and openapi_path_item_object_of_invocation_point_info :
   registry_info -> ('reqty, 'respty) invocation_point_info -> OpenApi.Path_item_object.t =
   fun reg_info invp ->
-  let { ip_name=_; ip_urlpath; ip_method;
+  let { ip_name; ip_urlpath; ip_method;
         ip_request_body; ip_responses; ip_deprecated;
         ip_summary = summary; ip_description = description; ip_external_doc; } = invp in
+  let summary = summary |? ip_name in
   let mk_path_item_object op =
     let servers =
       match server_of_url ip_urlpath with
@@ -98,15 +99,15 @@ and openapi_path_item_object_of_invocation_point_info :
       | None -> None
     in
     match ip_method with
-    | `get -> OpenApi.Path_item_object.mk ?summary ?description ?servers ~get:op ()
-    | `post -> OpenApi.Path_item_object.mk ?summary ?description ?servers ~post:op ()
+    | `get -> OpenApi.Path_item_object.mk ~summary ?description ?servers ~get:op ()
+    | `post -> OpenApi.Path_item_object.mk ~summary ?description ?servers ~post:op ()
   in
   let mk_operation_object request_body responses =
     let externalDocs = ip_external_doc |> Option.map openapi_external_documentation_object_of_external_doc in
     let requestBody = request_body |> Option.map Either.left in
     OpenApi.Path_item_object.operation
       ~deprecated:ip_deprecated
-      ?summary ?description ?externalDocs ?requestBody
+      ~summary ?description ?externalDocs ?requestBody
       responses
   in
   let request_body =
@@ -190,10 +191,8 @@ and openapi_media_type_object_of_media_type :
 
 and openapi_external_documentation_object_of_external_doc :
   external_doc -> OpenApi.External_documentation_object.t =
-  fun { ed_urlpath; ed_description; } ->
-  match ed_description with
-  | None -> OpenApi.External_documentation_object.mk ed_urlpath
-  | Some description -> OpenApi.External_documentation_object.mk ~description ed_urlpath
+  fun { ed_urlpath; ed_description = description; } ->
+  OpenApi.External_documentation_object.mk ed_urlpath ?description
 
 and openapi_schema_object_of_type_decl : type_decl -> OpenApi.Schema_object.t = gen_openapi_schema
 

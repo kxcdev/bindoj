@@ -102,6 +102,8 @@ let create_cases ex =
   let post_path = "/" ^ post_name in
   let get_urlpath = url ^ get_path in
   let post_urlpath = url ^ post_path in
+  let get_invp_name = "get" in
+  let post_invp_name = "post" in
 
   let registry_info =
     let module R = MakeRegistry () in
@@ -115,14 +117,14 @@ let create_cases ex =
           end)
         Ex.env.alias_ident_typemap in
     let _ =
-      R.register_post "post"
+      R.register_post post_invp_name
         ~urlpath:post_urlpath
         ~req_name:post_name
         ~req_type:Ex.typed
         ~resp_name:post_name
         ~resp_type:Ex.typed in
     let _ =
-      R.register_get "get"
+      R.register_get get_invp_name
         ~urlpath:get_urlpath
         ~resp_name:get_name
         ~resp_type:Ex.typed in
@@ -140,7 +142,9 @@ let create_cases ex =
       OpenApi.Path_item_object.paths [
         get_path,
         OpenApi.Path_item_object.mk
+          ~summary:get_invp_name
           ~get:(OpenApi.Path_item_object.operation
+                  ~summary:get_invp_name
                   ~deprecated:false
                   [ `default,
                     OpenApi.Response_object.mk
@@ -155,7 +159,9 @@ let create_cases ex =
           ();
         post_path,
         OpenApi.Path_item_object.mk
+          ~summary:post_invp_name
           ~post:(OpenApi.Path_item_object.operation
+                   ~summary:post_invp_name
                    ~deprecated:false
                    ~requestBody:(OpenApi.Request_body_object.mk
                                    ~description:post_name
@@ -187,13 +193,13 @@ let create_cases ex =
     [ test_case'
         "gen_openapi_document_object"
         testable_openapi_document_object
-        (registry_info |> gen_openapi_document_object ~title ~version)
-        document_object;
+        document_object
+        (registry_info |> gen_openapi_document_object ~title ~version);
       test_case'
         "openapi_paths_object_of_invocation_point_collection"
         testable_openapi_paths_object
-        (registry_info |> openapi_paths_object_of_invocation_point_collection)
-        paths_object ] in
+        paths_object
+        (registry_info |> openapi_paths_object_of_invocation_point_collection) ] in
 
   let invocation_point_info_cases =
     let resp_desc = "response description in invocation_point_info" in
@@ -213,7 +219,9 @@ let create_cases ex =
         ip_external_doc = None; } in
     let path_item_object =
       OpenApi.Path_item_object.mk
+        ~summary:name
         ~get:(OpenApi.Path_item_object.operation
+                ~summary:name
                 ~deprecated:false
                 [ resp_status,
                   (OpenApi.Response_object.mk
