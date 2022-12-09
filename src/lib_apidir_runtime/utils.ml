@@ -59,24 +59,6 @@ end
 let show_jv jv = Json.to_yojson jv |> Yojson.Safe.to_string
 let pp_jv ppf jv = pp_string ppf (show_jv jv)
 
-let tdenv_of_registry_info registry_info =
-  let open Bindoj_base in
-  let open Typed_type_desc in
-  let _, {
-      type_declarations;
-      type_decl_environment_wrappers
-    } = registry_info in
-  let alias_ident_typemap =
-    type_declarations
-    |> foldl (fun acc info ->
-           acc |> StringMap.add info.tdi_name info.tdi_decl
-         ) StringMap.empty in
-  let env0 = Type_decl_environment.{
-        alias_ident_typemap;
-        prim_ident_typemap = StringMap.empty;
-             } in
-  type_decl_environment_wrappers |> List.foldl (|>) env0
-
 open Bindoj_typedesc
 
 let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =

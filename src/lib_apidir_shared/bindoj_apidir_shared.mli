@@ -129,6 +129,8 @@ type invocation_point_collection = untyped_invocation_point_info list
 
 type registry_info = invocation_point_collection * type_decl_collection
 
+val tdenv_of_registry_info : registry_info -> tdenv
+
 module type ApiDirManifest = sig
   val registry_info : unit -> registry_info
 end

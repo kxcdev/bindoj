@@ -154,6 +154,24 @@ type invocation_point_collection = untyped_invocation_point_info list
 
 type registry_info = invocation_point_collection * type_decl_collection
 
+let tdenv_of_registry_info registry_info =
+  let open Bindoj_base in
+  let open Typed_type_desc in
+  let _, {
+      type_declarations;
+      type_decl_environment_wrappers
+    } = registry_info in
+  let alias_ident_typemap =
+    type_declarations
+    |> foldl (fun acc info ->
+           acc |> StringMap.add info.tdi_name info.tdi_decl
+         ) StringMap.empty in
+  let env0 = Type_decl_environment.{
+        alias_ident_typemap;
+        prim_ident_typemap = StringMap.empty;
+             } in
+  type_decl_environment_wrappers |> List.foldl (|>) env0
+
 module type ApiDirManifest = sig
   val registry_info : unit -> registry_info
 end

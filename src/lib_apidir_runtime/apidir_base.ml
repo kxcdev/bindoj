@@ -38,7 +38,7 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
   let invocation_points, type_decls =
     let invocation_points, type_decls = registry_info in
     invocation_points, type_decls
-  let tdenv = Utils.tdenv_of_registry_info registry_info
+  let tdenv = tdenv_of_registry_info registry_info
 
   let invp_count =
     let counter = ref 0 in

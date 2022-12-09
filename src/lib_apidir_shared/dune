@@ -1,6 +1,6 @@
 (library
  (name bindoj_apidir_shared)
  (public_name bindoj.apidir_shared)
- (libraries kxclib bindoj_typedesc)
+ (libraries kxclib bindoj_base bindoj_typedesc)
  (flags (:standard
           -open Kxclib)))

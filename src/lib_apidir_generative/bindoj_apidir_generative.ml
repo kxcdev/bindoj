@@ -49,19 +49,25 @@ let rec gen_openapi_document_object :
 
 and openapi_components_object_of_type_decl_collection :
   registry_info -> OpenApi.Components_object.t =
-  fun (_, { type_declarations = tds; _ }) ->
+  fun registry_info ->
+  let { prim_ident_typemap; alias_ident_typemap; } : tdenv =
+    tdenv_of_registry_info registry_info in
   let decls =
-    tds |> List.map (fun { tdi_decl = Boxed decl; _ } -> Typed.decl decl) in
+    (prim_ident_typemap
+     |> StringMap.to_list |&> fun (_, Boxed_prim (_, typed)) -> Typed.decl typed) @
+    (alias_ident_typemap
+     |> StringMap.to_list |&> fun (_, boxed) -> (Typed.decl % Typed.unbox) boxed) in
   let decl_schemas =
     decls |> List.map (fun td -> td.td_name, Either.left (openapi_schema_object_of_type_decl td)) in
   let references =
-    tds
-    |> List.filter_map (fun { tdi_name; tdi_decl = Boxed decl; _ } ->
-      let decl = Typed.decl decl in
-      if tdi_name = decl.td_name then None
+    alias_ident_typemap
+    |> StringMap.to_list
+    |> List.filter_map (fun (name, boxed) ->
+      let decl = (Typed.decl % Typed.unbox) boxed in
+      if name = decl.td_name then None
       else
         let ref = OpenApi.Reference_object.mk (sprintf "#/components/schemas/%s" decl.td_name) in
-        Some (tdi_name, Either.right ref)) in
+        Some (name, Either.right ref)) in
   let schemas =
     decl_schemas @ references
     |> List.sort_uniq (fun (n1, _) (n2, _) -> compare n1 n2) in

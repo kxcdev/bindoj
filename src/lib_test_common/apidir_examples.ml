@@ -34,4 +34,5 @@ let all : (string * (module T)) list = [
   "sample_apidir_01", (module Sample_apidir_01);
   "sample_apidir_02", (module Sample_apidir_02);
   "sample_apidir_03", (module Sample_apidir_03);
+  "sample_apidir_04", (module Sample_apidir_04);
 ]
