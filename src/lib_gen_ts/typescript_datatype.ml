@@ -207,6 +207,16 @@ let type_of_coretype :
     | Self -> `type_reference self_type_name
     | StringEnum cs -> `union (cs |> List.map (fun c -> `literal_type (`string_literal c)))
   in
+  let definitive =
+    let classify = Coretype.(function
+      | Ident _ | Self -> false
+      | Prim _ | Uninhabitable
+        | Option _ | List _ | Tuple _ | Map _
+        | StringEnum _
+        -> true
+      | _ -> .)
+    in
+    definitive || (classify ct_desc) in
   if definitive then
     ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
