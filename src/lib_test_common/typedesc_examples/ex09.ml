@@ -21,27 +21,36 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
-(** each example module should have this module type *)
-module type T = sig
-  val decl: type_decl
-  val example_module_path: string
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex09"
 
-  val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) fwrt_decl
-  val ts_ast: ts_ast option
-end
+let cty_int53p = Coretype.mk_prim `int53p
 
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex02", (module Ex02);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-  "ex09", (module Ex09);
-]
+let decl : type_decl =
+  record_decl "with_int53p" [
+    record_field "value" cty_int53p;
+  ]
+
+let decl_with_docstr : type_decl =
+  record_decl "with_int53p" [
+    record_field "value" cty_int53p ~doc:(`docstr "an int53p value");
+  ] ~doc:(`docstr "record of an int53p value")
+
+let fwrt : (unit, unit) fwrt_decl =
+  "with_int53p", FwrtTypeEnv.(
+      init
+      |> bind_object ~annot:() "with_int53p"
+        [ field ~annot:() "value" cty_int53p; ]
+    )
+
+let ts_ast : ts_ast option = Some [
+    `type_alias_declaration {
+        tsa_modifiers = [`export];
+        tsa_name = "with_int53p";
+        tsa_type_parameters = [];
+        tsa_type_desc =
+          `type_literal [
+              { tsps_modifiers = [];
+                tsps_name = "value";
+                tsps_type_desc = `type_reference "number"; };
+            ];};
+  ]

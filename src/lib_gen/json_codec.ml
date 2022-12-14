@@ -76,6 +76,13 @@ module Builtin_codecs = struct
         | (_ : Kxclib.Json.jv) -> None
       ];
     }
+  let int53p = {
+      encoder = [%expr fun (x : Kxclib.int53p) -> (`num (Kxclib.Int53p.to_float x) : Kxclib.Json.jv)];
+      decoder = [%expr function
+        | (`num x : Kxclib.Json.jv) -> Some (Kxclib.Int53p.of_float x)
+        | (_ : Kxclib.Json.jv) -> None
+      ];
+    }
   let float = {
       encoder = [%expr fun (x : float) -> (`num x : Kxclib.Json.jv)];
       decoder = [%expr function
@@ -172,6 +179,7 @@ module Builtin_codecs = struct
       "unit", unit;
       "bool", bool;
       "int", int;
+      "int53p", int53p;
       "float", float;
       "string", string;
       "uchar", uchar;
@@ -699,6 +707,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
       | Prim `unit -> Schema_object.null ?description ()
       | Prim `bool -> Schema_object.boolean ?description ()
       | Prim `int -> Schema_object.integer ?description ()
+      | Prim `int53p -> Schema_object.integer ?description ()
       | Prim `float -> Schema_object.number ?description ()
       | Prim `string -> Schema_object.string ?description ()
       | Prim `uchar -> Schema_object.string ~minLength:1 ~maxLength:1 ?description ()

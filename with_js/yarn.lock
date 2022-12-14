@@ -2481,10 +2481,10 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kxclib-re@1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/kxclib-re/-/kxclib-re-1.0.1.tgz#74a2c6243cfdcf62374494ef99698ce744f3fd45"
-  integrity sha512-keu/7hjlRHlM6IbFhw8R+MsQQWA7qG2KG9l5g1e//6XbyzCYqyQzw4sl7XkNm/5ddzioNcLOAyTxaB+BWdjyaA==
+kxclib-re@1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/kxclib-re/-/kxclib-re-1.3.0.tgz#ca8f9cfaa099bf11b38396dcb5f04b2c2d2dcaa8"
+  integrity sha512-rE/KgJGnaT7Yei2YA3AKkfOgYoLwfSR5vJUa5knpRpjPt/BCSUyo4PGamOM/x1XrWLfTP5TfBZnJP+3NEpLbjg==
 
 leven@^3.1.0:
   version "3.1.0"

@@ -107,6 +107,7 @@ and type_of_coretype : self_name:string -> coretype -> core_type =
     | `unit -> typcons "unit"
     | `bool -> typcons "bool"
     | `int -> typcons "int"
+    | `int53p -> typcons "Kxclib.int53p"
     | `float -> typcons "float"
     | `string -> typcons "string"
     | `uchar -> typcons "Uchar.t"
@@ -178,6 +179,7 @@ and coretype_of_expr ~self_name (ct: coretype) =
     | Prim `unit   -> [%expr Expr.to_unit]
     | Prim `bool   -> [%expr Expr.to_bool]
     | Prim `int    -> [%expr Expr.to_int]
+    | Prim `int53p -> [%expr Expr.to_int53p]
     | Prim `float  -> [%expr Expr.to_float]
     | Prim `string -> [%expr Expr.to_string]
     | Prim `uchar  -> [%expr Expr.to_uchar]
@@ -225,6 +227,7 @@ and coretype_to_expr ~self_name (ct: coretype) =
     | Prim `unit   -> [%expr Expr.of_unit]
     | Prim `bool   -> [%expr Expr.of_bool]
     | Prim `int    -> [%expr Expr.of_int]
+    | Prim `int53p -> [%expr Expr.of_int53p]
     | Prim `float  -> [%expr Expr.of_float]
     | Prim `string -> [%expr Expr.of_string]
     | Prim `uchar  -> [%expr Expr.of_uchar]

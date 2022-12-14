@@ -47,6 +47,7 @@ module Builtin_codecs : sig
   val unit : builtin_codec
   val bool : builtin_codec
   val int : builtin_codec
+  val int53p : builtin_codec
   val float : builtin_codec
   val string : builtin_codec
   val uchar : builtin_codec

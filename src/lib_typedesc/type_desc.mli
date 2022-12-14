@@ -65,6 +65,7 @@ module Coretype : sig
     | `unit (** [unit] in ocaml *)
     | `bool (** [bool] in ocaml *)
     | `int (** [int] in ocaml *)
+    | `int53p (** [Kxclib.int53p] in ocaml *)
     | `float (** [float] in ocaml *)
     | `string (** holding a text string; [string] in ocaml *)
     | `uchar (** holding one unicode scalar value; [Uchar.t] in ocaml *)

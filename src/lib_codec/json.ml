@@ -138,6 +138,7 @@ let rec of_json ~(env: tdenv) (a: 'a typed_type_decl) (jv: jv) : 'a option =
       | Prim `int, `num x ->
         if Float.is_integer x then Expr.Int (int_of_float x) |> some
         else none
+      | Prim `int53p, `num x -> Expr.Int53p (Int53p.of_float x) |> some
       | Prim `float, `num x -> Expr.Float x |> some
       | Prim `string, `str s -> Expr.String s |> some
       | Prim `uchar, `str s ->
@@ -251,6 +252,7 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
       | Prim `unit,   Expr.Unit -> `null
       | Prim `bool,   Expr.Bool b -> `bool b
       | Prim `int,    Expr.Int i -> `num (float_of_int i)
+      | Prim `int53p, Expr.Int53p i -> `num (Int53p.to_float i)
       | Prim `float,  Expr.Float f -> `num f
       | Prim `string, Expr.String s -> `str s
       | Prim `uchar,  Expr.Uchar c -> `str (String.of_list [Uchar.to_char c])

@@ -28,7 +28,7 @@ type foreign_language_label = Foreign_language : _ foreign_language -> foreign_l
 module External_format = struct
   module LabelOrdered = struct
     type t = external_format_label
-    let compare x y = Stdlib.compare x y
+    let compare x y = compare x y
   end
   module LabelSet = Set.Make(LabelOrdered)
   module LabelMap = Map.Make(LabelOrdered)
@@ -80,6 +80,7 @@ and Expr' : sig
     | Unit
     | Bool of bool
     | Int of int
+    | Int53p of int53p
     | Float of float
     | String of string
     | Uchar of Uchar.t
@@ -104,6 +105,8 @@ module Expr = struct
   let to_bool = function Bool b -> some b | _ -> none
   let of_int i = Int i
   let to_int = function Int i -> some i | _ -> none
+  let of_int53p i = Int53p i
+  let to_int53p = function Int53p i -> some i | _ -> none
   let of_float f = Float f
   let to_float = function Float f -> some f | _ -> none
   let of_string s = String s
@@ -179,6 +182,9 @@ module Reflects = struct
   let int_reflect =
     Expr.(reflect_of_alias
             of_int to_int)
+  let int53p_reflect =
+    Expr.(reflect_of_alias
+            of_int53p to_int53p)
   let float_reflect =
     Expr.(reflect_of_alias
             of_float to_float)

@@ -81,6 +81,7 @@ and Expr : sig
     | Unit
     | Bool of bool
     | Int of int
+    | Int53p of int53p
     | Float of float
     | String of string
     | Uchar of Uchar.t
@@ -100,6 +101,8 @@ and Expr : sig
   val to_bool : t -> bool option
   val of_int : int -> t
   val to_int : t -> int option
+  val of_int53p : int53p -> t
+  val to_int53p : t -> int53p option
   val of_float : float -> t
   val to_float : t -> float option
   val of_string : string -> t
@@ -141,6 +144,7 @@ module Reflects : sig
   val unit_reflect : unit Refl.t
   val bool_reflect : bool Refl.t
   val int_reflect : int Refl.t
+  val int53p_reflect : int53p Refl.t
   val float_reflect : float Refl.t
   val string_reflect : string Refl.t
   val uchar_reflect : Uchar.t Refl.t

@@ -172,7 +172,7 @@ let annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier 
 let type_of_prim : Coretype.prim -> ts_type_desc = function
   | `unit -> `union [`type_reference "null"; `type_reference "undefined"]
   | `bool -> `type_reference "boolean"
-  | `int | `float | `byte -> `type_reference "number"
+  | `int | `int53p | `float | `byte -> `type_reference "number"
   | `string | `uchar -> `type_reference "string"
   | `bytes -> `type_reference "string" (* base64 *)
 
