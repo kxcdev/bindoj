@@ -290,9 +290,25 @@ let tuple =
 
 let record =
   mk ~f:(fun cont ?(additionalProperties=`False) properties ->
-    let required = properties |> List.map (fun (k, _) -> k) in
+    let required =
+      properties |> List.filter_map (fun (k, t) ->
+        match t.generic_fields.nullable with
+        | None -> some k
+        | Some false -> some k
+        | Some true -> none) in
     TypImpl.obj ~properties ~required ~additionalProperties ~cont ()
   )
+
+let option =
+  mk ~f:(fun cont t ->
+      let t = cont t.typ in
+      { t with
+        generic_fields = {
+          t.generic_fields with
+          nullable = some true
+        };
+      }
+    )
 
 let rec map_ref (f: string -> string) (t: t) : t =
   let map_t_or_false = Option.map (function `T t -> `T (map_ref f t) | `False -> `False) in

@@ -21,16 +21,10 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
-let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05"
-
-let tuple_configs : [`coretype] configs =
-  let open Bindoj_codec.Json in
-  [Json_config.tuple_style (`obj `default)]
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05_notuple"
 
 let cty_int_opt = Coretype.(mk_option % prim) `int
 let cty_int_lst = Coretype.(mk_list % prim) `int
-let cty_int_tpl = Coretype.(mk_tuple % List.map prim) [ `int; `int ]
-let cty_int_obt = Coretype.(mk_tuple ~configs:tuple_configs % List.map prim) [ `int; `int ]
 let cty_int_map = Coretype.(mk_map `string % prim) `int
 
 let decl : type_decl =
@@ -38,18 +32,6 @@ let decl : type_decl =
     record_field "option" cty_int_opt;
 
     record_field "list" cty_int_lst;
-
-    record_field "tuple" cty_int_tpl;
-
-    record_field "objtuple" cty_int_obt;
-
-    record_field "nested" (Coretype.(
-      mk_tuple [
-        cty_int_opt.ct_desc;
-        cty_int_lst.ct_desc;
-        cty_int_tpl.ct_desc;
-      ]
-    ));
 
     record_field "map" cty_int_map;
   ]
@@ -62,20 +44,6 @@ let decl_with_docstr : type_decl =
     record_field "list" (Coretype.(mk_list (prim `int)))
       ~doc:(`docstr "int list");
 
-    record_field "tuple" (Coretype.(mk_tuple [prim `int; prim `int]))
-      ~doc:(`docstr "(int * int)");
-
-    record_field "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]))
-      ~doc:(`docstr "(int * int) (as object)");
-
-    record_field "nested" (Coretype.(
-      mk_tuple [
-        option (prim `int);
-        list (prim `int);
-        tuple [prim `int; prim `int];
-      ]
-    )) ~doc:(`docstr "(int option * int list * (int * int))");
-
     record_field "map" (Coretype.(mk_map `string (prim `int)))
       ~doc:(`docstr "map<string, int>");
   ] ~doc:(`docstr "collection of complex types")
@@ -87,17 +55,6 @@ let fwrt : (unit, unit) fwrt_decl =
     |> bind_object ~annot "complex_types" [
       field ~annot "option" (Coretype.(mk_option (prim `int)));
       field ~annot "list"   (Coretype.(mk_list (prim `int)));
-      field ~annot "tuple"  (Coretype.(mk_tuple [prim `int; prim `int]));
-      field ~annot "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]));
-      field ~annot "nested" (
-        Coretype.(
-          mk_tuple [
-            option (prim `int);
-            list (prim `int);
-            tuple [prim `int; prim `int];
-          ]
-        )
-      );
       field ~annot "map" (Coretype.(mk_map `string (prim `int)));
     ]
   )

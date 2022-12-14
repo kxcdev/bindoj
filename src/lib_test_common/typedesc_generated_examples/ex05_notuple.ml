@@ -17,34 +17,52 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-include Bindoj_test_common_typedesc_generated_examples
-
+include Bindoj_gen_test_gen_output.Ex05_notuple_gen
 open Bindoj_base
 
-(** each example module should have this module type *)
-module type T = sig
-  type t
-  include Runtime.Generic_typed_type_decl
-          with type type_decl := Type_desc.type_decl
-           and type t := t
-  val pp : ppf -> t -> unit
-  val t : t Alcotest.testable
-  val sample_values : t Sample_value.t list
-  val to_json : t -> Kxclib.Json.jv
-  val of_json : Kxclib.Json.jv -> t option
-  val env : tdenv
-end
+type t = complex_types = {
+  option: int option;
+  list:   int list;
+  map: (string * int) list;
+} [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex05_notuple.decl
+let reflect = complex_types_reflect
 
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex02", (module Ex02);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
+let to_json = complex_types_to_json
+let of_json = complex_types_of_json
+let env = empty_tdenv
+let t : t Alcotest.testable = Alcotest.of_pp pp
+
+type sample = t Sample_value.t
+open Sample_value
+
+let sample_value01 : sample = {
+  orig = {
+    option = Some 42;
+    list = [1;2;3;4];
+    map = ["foo", 4; "bar", 2]
+  };
+  jv = `obj [
+    "option", `num 42.;
+    "list", `arr [`num 1.; `num 2.; `num 3.; `num 4.];
+    "map", `obj ["foo", `num 4.; "bar", `num 2.];
+  ]
+}
+
+let sample_value02 : sample = {
+  orig = {
+    option = None;
+    list = [];
+    map = [];
+  };
+  jv = `obj [
+    "option", `null;
+    "list", `arr [];
+    "map", `obj [];
+  ]
+}
+
+let sample_values = [
+  sample_value01;
+  sample_value02;
 ]

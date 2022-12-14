@@ -39,6 +39,7 @@ let all : (string * (module T)) list = [
   "ex03_objtuple", (module Ex03_objtuple);
   "ex04", (module Ex04);
   "ex05", (module Ex05);
+  "ex05_notuple", (module Ex05_notuple);
   "ex06", (module Ex06);
   "ex07", (module Ex07);
   "ex08", (module Ex08);

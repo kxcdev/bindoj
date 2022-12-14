@@ -36,6 +36,11 @@
  (mode (promote (until-clean))))
 
 (rule
+ (target ex05_notuple_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+
+(rule
  (target ex06_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
  (mode (promote (until-clean))))

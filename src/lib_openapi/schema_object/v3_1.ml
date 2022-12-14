@@ -319,9 +319,24 @@ let tuple =
 
 let record =
   mk ~f:(fun cont ?(additionalProperties=`False) properties ->
-    let required = properties |> List.map (fun (k, _) -> k) in
+    let rec is_nullable t = match t.typ with
+      | Null -> true
+      | AllOf ts -> List.for_all is_nullable ts
+      | AnyOf ts -> List.exists is_nullable ts
+      | OneOf ts -> List.exists is_nullable ts
+      | Not t -> Bool.not (is_nullable t)
+      | Any -> true
+      | _ -> false in
+    let required =
+      properties |> List.filter_map (fun (k, t) ->
+        if is_nullable t then none
+        else some k
+      ) in
     TypImpl.obj ~properties ~required ~additionalProperties ~cont ()
   )
+
+let option =
+  mk ~f:(fun cont t -> TypImpl.oneOf [t; null ()] ~cont)
 
 let rec map_ref (f: string -> string) (t: t) : t =
   let map_t_or_false = Option.map (function `T t -> `T (map_ref f t) | `False -> `False) in
