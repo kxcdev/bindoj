@@ -17,46 +17,68 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
-open Bindoj_gen_ts.Typescript_datatype
+include Bindoj_gen_test_gen_output.Ex10_gen
+open Bindoj_base
 
-let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05_notuple"
+type t = xy_opt = { x_opt : int option; y_opt : int option } [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex10.decl
+let reflect = xy_opt_reflect
 
-let cty_int_opt = Coretype.(mk_option % prim) `int
-let cty_int_lst = Coretype.(mk_list % prim) `int
-let cty_int_map = Coretype.(mk_map `string % prim) `int
+let to_json = xy_opt_to_json
+let of_json = xy_opt_of_json
+let env =
+  empty_tdenv
+  |> Bindoj_std.Tdenv_wrappers.json
 
-let decl : type_decl =
-  record_decl "complex_types" [
-    record_field "option" cty_int_opt;
+let t : t Alcotest.testable = Alcotest.of_pp pp
 
-    record_field "list" cty_int_lst;
-
-    record_field "map" cty_int_map;
+let sample_value01 : t Sample_value.t = {
+  orig = {
+    x_opt = None;
+    y_opt = None;
+  };
+  jv = `obj [
+    "x_opt", `null;
+    "y_opt", `null;
   ]
+}
 
-let decl_with_docstr : type_decl =
-  record_decl "complex_types" [
-    record_field "option" cty_int_opt
-      ~doc:(`docstr "int option");
+let sample_value02 : t Sample_value.t = {
+  orig = {
+    x_opt = None;
+    y_opt = Some 42;
+  };
+  jv = `obj [
+    "x_opt", `null;
+    "y_opt", `num 42.;
+  ]
+}
 
-    record_field "list" cty_int_lst
-      ~doc:(`docstr "int list");
+let sample_value03 : t Sample_value.t = {
+  orig = {
+    x_opt = Some (-25);
+    y_opt = None;
+  };
+  jv = `obj [
+    "x_opt", `num (-25.);
+    "y_opt", `null;
+  ]
+}
 
-    record_field "map" cty_int_map
-      ~doc:(`docstr "map<string, int>");
-  ] ~doc:(`docstr "collection of complex types")
+let sample_value04 : t Sample_value.t = {
+  orig = {
+    x_opt = Some 512;
+    y_opt = Some (-119);
+  };
+  jv = `obj [
+    "x_opt", `num 512.;
+    "y_opt", `num (-119.);
+  ]
+}
 
-let fwrt : (unit, unit) fwrt_decl =
-  let annot = () in
-  "complex_types", FwrtTypeEnv.(
-    init
-    |> bind_object ~annot "complex_types" [
-      field ~annot "option" cty_int_opt;
-      field ~annot "list" cty_int_lst;
-      field ~annot "map" cty_int_map;
-    ]
-  )
-
-let ts_ast : ts_ast option = None
+let sample_values = [
+  sample_value01;
+  sample_value02;
+  sample_value03;
+  sample_value04;
+]

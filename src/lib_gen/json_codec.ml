@@ -720,7 +720,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         else
           Schema_object.ref ("#" ^ id.id_name)
       | Option t ->
-        Schema_object.option ?description (go t)
+        Schema_object.option (go t)
       | Tuple ts ->
         begin match tuple_style with
         | `arr ->

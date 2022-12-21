@@ -322,21 +322,7 @@ val record :
   (string * t) list -> t
 
 (** Helper for OCaml: option, nullable types *)
-val option :
-  ?schema:string ->
-  ?title:string ->
-  ?description:string ->
-  ?default:Json.jv ->
-  ?example:Json.jv ->
-  ?enum:Json.jv list ->
-  ?nullable:bool ->
-  ?deprecated:bool ->
-  ?readOnly:bool ->
-  ?writeOnly:bool ->
-  ?id:string ->
-  ?definitions:(string * t) list ->
-  ?discriminator:discriminator -> ?externalDocs:External_documentation_object.t ->
-  t -> t
+val option : t -> t
 
 (** Replaces all the appearances of [ref s] with [ref (f s)].*)
 val map_ref : (string -> string) -> t -> t

@@ -335,8 +335,7 @@ let record =
     TypImpl.obj ~properties ~required ~additionalProperties ~cont ()
   )
 
-let option =
-  mk ~f:(fun cont t -> TypImpl.oneOf [t; null ()] ~cont)
+let option t = oneOf [t; null ()]
 
 let rec map_ref (f: string -> string) (t: t) : t =
   let map_t_or_false = Option.map (function `T t -> `T (map_ref f t) | `False -> `False) in

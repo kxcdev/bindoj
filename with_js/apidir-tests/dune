@@ -29,6 +29,12 @@
  (mode (promote (until-clean))))
 
 (rule
+ (alias gen)
+ (target sample_apidir_06.json)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
  (alias runtest)
  (deps
   (sandbox none)
@@ -38,6 +44,7 @@
     sample_apidir_03.json
     sample_apidir_04.json
     sample_apidir_05.json
+    sample_apidir_06.json
   )
   (file ../.redocly.yaml)
   (alias ../node_modules))

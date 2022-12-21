@@ -21,42 +21,28 @@ open Bindoj_base.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
-let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05_notuple"
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex10"
 
 let cty_int_opt = Coretype.(mk_option % prim) `int
-let cty_int_lst = Coretype.(mk_list % prim) `int
-let cty_int_map = Coretype.(mk_map `string % prim) `int
 
 let decl : type_decl =
-  record_decl "complex_types" [
-    record_field "option" cty_int_opt;
-
-    record_field "list" cty_int_lst;
-
-    record_field "map" cty_int_map;
+  record_decl "xy_opt" [
+    record_field "x_opt" cty_int_opt;
+    record_field "y_opt" cty_int_opt;
   ]
 
 let decl_with_docstr : type_decl =
-  record_decl "complex_types" [
-    record_field "option" cty_int_opt
-      ~doc:(`docstr "int option");
-
-    record_field "list" cty_int_lst
-      ~doc:(`docstr "int list");
-
-    record_field "map" cty_int_map
-      ~doc:(`docstr "map<string, int>");
-  ] ~doc:(`docstr "collection of complex types")
+  record_decl "xy_opt" [
+    record_field "x_opt" cty_int_opt ~doc:(`docstr "an optional int x");
+    record_field "y_opt" cty_int_opt ~doc:(`docstr "an optional int y");
+  ] ~doc:(`docstr "record of optional int x and optional int y")
 
 let fwrt : (unit, unit) fwrt_decl =
-  let annot = () in
-  "complex_types", FwrtTypeEnv.(
-    init
-    |> bind_object ~annot "complex_types" [
-      field ~annot "option" cty_int_opt;
-      field ~annot "list" cty_int_lst;
-      field ~annot "map" cty_int_map;
-    ]
-  )
+  "xy_opt", FwrtTypeEnv.(
+      init
+      |> bind_object ~annot:() "xy_opt"
+        [ field ~annot:() "x_opt" cty_int_opt;
+          field ~annot:() "y_opt" cty_int_opt; ]
+    )
 
 let ts_ast : ts_ast option = None
