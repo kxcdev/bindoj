@@ -246,6 +246,19 @@ module Code = struct
           }
          |> rope_of_ts_expression
          |> Rope.to_string);
+      test_case'
+        "rope_of_ts_expression"
+        ({|{"foo": (12.5), "bar": (null as (undefined))}|})
+        (`literal_expression (
+             `object_literal [
+                 "foo", `literal_expression (`numeric_literal 12.5);
+                 "bar", `casted_expression (
+                            `identifier "null",
+                            `special `undefined
+                          )
+           ])
+         |> rope_of_ts_expression
+         |> Rope.to_string);
     ] in
 
     let type_desc_cases = [
@@ -256,9 +269,45 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
+        "rope_of_ts_expression"
+        "( \"abc\" ) as const"
+        (`const_assertion (`literal_expression (`string_literal "abc"))
+         |> rope_of_ts_expression
+         |> Rope.to_string);
+      test_case'
         "rope_of_ts_type_desc"
         number
         (`type_reference number
+         |> rope_of_ts_type_desc
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_type_desc"
+        "void"
+        (`special `void
+         |> rope_of_ts_type_desc
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_type_desc"
+        "( void ) as ( null )"
+        (`type_assertion (`special `void, `special `null)
+         |> rope_of_ts_type_desc
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_type_desc"
+        "foo<(null), (void)>"
+        (`type_construct ("foo", [`special `null; `special `void])
+         |> rope_of_ts_type_desc
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_type_desc"
+        "typeof foo"
+        (`typeof (`identifier "foo")
+         |> rope_of_ts_type_desc
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_type_desc"
+        "keyof bar"
+        (`keyof (`type_reference "bar")
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
@@ -400,6 +449,30 @@ module Code = struct
                   tsps_name = var_y;
                   tsps_type_desc = `type_reference string; };
               ];
+          }
+         |> rope_of_ts_statement
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_statement"
+        ("export const foo = 12.5")
+        (`value_declaration {
+             tsv_modifiers = [ `export ];
+             tsv_kind = `const;
+             tsv_name = "foo";
+             tsv_type_desc = None;
+             tsv_value = `literal_expression (`numeric_literal 12.5)
+          }
+         |> rope_of_ts_statement
+         |> Rope.to_string);
+      test_case'
+        "rope_of_ts_statement"
+        ("export const foo: number = 12.5")
+        (`value_declaration {
+             tsv_modifiers = [ `export ];
+             tsv_kind = `const;
+             tsv_name = "foo";
+             tsv_type_desc = Some (`type_reference "number");
+             tsv_value = `literal_expression (`numeric_literal 12.5)
           }
          |> rope_of_ts_statement
          |> Rope.to_string);

@@ -1,0 +1,11 @@
+(library
+ (name bindoj_apidir_typescript)
+ (public_name bindoj.apidir_typescript)
+ (libraries
+  kxclib
+  bindoj_typedesc
+  bindoj_apidir_shared
+  bindoj_gen_ts)
+ (flags (:standard
+          -open Kxclib)))
+

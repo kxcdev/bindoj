@@ -26,6 +26,7 @@ type ts_ast = ts_statement list [@@deriving show, eq]
 and ts_statement = [
   | `type_alias_declaration of ts_type_alias_decl
   | `function_declaration of ts_func_decl
+  | `value_declaration of ts_value_decl
   | `module_declaration of ts_mod_decl
   | `return_statement of ts_expression
   | `if_statement of ts_expression * ts_statement * ts_statement
@@ -49,6 +50,14 @@ and ts_func_decl = {
   tsf_body : ts_ast;
 }
 
+and ts_value_decl = {
+  tsv_modifiers : [ `export ] ignore_order_list;
+  tsv_kind : [ `const | `let_ ];
+  tsv_name : string;
+  tsv_type_desc : ts_type_desc option;
+  tsv_value : ts_expression;
+}
+
 and ts_mod_decl = {
   tsm_modifiers : [ `export ] list;
   tsm_name : string;
@@ -56,7 +65,12 @@ and ts_mod_decl = {
 }
 
 and ts_type_desc = [
-  | `type_reference of string (* includes primitive types *)
+  | `special of [
+    | `void | `undefined | `null
+    | `any | `unknown | `never
+    ]
+  | `type_reference of string (* includes primitive types except special *)
+  | `type_construct of string*ts_type_desc list
   | `type_literal of ts_property_signature ignore_order_list
   | `literal_type of ts_literal_type
   | `tuple of ts_type_desc list
@@ -65,6 +79,10 @@ and ts_type_desc = [
   | `array of ts_type_desc
   | `func_type of ts_func_type_desc
   | `record of ts_type_desc * ts_type_desc (* https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type *)
+  | `type_assertion of ts_type_desc * ts_type_desc
+  | `typeof of ts_expression (* TypeScript has artificial(?) limitation on the sort of
+                                expressions allowed, but do not care here *)
+  | `keyof of ts_type_desc
 ]
 
 and ts_property_signature = {
@@ -99,12 +117,15 @@ and ts_expression = [
   | `arrow_function of ts_arrow_function
   | `new_expression of ts_new_expression
   | `await_expression of ts_expression
+  | `casted_expression of ts_expression * ts_type_desc
+  | `const_assertion of ts_expression
 ]
 
 and ts_literal_expression = [
   | `numeric_literal of float
   | `string_literal of string
   | `template_literal of string
+  | `object_literal of (string*ts_expression) ignore_order_list
 ]
 
 and ts_call_expression = {
@@ -415,6 +436,7 @@ module RopeUtil = struct
   let (@+) s t = rope s ++ t
   let (+@) s t = s ++ rope t
   let between l r s = l @+ s +@ r
+  let between_double_quotes = between "\"" "\""
 
   let roprintf fmt = Format.ksprintf Rope.of_string fmt
   (** sprintf のように rope を作れる *)
@@ -422,6 +444,7 @@ module RopeUtil = struct
   let concat = Rope.concat
   let concat_str sep xs = Rope.concat (rope sep) xs
   let comma_separated_list xs = Rope.concat (rope ", ") xs
+  let comma_newline_separated_list xs = Rope.concat (rope ",\n") xs
 end
 
 let rec rope_of_ts_ast : ts_ast -> Rope.t = fun statements ->
@@ -436,6 +459,8 @@ and rope_of_ts_statement : ts_statement -> Rope.t =
     rope_of_ts_type_alias_decl type_alias_decl
   | `function_declaration func_decl ->
     rope_of_ts_func_decl func_decl
+  | `value_declaration value_decl ->
+    rope_of_ts_value_decl value_decl
   | `module_declaration ts_mod_decl ->
     rope_of_ts_mod_decl ts_mod_decl
   | `return_statement expr ->
@@ -488,6 +513,23 @@ and rope_of_ts_func_decl : ts_func_decl -> Rope.t =
     |> between "{\n" "\n}" in
   modifiers +@ "function " ++ name ++ type_parameters ++ parameters ++ (" : " @+ type_desc +@ "\n") ++ body
 
+and rope_of_ts_value_decl : ts_value_decl -> Rope.t =
+  fun { tsv_modifiers; tsv_kind; tsv_name; tsv_type_desc; tsv_value } ->
+  let open RopeUtil in
+  let modifiers = rope_of_modifiers (tsv_modifiers :> ts_modifier list) in
+  let kind =
+    (match tsv_kind with
+    | `const -> "const "
+    | `let_ -> "let "
+    ) |> rope in
+  let name = rope tsv_name in
+  let type_desc =
+    match tsv_type_desc >? rope_of_ts_type_desc with
+    | None -> rope ""
+    | Some r -> rope ": " ++ r in
+  let body = rope_of_ts_expression tsv_value in
+  modifiers ++ kind ++ name ++ type_desc +@ " = " ++ body
+
 and rope_of_ts_mod_decl : ts_mod_decl -> Rope.t =
   fun { tsm_modifiers; tsm_name; tsm_body; } ->
   let open RopeUtil in
@@ -504,9 +546,24 @@ and rope_of_modifiers : ts_modifier list -> Rope.t = fun modifiers ->
 
 and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
   let open RopeUtil in
+  let kw_of_special = function
+    | `void -> "void"
+    | `undefined -> "undefined"
+    | `null -> "null"
+    | `any -> "any"
+    | `unknown -> "unknown"
+    | `never -> "never"
+  in
   function
+  | `special s -> rope (kw_of_special s)
   | `type_reference s ->
     rope s
+  | `type_construct (constructor, arguments) ->
+     (rope constructor)
+     ++
+     (arguments |&> rope_of_ts_type_desc_with_paren
+      |> concat_str ", "
+      |> between "<" ">")
   | `type_literal members ->
     (members |&> fun { tsps_modifiers; tsps_name; tsps_type_desc; } ->
         let readonly =
@@ -535,6 +592,18 @@ and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
   | `intersection type_descs ->
     type_descs |&> rope_of_ts_type_desc_with_paren
     |> concat_str "\n& "
+  | `typeof expr ->
+     (rope "typeof ")
+     ++
+     (rope_of_ts_expression_with_paren expr)
+  | `keyof td ->
+     (rope "keyof ")
+     ++
+     (rope_of_ts_type_desc_with_paren td)
+  | `type_assertion (body, asserted) -> (
+     (rope_of_ts_type_desc_with_paren body)
+     +@ " as "
+     ++ (rope_of_ts_type_desc_with_paren asserted))
   | `array t ->
     rope_of_ts_type_desc_with_paren t +@ "[]"
   | `record (k, v) -> (* Record<K, V> *)
@@ -564,6 +633,13 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
       | `numeric_literal f -> rope (string_of_float f)
       | `string_literal s -> between "\"" "\"" (rope s)
       | `template_literal s -> between "`" "`" (rope s)
+      | `object_literal fs ->
+         (fs |&> fun (prop, value) ->
+           (between_double_quotes % rope) prop
+           +@ ": " ++ (rope_of_ts_expression_with_paren value)
+         )
+         |> comma_newline_separated_list
+         |> between "{\n" "\n}"
     end
   | `call_expression { tsce_expression; tsce_arguments; } ->
     rope_of_ts_expression_with_paren tsce_expression ++
@@ -591,6 +667,12 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
     between "(" ")" (tsne_arguments |&> rope_of_ts_expression |> comma_separated_list)
   | `await_expression expr ->
     "await " @+ rope_of_ts_expression expr
+  | `casted_expression (expr, td) ->
+     rope_of_ts_expression_with_paren expr
+     +@ " as " ++ (rope_of_ts_type_desc_with_paren td)
+  | `const_assertion expr ->
+     (rope_of_ts_expression_with_paren expr)
+     +@ " as const"
 
 and rope_of_ts_expression_with_paren : ts_expression -> Rope.t = fun expr ->
   let open RopeUtil in

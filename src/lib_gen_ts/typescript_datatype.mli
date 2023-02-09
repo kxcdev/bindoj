@@ -28,6 +28,7 @@ type ts_ast = ts_statement list
 and ts_statement = [
   | `type_alias_declaration of ts_type_alias_decl
   | `function_declaration of ts_func_decl
+  | `value_declaration of ts_value_decl
   | `module_declaration of ts_mod_decl
   | `return_statement of ts_expression
   | `if_statement of ts_expression * ts_statement * ts_statement
@@ -51,6 +52,14 @@ and ts_func_decl = {
   tsf_body : ts_ast;
 }
 
+and ts_value_decl = {
+  tsv_modifiers : [ `export ] ignore_order_list;
+  tsv_kind : [ `const | `let_ ];
+  tsv_name : string;
+  tsv_type_desc : ts_type_desc option;
+  tsv_value : ts_expression;
+}
+
 and ts_mod_decl = {
   tsm_modifiers : [ `export ] list;
   tsm_name : string;
@@ -58,7 +67,12 @@ and ts_mod_decl = {
 }
 
 and ts_type_desc = [
-  | `type_reference of string (* includes primitive types *)
+  | `special of [
+    | `void | `undefined | `null
+    | `any | `unknown | `never
+    ]
+  | `type_reference of string (* includes primitive types except special *)
+  | `type_construct of string*ts_type_desc list
   | `type_literal of ts_property_signature ignore_order_list
   | `literal_type of ts_literal_type
   | `tuple of ts_type_desc list
@@ -67,6 +81,10 @@ and ts_type_desc = [
   | `array of ts_type_desc
   | `func_type of ts_func_type_desc
   | `record of ts_type_desc * ts_type_desc (* https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type *)
+  | `type_assertion of ts_type_desc * ts_type_desc
+  | `typeof of ts_expression (* TypeScript has artificial(?) limitation on the sort of
+                                expressions allowed, but do not care here *)
+  | `keyof of ts_type_desc
 ]
 
 and ts_property_signature = {
@@ -101,12 +119,15 @@ and ts_expression = [
   | `arrow_function of ts_arrow_function
   | `new_expression of ts_new_expression
   | `await_expression of ts_expression
+  | `casted_expression of ts_expression * ts_type_desc
+  | `const_assertion of ts_expression
 ]
 
 and ts_literal_expression = [
   | `numeric_literal of float
   | `string_literal of string
   | `template_literal of string
+  | `object_literal of (string*ts_expression) ignore_order_list
 ]
 
 and ts_call_expression = {

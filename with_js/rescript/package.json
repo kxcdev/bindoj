@@ -17,7 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/kxcdev/bindoj.git"
   },
-  "author": "",
+  "author": "Bindoj Developers",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/kxcdev/bindoj/issues"

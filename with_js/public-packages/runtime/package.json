@@ -1,0 +1,25 @@
+{
+  "name": "bindoj-runtime",
+  "version": "0.2.0",
+  "description": "Base runtime library for Bindoj -- A generative datatype toolkit for OCaml centric workflows",
+  "keywords": ["bindoj", "ocaml"],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "package.json",
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "npx tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kxcdev/bindoj.git"
+  },
+  "author": "Bindoj Developers",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/kxcdev/bindoj/issues"
+  },
+  "homepage": "https://github.com/kxcdev/bindoj"
+}
