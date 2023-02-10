@@ -52,15 +52,18 @@ let gen_raw :
       @ (resptypes invp))
   in
   let imports =
+    let protect f x =
+      try f x
+      with _ -> x in
     imports |> List.group_by import_location
-    |> List.deassoc None |> snd
+    |> protect (List.deassoc None &> snd)
     |&> (?< Option.get)
   in
   let open Bindoj_gen_ts.Typescript_datatype in
   let td_name (Ttd.Boxed (module T)) = T.decl.td_name in
   let import_statements =
     imports |&> (fun (loc, tds) ->
-      let tnames = tds |&> td_name in
+      let tnames = tds |&> td_name |> List.sort_uniq compare in
       sprintf "import { %s } from \"%s\";"
           (String.concat ", " tnames)
           loc
