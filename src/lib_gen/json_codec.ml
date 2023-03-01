@@ -59,8 +59,9 @@ module Builtin_codecs = struct
   open struct let loc = Location.none end
 
   let unit = {
-      encoder = [%expr fun () -> (`null : Kxclib.Json.jv)];
-      decoder = [%expr function `null -> Some () | _ -> None];
+      encoder = [%expr fun () -> (`num 1. : Kxclib.Json.jv)];
+      decoder = [%expr function
+                      (`bool _ | `num _ | `str _ | `arr [] | `obj []) -> Some () | _ -> None];
     }
   let bool = {
       encoder = [%expr fun (x : bool) -> (`bool x : Kxclib.Json.jv)];
@@ -704,7 +705,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
     let rec go =
       let open Coretype in
       function
-      | Prim `unit -> Schema_object.null ?description ()
+      | Prim `unit -> Schema_object.integer ~minimum:1 ~maximum:1 ?description ()
       | Prim `bool -> Schema_object.boolean ?description ()
       | Prim `int -> Schema_object.integer ?description ()
       | Prim `int53p -> Schema_object.integer ?description ()

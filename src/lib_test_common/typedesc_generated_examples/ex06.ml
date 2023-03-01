@@ -57,7 +57,7 @@ let sample_value01 : sample = {
     bytes = Bytes.of_string "Hello, world!";
   };
   jv = `obj [
-    "unit", `null;
+    "unit", `num 1.;
     "bool", `bool true;
     "int", `num 42.;
     "float", `num 4.2;

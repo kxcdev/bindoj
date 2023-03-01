@@ -133,7 +133,8 @@ let rec of_json ~(env: tdenv) (a: 'a typed_type_decl) (jv: jv) : 'a option =
   let expr_of_json (ct: coretype) (jv: jv) : Expr.t option =
     let rec go (d: Coretype.desc) (jv: jv) =
       match d, jv with
-      | Prim `unit, `null -> Expr.Unit |> some
+      | Prim `unit, (`bool _ | `num _ | `str _ | `arr [] | `obj []) ->
+         Expr.Unit |> some
       | Prim `bool, `bool b -> Expr.Bool b |> some
       | Prim `int, `num x ->
         if Float.is_integer x then Expr.Int (int_of_float x) |> some
@@ -249,7 +250,7 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
   let expr_to_json (ct: coretype) (expr: Expr.t) : jv =
     let rec go (d: Coretype.desc) (e: Expr.t) =
       match d, e with
-      | Prim `unit,   Expr.Unit -> `null
+      | Prim `unit,   Expr.Unit -> `num 1.
       | Prim `bool,   Expr.Bool b -> `bool b
       | Prim `int,    Expr.Int i -> `num (float_of_int i)
       | Prim `int53p, Expr.Int53p i -> `num (Int53p.to_float i)
