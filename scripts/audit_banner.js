@@ -32,6 +32,7 @@ const sourceDirs = [
   "./with_js/src",
   "./with_js/apidir-tests",
   "./with_js/compile-tests",
+  "./with_js/apidir-typescript-tests/gen",
   "./with_js/jsoo-integration-tests",
 ]
 

@@ -17,20 +17,6 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_apidir_shared
-open Bindoj_typedesc
+open Bindoj_test_common
 
-type resolution_strategy = [
-  | `no_resolution
-  | `import_location of string
-  | `inline_type_definition
-  | `infile_type_definition of [ `export | `no_export ]
-]
-
-val gen_raw :
-    ?resolution_strategy:(Typed_type_desc.boxed_type_decl -> resolution_strategy)
-    -> ?bindoj_namespace:string
-    -> ?mod_prefix:string
-    -> mod_name:string
-    -> registry_info
-    -> string
+let () = Gen_mock_server.export_to_js(module Apidir_examples.Sample_apidir_03)

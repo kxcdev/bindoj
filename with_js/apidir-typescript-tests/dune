@@ -1,0 +1,111 @@
+(rule
+ (alias gen)
+ (target sample_apidir_01.ts)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target sample_apidir_02.ts)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target sample_apidir_03.ts)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target sample_apidir_04.ts)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target sample_apidir_05.ts)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target sample_apidir_06.ts)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias runtest)
+ (deps
+  (sandbox none)
+  (:outputs
+    sample_apidir_01.ts
+    sample_apidir_02.ts
+    sample_apidir_03.ts
+    sample_apidir_04.ts
+    sample_apidir_05.ts
+    sample_apidir_06.ts
+  )
+  (alias ../node_modules))
+ (action
+  (progn
+   (run yarn --cwd ../ install --frozen-lockfile))))
+
+(rule
+  (alias gen_mock_server)
+  (targets sample_apidir_01_server.js)
+  (deps gen/gen_mock_server_01.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias gen_mock_server)
+  (targets sample_apidir_02_server.js)
+  (deps gen/gen_mock_server_02.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias gen_mock_server)
+  (targets sample_apidir_03_server.js)
+  (deps gen/gen_mock_server_03.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias gen_mock_server)
+  (targets sample_apidir_04_server.js)
+  (deps gen/gen_mock_server_04.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias gen_mock_server)
+  (targets sample_apidir_05_server.js)
+  (deps gen/gen_mock_server_05.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias gen_mock_server)
+  (targets sample_apidir_06_server.js)
+  (deps gen/gen_mock_server_06.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+ (alias runtest)
+ (deps
+  (sandbox none)
+  (:outputs
+    sample_apidir_01_server.js
+    sample_apidir_02_server.js
+    sample_apidir_03_server.js
+    sample_apidir_04_server.js
+    sample_apidir_05_server.js
+    sample_apidir_06_server.js
+  )
+  (alias ../node_modules))
+ (action
+  (progn
+   (run yarn --cwd ../ install --frozen-lockfile))))

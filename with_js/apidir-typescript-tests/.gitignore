@@ -1,0 +1,3 @@
+*.ts
+*.js
+!tests/*.ts

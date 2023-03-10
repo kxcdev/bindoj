@@ -31,7 +31,7 @@ export type ApiDirInvpFunctionType<
   Dir extends ApiDirInfoMap,
   invp extends keyof Dir,
   Opt extends unknown[] = [],
-  respty = Promise<ApiDirInvpResponseType<Dir, invp>>
+  respty = Promise<{ body: ApiDirInvpResponseType<Dir, invp>; status_code: number }>
 > = ApiDirInvpRequestType<Dir, invp> extends undefined
   ? (...extraArgs: Opt) => respty
   : (reqBody: ApiDirInvpRequestType<Dir, invp>, ...extraArgs: Opt) => respty;

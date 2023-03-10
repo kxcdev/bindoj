@@ -7,7 +7,7 @@
   bindoj_codec
   bindoj_typedesc
   bindoj_apidir_shared
-  brr
+  prr
   yojson
   jsonm
   (re_export bindoj.runtime))

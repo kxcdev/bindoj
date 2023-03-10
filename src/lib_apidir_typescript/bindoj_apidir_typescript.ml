@@ -21,23 +21,43 @@ open Bindoj_apidir_shared
 
 module Ttd = Bindoj_typedesc.Typed_type_desc
 
+type resolution_strategy = [
+  | `no_resolution
+  | `import_location of string
+  | `inline_type_definition
+  | `infile_type_definition of [ `export | `no_export ]
+]
+
 let box ttd = Ttd.Boxed ttd
 
 let gen_raw :
-    ?import_location:(Ttd.boxed_type_decl -> string option)
+    ?resolution_strategy:(Ttd.boxed_type_decl -> resolution_strategy)
     -> ?bindoj_namespace:string
     -> ?mod_prefix:string
     -> mod_name:string
     -> registry_info
     -> string
-  = fun ?import_location ?bindoj_namespace ?mod_prefix ~mod_name (invps, _) ->
+  = fun ?resolution_strategy ?bindoj_namespace ?mod_prefix ~mod_name (invps, _) ->
   let mod_prefixed s = match mod_prefix with
     | Some p -> p^"_"^s
     | None -> String.capitalize_ascii mod_name^s in
   let bindoj_prefixed s = match bindoj_namespace with
     | Some ns -> ns^"."^s
     | None -> invalid_arg' "?bindoj_namespace is not specified" in
-  let import_location = import_location |? constant None in
+  let open Bindoj_gen_ts.Typescript_datatype in
+  let open Bindoj_typedesc.Typed_type_desc in
+  let td_name (Ttd.Boxed (module T)) = T.decl.td_name in
+  let resolution_strategy typ =
+    match resolution_strategy with
+    | None -> `no_resolution
+    | Some f ->
+      match f typ with
+      | `no_resolution
+      | `import_location _
+      | `infile_type_definition _ as s -> s
+      | _ ->
+          failwith' "Bindoj_apidir_typescript.gen_raw not yet supports `inline_type_definition (for type %s)" (td_name typ)
+  in
   let reqtype invp =
     invp.ip_request_body
     >? (fun r -> box r.rq_media_type.mt_type) in
@@ -51,23 +71,26 @@ let gen_raw :
       (reqtype invp |> Option.to_list)
       @ (resptypes invp))
   in
-  let imports =
-    let protect f x =
-      try f x
-      with _ -> x in
-    imports |> List.group_by import_location
-    |> protect (List.deassoc None &> snd)
-    |&> (?< Option.get)
-  in
-  let open Bindoj_gen_ts.Typescript_datatype in
-  let td_name (Ttd.Boxed (module T)) = T.decl.td_name in
   let import_statements =
-    imports |&> (fun (loc, tds) ->
+    imports
+    |> List.group_by resolution_strategy
+    |&?> (function | (`import_location loc, tds) -> Some (loc, tds) | _ -> None)
+    |&> (fun (loc, tds) ->
       let tnames = tds |&> td_name |> List.sort_uniq compare in
       sprintf "import { %s } from \"%s\";"
           (String.concat ", " tnames)
           loc
     ) in
+  let infile_type_definition_statements =
+      imports
+      |> List.sort_uniq compare
+      |&?> (fun td ->
+        match resolution_strategy td with
+        | `infile_type_definition modifier ->
+          let decl = td |> Typed.unbox |> Typed.decl in
+          Some (gen_ts_type ~export:(modifier = `export) decl)
+        | _ -> None)
+  in
   let make_type_reference typ = `type_reference (td_name typ) in
   let typescript_resptypes (Invp invp) : ts_type_desc =
     let branches = resptypes invp |&> make_type_reference in
@@ -151,5 +174,8 @@ let gen_raw :
     |> Internals.rope_of_ts_ast
     |> Rope.to_string in
   (String.concat "\n" import_statements)
-  ^"\n"^statements
+  ^"\n"
+  ^(String.concat "\n" infile_type_definition_statements)
+  ^"\n"
+  ^statements
 

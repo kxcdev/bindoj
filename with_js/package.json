@@ -26,7 +26,8 @@
       "js"
     ],
     "roots": [
-      "unit-tests"
+      "unit-tests",
+      "apidir-typescript-tests/tests"
     ],
     "transform": {
       "^.+\\.ts$": "ts-jest"

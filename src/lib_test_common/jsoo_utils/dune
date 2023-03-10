@@ -1,0 +1,8 @@
+(library
+ (name bindoj_test_common_jsoo_utils)
+ (libraries
+  bindoj_apidir_runtime
+  alcotest fmt fmt.tty js_of_ocaml prr
+  kxclib yojson jsonm)
+ (preprocess (pps js_of_ocaml-ppx))
+ (flags (:standard)))

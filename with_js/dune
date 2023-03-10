@@ -15,7 +15,10 @@
   (sandbox none)
   (alias node_modules)
   (alias compile-tests/gen)
-  (source_tree unit-tests))
+  (alias apidir-typescript-tests/gen_mock_server)
+  (source_tree unit-tests)
+  (source_tree public-packages)
+  (source_tree apidir-typescript-tests/tests))
  (action
   (progn
    (run yarn install --frozen-lockfile)

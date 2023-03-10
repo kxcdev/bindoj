@@ -12,7 +12,9 @@
   "include": [
     "./src/",
     "./compile-tests/",
-    "./unit-tests/"
+    "./unit-tests/",
+    "./apidir-typescript-tests/",
+    "./apidir-typescript-tests/tests/",
   ],
   "exclude": [
     "./node_modules"
