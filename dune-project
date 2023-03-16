@@ -31,7 +31,7 @@
   (zed (>= 3.1.0))
   (odoc (and :dev (>= 2.1.0)))
   (jsonm (>= 1.0))
-  (js_of_ocaml (and :with-test (>= 4.0.0)))
+  (js_of_ocaml (and :with-test (>= 4.0.0) (< 5.1.0)))
   (js_of_ocaml-ppx (and :with-test (>= 4.0.0)))
   (gen_js_api (and :with-test (>= 1.1.1)))
   (mdx (and :with-test (>= 2.1.0)))
