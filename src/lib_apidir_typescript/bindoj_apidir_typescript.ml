@@ -47,16 +47,8 @@ let gen_raw :
   let open Bindoj_gen_ts.Typescript_datatype in
   let open Bindoj_typedesc.Typed_type_desc in
   let td_name (Ttd.Boxed (module T)) = T.decl.td_name in
-  let resolution_strategy typ =
-    match resolution_strategy with
-    | None -> `no_resolution
-    | Some f ->
-      match f typ with
-      | `no_resolution
-      | `import_location _
-      | `infile_type_definition _ as s -> s
-      | _ ->
-          failwith' "Bindoj_apidir_typescript.gen_raw not yet supports `inline_type_definition (for type %s)" (td_name typ)
+  let resolution_strategy =
+    resolution_strategy |? (constant `no_resolution)
   in
   let reqtype invp =
     invp.ip_request_body
@@ -91,13 +83,26 @@ let gen_raw :
           Some (gen_ts_type ~export:(modifier = `export) decl)
         | _ -> None)
   in
-  let make_type_reference typ = `type_reference (td_name typ) in
+  let make_ts_type_desc (Ttd.Boxed (module T) as typ): ts_type_desc =
+    let name = T.decl.td_name in
+    match resolution_strategy typ with
+    | `inline_type_definition ->
+      let open Bindoj_gen_foreign.Foreign_datatype in
+      let () = if is_recursive T.decl then
+        failwith' "%s - Recursive type '%s' cannot be defined inline." __FILE__ name
+      in
+      fwrt_decl_of_type_decl T.decl
+      |> annotate_fwrt_decl false false
+      |> ts_type_alias_decl_of_fwrt_decl ~self_type_name:name
+      |> fun t -> t.tsa_type_desc
+    | _ -> `type_reference name
+  in
   let typescript_resptypes (Invp invp) : ts_type_desc =
-    let branches = resptypes invp |&> make_type_reference in
+    let branches = resptypes invp |&> make_ts_type_desc in
     `union branches
   in
   let typescript_reqtype (Invp invp) : ts_type_desc =
-    reqtype invp >? make_type_reference |? `special `undefined
+    reqtype invp >? make_ts_type_desc |? `special `undefined
   in
   let invp_info_object: ts_expression =
     let objexpr fs : ts_expression = `literal_expression (`object_literal fs) in

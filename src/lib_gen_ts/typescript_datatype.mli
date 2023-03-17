@@ -186,6 +186,7 @@ val equal_ts_ast : ts_ast -> ts_ast -> bool
 
 val ts_ast_of_fwrt_decl : (ts_modifier list, [`readonly] list) fwrt_decl -> ts_ast
 val annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`readonly] list) fwrt_decl
+val ts_type_alias_decl_of_fwrt_decl : self_type_name:string -> (ts_modifier list, [`readonly] list) fwrt_decl -> ts_type_alias_decl
 
 module Rope : sig
   type t

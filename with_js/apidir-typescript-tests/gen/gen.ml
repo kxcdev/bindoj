@@ -35,7 +35,8 @@ let print_typescript name (module Dir : T) =
       | { td_name = "named_json"; _ } -> `import_location "../compile-tests/ex08_gen"
       | { td_name = "with_int53p"; _ } -> `import_location "../compile-tests/ex09_gen"
       | { td_name = "xy_opt"; _ } -> `import_location "../compile-tests/ex10_gen"
-      | { td_name = "int" | "int_opt" | "json_value"; _ } -> `infile_type_definition `no_export
+      | { td_name = "int"; _ } -> `infile_type_definition `no_export
+      | { td_name = "int_opt" | "json_value"; _ } -> `inline_type_definition
       | _ -> `no_resolution)
     ~bindoj_namespace:namespace
     ~mod_name:name
