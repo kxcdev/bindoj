@@ -1,0 +1,9 @@
+(test
+ (name coretypes)
+ (libraries
+   alcotest
+   bindoj_runtime
+   bindoj_typedesc
+   kxclib)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show)))
