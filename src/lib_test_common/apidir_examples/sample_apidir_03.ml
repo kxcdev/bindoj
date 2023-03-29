@@ -20,6 +20,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 [@@@warning "-33-32"]
 
 open Bindoj_apidir_shared
+open Bindoj_typedesc
 open Bindoj_typedesc.Typed_type_desc
 
 module Types = struct
@@ -30,14 +31,10 @@ module Types = struct
   let person : person typed_type_decl = Typed.mk Ex02.decl Ex02.reflect
 
   let int : int typed_type_decl =
-    let decl = alias_decl "int" (Coretype.mk_prim `int) in
-    let reflect = Reflects.int_reflect in
-    Typed.mk decl reflect
+    Coretypes.(Prims.int |> to_typed_type_decl "int")
 
   let string : string typed_type_decl =
-    let decl = alias_decl "string" (Coretype.mk_prim `string) in
-    let reflect = Reflects.string_reflect in
-    Typed.mk decl reflect
+    Coretypes.(Prims.string |> to_typed_type_decl "string")
 end
 
 open struct

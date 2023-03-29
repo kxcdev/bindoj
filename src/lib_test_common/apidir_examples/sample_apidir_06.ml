@@ -20,6 +20,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 [@@@warning "-33-32"]
 
 open Bindoj_apidir_shared
+open Bindoj_typedesc
 open Bindoj_typedesc.Typed_type_desc
 
 module Types = struct
@@ -30,11 +31,7 @@ module Types = struct
     Typed.mk Ex10.decl Ex10.reflect
 
   let int_opt : int option typed_type_decl =
-    let decl = alias_decl "int_opt" (Coretype.(mk_option % prim) `int) in
-    let reflect =
-      Reflects.reflect_of_alias
-        Expr.(of_option of_int) Expr.(to_option to_int) in
-    Typed.mk decl reflect
+    Coretypes.(Prims.int |> option |> to_typed_type_decl "int_opt")
 
   let int_opt_to_json : int option -> Json.jv = function
     | None -> `null
@@ -58,9 +55,12 @@ let get_x =
     ~resp_type:T.int_opt
 
 let get_y =
+  let xy_opt =
+    let env = R.Public.registry_info() |> tdenv_of_registry_info in
+    T.xy_opt |> Coretypes.(ident' &> to_typed_type_decl "xy_opt" ~env) in
   R.register_post "get-y"
     ~urlpath:"/xy-opt/y"
-    ~req_type:T.xy_opt
+    ~req_type:xy_opt
     ~resp_type:T.int_opt
 
 include R.Public
