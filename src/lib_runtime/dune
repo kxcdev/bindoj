@@ -2,5 +2,6 @@
  (name bindoj_runtime)
  (public_name bindoj.runtime)
  (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show ppx_deriving.eq))
  (libraries kxclib))
 

@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_runtime
 open Bindoj_typedesc.Typed_type_desc
 
 (** TODO.future - temporary solution before the arrival of type cosmos *)
@@ -48,6 +49,7 @@ type ('reqty, 'respty) invocation_point_info = {
   ip_summary : string option;
   ip_description : string option;
   ip_external_doc : external_doc option;
+  ip_usage_samples : ('reqty, 'respty) invp_usage_sample list;
 }
 
 and 't request_body = {
@@ -66,6 +68,7 @@ and 't response_case =
   | Response_case : {
       name: string;
       doc: string;
+      samples: 'a with_doc list;
       status: http_status;
       response: 'a response;
       pack: 'a -> 't;
@@ -94,7 +97,6 @@ and parameter_location = Query | Header | Path | Cookie
 
 and 't media_type = {
   mt_type : 't typed_type_decl;
-  mt_examples : (string * 't) list;
   mt_external_examples : (string * string) list;
   (* mt_encoding : encoding; *) (* TODO.future assume that encoding codec is UTF8 #223 *)
 }
@@ -113,17 +115,48 @@ and external_example = {
   description : string;
 }
 
+and ('reqty, 'respty) invp_usage_sample =
+  | Req_sample of 'reqty with_doc
+  | Resp_sample of ('respty * http_status) with_doc
+  | Usage_sample of ('reqty * 'respty * http_status) with_doc
+
 val make_response_case :
   ?status:http_status
   -> ?name:string
   -> ?doc:string
+  -> ?samples:('a with_doc list)
   -> pack:('a -> 'respty)
   -> unpack:('respty -> 'a option)
   -> 'a typed_type_decl
   -> 'respty response_case
 
+type invocation_point_meta = {
+  ipm_name : string;
+  ipm_urlpath : string;
+  ipm_method : [ `get | `post ];
+}
+
+type ('reqty, 'respty) invocation_point_additional_info = {
+  mutable ipa_request_body : 'reqty request_body option;
+  mutable ipa_responses : 'respty response_case list;
+  mutable ipa_deprecated : bool;
+  mutable ipa_summary : string option;
+  mutable ipa_description : string option;
+  mutable ipa_external_doc : external_doc option;
+  mutable ipa_usage_samples : ('reqty, 'respty) invp_usage_sample list;
+}
+
 type untyped_invocation_point_info =
   | Invp : (_, _) invocation_point_info -> untyped_invocation_point_info
+
+type untyped_invocation_point_additional_info =
+  | InvpAdditionalInfo : (_, _) invocation_point_additional_info -> untyped_invocation_point_additional_info
+
+val to_invocation_point_info_meta : (_, _) invocation_point_info -> invocation_point_meta
+
+val to_invocation_point_additional_info : ('reqty, 'respty) invocation_point_info -> ('reqty, 'respty) invocation_point_additional_info
+
+val to_invocation_point_info : invocation_point_meta -> ('reqty, 'respty) invocation_point_additional_info -> ('reqty, 'respty) invocation_point_info
 
 type invocation_point_collection = untyped_invocation_point_info list
 
@@ -142,9 +175,6 @@ module type RegistryInfo = sig
 end
 
 module type MakeRegistryS = sig
-
-  (** TODO.future - allow specifying examples for req/resp #221 *)
-
   val register_type_decl_info :
     ?name:string
     -> ?doc:string
@@ -160,6 +190,7 @@ module type MakeRegistryS = sig
     -> ?description:string
     -> ?resp_name:string
     -> ?resp_doc:string
+    -> ?resp_samples:(('respty * http_status) with_doc list)
     -> urlpath:string
     -> resp_type:('respty typed_type_decl)
     -> string (* name of the invocation point *)
@@ -168,6 +199,7 @@ module type MakeRegistryS = sig
   val register_get' :
     ?summary:string
     -> ?description:string
+    -> ?resp_samples:(('respty * http_status) with_doc list)
     -> urlpath:string
     -> string (** name of the invocation point *)
     -> 'respty response_case list
@@ -178,8 +210,11 @@ module type MakeRegistryS = sig
     -> ?description:string
     -> ?req_name:string
     -> ?req_doc:string
+    -> ?req_samples:('reqty with_doc list)
     -> ?resp_name:string
     -> ?resp_doc:string
+    -> ?resp_samples:(('respty * http_status) with_doc list)
+    -> ?usage_samples:(('reqty * 'respty * http_status) with_doc list)
     -> urlpath:string
     -> req_type:('reqty typed_type_decl)
     -> resp_type:('respty typed_type_decl)
@@ -191,11 +226,57 @@ module type MakeRegistryS = sig
     -> ?description:string
     -> ?req_name:string
     -> ?req_doc:string
+    -> ?req_samples:('reqty with_doc list)
+    -> ?resp_samples:(('respty * http_status) with_doc list)
+    -> ?usage_samples:(('reqty * 'respty * http_status) with_doc list)
     -> urlpath:string
     -> req_type:('reqty typed_type_decl)
     -> string (** name of the invocation point *)
     -> 'respty response_case list
     -> ('reqty, 'respty) invocation_point_info
+
+  val register_response_samples :
+    ('respty * http_status) with_doc list
+    -> (_, 'respty) invocation_point_info
+    -> unit
+
+  val register_response_sample :
+    ?doc:string
+    -> ?status:http_status
+    -> 'respty
+    -> (_, 'respty) invocation_point_info
+    -> unit
+
+  val register_request_samples :
+    'reqty with_doc list
+    -> ('reqty, _) invocation_point_info
+    -> unit
+
+  val register_request_sample :
+    ?doc:string
+    -> 'reqty
+    -> ('reqty, _) invocation_point_info
+    -> unit
+
+  val register_usage_samples :
+    ('reqty * 'respty * http_status) with_doc list
+    -> ('reqty, 'respty) invocation_point_info
+    -> unit
+
+  val register_usage_sample :
+    ?doc:string
+    -> ?status:http_status
+    -> req:'reqty
+    -> resp:'respty
+    -> ('reqty, 'respty) invocation_point_info
+    -> unit
+
+  val register_usage_sample' :
+    ?doc:string
+    -> ?status:http_status
+    -> ('reqty * 'respty)
+    -> ('reqty, 'respty) invocation_point_info
+    -> unit
 
   module Public : RegistryInfo
 end

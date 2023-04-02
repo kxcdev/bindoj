@@ -30,5 +30,5 @@
  (modules utils bindoj_runtime
  )
  (libraries kxclib)
- (preprocess (pps ppx_optcomp))
+ (preprocess (pps ppx_optcomp ppx_deriving.show ppx_deriving.eq))
  (flags :standard -open Kxclib))

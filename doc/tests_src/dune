@@ -7,6 +7,7 @@
 (mdx
  (libraries
    bindoj
+   bindoj_runtime
    bindoj_typedesc
    bindoj_base
    bindoj_gen

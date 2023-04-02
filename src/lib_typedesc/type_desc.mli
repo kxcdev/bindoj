@@ -147,14 +147,6 @@ val pp_coretype : ppf -> coretype -> unit
 val string_of_coretype : coretype -> string
 val equal_coretype : coretype -> coretype -> bool
 
-type doc = [
-  | `docstr of string
-  | `nodoc
-]
-val pp_doc : ppf -> doc -> unit
-val string_of_doc : doc -> string
-val equal_doc : doc -> doc -> bool
-
 type record_field = {
   rf_name: string;
   rf_type: coretype;

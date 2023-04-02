@@ -22,9 +22,9 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_apidir_shared
 open Bindoj_typedesc
 open Bindoj_typedesc.Typed_type_desc
+open Bindoj_test_common_typedesc_generated_examples
 
 module Types = struct
-  open Bindoj_test_common_typedesc_generated_examples
   open Bindoj_runtime
 
   type int_list = Ex03_objtuple.int_list
@@ -32,6 +32,16 @@ module Types = struct
 
   let int : int typed_type_decl =
     Coretypes.(Prims.int |> to_typed_type_decl "int")
+end
+
+module Functions = struct
+  let rec inc_int_list = Ex03_objtuple.(function
+  | IntNil -> IntNil
+  | IntCons (n, ns) -> IntCons (n+1, inc_int_list ns))
+
+  let rec sum_of_int_list = Ex03_objtuple.(function
+  | IntNil -> 0
+  | IntCons (n, ns) -> n + sum_of_int_list ns)
 end
 
 open struct
@@ -65,6 +75,21 @@ let sum_of_int_list =
     ~resp_type:T.int
     ~resp_name:"int"
     ~resp_doc:"sum of the supplied int list"
+
+let () = begin
+  let samples = Ex03_objtuple.[ sample_value01.orig; sample_value03.orig ] in
+  get_any_int_list
+  |> R.register_response_samples
+    (samples |&> (fun s -> ((s, `default), `nodoc)));
+
+  inc_int_list
+  |> R.register_usage_samples
+    (samples |&> (fun s -> ((s, (Functions.inc_int_list s), `default), `nodoc)));
+
+  sum_of_int_list
+  |> R.register_usage_samples
+    (samples |&> (fun s -> ((s, (Functions.sum_of_int_list s), `default), `nodoc)));
+end
 
 include R.Public
 
@@ -107,7 +132,6 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Bindoj_test_common_typedesc_generated_examples in
   let open Sample_value in
 
   let () (* get-any-int-list *) =
@@ -120,11 +144,7 @@ let build_mock_server (module M: MockServerBuilder) =
 
   let () (* inc-int-list *) =
     let invp = inc_int_list in
-
-    let rec inc_int_list = Ex03_objtuple.(function
-      | IntNil -> IntNil
-      | IntCons (n, ns) -> IntCons (n+1, inc_int_list ns)) in
-
+    let open Functions in
     let reg_sample { orig; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
         ~orig_resp:(inc_int_list orig) ~orig_req:orig
@@ -137,10 +157,7 @@ let build_mock_server (module M: MockServerBuilder) =
 
   let () (* sum-of-int-list *) =
     let invp = sum_of_int_list in
-
-    let rec sum_of_int_list = Ex03_objtuple.(function
-      | IntNil -> 0
-      | IntCons (n, ns) -> n + sum_of_int_list ns) in
+    let open Functions in
 
     let reg_sample { orig; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)

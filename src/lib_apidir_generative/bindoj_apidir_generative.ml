@@ -90,8 +90,23 @@ and openapi_path_item_object_of_invocation_point_info :
   fun reg_info invp ->
   let { ip_name; ip_urlpath; ip_method;
         ip_request_body; ip_responses; ip_deprecated;
-        ip_summary = summary; ip_description = description; ip_external_doc; } = invp in
+        ip_summary = summary; ip_description = description;
+        ip_external_doc; ip_usage_samples } = invp in
   let summary = summary |? ip_name in
+  let req_samples =
+    ip_usage_samples
+    |> List.filter_map (function
+      | Req_sample s -> Some s
+      | Resp_sample _ -> None
+      | Usage_sample ((req, _, _), doc) -> Some (req,doc))
+  in
+  let resp_samples =
+    ip_usage_samples
+    |> List.filter_map (function
+    | Req_sample _ -> None
+    | Resp_sample s -> Some s
+    | Usage_sample ((_, resp, status), doc) -> Some ((resp, status), doc))
+  in
   let mk_path_item_object op =
     let servers =
       match server_of_url ip_urlpath with
@@ -111,25 +126,34 @@ and openapi_path_item_object_of_invocation_point_info :
       responses
   in
   let request_body =
-    (Obj.magic ip_request_body) |> Option.map (openapi_request_body_object_of_request_body reg_info) in
+    (Obj.magic ip_request_body) |> Option.map (openapi_request_body_object_of_request_body reg_info (Obj.magic req_samples)) in
   let responses =
-    ip_responses |&> function Response_case { status; response; _ } ->
-      let response = openapi_response_object_of_response reg_info (Obj.magic response) in
+    ip_responses |&> function Response_case { status; response; samples; unpack; _ } ->
+      let samples : 'a with_doc list =
+        resp_samples
+        |&?> (function
+          | ((v, st), doc) when st = status ->
+            unpack v >? (fun v -> (v, doc))
+          | _ -> None)
+        |> List.append samples
+        |> Obj.magic
+      in
+      let response = openapi_response_object_of_response reg_info (samples) (Obj.magic response) in
       (status, Either.left response) in
   let operation = mk_operation_object request_body responses in
   mk_path_item_object operation
 
-and openapi_request_body_object_of_request_body : registry_info -> 't request_body -> OpenApi.Request_body_object.t =
-  fun reg_info { rq_media_type; rq_description; rq_required; } ->
-  let media_type = openapi_media_type_object_of_media_type reg_info rq_media_type in
+and openapi_request_body_object_of_request_body : registry_info -> 't with_doc list -> 't request_body -> OpenApi.Request_body_object.t =
+  fun reg_info req_samples { rq_media_type; rq_description; rq_required; } ->
+  let media_type = openapi_media_type_object_of_media_type reg_info req_samples rq_media_type in
   OpenApi.Request_body_object.mk
     ~description:rq_description
     ~required:rq_required
     [(content_type, media_type)]
 
-and openapi_response_object_of_response : registry_info -> 't response -> OpenApi.Response_object.t =
-  fun reg_info { rs_media_type; rs_description; rs_headers; } ->
-  let media_type = openapi_media_type_object_of_media_type reg_info rs_media_type in
+and openapi_response_object_of_response : registry_info -> 't with_doc list -> 't response -> OpenApi.Response_object.t =
+  fun reg_info resp_samples { rs_media_type; rs_description; rs_headers; } ->
+  let media_type = openapi_media_type_object_of_media_type reg_info resp_samples rs_media_type in
   let headers =
     rs_headers |&> fun header ->
       let { hd_name; _; } = header in
@@ -155,8 +179,8 @@ and openapi_header_object_of_header : registry_info -> 't header -> OpenApi.Head
     ()
 
 and openapi_media_type_object_of_media_type :
-  registry_info -> 't media_type -> OpenApi.Header_object.media_type_object =
-  fun reg_info { mt_type; mt_examples; mt_external_examples; } ->
+  registry_info -> 't with_doc list -> 't media_type -> OpenApi.Header_object.media_type_object =
+  fun reg_info samples { mt_type; mt_external_examples; } ->
   let _, {
       type_declarations;
       type_decl_environment_wrappers
@@ -173,12 +197,12 @@ and openapi_media_type_object_of_media_type :
   let env = type_decl_environment_wrappers |> List.foldl (|>) env0 in
   let type_decl = Typed.decl mt_type in
   let examples =
-    (mt_examples |&> fun (ex_name, ex_val) ->
-        (ex_name,
+    (samples |> List.mapi (fun index (sample_val, sample_name) ->
+        ((match sample_name with `docstr s -> s | `nodoc -> sprintf "example_%d" index),
          OpenApi.Example_object.mk
-           ~value:(Codec.Json.to_json ~env mt_type ex_val)
+           ~value:(Codec.Json.to_json ~env mt_type sample_val)
            ()
-         |> Either.left)) @
+         |> Either.left))) @
     (mt_external_examples |&> fun (ex_name, ex_url) ->
         (ex_name,
          OpenApi.Example_object.mk

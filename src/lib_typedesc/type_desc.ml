@@ -206,12 +206,6 @@ end
 type coretype = Coretype.t [@@deriving show,eq]
 let string_of_coretype = show_coretype
 
-type doc = [
-  | `docstr of string
-  | `nodoc
-] [@@deriving show,eq]
-let string_of_doc = show_doc
-
 type record_field = {
   rf_name: string;
   rf_type: coretype;

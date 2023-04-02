@@ -39,7 +39,7 @@ type nonrec type_decl =
   td_name : string;
   td_configs : [ `type_decl ] configs;
   td_kind : type_decl_kind;
-  td_doc : doc;
+  td_doc : Bindoj_base.Runtime.doc;
 }
 # let student_desc =
     record_decl "student" [
@@ -74,7 +74,7 @@ type nonrec type_decl =
   td_name : string;
   td_configs : [ `type_decl ] configs;
   td_kind : type_decl_kind;
-  td_doc : doc;
+  td_doc : Bindoj_runtime.doc;
 }
 # let person_desc =
     variant_decl "person" [

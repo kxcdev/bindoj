@@ -22,9 +22,9 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_apidir_shared
 open Bindoj_typedesc
 open Bindoj_typedesc.Typed_type_desc
+open Bindoj_test_common_typedesc_generated_examples
 
 module Types = struct
-  open Bindoj_test_common_typedesc_generated_examples
   open Bindoj_runtime
 
   let string : string typed_type_decl =
@@ -63,6 +63,20 @@ let option_of_complex =
     ~req_type:T.complex
     ~resp_type:T.int_opt
 
+let () = begin
+  int_of_string
+  |-> R.register_usage_samples
+    ( [ ""; "0"; "2020"; "a"; "11.2" ]
+      |&> (fun s -> (s, int_of_string_opt s, `default), `nodoc))
+  |-> R.register_request_sample "42"
+  |> ignore;
+
+  option_of_complex
+  |> R.register_usage_samples
+    ( Ex05_notuple.sample_values
+      |&> (fun { orig; _ } -> (orig, orig.option, `default), `nodoc));
+end
+
 include R.Public
 
 open Alcotest
@@ -95,7 +109,6 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Bindoj_test_common_typedesc_generated_examples in
   let open Sample_value in
 
   let () (* int-of-string *) =

@@ -23,3 +23,24 @@ module StringMap = struct
   let of_list xs = List.fold_left (fun m (k,v) -> add k v m) empty xs
   let to_list t = fold (fun k v acc -> (k, v) :: acc) t []
 end
+
+module Doc = struct
+  type t = [
+    | `docstr of string
+    | `nodoc
+  ] [@@deriving show, eq]
+
+  type 'x u = 'x * t
+
+  let of_string_opt = function
+    | None -> `nodoc
+    | Some doc -> `docstr doc
+end
+
+type doc = Doc.t [@@deriving show, eq]
+
+type 'x with_doc = 'x Doc.u
+
+let string_of_doc : doc -> string = show_doc
+
+let doc_of_string_opt = Doc.of_string_opt

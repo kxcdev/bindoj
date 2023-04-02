@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_runtime
 open Bindoj_typedesc.Type_desc
 
 type ('ann0, 'ann1) fwrt_desc = {

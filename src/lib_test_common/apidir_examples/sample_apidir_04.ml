@@ -22,9 +22,9 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_apidir_shared
 open Bindoj_typedesc
 open Bindoj_typedesc.Typed_type_desc
+open Bindoj_test_common_typedesc_generated_examples
 
 module Types = struct
-  open Bindoj_test_common_typedesc_generated_examples
   open Bindoj_runtime
 
   let named_json : Ex08.named_json typed_type_decl =
@@ -58,6 +58,18 @@ let json_of_named_json =
     ~req_type:T.named_json
     ~resp_type:T.json
 
+let () = begin
+  name_of_named_json
+  |> R.register_usage_samples
+    ( Ex08.sample_values
+      |&> (fun { orig; _ } -> (orig, orig.name, `default), `nodoc));
+
+  json_of_named_json
+  |> R.register_usage_samples
+    ( Ex08.sample_values
+      |&> (fun { orig; _ } -> (orig, orig.json, `default), `nodoc));
+end
+
 include R.Public
 
 open Alcotest
@@ -90,7 +102,6 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Bindoj_test_common_typedesc_generated_examples in
   let open Sample_value in
 
   let () (* name-of-named_json*) =

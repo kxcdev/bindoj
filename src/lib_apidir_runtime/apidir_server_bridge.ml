@@ -48,29 +48,35 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
   open IoOps
 
   type ('reqty, 'respty) invp = ('reqty, 'respty) invocation_point_info
+  type invp_meta = invocation_point_meta
+  type ('reqty, 'respty) invp_additional = ('reqty, 'respty) invocation_point_additional_info
   type invp' = untyped_invocation_point_info
 
   type handler =
-    | Handler : ('reqty, 'respty) invp * ('reqty -> (int * 'respty) io) -> handler
+    | Handler : ('reqty, 'respty) invp_additional * ('reqty -> (int * 'respty) io) -> handler
 
-  let handler_registry_post : (invp', handler) Hashtbl.t = Hashtbl.create 0
-  let handler_registry_get : (invp', handler) Hashtbl.t = Hashtbl.create 0
+  let handler_registry_post : (invp_meta, handler) Hashtbl.t = Hashtbl.create 0
+  let handler_registry_get : (invp_meta, handler) Hashtbl.t = Hashtbl.create 0
 
   let register_post_handler (type reqty) (type respty) :
      (reqty, respty) invp ->
      (reqty -> (int * respty) io) -> unit =
     fun invp func ->
+    let invpm = to_invocation_point_info_meta invp in
+    let invpa = to_invocation_point_additional_info invp in
     Hashtbl.replace handler_registry_post
-      (Invp invp)
-      (Handler (invp, func))
+      invpm
+      (Handler (invpa, func))
 
   let register_get_handler (type respty) :
      (unit, respty) invp ->
      (unit -> (int * respty) io) -> unit =
     fun invp func ->
+    let invpm = to_invocation_point_info_meta invp in
+    let invpa = to_invocation_point_additional_info invp in
     Hashtbl.replace handler_registry_get
-      (Invp invp)
-      (Handler (invp, func))
+      invpm
+      (Handler (invpa, func))
 
   let create_response : 'respty response_case list -> (int * 'respty) -> TupleJsonResponse.t =
     fun responses (resp_status, packed) ->
@@ -101,34 +107,42 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
 
   let handle_json_post : invp' -> jv -> TupleJsonResponse.t io =
     fun invp reqbody ->
-    match Hashtbl.find_opt handler_registry_post invp with
+    let invpm =
+      let Invp(invp) = invp in
+      to_invocation_point_info_meta invp
+    in
+    match Hashtbl.find_opt handler_registry_post invpm with
     | None ->
        invalid_arg
          "no handler registered for the requested api"
-    | Some (Handler (invp, handler)) ->
-       let req = match invp.ip_method, invp.ip_request_body with
-         | `get, _ -> invalid_arg' "handle_json_post got GET invp: %s" invp.ip_name
-         | `post, None -> invalid_arg' "POST method must have a request body definition: %s" invp.ip_name
+    | Some (Handler (invpa, handler)) ->
+       let req = match invpm.ipm_method, invpa.ipa_request_body with
+         | `get, _ -> invalid_arg' "handle_json_post got GET invp: %s" invpm.ipm_name
+         | `post, None -> invalid_arg' "POST method must have a request body definition: %s" invpm.ipm_name
          | `post, Some desc ->
             let ttd = Utils.ttd_of_media_type desc.rq_media_type in
             (match reqbody |> Bindoj_codec.Json.of_json ~env:tdenv ttd with
              | None -> Utils.bad_request "invalid json format for type %s: %a"
                          (Utils.ttd_name ttd) Utils.pp_jv reqbody
              | Some req -> req) in
-       handler req >|= create_response invp.ip_responses
+       handler req >|= create_response invpa.ipa_responses
 
   let handle_json_get : invp' -> TupleJsonResponse.t io =
     fun invp ->
-    match Hashtbl.find_opt handler_registry_get invp with
+    let invpm =
+      let Invp(invp) = invp in
+      to_invocation_point_info_meta invp
+    in
+    match Hashtbl.find_opt handler_registry_get invpm with
     | None ->
        invalid_arg
          "no handler registered for the requested api"
-    | Some (Handler (invp, handler)) ->
-       (match invp.ip_method with
-        | `post -> invalid_arg' "handle_json_get got Post invp: %s" invp.ip_name
+    | Some (Handler (invpa, handler)) ->
+       (match invpm.ipm_method with
+        | `post -> invalid_arg' "handle_json_get got Post invp: %s" invpm.ipm_name
         | `get -> ()
         | _ -> .);
-       handler (() |> Obj.magic) >|= create_response invp.ip_responses
+       handler (() |> Obj.magic) >|= create_response invpa.ipa_responses
 
   let handle_path_json_post : string -> jv -> TupleJsonResponse.t io =
     fun path reqbody ->

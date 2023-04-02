@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_runtime
 open Bindoj_apidir_shared
 module OpenApi = Bindoj_openapi.V3
 
@@ -34,16 +35,16 @@ module Internals : sig
     registry_info -> ('reqty, 'respty) invocation_point_info -> OpenApi.Path_item_object.t
 
   val openapi_request_body_object_of_request_body :
-    registry_info -> 't request_body -> OpenApi.Request_body_object.t
+    registry_info -> 't with_doc list -> 't request_body -> OpenApi.Request_body_object.t
 
   val openapi_response_object_of_response :
-    registry_info -> 't response -> OpenApi.Response_object.t
+    registry_info -> 't with_doc list -> 't response -> OpenApi.Response_object.t
 
   val openapi_header_object_of_header :
     registry_info -> 't header -> OpenApi.Header_object.t
 
   val openapi_media_type_object_of_media_type :
-    registry_info -> 't media_type -> OpenApi.Header_object.media_type_object
+    registry_info -> 't with_doc list -> 't media_type -> OpenApi.Header_object.media_type_object
 
   val openapi_external_documentation_object_of_external_doc :
     external_doc -> OpenApi.External_documentation_object.t

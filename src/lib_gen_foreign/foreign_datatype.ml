@@ -17,8 +17,8 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base
 open Bindoj_base.Type_desc
+open Bindoj_runtime
 
 [@@@alert "-equal_configs"]
 

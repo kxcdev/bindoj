@@ -22,9 +22,9 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_apidir_shared
 open Bindoj_typedesc
 open Bindoj_typedesc.Typed_type_desc
+open Bindoj_test_common_typedesc_generated_examples
 
 module Types = struct
-  open Bindoj_test_common_typedesc_generated_examples
   open Bindoj_runtime
 
   type person = Ex02.person
@@ -35,6 +35,17 @@ module Types = struct
 
   let string : string typed_type_decl =
     Coretypes.(Prims.string |> to_typed_type_decl "string")
+end
+
+module Functions = struct
+  let id_of_person =
+    let anonymousError = "Cannot get the ID of an anonymous person." in
+    let teacherError = "This teacher does not have a personal ID." in
+    Ex02.(function
+    | Anonymous -> (403, `Error anonymousError)
+    | With_id id -> (200, `Ok id)
+    | Student { student_id; _ } -> (200, `Ok student_id)
+    | Teacher _ -> (404, `Error teacherError))
 end
 
 open struct
@@ -55,8 +66,25 @@ let id_of_person =
       make_response_case ~status:(`status_range `_4XX)
         ~name:"error_message"
         ~doc:"The reason why the ID of the given person is unavailable."
+        ~samples:[
+          ("error message like this 1", `docstr "a sample value with error message")
+        ]
         ~pack:(fun s -> `Error s) ~unpack:(function `Error x -> Some x | `Ok _ -> None)
         T.string; ]
+
+let () = begin
+    id_of_person
+    |-> R.register_usage_samples
+          ( Ex02.sample_values
+            |&> (fun { orig = person; _} ->
+              let (code, resp) = Functions.id_of_person person in
+              (person, resp, `status_code code), `nodoc))
+    |-> R.register_response_sample
+          ~status:(`status_range `_4XX)
+          ~doc:"another sample value with error message"
+          (`Error "error message like this 2")
+    |> ignore;
+end
 
 include R.Public
 
@@ -86,20 +114,11 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Bindoj_test_common_typedesc_generated_examples in
   let open Sample_value in
 
   let () (* id-of-person *) =
     let invp = id_of_person in
-
-    let anonymousError = "Cannot get the ID of an anonymous person." in
-    let teacherError = "This teacher does not have a personal ID." in
-
-    let id_of_person = Ex02.(function
-      | Anonymous -> (403, `Error anonymousError)
-      | With_id id -> (200, `Ok id)
-      | Student { student_id; _ } -> (200, `Ok student_id)
-      | Teacher _ -> (404, `Error teacherError)) in
+    let open Functions in
 
     let pp_result ppf = function
       | `Ok i -> pp_int ppf i

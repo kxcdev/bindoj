@@ -17,7 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base
+open Bindoj_runtime
 open Bindoj_typedesc.Typed_type_desc
 open Bindoj_apidir_generative
 open Bindoj_apidir_generative.Internals
@@ -56,7 +56,7 @@ module type Ex = sig
   type typ
   val typed : typ typed_type_decl
   val env : tdenv
-  val sample_values : (string * typ) list
+  val sample_values : typ with_doc list
   val sample_jsons : (string * Json.jv) list
 end
 
@@ -73,7 +73,7 @@ let all =
         let env = G.env
         let sample_values =
           List.mapi (fun i ExG.Sample_value.{ orig; _; } ->
-              ("ex" ^ string_of_int i, orig))
+              (orig, `docstr ("ex" ^ string_of_int i)))
             G.sample_values
         let sample_jsons =
           List.mapi (fun i ExG.Sample_value.{ jv; _; } ->
@@ -216,7 +216,8 @@ let create_cases ex =
         ip_deprecated = false;
         ip_summary = None;
         ip_description = None;
-        ip_external_doc = None; } in
+        ip_external_doc = None;
+        ip_usage_samples = [] } in
     let path_item_object =
       OpenApi.Path_item_object.mk
         ~summary:name
@@ -245,11 +246,10 @@ let create_cases ex =
       "openapi_request_body_object_of_request_body"
       testable_openapi_request_body_object
       ({ rq_media_type = { mt_type = Ex.typed;
-                           mt_examples = [];
                            mt_external_examples = []; };
          rq_description = "request body description";
          rq_required = false; }
-       |> openapi_request_body_object_of_request_body registry_info)
+       |> openapi_request_body_object_of_request_body registry_info [])
       (OpenApi.Request_body_object.mk
          ~description:"request body description"
          ~required:false
@@ -265,11 +265,10 @@ let create_cases ex =
       "openapi_response_object_of_response"
       testable_openapi_response_object
       ({ rs_media_type = { mt_type = Ex.typed;
-                           mt_examples = [];
                            mt_external_examples = []; };
          rs_description = "";
          rs_headers = []; }
-       |> openapi_response_object_of_response registry_info)
+       |> openapi_response_object_of_response registry_info [])
       (OpenApi.Response_object.mk
          ~content:[(content_type,
                     OpenApi.Header_object.media_type
@@ -305,9 +304,8 @@ let create_cases ex =
       "openapi_schema_or_reference_of_type_decl"
       testable_openapi_media_type_object
       ({ mt_type = Ex.typed ;
-         mt_examples = [];
          mt_external_examples = []; }
-       |> openapi_media_type_object_of_media_type registry_info)
+       |> openapi_media_type_object_of_media_type registry_info [])
       (OpenApi.Header_object.media_type
          ~examples:[]
          ~schema:(Internals.openapi_schema_or_reference_of_type_decl registry_info Ex.decl)
@@ -316,9 +314,8 @@ let create_cases ex =
       "openapi_schema_or_reference_of_type_decl"
       testable_openapi_media_type_object
       ({ mt_type = Ex.typed ;
-         mt_examples = Ex.sample_values;
          mt_external_examples = []; }
-       |> openapi_media_type_object_of_media_type registry_info)
+       |> openapi_media_type_object_of_media_type registry_info Ex.sample_values)
       (OpenApi.Header_object.media_type
          ~examples:(Ex.sample_jsons |&> fun (name, ex) ->
              (name, OpenApi.Example_object.mk ~value:ex () |> Either.left))
