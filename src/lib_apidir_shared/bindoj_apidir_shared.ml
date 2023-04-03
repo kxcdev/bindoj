@@ -513,7 +513,7 @@ module MakeRegistry () : MakeRegistryS = struct
         } in
       let invp_collection : invocation_point_collection =
         !invp_meta_registry
-        |> List.map (fun invp_meta ->
+        |> List.rev_map (fun invp_meta ->
           let InvpAdditionalInfo(invp_additional) = Hashtbl.find invp_registry invp_meta in
           Invp (to_invocation_point_info invp_meta invp_additional))
       in

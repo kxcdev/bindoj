@@ -62,6 +62,7 @@ let gen_raw :
     invps |> List.fmap (fun (Invp invp) ->
       (reqtype invp |> Option.to_list)
       @ (resptypes invp))
+    |> List.rev
   in
   let import_statements =
     imports

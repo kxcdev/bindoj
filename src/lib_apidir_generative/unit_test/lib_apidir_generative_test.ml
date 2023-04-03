@@ -131,7 +131,7 @@ let create_cases ex =
     let _ =
       R.add_type_decl_environment_wrapper
         Bindoj_std.Tdenv_wrappers.json in
-    R.Public.registry_info () in
+    R.Public.registry_info () /< List.rev in
 
   let invocation_point_collection_cases =
     let title = "document_title" in
