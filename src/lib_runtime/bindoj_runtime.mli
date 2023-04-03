@@ -158,3 +158,41 @@ module Wellknown : sig
   val json_format : Kxclib.Json.jv external_format
   val json_format' : external_format_label
 end
+
+module Json_shape : sig
+  type shape_explanation = [
+    | `self
+    | `named of string*shape_explanation
+    | `special of string*shape_explanation
+    | `with_warning of string*shape_explanation
+    | `exactly of Kxclib.Json.jv
+    | `unresolved of string
+    | `anyone_of of shape_explanation list
+    | `string_enum of string list
+    | `nullable of shape_explanation
+    | `boolean
+    | `numeric
+    | `integral | `proper_int53p | `proper_float
+    | `string | `base64str
+    | `array_of of shape_explanation
+    | `tuple_of of shape_explanation list
+    | `record_of of shape_explanation
+    | `object_of of field_shape_explanation list
+    ]
+  and field_shape_explanation = [
+    | `mandatory_field of string*shape_explanation
+    | `optional_field of string*shape_explanation
+    ]
+
+  val show_shape_explanation : shape_explanation -> string
+  val show_field_shape_explanation : field_shape_explanation -> string
+
+  val string_of_shape_explanation : shape_explanation -> string
+  val string_of_field_shape_explanation : field_shape_explanation -> string
+end
+
+type json_shape_explanation = Json_shape.shape_explanation
+type json_field_shape_explanation = Json_shape.field_shape_explanation
+
+val string_of_json_shape_explanation : json_shape_explanation -> string
+val string_of_json_field_shape_explanation : json_field_shape_explanation -> string

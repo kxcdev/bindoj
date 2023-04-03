@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base
+open Bindoj_runtime
 open Typed_type_desc
 
 module Config : sig
@@ -76,6 +77,8 @@ module Config : sig
 end
 
 include module type of Config
+
+val explain_encoded_json_shape : env:tdenv -> 't typed_type_decl -> json_shape_explanation
 
 val of_json : env:tdenv -> 'a typed_type_decl -> Kxclib.Json.jv -> 'a option
 val to_json : env:tdenv -> 'a typed_type_decl -> 'a -> Kxclib.Json.jv

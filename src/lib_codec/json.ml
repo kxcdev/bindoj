@@ -120,6 +120,74 @@ let lookup_primitive_codec ~(env: tdenv) ident_name : unsafe_primitive_codec opt
       )
   )
 
+(** todo.future - check and conform to configs *)
+let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_shape_explanation =
+  let rec process_td td : json_shape_explanation =
+    let { td_kind; td_name; _ } = Typed.decl td in
+    `named (td_name, process_kind td_kind)
+  and process_kind knd : json_shape_explanation = match knd with
+    | Alias_decl ct -> process_coretype ct.ct_desc
+    | Record_decl fields ->
+       `object_of (fields |&> process_field)
+    | Variant_decl branches ->
+       `anyone_of (branches |&> (fun { vc_name = kind_name; vc_param; _ } ->
+             let discriminator = Json_config.default_variant_discriminator in
+             match vc_param with
+             | `no_param ->
+                process_branch kind_name discriminator []
+             | `tuple_like cts ->
+                let arg_shape = `tuple_of (cts |&> process_coretype') in
+                process_branch kind_name discriminator [
+                  `mandatory_field (
+                      Json_config.default_name_of_variant_arg,
+                      arg_shape)]
+             | `inline_record fields ->
+                process_branch kind_name discriminator
+                  (fields |&> process_field)))
+  and process_field field: json_field_shape_explanation =
+    let optional, desc =
+      field.rf_type.ct_desc
+      |> (function Option desc -> true, desc | desc -> false, desc)
+    in
+    let inner = process_coretype desc in
+    match optional with
+    | true -> `optional_field (field.rf_name, inner)
+    | false -> `mandatory_field (field.rf_name, inner)
+  and process_branch kind_name discriminator_field_name proper_fields =
+    (* asuming flat_kind for now *)
+    let kind_field =
+      `mandatory_field (
+          discriminator_field_name,
+          `exactly (`str kind_name)) in
+    `object_of (kind_field :: proper_fields)
+  and process_coretype' (ct: Coretype.t) : json_shape_explanation = process_coretype ct.ct_desc
+  and process_coretype (desc: Coretype.desc) : json_shape_explanation = match desc with
+    | Prim `unit -> `special ("unit", `exactly `null)
+    | Prim `bool -> `boolean
+    | Prim `int -> `integral
+    | Prim `int53p -> `proper_int53p
+    | Prim `float -> `proper_float
+    | Prim `string -> `string
+    | Prim `uchar -> `special ("uchar", `string)
+    | Prim `byte -> `special ("byte", `string)
+    | Prim `bytes -> `base64str
+    | Uninhabitable -> `special ("uninhabitable", `exactly `null)
+    | Ident { id_name = ident; id_codec = `default } ->
+       StringMap.find_opt ident env.alias_ident_typemap
+       >? (fun (Boxed (module T)) -> `named (T.decl.td_name, process_td td))
+       |? `unresolved ("alias: "^ident)
+    | Ident { id_name = ident; id_codec = _ } ->
+       `unresolved ("alias with special custom:  "^ident)
+    | Option d -> `nullable (process_coretype d)
+    | Tuple ds -> `tuple_of (ds |&> process_coretype)
+    | List desc -> `array_of (process_coretype desc)
+    | Map (`string, d) -> `record_of (process_coretype d)
+    | StringEnum xs -> `string_enum xs
+    | Self -> `self
+    | _ -> .
+  in
+  `with_warning ("not considering any config if exists", process_td td)
+
 let rec of_json ~(env: tdenv) (a: 'a typed_type_decl) (jv: jv) : 'a option =
   let { td_configs; td_kind; _ } = Typed.decl a in
   let try_opt f = try f () with Invalid_argument _msg -> None in

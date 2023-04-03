@@ -19,6 +19,8 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Utils
 
+open Kxclib.Json
+
 type 'camlrepr external_format = ..
 type ('tag, 'datatype_expr) foreign_language = ..
 
@@ -204,7 +206,46 @@ end
 
 module Wellknown = struct
   type _ external_format +=
-     | External_format_json : Kxclib.Json.jv external_format
+     | External_format_json : jv external_format
   let json_format = External_format_json
   let json_format' = External_format json_format
 end
+
+module Json_shape = struct
+  let pp_jv = pp_unparse
+
+  type shape_explanation = [
+    | `self
+    | `named of string*shape_explanation
+    | `special of string*shape_explanation
+    | `with_warning of string*shape_explanation
+    | `exactly of jv
+    | `unresolved of string
+    | `anyone_of of shape_explanation list
+    | `string_enum of string list
+    | `nullable of shape_explanation
+    | `boolean
+    | `numeric
+    | `integral | `proper_int53p | `proper_float
+    | `string | `base64str
+    | `array_of of shape_explanation
+    | `tuple_of of shape_explanation list
+    | `record_of of shape_explanation
+    | `object_of of field_shape_explanation list
+    ]
+  [@@deriving show]
+  and field_shape_explanation = [
+    | `mandatory_field of string*shape_explanation
+    | `optional_field of string*shape_explanation
+    ]
+  [@@deriving show]
+
+  let string_of_shape_explanation = show_shape_explanation
+  let string_of_field_shape_explanation = show_field_shape_explanation
+end
+
+type json_shape_explanation = Json_shape.shape_explanation
+type json_field_shape_explanation = Json_shape.field_shape_explanation
+
+let string_of_json_shape_explanation = Json_shape.string_of_shape_explanation
+let string_of_json_field_shape_explanation = Json_shape.string_of_field_shape_explanation
