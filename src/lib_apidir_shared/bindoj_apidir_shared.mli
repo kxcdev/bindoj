@@ -168,6 +168,8 @@ module type ApiDirManifest = sig
   val registry_info : unit -> registry_info
 end
 
+module MergedApiDirManifest : functor (_ : ApiDirManifest) (_ : ApiDirManifest) -> ApiDirManifest
+
 module type RegistryInfo = sig
   type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
   type nonrec registry_info = registry_info

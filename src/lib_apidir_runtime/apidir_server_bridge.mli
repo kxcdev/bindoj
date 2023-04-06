@@ -38,7 +38,7 @@ module type T = sig
 end
 
 module Make :
-  functor (Dir : ApiDirManifest) (IoStyle : Utils.IoStyle) ->
+  functor (Dir : ApiDirManifest) (IoStyle : Monadic) ->
     sig
       include module type of Apidir_base.Make(Dir)(IoStyle)
 
@@ -51,5 +51,5 @@ module Make :
       val handler_registry_post :
         (invocation_point_meta, handler) Hashtbl.t
 
-      include T with type 'resp io := 'resp IoStyle.t
-    end
+      include T with type 'resp io = 'resp IoStyle.t
+    end with module IoStyle = IoStyle

@@ -67,8 +67,7 @@ module type T = sig
 end
 
 module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
-  module IoStyle = Fetcher.IoStyle
-  include Apidir_base.Make(Dir)(IoStyle)
+  include Apidir_base.Make(Dir)(Fetcher.IoStyle)
   open IoOps
 
   let process_response ttd jv =
@@ -81,7 +80,7 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
           desc = Typed_type_desc.Boxed ttd;
           msg  = Printexc.to_string exn |> some;
         }
-      )|> IoStyle.inject_error
+      )|> Fetcher.IoStyle.inject_error
     | None ->
       Apidir_client_error (
         Bad_response {
@@ -91,7 +90,7 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
             sprintf "Bindoj_codec.Json.to_json (%s) returns None"
               resp_type_name |> some;
         }
-      ) |> IoStyle.inject_error
+      ) |> Fetcher.IoStyle.inject_error
     | Some x -> return x
 
   let match_response (responses: 'respty response_case list) (resp: Fetcher.Response.t) =
@@ -113,7 +112,7 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
     | None ->
       Apidir_client_error (
         Unexpected_response { status = resp_status; body = resp_body }
-      ) |> IoStyle.inject_error
+      ) |> Fetcher.IoStyle.inject_error
     | Some (Response_case { response; pack; _ }) ->
       process_response
         (Utils.ttd_of_media_type response.rs_media_type)

@@ -33,6 +33,7 @@ module Make :
   functor (Dir : ApiDirManifest) (IoStyle : Monadic) ->
     sig
       type 'x io = 'x IoStyle.t
+      module IoStyle : module type of IoStyle
       module IoOps : module type of Kxclib.MonadOps(IoStyle)
 
       val registry_info : registry_info
@@ -42,4 +43,4 @@ module Make :
       val invp_count : int
       val index_get : (string, untyped_invocation_point_info) Hashtbl.t
       val index_post : (string, untyped_invocation_point_info) Hashtbl.t
-    end
+    end with module IoStyle = IoStyle

@@ -233,6 +233,21 @@ module type ApiDirManifest = sig
   val registry_info : unit -> registry_info
 end
 
+module MergedApiDirManifest (A : ApiDirManifest) (B : ApiDirManifest) : ApiDirManifest = struct
+  let registry_info() =
+    let destruct_tc { type_declarations; type_decl_environment_wrappers } =
+      type_declarations, type_decl_environment_wrappers in
+    let invps1, ( tds1, tenv1 ) = A.registry_info() |> ?> destruct_tc in
+    let invps2, ( tds2, tenv2 ) = B.registry_info() |> ?> destruct_tc in
+    let invps = invps1 @ invps2 in
+    let type_decl_environment_wrappers = tenv1 @ tenv2 in
+    let type_declarations =
+      List.sort_uniq (projected_compare (fun tdi -> tdi.tdi_name))
+        (List.rev_append tds2 tds1) in
+    invps, { type_declarations; type_decl_environment_wrappers }
+end
+
+
 module type RegistryInfo = sig
   type nonrec ('reqty, 'respty) invocation_point_info = ('reqty, 'respty) invocation_point_info
   type nonrec registry_info = registry_info

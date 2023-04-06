@@ -30,8 +30,9 @@ module type JsonResponse = sig
   val body : t -> Json.jv
 end
 
-module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
-  type 'x io = 'x IoStyle.t
+module Make (Dir : ApiDirManifest) (IoStyleP : Monadic) = struct
+  type 'x io = 'x IoStyleP.t
+  module IoStyle = IoStyleP
   module IoOps = MonadOps(IoStyle)
 
   let registry_info = Dir.registry_info()
