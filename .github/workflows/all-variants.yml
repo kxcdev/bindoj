@@ -12,7 +12,6 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-version:
-          - 4.12.1
           - 4.13.x
           - 4.14.x
         node-version:

@@ -91,9 +91,7 @@ end
 
 include Config
 
-type jv = Kxclib.Json.jv
-
-open MonadOps(Option)
+open Kxclib.Json
 
 type unsafe_primitive_codec = {
     encode : Expr.t -> jv;
@@ -120,7 +118,11 @@ let lookup_primitive_codec ~(env: tdenv) ident_name : unsafe_primitive_codec opt
       )
   )
 
-(** todo.future - check and conform to configs *)
+module OfJsonResult = struct
+  include ResultOf(struct type err = string * jvpath * json_shape_explanation end)
+  module Ops_monad = MonadOps(ResultOf(struct type err = string * jvpath * json_shape_explanation end))
+end
+
 let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_shape_explanation =
   let rec process_td td : json_shape_explanation =
     let { td_kind; td_name; _ } = Typed.decl td in
@@ -174,7 +176,7 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
     | Uninhabitable -> `special ("uninhabitable", `exactly `null)
     | Ident { id_name = ident; id_codec = `default } ->
        StringMap.find_opt ident env.alias_ident_typemap
-       >? (fun (Boxed (module T)) -> `named (T.decl.td_name, process_td td))
+       >? (fun (Boxed ((module T) as ttd)) -> `named (T.decl.td_name, process_td (Obj.magic ttd)))
        |? `unresolved ("alias: "^ident)
     | Ident { id_name = ident; id_codec = _ } ->
        `unresolved ("alias with special custom:  "^ident)
@@ -188,128 +190,234 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
   in
   `with_warning ("not considering any config if exists", process_td td)
 
-let rec of_json ~(env: tdenv) (a: 'a typed_type_decl) (jv: jv) : 'a option =
-  let { td_configs; td_kind; _ } = Typed.decl a in
-  let try_opt f = try f () with Invalid_argument _msg -> None in
-  let parse_obj_style_tuple (conv: _ -> jv -> Expr.t option) (ts: _ list) (fields: jv StringMap.t) =
+let rec coretype_desc_to_string (desc: Coretype.desc) =
+  match desc with
+  | Prim p -> Coretype.string_of_prim p
+  | Uninhabitable -> "*uninhabitable*"
+  | Ident i -> i.id_name
+  | Self -> "*self*"
+  | List t -> (coretype_desc_to_string t) ^ " list"
+  | Map(`string, t) -> sprintf "(string, %s) map" (coretype_desc_to_string t)
+  | Option t -> (coretype_desc_to_string t) ^ " option"
+  | StringEnum cases -> cases |> String.concat " | " |> sprintf "(%s)"
+  | Tuple ds -> ds |&> coretype_desc_to_string |> String.concat " * " |> sprintf "(%s)"
+
+let jv_type_to_string (jv: jv) =
+  match jv with
+  | `null -> "null"
+  | `bool _ -> "bool"
+  | `num _ -> "number"
+  | `str _ -> "string"
+  | `arr _ -> "array"
+  | `obj _ -> "obj"
+
+open MonadOps(ResultOf(struct type err = string * jvpath end))
+
+let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> ('a, string * jvpath) result =
+  fun ?(path = []) ~env a jv ->
+  let { td_configs; td_kind; td_name; _ } = Typed.decl a in
+  let opt_to_result msg = function
+    | None -> Result.error msg
+    | Some a -> Result.ok a
+  in
+  let try_result jvpath f = try f () with Invalid_argument msg -> Error (msg, jvpath) in
+  let parse_obj_style_tuple path (conv: jvpath -> _ -> jv -> (Expr.t, string * jvpath) result) (ts: _ list) (fields: jv StringMap.t) =
     ts
     |> List.mapi (fun i t ->
-      fields |> StringMap.find_opt (tuple_index_to_field_name i)
-      >>= fun jv -> conv t jv)
+      let field_name = tuple_index_to_field_name i in
+      fields |> StringMap.find_opt field_name
+      |> function
+      | None -> Result.error (sprintf "mandatory field '%s' does not exist" field_name, path)
+      | Some x -> Result.ok x
+      >>= fun jv -> conv (`f field_name :: path) t jv)
     |> sequence_list
   in
-  let expr_of_json (ct: coretype) (jv: jv) : Expr.t option =
-    let rec go (d: Coretype.desc) (jv: jv) =
+  let map2i f l1 l2 =
+    let rec map2i i f l1 l2 =
+      match (l1, l2) with
+      | ([], []) -> Some []
+      | (a1::l1, a2::l2) ->
+        let r = f i a1 a2 in
+        map2i (i + 1) f l1 l2
+        |> Option.map (fun tail -> r :: tail)
+      | (_, _) -> None
+    in
+    map2i 0 f l1 l2
+  in
+  let expr_of_json (path: jvpath) (ct: coretype) (jv: jv) : (Expr.t, string * jvpath) result =
+    let rec go (path: jvpath) (d: Coretype.desc) (jv: jv) =
       match d, jv with
       | Prim `unit, (`bool _ | `num _ | `str _ | `arr [] | `obj []) ->
-         Expr.Unit |> some
-      | Prim `bool, `bool b -> Expr.Bool b |> some
+         Expr.Unit |> Result.ok
+      | Prim `bool, `bool b -> Expr.Bool b |> Result.ok
       | Prim `int, `num x ->
-        if Float.is_integer x then Expr.Int (int_of_float x) |> some
-        else none
-      | Prim `int53p, `num x -> Expr.Int53p (Int53p.of_float x) |> some
-      | Prim `float, `num x -> Expr.Float x |> some
-      | Prim `string, `str s -> Expr.String s |> some
+        if Float.is_integer x then Expr.Int (int_of_float x) |> Result.ok
+        else Result.error (sprintf "expecting an integer but the given is '%f'" x, path)
+      | Prim `int53p, `num x -> Expr.Int53p (Int53p.of_float x) |> Result.ok
+      | Prim `float, `num x -> Expr.Float x |> Result.ok
+      | Prim `string, `str s -> Expr.String s |> Result.ok
       | Prim `uchar, `str s ->
         if String.length s = 1 then
-          Expr.Uchar (Uchar.of_char (String.get s 0)) |> some
-        else None
+          Expr.Uchar (Uchar.of_char (String.get s 0)) |> Result.ok
+        else Result.error (sprintf "string '%s' is not a valid uchar value" s, path)
       | Prim `byte, `num x ->
         let x = int_of_float x in
-        if 0 <= x && x <= 255 then Expr.Byte (char_of_int x) |> some
-        else None
-      | Prim `bytes,  `str s ->
-        try_opt (fun () -> Expr.Bytes (Kxclib.Base64.decode s) |> some)
-      | Uninhabitable, `null -> Expr.Unit |> some
-      | Ident i, _ ->
-        begin match lookup_primitive_codec ~env i.id_name with
-        | Some codec -> codec.decode jv
-        | _ -> (
+        if 0 <= x && x <= 255 then Expr.Byte (char_of_int x) |> Result.ok
+        else Result.error (sprintf "number '%d' is not a valid byte value" x, path)
+      | Prim `bytes, `str s ->
+        try_result path (fun () -> Expr.Bytes (Kxclib.Base64.decode s) |> Result.ok)
+      | Uninhabitable, _ -> Result.error (sprintf "unexpected value of *uninhabitable* type: %a" pp_unparse jv, path)
+      | Ident i, _ -> begin match lookup_primitive_codec ~env i.id_name with
+        | Some codec ->
+          codec.decode jv
+          |> opt_to_result (sprintf "failed to decode value of primitive ident type '%s': %a" i.id_name pp_unparse jv, path)
+        | _ ->
           match StringMap.find_opt i.id_name env.alias_ident_typemap with
           | Some boxed ->
-             let t = Typed.unbox boxed in
-             of_json ~env t jv >>= fun value -> Expr.Refl (Typed.to_refl t, value) |> some
-          | None -> invalid_arg' "type '%s' not found in env" i.id_name)
+            let t = Typed.unbox boxed in
+            of_json_impl ~path ~env t jv
+            >|= fun value -> Expr.Refl (Typed.to_refl t, value)
+          | None -> invalid_arg' "type '%s' not found in env" i.id_name
         end
       | Self, _ ->
-        of_json ~env a jv >>= fun value -> Expr.Refl (Typed.to_refl a, value) |> some
+        of_json_impl ~path ~env a jv
+        >|= fun value -> Expr.Refl (Typed.to_refl a, value)
       | List t, `arr xs ->
-        xs |> List.map (go t) >>=* fun xs -> Expr.List xs |> some
+        xs |> List.mapi (fun i -> go (`i i :: path) t) >>=* fun xs -> Expr.List xs |> Result.ok
       | Tuple ts, _ ->
-        try_opt (fun () ->
+        try_result path (fun () ->
           match jv, Json_config.get_tuple_style ct.ct_configs with
-          | `arr xs, `arr -> List.map2 go ts xs >>=* fun xs -> Expr.Tuple xs |> some
+          | `arr xs, `arr -> begin
+            map2i (fun i -> go (`i i :: path)) ts xs |> function
+            | Some es -> es >>=* fun xs -> Expr.Tuple xs |> Result.ok
+            | None ->
+              let ts_len = List.length ts in
+              let xs_len = List.length xs in
+              let msg =
+                sprintf "expecting a tuple of length %d, but the given has a length of %d"
+                  ts_len xs_len
+              in
+              Result.error (msg, path)
+          end
+          | _, `arr ->
+            Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv_type_to_string jv), path)
           | `obj fields, `obj `default ->
-            parse_obj_style_tuple go ts (StringMap.of_list fields) |> Option.map (fun xs -> Expr.Tuple xs)
-          | _, _ -> None
+            parse_obj_style_tuple path go ts (StringMap.of_list fields)
+            >|= (fun xs -> Expr.Tuple xs)
+          | _, `obj `default ->
+            Result.error (sprintf "an object is expected for a tuple value, but the given is of type '%s'" (jv_type_to_string jv), path)
         )
       | Map (`string, t), `obj fields ->
-        fields |> List.map (fun (name, x) -> go t x |> Option.map (fun v -> name, v))
-        >>=* fun fields -> Expr.Map fields |> some
-      | Option _, `null -> Some Expr.None
-      | Option t, _ -> go t jv |> Option.map (fun x -> Expr.Some x)
-      | StringEnum cases, `str s when List.mem s cases -> Expr.StringEnum s |> some
-      | _, _ -> None
+        fields |> List.map (fun (name, x) -> go (`f name :: path) t x >|= (fun v -> name, v))
+        >>=* fun fields -> Expr.Map fields |> Result.ok
+      | Option _, `null -> Result.ok Expr.None
+      | Option t, _ -> go path t jv >|= (fun x -> Expr.Some x)
+      | StringEnum cases, `str s when List.mem s cases -> Expr.StringEnum s |> Result.ok
+      | _, _ ->
+        let msg =
+          sprintf "expecting type '%s' but the given is of type '%s'"
+            (coretype_desc_to_string d) (jv_type_to_string jv)
+        in
+        Result.error (msg, path)
     in
-    go ct.ct_desc jv
+    go path ct.ct_desc jv
   in
-  let record_fields_of_json (fields: record_field list) (jv: jv) : Expr.t StringMap.t option =
+  let record_fields_of_json (path: jvpath) (fields: record_field list) (jv: jv) : (Expr.t StringMap.t, string * jvpath) result =
     match jv with
     | `obj obj ->
       let obj = StringMap.of_list obj in
       fields |> List.map (fun { rf_name; rf_type; _} ->
         match obj |> StringMap.find_opt rf_name with
-        | None when Coretype.is_option rf_type -> Some (rf_name, Expr.None)
-        | Some jv -> expr_of_json rf_type jv >>= fun expr -> Some (rf_name, expr)
-        | None -> None
-      ) |> sequence_list |> Option.map StringMap.of_list
-    | _ -> None
+        | None when Coretype.is_option rf_type -> Result.ok (rf_name, Expr.None)
+        | Some jv -> expr_of_json (`f rf_name :: path) rf_type jv >>= fun expr -> Result.ok (rf_name, expr)
+        | None -> Result.error (sprintf "mandatory field '%s' does not exist" rf_name, path)
+      ) |> sequence_list >|= StringMap.of_list
+    | _ -> Result.error (sprintf "an object is expected for a record value, but the given is of type '%s'" (jv_type_to_string jv), path)
   in
   let fail () = invalid_arg "inconsistent type_decl and reflection result" in
-  let constructor_of_json (ctors: variant_constructor list) (ref_ctors: 'a Refl.constructor StringMap.t) (jv: jv) : 'a option =
+  let constructor_of_json (path: jvpath) (ctors: variant_constructor list) (ref_ctors: 'a Refl.constructor StringMap.t) (jv: jv) : ('a, string * jvpath) result =
     let discriminator = Json_config.get_variant_discriminator td_configs in
     match jv with
     | `obj obj ->
       let obj = StringMap.of_list obj in
       begin match obj |> StringMap.find_opt discriminator with
       | Some (`str ctor_name) ->
-        ctors |> List.find_opt (fun ctor -> ctor.vc_name = ctor_name) >>= (fun ctor ->
+        ctors
+        |> List.find_opt (fun ctor -> ctor.vc_name = ctor_name)
+        |> opt_to_result
+          ( sprintf "given discriminator field value '%s' is not one of [ %s ]"
+              ctor_name (ctors |&> (fun c -> sprintf "'%s'" c.vc_name) |> String.concat ", "),
+            `f discriminator :: path)
+        >>= (fun ctor ->
           let ref_ctor = ref_ctors |> StringMap.find_opt ctor_name |> Option.v' fail in
           let arg_fname = Json_config.get_name Json_config.default_name_of_variant_arg ctor.vc_configs in
           match Json_config.get_variant_style ctor.vc_configs with
           | `flatten ->
             begin match ctor.vc_param, ref_ctor with
-            | `no_param, NoParam { value } -> Some value
+            | `no_param, NoParam { value } -> Ok value
             | `tuple_like ts, TupleLike { mk; _ } ->
               begin match Json_config.get_tuple_style ctor.vc_configs, ts with
               | `obj `default, _ :: _ :: _ ->
-                parse_obj_style_tuple expr_of_json ts obj >>= mk
+                parse_obj_style_tuple path expr_of_json ts obj
+                >>= (mk &> opt_to_result (sprintf "panic - failed to make tuple for variant_constructor '%s'" ctor_name, path))
               | _, _ ->
-                obj |> StringMap.find_opt arg_fname >>= (fun arg ->
+                obj
+                |> StringMap.find_opt arg_fname
+                |> opt_to_result (sprintf "mandatory field '%s' does not exist" arg_fname, path)
+                >>= (fun arg ->
+                  let path = `f arg_fname :: path in
+                  let mk = mk &> opt_to_result (sprintf "panic - failed to make tuple for variant_constructor '%s'" ctor_name, path) in
                   match ts, arg with
                   | [], _ -> mk []
-                  | [t], _ -> expr_of_json t arg >>= fun expr -> mk [expr]
-                  | ts, `arr xs -> try_opt (fun () -> List.map2 expr_of_json ts xs >>=* mk)
-                  | _ -> None
+                  | [t], _ -> expr_of_json path t arg >>= fun expr -> mk [expr]
+                  | ts, `arr xs ->
+                    try_result path
+                      (fun () ->
+                        map2i (fun i -> expr_of_json (`i i :: path)) ts xs |> function
+                        | Some es -> es >>=* mk
+                        | None ->
+                          let ts_len = List.length ts in
+                          let xs_len = List.length xs in
+                          let msg =
+                            sprintf "expecting an array of length %d, but the given has a length of %d"
+                              ts_len xs_len
+                          in
+                          Result.error (msg, path))
+                  | _ -> Result.error ("invalid tuple", path)
                 )
               end
             | `inline_record fields, InlineRecord { mk; _ } ->
-              record_fields_of_json fields jv >>= mk
+              record_fields_of_json path fields jv
+              >>= (mk &> opt_to_result (sprintf "panic - failed to make inline record for variant_constructor '%s'" ctor_name, path))
             | _ -> fail ()
             end
         )
-      | _ -> None
+      | _ -> Result.error (sprintf "discriminator field '%s' does not exist" discriminator, path)
       end
-    | _ -> None
+    | _ -> Result.error (sprintf "an object is expected for a variant value, but the given is of type '%s'" (jv_type_to_string jv), path)
   in
   match td_kind, Typed.reflect a with
   | Alias_decl ct, Alias { mk; _ } ->
-    expr_of_json ct jv >>= fun expr -> mk expr
+    expr_of_json path ct jv
+    >>= (mk &> opt_to_result (sprintf "panic - failed to make alias value for type '%s'" td_name, path))
   | Record_decl fields, Record { mk; _ } ->
-    record_fields_of_json fields jv >>= fun fields -> mk fields
+    record_fields_of_json path fields jv
+    >>= (mk &> opt_to_result (sprintf "panic - failed to make record value for type '%s'" td_name, path))
   | Variant_decl ctors, Variant { constructors; _ } ->
-    constructor_of_json ctors constructors jv
+    constructor_of_json path ctors constructors jv
   | _, _ -> fail ()
+
+let of_json' : env:tdenv -> 'a typed_type_decl -> jv -> 'a OfJsonResult.t =
+  fun ~env a jv ->
+  of_json_impl ~env a jv
+  |> Result.map_error (fun (msg, path) ->
+    let msg =
+      if List.empty path then sprintf "%s at root" msg
+      else sprintf "%s at path %s" msg (unparse_jvpath path)
+    in
+    (msg, path, explain_encoded_json_shape ~env a))
+
+let of_json ~env a jv = of_json_impl ~env a jv |> Result.to_option
 
 let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
   let fail msg = invalid_arg' "inconsistent type_decl and reflection result (%s)" msg in

@@ -11,9 +11,8 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-version:
-          - 4.12.1
+          - 4.13.1
           ## we only test all versions at the [all-variants] flow
-          # - 4.13.x
           # - 4.14.x
         node-version:
           - lts/fermium # v14 Maintenance LTS

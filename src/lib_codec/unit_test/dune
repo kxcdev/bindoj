@@ -1,6 +1,17 @@
-(tests
- (names
-  json)
+(test
+ (name json)
+ (modules json)
  (libraries alcotest bindoj_test_common bindoj_codec bindoj_base kxclib yojson jsonm)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show)))
+
+(test
+ (name of_json_error)
+ (modules of_json_error)
+ (libraries
+  alcotest
+  bindoj_test_common bindoj_codec
+  bindoj_base bindoj_typedesc
+  kxclib yojson jsonm)
  (flags (:standard -open Kxclib))
  (preprocess (pps ppx_deriving.show)))

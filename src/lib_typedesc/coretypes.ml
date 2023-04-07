@@ -156,10 +156,10 @@ let rec to_refl_coretype' :
     (throw "Refl.Alias.get", throw "Refl.Alias.mk") |> return_alias
   | _, (C (Ident { id_name; _ }, _) : 'y t) ->
     ident_to_typed_type_decl_opt env id_name
-    >? to_refl_type_decl
-    |> Option.v' (fun() ->
+    >? (to_refl_type_decl &> fun refl -> Expr.(of_refl refl, to_refl refl) |> return_alias)
+    |?! fun() ->
         failwith' "Bindoj.Coretypes.to_refl: cannot find type named %S in provided tdenv%s"
-          id_name name_debug_msg_for)
+          id_name name_debug_msg_for
   | _, (C (Option desc, _) : 'y t) ->
     let o, t = to_refl_coretype' ~env (C (desc, Configs.empty)) |> as_alias in
     (Expr.(of_option o, to_option t) : 'y option res) |> return_alias
@@ -272,13 +272,6 @@ let to_typed_type_decl :
     'x t ->
     'x Typed_type_desc.typed_type_decl =
   fun ?(env=Type_decl_environment.empty) ?self name ct ->
-  match ct with
-  | C(Ident { id_name; _ }, _) ->
-    ident_to_typed_type_decl_opt env id_name
-    |> Option.v' (fun() ->
-      failwith' "Bindoj.Coretypes.to_typed_type_decl: cannot find type named %S in provided tdenv"
-        id_name)
-  | _ ->
-    let decl = alias_decl name (to_coretype ct) in
-    let refl = to_refl ~env ?self ct in
-    Typed_type_desc.Typed.mk decl refl
+  let decl = alias_decl name (to_coretype ct) in
+  let refl = to_refl ~env ?self ct in
+  Typed_type_desc.Typed.mk decl refl
