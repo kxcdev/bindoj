@@ -187,6 +187,9 @@ module Json_shape : sig
   val show_shape_explanation : shape_explanation -> string
   val show_field_shape_explanation : field_shape_explanation -> string
 
+  val pp_shape_explanation : Format.formatter -> shape_explanation -> unit
+  val pp_field_shape_explanation : Format.formatter -> field_shape_explanation -> unit
+
   val string_of_shape_explanation : shape_explanation -> string
   val string_of_field_shape_explanation : field_shape_explanation -> string
 end

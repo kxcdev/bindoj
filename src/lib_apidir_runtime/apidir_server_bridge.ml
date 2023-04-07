@@ -105,7 +105,7 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
         let jv = Bindoj_codec.Json.to_json ~env:tdenv ttd unpacked in
         (resp_status, jv)
 
-  let handle_json_post : invp' -> jv -> TupleJsonResponse.t io =
+  let handle_json_post' : invp' -> jv -> TupleJsonResponse.t Bindoj_codec.Json.OfJsonResult.t io =
     fun invp reqbody ->
     let invpm =
       let Invp(invp) = invp in
@@ -116,16 +116,25 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
        invalid_arg
          "no handler registered for the requested api"
     | Some (Handler (invpa, handler)) ->
-       let req = match invpm.ipm_method, invpa.ipa_request_body with
-         | `get, _ -> invalid_arg' "handle_json_post got GET invp: %s" invpm.ipm_name
-         | `post, None -> invalid_arg' "POST method must have a request body definition: %s" invpm.ipm_name
-         | `post, Some desc ->
-            let ttd = Utils.ttd_of_media_type desc.rq_media_type in
-            (match reqbody |> Bindoj_codec.Json.of_json ~env:tdenv ttd with
-             | None -> Utils.bad_request "invalid json format for type %s: %a"
-                         (Utils.ttd_name ttd) Utils.pp_jv reqbody
-             | Some req -> req) in
-       handler req >|= create_response invpa.ipa_responses
+       let module JR = Bindoj_codec.Json.OfJsonResult in
+       let (>>=?) = JR.bind in
+       match invpm.ipm_method, invpa.ipa_request_body with
+       | `get, _ -> invalid_arg' "handle_json_post got GET invp: %s" invpm.ipm_name
+       | `post, None -> invalid_arg' "POST method must have a request body definition: %s" invpm.ipm_name
+       | `post, Some desc ->
+          let ttd = Utils.ttd_of_media_type desc.rq_media_type in
+          match reqbody |> Bindoj_codec.Json.of_json' ~env:tdenv ttd with
+          | Ok req -> handler req >|= (create_response invpa.ipa_responses &> JR.return)
+          | Error e -> return (Error e)
+
+  let handle_json_post : invp' -> jv -> TupleJsonResponse.t io =
+    fun invp reqbody ->
+    handle_json_post' invp reqbody >>= function
+    | Ok resp -> return resp
+    | Error (errmsg, _, shape) ->
+       Utils.bad_request "invalid json format - %s; expected shape: %a"
+         errmsg
+         Bindoj_runtime.Json_shape.pp_shape_explanation shape
 
   let handle_json_get : invp' -> TupleJsonResponse.t io =
     fun invp ->
