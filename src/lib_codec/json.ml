@@ -413,7 +413,7 @@ let of_json' : env:tdenv -> 'a typed_type_decl -> jv -> 'a OfJsonResult.t =
   |> Result.map_error (fun (msg, path) ->
     let msg =
       if List.empty path then sprintf "%s at root" msg
-      else sprintf "%s at path %s" msg (unparse_jvpath path)
+      else sprintf "%s at path %s" msg (path |> List.rev |> unparse_jvpath )
     in
     (msg, path, explain_encoded_json_shape ~env a))
 

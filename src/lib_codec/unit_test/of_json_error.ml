@@ -320,7 +320,7 @@ let create_test_cases (module S : Sample) =
   S.name, (S.samples |&> (fun (name, jv, (msg, path)) ->
     let msg =
       if List.empty path then sprintf "%s at root" msg
-      else sprintf "%s at path %s" msg (Kxclib.Json.unparse_jvpath path)
+      else sprintf "%s at path %s" msg (path |> List.rev |> Json.unparse_jvpath)
     in
     test_case name `Quick(fun () ->
       let res_msg, res_path =
