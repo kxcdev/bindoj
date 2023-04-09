@@ -158,6 +158,10 @@ type ('type_decl, 't) generic_typed_type_decl =
             type type_decl = 'type_decl
           and type t = 't)
 
+type _ boxed_generic_typed_type_decl =
+  | Boxed_generic_typed_type_decl :
+      ('type_decl, _) generic_typed_type_decl -> ('type_decl) boxed_generic_typed_type_decl
+
 let mk_generic_typed_type_decl
     : type type_decl t. type_decl -> t Refl.t
            -> (type_decl, t) generic_typed_type_decl =
@@ -168,6 +172,17 @@ let mk_generic_typed_type_decl
       let decl = decl
       let reflect = refl
     end)
+
+let box_generic_typed_type_decl :
+  ('type_decl, 't) generic_typed_type_decl
+  -> ('type_decl) boxed_generic_typed_type_decl
+  = fun ttd -> Boxed_generic_typed_type_decl ttd
+
+let mk_boxed_generic_typed_type_decl :
+  'type_decl -> 't Refl.t
+  -> ('type_decl) boxed_generic_typed_type_decl
+  = fun decl refl ->
+  mk_generic_typed_type_decl decl refl |> box_generic_typed_type_decl
 
 module Reflects = struct
   open Refl

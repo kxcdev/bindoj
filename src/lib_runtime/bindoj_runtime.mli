@@ -134,9 +134,21 @@ type ('type_decl, 't) generic_typed_type_decl =
             type type_decl = 'type_decl
           and type t = 't)
 
+type _ boxed_generic_typed_type_decl =
+  | Boxed_generic_typed_type_decl :
+      ('type_decl, _) generic_typed_type_decl -> ('type_decl) boxed_generic_typed_type_decl
+
 val mk_generic_typed_type_decl :
   'type_decl -> 't Refl.t
   -> ('type_decl, 't) generic_typed_type_decl
+
+val mk_boxed_generic_typed_type_decl :
+  'type_decl -> 't Refl.t
+  -> ('type_decl) boxed_generic_typed_type_decl
+
+val box_generic_typed_type_decl :
+  ('type_decl, 't) generic_typed_type_decl
+  -> ('type_decl) boxed_generic_typed_type_decl
 
 module Reflects : sig
   val reflect_of_alias :

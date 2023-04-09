@@ -26,6 +26,8 @@ type 'a typed_type_decl =
 type boxed_type_decl =
   | Boxed : 'a typed_type_decl -> boxed_type_decl
 
+val of_generic_boxed : type_decl boxed_generic_typed_type_decl -> boxed_type_decl
+
 module Typed : sig
   val mk : type_decl -> 'a Refl.t -> 'a typed_type_decl
 

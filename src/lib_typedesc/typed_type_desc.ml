@@ -26,6 +26,9 @@ type 'a typed_type_decl =
 type boxed_type_decl =
   | Boxed : 'a typed_type_decl -> boxed_type_decl
 
+let of_generic_boxed : type_decl boxed_generic_typed_type_decl -> boxed_type_decl = function
+  | Boxed_generic_typed_type_decl ttd -> Boxed ttd
+
 module Typed = struct
   let mk decl reflect = mk_generic_typed_type_decl decl reflect
 
