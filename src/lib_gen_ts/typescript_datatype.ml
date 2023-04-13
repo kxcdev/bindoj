@@ -242,6 +242,13 @@ let type_of_coretype :
     ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
 
+let get_name_of_fwrt_desc_opt : ('ann0, 'ann1) fwrt_desc -> string option =
+  fun desc ->
+  match desc.fd_kind with
+  | Fwrt_object { fo_configs; _ } -> Ts_config.get_name_opt fo_configs
+  | Fwrt_alias { fa_configs; _ } -> Ts_config.get_name_opt fa_configs
+  | Fwrt_constructor { fc_configs; _ } -> Ts_config.get_name_opt fc_configs
+
 let rec ts_ast_of_fwrt_decl :
   (ts_modifier list, [`readonly] list) fwrt_decl -> ts_ast =
   fun fwrt_decl ->
@@ -267,15 +274,16 @@ and ts_type_alias_decl_of_fwrt_decl :
             tsps_name = ff_name;
             tsps_type_desc = type_of_coretype ~self_type_name ff_type }
       in
-      let discriminator = fo_configs |> Ts_config.get_variant_discriminator in
+      let discriminator_name = fo_configs |> Ts_config.get_variant_discriminator in
       let children =
         fo_children |&> fun child ->
           let { tsa_name; tsa_type_desc; _; } =
             ts_type_alias_decl_of_fwrt_decl ~self_type_name (child, env) in
+          let discriminator_value = FwrtTypeEnv.lookup child env |> get_name_of_fwrt_desc_opt |? tsa_name in
           let kind_field =
             { tsps_modifiers = [];
-              tsps_name = discriminator;
-              tsps_type_desc = `literal_type (`string_literal tsa_name); } in
+              tsps_name = discriminator_name;
+              tsps_type_desc = `literal_type (`string_literal discriminator_value); } in
           begin match tsa_type_desc with
             | `type_literal fields -> `type_literal (kind_field :: fields)
             | _ -> failwith "tsa_type_desc in children must be type literal"
@@ -288,12 +296,13 @@ and ts_type_alias_decl_of_fwrt_decl :
       desc
     | Fwrt_alias { fa_type; _ } -> type_of_coretype ~definitive:true ~self_type_name fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs } ->
-      let arg_name = Ts_config.get_name Ts_config.default_name_of_variant_arg fc_configs in
+      let arg_name = Ts_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
       let members =
         let tmp =
-          fc_fields |&> fun { ff_name; ff_type; ff_annot; _ } ->
+          fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
+            let json_field_name = Ts_config.get_name_opt ff_configs |? ff_name in
             { tsps_modifiers = ff_annot;
-              tsps_name = ff_name;
+              tsps_name = json_field_name;
               tsps_type_desc = type_of_coretype ~self_type_name ff_type }
         in
         let open Bindoj_codec.Json in
@@ -339,21 +348,22 @@ and ts_func_decl_of_fwrt_decl :
     let type_param = "__bindoj_ret" in
     let param = "__bindoj_fns" in
     let var_v = "__bindoj_v" in
-    let discriminator = Ts_config.get_variant_discriminator fo_configs in
+    let discriminator_name = Ts_config.get_variant_discriminator fo_configs in
     let param_type =
       `type_literal (List.sort String.compare fo_children |&> fun child ->
         let decl = ts_type_alias_decl_of_fwrt_decl ~self_type_name (child, env) in
+        let discriminator_value = FwrtTypeEnv.lookup child env |> get_name_of_fwrt_desc_opt |? decl.tsa_name in
         let kind_field =
           { tsps_modifiers = [];
-            tsps_name = discriminator;
-            tsps_type_desc = `literal_type (`string_literal decl.tsa_name); } in
+            tsps_name = discriminator_name;
+            tsps_type_desc = `literal_type (`string_literal discriminator_value); } in
         let desc =
           match decl.tsa_type_desc with
           | `type_literal fields -> `type_literal (kind_field :: fields)
           | _ -> failwith "tsa_type_desc in children must be type literal"
         in
         { tsps_modifiers = [];
-          tsps_name = decl.tsa_name;
+          tsps_name = discriminator_value;
           tsps_type_desc =
             (`func_type
               { tsft_parameters = [{ tsp_name = var_v; tsp_type_desc = desc }];
@@ -382,15 +392,16 @@ and ts_func_decl_of_fwrt_decl :
                                 tsbe_operator_token = "+";
                                 tsbe_right = `identifier var_x; }]; }),
                   fun (acc, child) ->
-                    let { fd_name; _ } = FwrtTypeEnv.lookup child env in
+                    let { fd_name; _ } as child_desc = FwrtTypeEnv.lookup child env in
+                    let discriminator_value = child_desc |> get_name_of_fwrt_desc_opt |? fd_name in
                     `if_statement
                       ((`binary_expression
                           { tsbe_left =
                               `property_access_expression
                                 { tspa_expression = `identifier var_x;
-                                  tspa_name = discriminator; };
+                                  tspa_name = discriminator_name; };
                             tsbe_operator_token = "===";
-                            tsbe_right = `literal_expression (`string_literal fd_name); }),
+                            tsbe_right = `literal_expression (`string_literal discriminator_value); }),
                       (`return_statement
                           (`call_expression
                             { tsce_expression =
@@ -399,7 +410,7 @@ and ts_func_decl_of_fwrt_decl :
                                     tsea_argument =
                                       `property_access_expression
                                         { tspa_expression = `identifier var_x;
-                                          tspa_name = discriminator; }; };
+                                          tspa_name = discriminator_name; }; };
                               tsce_arguments = [`identifier var_x]; })),
                       acc))]; })) in
     { tsf_modifiers = fd_annot;

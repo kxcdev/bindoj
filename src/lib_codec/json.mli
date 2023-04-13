@@ -35,6 +35,7 @@ module Config : sig
 
   type ('pos, 'kind) config +=
     | Config_json_name : string -> ('pos, [`json_name]) config
+    | Config_json_name_of_variant_arg : string -> ('pos, [`json_name_of_variant_arg]) config
     | Config_json_variant_style :
       json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
     | Config_json_variant_discriminator :
@@ -48,11 +49,14 @@ module Config : sig
 
   module Json_config : sig
     val name : string -> ([< pos], [`json_name]) config
-    val get_name : string -> [< pos] configs -> string
+    val name_of_variant_arg : string -> ([< pos], [`json_name_of_variant_arg]) config
+
+    val get_name_opt : [< pos] configs -> string option
+    val get_name_of_variant_arg : string -> [< pos] configs -> string
 
     (**
       The default field name for the argument of a variant constructor.
-      Use [Json_config.name] for [variant_constructor .. (`tuple_like ..)] to override.
+      Use [Json_config.name_of_variant_arg] for [variant_constructor .. (`tuple_like ..)] to override.
     *)
     val default_name_of_variant_arg : string
 

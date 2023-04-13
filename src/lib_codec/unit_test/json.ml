@@ -42,7 +42,12 @@ let create_test_cases (name: string) (module Ex : T) =
   let msg msg = sprintf "%s %s" name msg in
   let typed_decl = Typed_type_desc.Typed.mk Ex.decl Ex.reflect in
   let to_json = Json.to_json ~env typed_decl in
-  let of_json = Json.of_json ~env typed_decl in
+  let of_json jv =
+    Json.of_json' ~env typed_decl jv
+    |> function
+    | Ok x -> Some x
+    | Error (msg, _, _) -> eprintf "%s\n" msg; None
+  in
 
   (* encoding *)
   let check_encoder (value: t Sample_value.t) =

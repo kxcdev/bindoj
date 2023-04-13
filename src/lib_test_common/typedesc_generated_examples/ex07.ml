@@ -40,14 +40,14 @@ let discriminator = "tag"
 
 let sample_value01 : sample = {
   orig = Case1 42;
-  jv = ctor1 ~discriminator ~arg:"value" "Case1" (`num 42.);
+  jv = ctor1 ~discriminator ~arg:"value" "Case1_" (`num 42.);
 }
 
 let sample_value02 : sample = {
   orig = Case2 { x = 4; y = 2 };
-  jv = ctor_record ~discriminator "Case2" [
-    "x", `num 4.;
-    "y", `num 2.;
+  jv = ctor_record ~discriminator "Case2_" [
+    "x_", `num 4.;
+    "y_", `num 2.;
   ]
 }
 

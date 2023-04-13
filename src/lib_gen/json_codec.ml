@@ -404,8 +404,9 @@ let gen_json_encoder :
       Closed
   in
   let member_of_field : int -> record_field -> expression =
-    fun i { rf_name; rf_type; _ } ->
-    [%expr ([%e estring ~loc rf_name],
+    fun i { rf_name; rf_type; rf_configs; _ } ->
+    let json_field_name = Json_config.get_name_opt rf_configs |? rf_name in
+    [%expr ([%e estring ~loc json_field_name],
             [%e encoder_of_coretype self_ename rf_type] [%e evari i])]
   in
   let record_body : record_field list -> expression = fun fields ->
@@ -438,18 +439,19 @@ let gen_json_encoder :
   in
   let variant_body : variant_constructor list -> expression list = fun cnstrs ->
     cnstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
-      let discriminator = Json_config.get_variant_discriminator td_configs in
-      let arg_fname = Json_config.get_name Json_config.default_name_of_variant_arg vc_configs in
+      let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+      let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
+      let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg vc_configs) in
       match Json_config.get_variant_style vc_configs with
       | `flatten -> begin
         match vc_param with
         | `no_param ->
-          let cstr = [%expr ([%e estring ~loc discriminator], `str [%e estring ~loc vc_name])] in
+          let cstr = [%expr ([%e estring ~loc discriminator_fname], `str [%e estring ~loc discriminator_value])] in
           [%expr `obj [[%e cstr]]]
         | `tuple_like args ->
-          let discriminator = estring ~loc discriminator in
+          let discriminator_fname = estring ~loc discriminator_fname in
           let arg_fname = estring ~loc arg_fname in
-          let cstr = [%expr ([%e discriminator], `str [%e estring ~loc vc_name])] in
+          let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
           let args =
             List.mapi (fun i typ ->
                 [%expr [%e encoder_of_coretype self_ename typ] [%e evari i]])
@@ -467,8 +469,8 @@ let gen_json_encoder :
             [%expr `obj ([%e cstr] :: [%e elist ~loc fields])]
           end
         | `inline_record fields ->
-          let discriminator = estring ~loc discriminator in
-          let cstr = [%expr ([%e discriminator], `str [%e estring ~loc vc_name])] in
+          let discriminator_fname = estring ~loc discriminator_fname in
+          let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
           let args = List.mapi (fun i field -> member_of_field i field) fields in
           [%expr `obj [%e elist ~loc (cstr :: args)]]
       end
@@ -542,16 +544,17 @@ let gen_json_decoder :
              bindings body]]
   in
   let record_bindings : record_field list -> (pattern * expression) list = fun fields ->
-    List.mapi (fun i { rf_name; rf_type; _; } ->
+    List.mapi (fun i { rf_name; rf_type; rf_configs; _; } ->
+        let json_field_name = Json_config.get_name_opt rf_configs |? rf_name in
         let expr =
           if Coretype.is_option rf_type then
             [%expr
-              List.assoc_opt [%e estring ~loc rf_name] [%e param_e]
+              List.assoc_opt [%e estring ~loc json_field_name] [%e param_e]
               |> Option.value ~default:`null
               |> [%e decoder_of_coretype self_ename rf_type]]
           else
             [%expr
-              List.assoc_opt [%e estring ~loc rf_name] [%e param_e]
+              List.assoc_opt [%e estring ~loc json_field_name] [%e param_e]
               >>= [%e decoder_of_coretype self_ename rf_type]]
           in
         pvari i, expr)
@@ -560,25 +563,26 @@ let gen_json_decoder :
   let record_body : record_field list -> expression = fun fields ->
     pexp_record ~loc
       (List.mapi (fun i { rf_name; _; } ->
-           (lidloc ~loc rf_name, [%expr [%e evari i]]))
+          (lidloc ~loc rf_name, [%expr [%e evari i]]))
          fields)
       None
   in
   let variant_params : variant_constructor list -> pattern list = fun cstrs ->
     cstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
-      let discriminator = Json_config.get_variant_discriminator td_configs in
-      let arg_fname = Json_config.get_name Json_config.default_name_of_variant_arg vc_configs in
+      let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+      let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
+      let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg vc_configs) in
       match Json_config.get_variant_style vc_configs with
       | `flatten -> begin
         match vc_param with
         | `no_param ->
-          let discriminator = pstring ~loc discriminator in
-          let cstr = [%pat? ([%p discriminator], `str [%p pstring ~loc vc_name])] in
+          let discriminator_fname = pstring ~loc discriminator_fname in
+          let cstr = [%pat? ([%p discriminator_fname], `str [%p pstring ~loc discriminator_value])] in
           [%pat? `obj [[%p cstr]]]
         | `tuple_like args ->
-          let discriminator = pstring ~loc discriminator in
+          let discriminator_fname = pstring ~loc discriminator_fname in
           let arg_fname = pstring ~loc arg_fname in
-          let cstr = [%pat? ([%p discriminator], `str [%p pstring ~loc vc_name])] in
+          let cstr = [%pat? ([%p discriminator_fname], `str [%p pstring ~loc discriminator_value])] in
           let args = List.mapi (fun i _ -> pvari i) args in
           begin match args, Json_config.get_tuple_style vc_configs with
           | [], _ -> [%pat? `obj [[%p cstr]]]
@@ -587,8 +591,8 @@ let gen_json_decoder :
           | _, `obj `default -> [%pat? `obj ([%p cstr] :: fields)]
           end
         | `inline_record _ ->
-          let discriminator = pstring ~loc discriminator in
-          let cstr = [%pat? ([%p discriminator], `str [%p pstring ~loc vc_name])] in
+          let discriminator_fname = pstring ~loc discriminator_fname in
+          let cstr = [%pat? ([%p discriminator_fname], `str [%p pstring ~loc discriminator_value])] in
           [%pat? `obj ([%p cstr] :: [%p param_p])]
       end
   in
@@ -755,7 +759,10 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
 
   let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc fields =
     let field_to_t field =
-      field.rf_name,
+      let json_field_name =
+        Json_config.get_name_opt field.rf_configs |? field.rf_name
+      in
+      json_field_name,
       convert_coretype ~self_name ?description:(docopt field.rf_doc) field.rf_type
     in
     let fields = fields |> List.map field_to_t in
@@ -782,19 +789,20 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
     | Record_decl fields ->
       record_to_t ?schema ?id ~name ~self_name ~doc fields
     | Variant_decl ctors ->
-      let discriminator = Json_config.get_variant_discriminator td_configs in
-      let ctor_to_t { vc_name = name; vc_param; vc_doc = doc; vc_configs } =
+      let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+      let ctor_to_t { vc_name; vc_param; vc_doc = doc; vc_configs } =
+        let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
         let discriminator_field =
-          let enum = [`str name] in
-          [discriminator, Schema_object.string ~enum ()]
+          let enum = [`str discriminator_value] in
+          [discriminator_fname, Schema_object.string ~enum ()]
         in
         match Json_config.get_variant_style vc_configs with
         | `flatten ->
           begin match vc_param with
             | `no_param | `tuple_like [] ->
-              Schema_object.record ?description:(docopt doc) ~title:name discriminator_field
+              Schema_object.record ?description:(docopt doc) ~title:discriminator_value discriminator_field
             | `tuple_like (t :: ts) ->
-              let arg_name = Json_config.get_name Json_config.default_name_of_variant_arg vc_configs in
+              let arg_name = Json_config.(get_name_of_variant_arg default_name_of_variant_arg vc_configs) in
               let arg_field =
                 match ts, Json_config.get_tuple_style vc_configs with
                 | [], _ -> [arg_name, convert_coretype ~self_name t]
@@ -811,18 +819,18 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
                   )
               in
               let fields = discriminator_field @ arg_field in
-              Schema_object.record ?description:(docopt doc) ~title:name fields
+              Schema_object.record ?description:(docopt doc) ~title:discriminator_value fields
             | `inline_record fields ->
-              record_to_t ~additional_fields:discriminator_field ~name ~self_name ~doc fields
-            end
-        in
-        Schema_object.oneOf
-          ?schema
-          ~title:name
-          ?description:(docopt doc)
-          ?id
-          (ctors |> List.map ctor_to_t)
-      | Alias_decl cty ->
-        convert_coretype ~self_name ?description:(docopt doc) cty
+              record_to_t ~additional_fields:discriminator_field ~name:discriminator_value ~self_name ~doc fields
+          end
+      in
+      Schema_object.oneOf
+        ?schema
+        ~title:name
+        ?description:(docopt doc)
+        ?id
+        (ctors |> List.map ctor_to_t)
+    | Alias_decl cty ->
+      convert_coretype ~self_name ?description:(docopt doc) cty
 
 let gen_openapi_schema : type_decl -> Schema_object.t = gen_json_schema ~openapi:true

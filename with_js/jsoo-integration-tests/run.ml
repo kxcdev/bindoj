@@ -98,11 +98,15 @@ let create_test_cases name (module Ex : T) filter =
     done
   in
 
-  let interpreted =
+  let interpreted jv =
     let open Typed_type_desc in
     let env = Ex.env in
     let typed_decl = Typed.mk Ex.decl Ex.reflect in
-    Bindoj_codec.Json.of_json ~env typed_decl in
+    Bindoj_codec.Json.of_json' ~env typed_decl jv
+    |> function
+    | Ok x -> Some x
+    | Error (msg, _, _) -> eprintf "%s\n" msg; None
+  in
   let compiled = Ex.of_json in
 
   name, [

@@ -12,8 +12,8 @@ describe('ex07', (): void => {
   test('the case analyzer works', (): void => {
     function analyzer(x: ex07.customized_union) {;
       return ex07.analyze_customized_union<number>({
-        Case1: v => v.value,
-        Case2: v => v.x + v.y,
+        Case1_: v => v.value,
+        Case2_: v => v.x_ + v.y_,
       })(x);
     };
 
