@@ -154,6 +154,13 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
                       arg_shape)]
              | `inline_record fields ->
                 process_branch kind_name discriminator_fname
+                  (fields |&> process_field)
+             | `reused_inline_record decl ->
+                let fields = decl.td_kind |> function
+                  | Record_decl fields -> fields
+                  | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." kind_name
+                in
+                process_branch kind_name discriminator_fname
                   (fields |&> process_field)))
   and process_field field: json_field_shape_explanation =
     let optional, desc =
@@ -404,6 +411,13 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
             | `inline_record fields, InlineRecord { mk; _ } ->
               record_fields_of_json path fields jv
               >>= (mk &> opt_to_result (sprintf "panic - failed to make inline record for variant_constructor '%s'" discriminator_value, path))
+            | `reused_inline_record decl, ReusedInlineRecord { mk; _ } ->
+              let fields = decl.td_kind |> function
+                | Record_decl fields -> fields
+                | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." ctor.vc_name
+              in
+              record_fields_of_json path fields jv
+              >>= (mk &> opt_to_result (sprintf "panic - failed to make reused inline record for variant_constructor '%s'" discriminator_value, path))
             | _ -> fail ()
             end
         )
@@ -498,6 +512,13 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
       begin match ctor.vc_param, expr with
       | `no_param, NoParam _ -> `obj discriminator_field
       | `inline_record fields, InlineRecord { get; _ } ->
+        let fields = record_to_json_fields fields (get value) in
+        `obj (discriminator_field @ fields)
+      | `reused_inline_record decl, ReusedInlineRecord { get; _ } ->
+        let fields = decl.td_kind |> function
+          | Record_decl fields -> fields
+          | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
+        in
         let fields = record_to_json_fields fields (get value) in
         `obj (discriminator_field @ fields)
       | `tuple_like ts, TupleLike { get; _ } ->

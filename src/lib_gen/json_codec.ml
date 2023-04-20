@@ -415,6 +415,15 @@ let gen_json_encoder :
   in
   let variant_params : variant_constructor list -> pattern list = fun constrs ->
     constrs |&> fun { vc_name; vc_param; _ } ->
+      let of_record_fields ~label fields =
+        match Caml_config.get_variant_type td_configs with
+        | `regular ->
+          ppat_construct ~loc
+            (lidloc ~loc vc_name)
+            (Some (record_params fields))
+        | `polymorphic ->
+          failwith' "case '%s' with an %s cannot be used in a polymorphic variant" vc_name label
+      in
       match vc_param with
       | `no_param ->
         begin match Caml_config.get_variant_type td_configs with
@@ -427,21 +436,25 @@ let gen_json_encoder :
         | `regular -> Pat.construct (lidloc vc_name) inner
         | `polymorphic -> Pat.variant vc_name inner
         end
-      | `inline_record fields ->
-        begin match Caml_config.get_variant_type td_configs with
-        | `regular ->
-          ppat_construct ~loc
-            (lidloc ~loc vc_name)
-            (Some (record_params fields))
-        | `polymorphic ->
-          failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" vc_name
-        end
+      | `inline_record fields -> of_record_fields ~label:"inline record" fields
+      | `reused_inline_record decl ->
+        let fields = decl.td_kind |> function
+          | Record_decl fields -> fields
+          | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+        in
+        of_record_fields ~label:"reused inline record" fields
   in
   let variant_body : variant_constructor list -> expression list = fun cnstrs ->
     cnstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
       let discriminator_fname = Json_config.get_variant_discriminator td_configs in
       let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
       let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg vc_configs) in
+      let of_record_fields fields =
+        let discriminator_fname = estring ~loc discriminator_fname in
+          let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
+          let args = List.mapi (fun i field -> member_of_field i field) fields in
+          [%expr `obj [%e elist ~loc (cstr :: args)]]
+      in
       match Json_config.get_variant_style vc_configs with
       | `flatten -> begin
         match vc_param with
@@ -468,11 +481,13 @@ let gen_json_encoder :
             in
             [%expr `obj ([%e cstr] :: [%e elist ~loc fields])]
           end
-        | `inline_record fields ->
-          let discriminator_fname = estring ~loc discriminator_fname in
-          let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
-          let args = List.mapi (fun i field -> member_of_field i field) fields in
-          [%expr `obj [%e elist ~loc (cstr :: args)]]
+        | `inline_record fields -> of_record_fields fields
+        | `reused_inline_record decl ->
+          let fields = decl.td_kind |> function
+            | Record_decl fields -> fields
+            | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+          in
+          of_record_fields fields
       end
   in
   match kind with
@@ -590,7 +605,8 @@ let gen_json_decoder :
           | _, `arr -> [%pat? `obj [[%p cstr]; ([%p arg_fname], `arr [%p plist ~loc args])]]
           | _, `obj `default -> [%pat? `obj ([%p cstr] :: fields)]
           end
-        | `inline_record _ ->
+        | `inline_record _
+        | `reused_inline_record _ ->
           let discriminator_fname = pstring ~loc discriminator_fname in
           let cstr = [%pat? ([%p discriminator_fname], `str [%p pstring ~loc discriminator_value])] in
           [%pat? `obj ([%p cstr] :: [%p param_p])]
@@ -603,6 +619,19 @@ let gen_json_decoder :
       | `polymorphic -> Exp.variant name args
     in
     cstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
+      let of_record_fields ~label fields =
+        begin match fields with
+        | [] -> construct vc_name None
+        | _ ->
+          let bindings = record_bindings fields in
+          let body =
+            match Caml_config.get_variant_type td_configs with
+            | `regular -> record_body fields
+            | `polymorphic -> failwith' "case '%s' with an %s cannot be used in a polymorphic variant" vc_name label
+          in
+          bind_options bindings [%expr Some [%e (construct vc_name (Some body))]]
+        end
+      in
       match vc_param with
       | `no_param -> [%expr Some [%e construct vc_name None]]
       | `tuple_like args ->
@@ -632,17 +661,15 @@ let gen_json_decoder :
           | _ -> bind_options bindings body
         end
       | `inline_record fields ->
-        begin match fields with
-        | [] -> construct vc_name None
-        | _ ->
-          let bindings = record_bindings fields in
-          let body =
-            match Caml_config.get_variant_type td_configs with
-            | `regular -> record_body fields
-            | `polymorphic -> failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" vc_name
-          in
-          bind_options bindings [%expr Some [%e (construct vc_name (Some body))]]
-        end
+        of_record_fields ~label:"inline record" fields
+      | `reused_inline_record decl ->
+        let fields =
+          decl.td_kind |> function
+          | Record_decl fields -> fields
+          | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+        in
+        of_record_fields ~label:"reused inline record" fields
+
   in
   begin match kind with
   | Alias_decl cty ->
@@ -822,6 +849,13 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
               Schema_object.record ?description:(docopt doc) ~title:discriminator_value fields
             | `inline_record fields ->
               record_to_t ~additional_fields:discriminator_field ~name:discriminator_value ~self_name ~doc fields
+            | `reused_inline_record decl ->
+              let fields = decl.td_kind |> function
+                | Record_decl fields -> fields
+                | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+              in
+              record_to_t ~additional_fields:discriminator_field ~name:discriminator_value ~self_name ~doc fields
+
           end
       in
       Schema_object.oneOf

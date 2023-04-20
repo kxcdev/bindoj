@@ -167,10 +167,24 @@ type variant_constructor = {
     | `no_param
     | `tuple_like of coretype list (** invariant: at least one *)
     | `inline_record of record_field list (** invariant: at least one *)
+    | `reused_inline_record of type_decl (** must be Variant_decl kinded *)
   ];
   vc_configs: [`variant_constructor] configs;
   vc_doc: doc;
 }
+
+and type_decl_kind =
+  | Alias_decl of coretype
+  | Record_decl of record_field list
+  | Variant_decl of variant_constructor list
+
+and type_decl = {
+  td_name: string;
+  td_configs: [`type_decl] configs;
+  td_kind : type_decl_kind;
+  td_doc: doc;
+}
+
 val pp_variant_constructor : ppf -> variant_constructor -> unit
 val string_of_variant_constructor : variant_constructor -> string
 val equal_variant_constructor : variant_constructor -> variant_constructor -> bool
@@ -181,19 +195,9 @@ val variant_constructor :
     | `no_param
     | `tuple_like of coretype list (** invariant: at least one *)
     | `inline_record of record_field list (** invariant: at least one *)
+    | `reused_inline_record of type_decl (** must be Variant_decl kinded *)
   ] -> variant_constructor
 
-type type_decl_kind =
-  | Alias_decl of coretype
-  | Record_decl of record_field list
-  | Variant_decl of variant_constructor list
-
-type type_decl = {
-  td_name: string;
-  td_configs: [`type_decl] configs;
-  td_kind : type_decl_kind;
-  td_doc: doc;
-}
 val pp_type_decl : ppf -> type_decl -> unit
 val string_of_type_decl : type_decl -> string
 val equal_type_decl : type_decl -> type_decl -> bool

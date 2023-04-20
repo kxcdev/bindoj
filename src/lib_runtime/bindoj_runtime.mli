@@ -58,6 +58,10 @@ module rec Refl : sig
     | NoParam of {
         value: 't
       }
+    | ReusedInlineRecord of {
+      get: 't -> Expr.t StringMap.t;
+        mk: Expr.t StringMap.t -> 't option;
+    }
 
   type 't result =
     | Record of {
@@ -73,7 +77,7 @@ module rec Refl : sig
         mk: Expr.t -> 't option;
       }
 
-  type 'a t = 'a result Lazy.t
+  and 'a t = 'a result Lazy.t
 end
 
 and Expr : sig

@@ -27,8 +27,16 @@ module Ts_ast = struct
       var_fns : string;
       ret : string; }
 
-  type literal = (string * [`type_literal of ts_property_signature list])
-  let compare_literal (xname, `type_literal _) (yname, `type_literal _) = String.compare xname yname
+  let rec find_prop_opt f = function
+    | `type_literal ps -> List.find_opt f ps
+    | `intersection tds ->
+      List.fold_left
+        (fun s td -> s |> Option.otherwise' (fun () -> find_prop_opt f td))
+        None tds
+    | _ -> None
+
+  type literal = (string * ts_type_desc)
+  let compare_literal (xname, (_: ts_type_desc)) (yname, (_: ts_type_desc)) = String.compare xname yname
 
   let case_analyzer_parameters :
     options -> literal list -> ts_parameter list =
@@ -36,16 +44,18 @@ module Ts_ast = struct
     [ { tsp_name = options.var_fns;
         tsp_type_desc =
           `type_literal
-            (cstrs |&> fun (_, `type_literal cstr) ->
-                match List.find (fun { tsps_name; _; } -> tsps_name = options.discriminator) cstr with
-                | { tsps_type_desc = `literal_type (`string_literal kind); _; } ->
+            (cstrs |&> fun (_, desc) ->
+                desc
+                |> find_prop_opt (fun { tsps_name; _; } -> tsps_name = options.discriminator)
+                |> function
+                | Some { tsps_type_desc = `literal_type (`string_literal kind); _; } ->
                   { tsps_modifiers = [];
                     tsps_name = kind;
                     tsps_type_desc =
                       `func_type
                         { tsft_parameters =
                             [ { tsp_name = options.var_v;
-                                tsp_type_desc = `type_literal cstr; } ];
+                                tsp_type_desc = desc; } ];
                           tsft_type_desc = `type_reference options.ret; }; }
                 | _ -> failwith "impossible case"); } ]
 
@@ -70,9 +80,11 @@ module Ts_ast = struct
                                      (`string_literal ("panic @analyze_" ^ name ^ " - unrecognized: "));
                                  tsbe_operator_token = "+";
                                  tsbe_right = `identifier options.var_x; } ]; }),
-                  fun (statement, (_, `type_literal person)) ->
-                    match List.find (fun { tsps_name; _; } -> tsps_name = options.discriminator) person with
-                    | { tsps_type_desc = `literal_type (`string_literal kind); _; } ->
+                  fun (statement, (_, desc)) ->
+                    desc
+                    |> find_prop_opt (fun { tsps_name; _; } -> tsps_name = options.discriminator)
+                    |> function
+                    | Some { tsps_type_desc = `literal_type (`string_literal kind); _; } ->
                       `if_statement
                         ((`binary_expression
                             { tsbe_left =

@@ -177,6 +177,21 @@ let typescript = Foreign_language_TypeScript
 
 module Ts_config = struct
   include Bindoj_gen.Json_codec.Json_config
+
+  type reused_variant_inline_record_style = [ `inline_fields | `intersection_type ]
+
+  type ('pos, 'kind) config +=
+    | Config_ts_reused_variant_inline_record_style : reused_variant_inline_record_style -> ('pos, reused_variant_inline_record_style) config
+
+  let reused_variant_inline_record_style style =
+    Config_ts_reused_variant_inline_record_style style
+
+  let get_reused_variant_inline_record_style_opt configs =
+    Configs.find (function
+      | Config_ts_reused_variant_inline_record_style style -> Some style
+      | _ -> None
+    ) configs
+
   let typescript_type expr =
     Configs.Config_foreign_type_expression (typescript, expr)
 end
@@ -296,40 +311,44 @@ and ts_type_alias_decl_of_fwrt_decl :
       desc
     | Fwrt_alias { fa_type; _ } -> type_of_coretype ~definitive:true ~self_type_name fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs } ->
-      let arg_name = Ts_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
-      let members =
-        let tmp =
-          fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-            let json_field_name = Ts_config.get_name_opt ff_configs |? ff_name in
-            { tsps_modifiers = ff_annot;
-              tsps_name = json_field_name;
-              tsps_type_desc = type_of_coretype ~self_type_name ff_type }
+      match Ts_config.get_reused_variant_inline_record_style_opt fc_configs with
+      | Some `intersection_type ->
+        failwith "noimpl: reused inlnie record with intersection type style."
+      | _ ->
+        let arg_name = Ts_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
+        let members =
+          let tmp =
+            fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
+              let json_field_name = Ts_config.get_name_opt ff_configs |? ff_name in
+              { tsps_modifiers = ff_annot;
+                tsps_name = json_field_name;
+                tsps_type_desc = type_of_coretype ~self_type_name ff_type }
+          in
+          let open Bindoj_codec.Json in
+          match fc_args, Json_config.get_tuple_style fc_configs with
+          | [], _ -> tmp
+          | [arg], _ ->
+            { tsps_modifiers = [];
+              tsps_name = arg_name;
+              tsps_type_desc = type_of_coretype ~self_type_name arg } :: tmp
+          | args, `arr ->
+            let desc =
+              `tuple (args |> List.map (type_of_coretype ~self_type_name))
+            in
+            { tsps_modifiers = [];
+              tsps_name = arg_name;
+              tsps_type_desc = desc } :: tmp
+          | args, `obj `default ->
+            let fields =
+              args |> List.mapi (fun i t -> {
+                tsps_modifiers = [];
+                tsps_name = tuple_index_to_field_name i;
+                tsps_type_desc = type_of_coretype ~self_type_name t
+              })
+            in
+            tmp @ fields
         in
-        let open Bindoj_codec.Json in
-        match fc_args, Json_config.get_tuple_style fc_configs with
-        | [], _ -> tmp
-        | [arg], _ ->
-          { tsps_modifiers = [];
-            tsps_name = arg_name;
-            tsps_type_desc = type_of_coretype ~self_type_name arg } :: tmp
-        | args, `arr ->
-          let desc =
-            `tuple (args |> List.map (type_of_coretype ~self_type_name))
-          in
-          { tsps_modifiers = [];
-            tsps_name = arg_name;
-            tsps_type_desc = desc } :: tmp
-        | args, `obj `default ->
-          let fields =
-            args |> List.mapi (fun i t -> {
-              tsps_modifiers = [];
-              tsps_name = tuple_index_to_field_name i;
-              tsps_type_desc = type_of_coretype ~self_type_name t
-            })
-          in
-          tmp @ fields
-      in
-      `type_literal members
+        `type_literal members
   in
   { tsa_modifiers = fd_annot;
     tsa_name = name;
@@ -699,9 +718,27 @@ module Internals = struct
   let rope_of_ts_expression = rope_of_ts_expression
 end
 
+let set_default_reused_variant_inline_record_style = function
+  | { td_kind = Variant_decl ctors; _ } as td ->
+    let ctors = ctors |&> (function
+      | { vc_param = `reused_inline_record _; vc_configs; _ } as ctor ->
+        begin match Ts_config.get_reused_variant_inline_record_style_opt vc_configs with
+          | None -> { ctor with vc_configs = Ts_config.reused_variant_inline_record_style `intersection_type :: vc_configs }
+          | _ -> ctor
+        end
+      | ctor -> ctor )
+    in
+    { td with td_kind = Variant_decl ctors }
+  | td -> td
+
 let gen_ts_type : ?export:bool -> type_decl -> string =
   fun ?(export=true) type_decl ->
-  let fwrt_decl = annotate_fwrt_decl export false (fwrt_decl_of_type_decl type_decl) in
+  let fwrt_decl =
+    type_decl
+    |> set_default_reused_variant_inline_record_style
+    |> fwrt_decl_of_type_decl
+    |> annotate_fwrt_decl export false
+  in
   let self_type_name = fst fwrt_decl in
   let ts_type_alias_decl = ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl in
   let rope = rope_of_ts_type_alias_decl ts_type_alias_decl in
@@ -709,7 +746,12 @@ let gen_ts_type : ?export:bool -> type_decl -> string =
 
 let gen_ts_case_analyzer : ?export:bool -> ?name:string -> type_decl -> string =
   fun ?(export=true) ?name type_decl ->
-  let fwrt_decl = annotate_fwrt_decl export false (fwrt_decl_of_type_decl type_decl) in
+  let fwrt_decl =
+    type_decl
+    |> set_default_reused_variant_inline_record_style
+    |> fwrt_decl_of_type_decl
+    |> annotate_fwrt_decl export false
+  in
   let self_type_name = fst fwrt_decl in
   let ts_func_decl = ts_func_decl_of_fwrt_decl ~self_type_name fwrt_decl in
   let ts_func_decl =

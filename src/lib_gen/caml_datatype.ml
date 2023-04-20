@@ -77,6 +77,8 @@ and type_manifest_of_type_decl_kind : self_name:string -> type_decl -> core_type
             | args -> [Typ.tuple (args |&> type_of_coretype ~self_name)])
         | `inline_record _ ->
           failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" ctor.vc_name
+        | `reused_inline_record _ ->
+          failwith' "case '%s' with an reused inline record cannot be used in a polymorphic variant" ctor.vc_name
       in
       Some (Typ.variant fields Closed None)
 
@@ -96,6 +98,12 @@ and constructor_declarations_of_variant_constructors ~self_name ctors =
       | `tuple_like ts ->
         ctor.vc_name, Pcstr_tuple (ts |&> type_of_coretype ~self_name)
       | `inline_record fields ->
+        ctor.vc_name, Pcstr_record (fields |> label_declarations_of_record_fields ~self_name)
+      | `reused_inline_record decl ->
+        let fields = decl.td_kind |> function
+          | Record_decl fields -> fields
+          | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
+        in
         ctor.vc_name, Pcstr_record (fields |> label_declarations_of_record_fields ~self_name)
     in
     Type.constructor ~attrs:(doc_attribute ctor.vc_doc) ~args (locmk name)
@@ -321,6 +329,18 @@ and gen_reflect_variant_impl ~self_name ~poly (ctors: variant_constructor list) 
     let ctor_expr = ctor_expr ctor in
     let ctor_pat = ctor_pat ctor in
     let invalid = [%expr invalid_arg ([%e Exp.constant (Const.string ctor.vc_name)] ^ " is expected")] in
+    let of_record_fields ~label fields make_refl =
+      if poly then failwith' "case '%s' with an %s cannot be used in a polymorphic variant" ctor.vc_name label
+      else
+        let (get_pat, get_expr), mk =
+          gen_reflect_record_impl ~mk_ctor:(fun x -> ctor_expr ~arg:x ()) ~self_name fields
+        in
+        let get = [%expr function
+          | [%p ctor_pat ~arg:get_pat ()] -> [%e get_expr]
+          | _ -> [%e invalid]]
+        in
+        ctor, make_refl get mk
+    in
     match ctor.vc_param with
     | `no_param ->
       let value = ctor_expr () in
@@ -365,16 +385,13 @@ and gen_reflect_variant_impl ~self_name ~poly (ctors: variant_constructor list) 
       in
       ctor, [%expr Refl.TupleLike { get = [%e get]; mk = [%e mk] }]
     | `inline_record fields ->
-      if poly then failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" ctor.vc_name
-      else
-        let (get_pat, get_expr), mk =
-          gen_reflect_record_impl ~mk_ctor:(fun x -> ctor_expr ~arg:x ()) ~self_name fields
-        in
-        let get = [%expr function
-          | [%p ctor_pat ~arg:get_pat ()] -> [%e get_expr]
-          | _ -> [%e invalid]]
-        in
-        ctor, [%expr Refl.InlineRecord { get = [%e get]; mk = [%e mk] }]
+      of_record_fields ~label:"inline record" fields (fun get mk -> [%expr Refl.InlineRecord { get = [%e get]; mk = [%e mk] }])
+    | `reused_inline_record decl ->
+      let fields = decl.td_kind |> function
+        | Record_decl fields -> fields
+        | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
+      in
+      of_record_fields ~label:"reused inline record" fields (fun get mk -> [%expr Refl.ReusedInlineRecord { get = [%e get]; mk = [%e mk] }])
   )
 
 and gen_reflect_variant ~self_name ?(poly=false) (ctors: variant_constructor list) : expression =

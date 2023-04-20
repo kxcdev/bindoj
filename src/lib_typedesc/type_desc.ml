@@ -223,9 +223,23 @@ type variant_constructor = {
     | `no_param
     | `tuple_like of coretype list
     | `inline_record of record_field ignore_order_list
+    | `reused_inline_record of type_decl
   ];
   vc_configs: [`variant_constructor] configs;
   vc_doc: doc;
+} [@@deriving show,eq]
+
+and type_decl_kind =
+  | Alias_decl of coretype
+  | Record_decl of record_field ignore_order_list
+  | Variant_decl of variant_constructor ignore_order_list
+  [@@deriving show,eq]
+
+and type_decl = {
+  td_name: string;
+  td_configs: [`type_decl] configs;
+  td_kind : type_decl_kind;
+  td_doc: doc;
 } [@@deriving show,eq]
 let string_of_variant_constructor = show_variant_constructor
 
@@ -233,20 +247,10 @@ let variant_constructor ?(doc=`nodoc) ?(configs=Configs.empty) vc_name vc_param 
   match vc_param with
   | `tuple_like [] -> invalid_arg "`tuple_like but no type is given"
   | `inline_record [] -> invalid_arg "`inline_record but no field is given"
+  | `reused_inline_record { td_kind = Alias_decl _ | Variant_decl _; _ } ->
+    invalid_arg "`reused_inline_record but the given type decl is not record"
   | _ -> { vc_name; vc_param; vc_configs = configs; vc_doc = doc }
 
-type type_decl_kind =
-  | Alias_decl of coretype
-  | Record_decl of record_field ignore_order_list
-  | Variant_decl of variant_constructor ignore_order_list
-  [@@deriving show,eq]
-
-type type_decl = {
-  td_name: string;
-  td_configs: [`type_decl] configs;
-  td_kind : type_decl_kind;
-  td_doc: doc;
-} [@@deriving show,eq]
 let string_of_type_decl = show_type_decl
 
 type variant_type = [
@@ -309,13 +313,22 @@ let fold_coretypes folder state td =
     ) state
   | Variant_decl ctors ->
     ctors |> List.fold_left (fun state ctor ->
+      let fold_record_fields =
+        List.fold_left (fun state field ->
+          folder state field.rf_type
+        ) state
+      in
       match ctor.vc_param with
       | `no_param -> state
       | `tuple_like ts -> List.fold_left folder state ts
       | `inline_record fields ->
-        fields |> List.fold_left (fun state field ->
-          folder state field.rf_type
-        ) state
+        fold_record_fields fields
+      | `reused_inline_record decl ->
+        let fields = decl.td_kind |> function
+          | Record_decl fields -> fields
+          | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
+        in
+        fold_record_fields fields
     ) state
 
 let is_recursive =

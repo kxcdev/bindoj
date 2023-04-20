@@ -176,6 +176,16 @@ val typescript : (typescript, ts_type_desc) foreign_language
 
 module Ts_config : sig
   include module type of Bindoj_gen.Json_codec.Json_config
+
+  type reused_variant_inline_record_style = [ `inline_fields | `intersection_type ]
+
+  type ('pos, 'kind) config +=
+    | Config_ts_reused_variant_inline_record_style : reused_variant_inline_record_style -> ('pos, reused_variant_inline_record_style) config
+
+  val reused_variant_inline_record_style : reused_variant_inline_record_style -> ([< pos], reused_variant_inline_record_style) config
+
+  val get_reused_variant_inline_record_style_opt : [< pos] configs -> reused_variant_inline_record_style option
+
   val typescript_type :
     ts_type_desc -> ([`coretype], [`foreign_type_expression]) config
 end

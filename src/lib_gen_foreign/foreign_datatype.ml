@@ -196,7 +196,8 @@ let fwrt_decl_of_type_decl : type_decl -> (unit, unit) fwrt_decl =
       td_name,
       FwrtTypeEnv.init |> FwrtTypeEnv.bind_object ~doc ~annot:() ~configs td_name (conv_fields fields)
     | Variant_decl ctors ->
-      let add_ctor parent acc { vc_name; vc_param; vc_configs=configs; vc_doc=doc } =
+      let add_ctor parent acc ctor =
+        let { vc_name; vc_param; vc_configs=configs; vc_doc=doc } = ctor in
         match vc_param with
         | `no_param ->
           acc |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs ~annot:() vc_name
@@ -204,6 +205,12 @@ let fwrt_decl_of_type_decl : type_decl -> (unit, unit) fwrt_decl =
           acc |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs ~annot:() ~args vc_name
         | `inline_record fields ->
           let fields = conv_fields fields in
+          acc |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs ~annot:() ~fields vc_name
+        | `reused_inline_record decl ->
+          let fields = decl.td_kind |> function
+            | Record_decl fields -> conv_fields fields
+            | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+          in
           acc |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs ~annot:() ~fields vc_name
       in
       td_name,
