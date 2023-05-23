@@ -108,13 +108,30 @@ open Alcotest
 
 let (^^) a b = a ^ ", " ^ b
 
+module MakeJvIo(Io : IoStyle) = struct
+  let jv_io =
+    let open Kxclib in
+    let id_counter = ref 0 in
+    testable (fun ppf mx ->
+        let id = get_and_incr id_counter in
+        let open MonadOps(Io) in
+        (mx >>= fun x ->
+         sprintf "(async:jv.%d) %a"
+           id Utils.pp_jv x
+         |> return)
+        |> Io.trace;
+        fprintf ppf "[async:jv.%d]" id
+      ) (=)
+end
+
+
 let bridge_path_handler_cases =
   (all |&>
    fun (name, test) ->
      let module Test = (val test : TestS) in
      let open Test in
      let open MonadOps(Io) in
-     let jv_io = testable (Io.pp Utils.pp_jv) ( = ) in
+     let open MakeJvIo(Io) in
      begin get_paths |&> fun path ->
          test_case "register_get_handler, path_index_get and handle_path_json_get work"
            `Quick
@@ -147,6 +164,7 @@ let bridge_handler_cases =
      let module Test = (val test : TestS) in
      let open Test in
      let open MonadOps(Io) in
+     let open MakeJvIo(Io) in
      invps |&> fun (Invp invp as uinvp) ->
        test_case "register_get/post_handler and handle_json_get/post work"
          `Quick
@@ -156,7 +174,7 @@ let bridge_handler_cases =
                 | None ->
                   fail "No GET method example of the given path"
                 | Some get ->
-                  check (testable (Io.pp pp_jv) ( = )) (name ^^ invp.ip_urlpath ^^ "GET")
+                  check jv_io (name ^^ invp.ip_urlpath ^^ "GET")
                     (Io.return get.jv)
                     (Bridge.handle_json_get uinvp >|= snd)
               end
@@ -165,7 +183,7 @@ let bridge_handler_cases =
                   fail "No POST method example of the given path"
                 | posts ->
                   List.iter (fun (post : ('resp, 'req) Examples.post) ->
-                      check (testable (Io.pp pp_jv) ( = )) (name ^^ invp.ip_urlpath ^^ "POST")
+                      check jv_io (name ^^ invp.ip_urlpath ^^ "POST")
                         (Io.return post.jv_resp)
                         (Bridge.handle_json_post uinvp post.jv_req >|= snd))
                     posts
@@ -177,6 +195,7 @@ let client_cases =
      let module Test = (val test : TestS) in
      let open Test in
      begin invps |&> fun (Invp invp as uinvp) ->
+         let open MakeJvIo(Io) in
          test_case "Bridge.register_get_handler and Client.perform_json_get work."
            `Quick
            (fun () ->
@@ -185,7 +204,7 @@ let client_cases =
                   | None ->
                     fail "No GET method example of the given path"
                   | Some get ->
-                    check (testable (Io.pp get.pp_get) ( = )) (name ^^ invp.ip_urlpath ^^ "GET")
+                    check jv_io (name ^^ invp.ip_urlpath ^^ "GET")
                       (Io.return get.orig)
                       (Client.perform_json_get (Obj.magic invp))
                 end
@@ -194,7 +213,7 @@ let client_cases =
                     fail "No POST method example of the given path"
                   | posts ->
                     List.iter (fun (post : ('resp, 'req) Examples.post) ->
-                        check (testable (Io.pp post.pp_post) ( = )) (name ^^ invp.ip_urlpath ^^ "POST")
+                        check jv_io (name ^^ invp.ip_urlpath ^^ "POST")
                           (Io.return post.orig_resp)
                           (Client.perform_json_post (Obj.magic invp) post.orig_req))
                       posts

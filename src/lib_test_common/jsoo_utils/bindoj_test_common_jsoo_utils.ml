@@ -62,6 +62,12 @@ module FutexnIo = struct
 
   let await : 'a t -> (('a, exn * backtrace) result -> unit) -> unit = Fut.await
 
+  let trace : string t -> unit = fun s ->
+    await s (function
+        | Ok s -> Log0.log ~label:"trace" ~header_style:(Some `Thin) ~header_color:`Yellow
+             "%s" s
+        | _ -> ())
+
   let return : 'x. 'x -> 'x t = fun x -> Result.ok x |> return0
   let inject_error : 'x. exn -> 'x t =
    fun e ->

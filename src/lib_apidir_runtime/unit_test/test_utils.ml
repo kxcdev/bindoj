@@ -21,7 +21,7 @@ open Bindoj_apidir_runtime.Utils
 open Bindoj_apidir_shared
 
 module DirectIo : IoStyle = struct
-  type 'x t = ('x, exn*backtrace_info option) result [@@deriving show]
+  type 'x t = ('x, exn*backtrace_info option) result
 
   let return : 'x -> 'x t = fun x -> Result.ok x
 
@@ -35,6 +35,12 @@ module DirectIo : IoStyle = struct
     function
     | Ok x -> Ok x |> return
     | Error (e, bt) -> Error (e, bt) |> return
+
+  let trace = function
+    | Ok s ->
+       Log0.log ~label:"trace" ~header_style:(Some `Thin) ~header_color:`Yellow
+         "%s" s
+    | _ -> ()
 end
 
 module Examples = struct

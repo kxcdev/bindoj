@@ -53,7 +53,7 @@ module type IoStyle = sig
   val inject_error : exn -> 'x t
   val extract_error : 'x t -> ('x, exn*backtrace_info option) result t
 
-  val pp : (ppf -> 'x -> unit) -> ppf -> 'x t -> unit
+  val trace : string t -> unit
 end
 
 let show_jv jv = Json.to_yojson jv |> Yojson.Safe.to_string
