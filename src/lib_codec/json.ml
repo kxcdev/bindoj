@@ -378,25 +378,27 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
             begin match ctor.vc_param, ref_ctor with
             | `no_param, NoParam { value } -> Ok value
             | `tuple_like ts, TupleLike { mk; _ } ->
+              let mk_result (path : jvpath) =
+                mk &> opt_to_result (sprintf "panic - failed to make tuple for variant_constructor '%s'" discriminator_value, path)
+              in
               begin match Json_config.get_tuple_style ctor.vc_configs, ts with
               | `obj `default, _ :: _ :: _ ->
                 parse_obj_style_tuple path expr_of_json ts obj
-                >>= (mk &> opt_to_result (sprintf "panic - failed to make tuple for variant_constructor '%s'" discriminator_value, path))
+                >>= (mk_result path)
+              | _, [] -> mk_result path []
               | _, _ ->
                 obj
                 |> StringMap.find_opt arg_fname
                 |> opt_to_result (sprintf "mandatory field '%s' does not exist" arg_fname, path)
                 >>= (fun arg ->
                   let path = `f arg_fname :: path in
-                  let mk = mk &> opt_to_result (sprintf "panic - failed to make tuple for variant_constructor '%s'" discriminator_value, path) in
                   match ts, arg with
-                  | [], _ -> mk []
-                  | [t], _ -> expr_of_json path t arg >>= fun expr -> mk [expr]
+                  | [t], _ -> expr_of_json path t arg >>= fun expr -> mk_result path [expr]
                   | ts, `arr xs ->
                     try_result path
                       (fun () ->
                         map2i (fun i -> expr_of_json (`i i :: path)) ts xs |> function
-                        | Some es -> es >>=* mk
+                        | Some es -> es >>=* mk_result path
                         | None ->
                           let ts_len = List.length ts in
                           let xs_len = List.length xs in
@@ -405,8 +407,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
                               ts_len xs_len
                           in
                           Result.error (msg, path))
-                  | _ -> Result.error ("invalid tuple", path)
-                )
+                  | _ -> Result.error ("invalid tuple", path))
               end
             | `inline_record fields, InlineRecord { mk; _ } ->
               record_fields_of_json path fields jv
