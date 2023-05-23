@@ -24,8 +24,9 @@ type t = [ `Foo0  | `Foo1 of int  | `Foo2 of (int * int) ] [@@deriving show]
 let decl = Bindoj_test_common_typedesc_examples.Ex04.decl
 let reflect = foo_reflect
 
+let json_shape_explanation = foo_json_shape_explanation
 let to_json = foo_to_json
-let of_json = foo_of_json
+let of_json' = foo_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 

@@ -105,7 +105,7 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
         let jv = Bindoj_codec.Json.to_json ~env:tdenv ttd unpacked in
         (resp_status, jv)
 
-  let handle_json_post' : invp' -> jv -> TupleJsonResponse.t Bindoj_codec.Json.OfJsonResult.t io =
+  let handle_json_post' : invp' -> jv -> TupleJsonResponse.t Bindoj_runtime.OfJsonResult.t io =
     fun invp reqbody ->
     let invpm =
       let Invp(invp) = invp in
@@ -116,7 +116,7 @@ module Make (Dir : ApiDirManifest) (IoStyle : Monadic) = struct
        invalid_arg
          "no handler registered for the requested api"
     | Some (Handler (invpa, handler)) ->
-       let module JR = Bindoj_codec.Json.OfJsonResult in
+       let module JR = Bindoj_runtime.OfJsonResult in
        match invpm.ipm_method, invpa.ipa_request_body with
        | `get, _ -> invalid_arg' "handle_json_post got GET invp: %s" invpm.ipm_name
        | `post, None -> invalid_arg' "POST method must have a request body definition: %s" invpm.ipm_name

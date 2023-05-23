@@ -31,8 +31,9 @@ type t = complex_types = {
 let decl = Bindoj_test_common_typedesc_examples.Ex05.decl
 let reflect = complex_types_reflect
 
+let json_shape_explanation = complex_types_json_shape_explanation
 let to_json = complex_types_to_json
-let of_json = complex_types_of_json
+let of_json' = complex_types_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 

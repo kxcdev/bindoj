@@ -21,6 +21,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_base
 open Bindoj_base.Typed_type_desc
 open Bindoj_runtime
+open Bindoj_codec
 
 module Json_value : sig
   include module type of Bindoj_std_runtime.Json_value
@@ -52,6 +53,7 @@ end = struct
           Ts_config.custom_json_schema (
             Bindoj_openapi.V3.Schema_object.any ()
           );
+          Json.Json_config.custom_shape_explanation Bindoj_std_runtime.json_value_json_shape_explanation;
         ]
         ~codec:(`in_module "Bindoj_std_runtime.Json_value")
         type_name
@@ -76,6 +78,8 @@ end = struct
 end
 
 type json_value = Json_value.t
+
+let json_value_json_shape_explanation = `any_json_value
 
 module Coretypes = struct
   let json = Json_value.Type_decl.coretype

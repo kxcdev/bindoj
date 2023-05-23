@@ -19,7 +19,9 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_test_common_typedesc_generated_examples
 
+open Kxclib.Json
 open Bindoj_base
+open Bindoj_runtime
 
 (** each example module should have this module type *)
 module type T = sig
@@ -30,8 +32,9 @@ module type T = sig
   val pp : ppf -> t -> unit
   val t : t Alcotest.testable
   val sample_values : t Sample_value.t list
-  val to_json : t -> Kxclib.Json.jv
-  val of_json : Kxclib.Json.jv -> t option
+  val json_shape_explanation : json_shape_explanation
+  val to_json : t -> jv
+  val of_json' : jv -> t OfJsonResult.t
   val env : tdenv
 end
 

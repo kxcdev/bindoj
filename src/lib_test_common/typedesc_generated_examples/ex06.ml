@@ -36,8 +36,9 @@ type t = various_prim_types = {
 let decl = Bindoj_test_common_typedesc_examples.Ex06.decl
 let reflect = various_prim_types_reflect
 
+let json_shape_explanation = various_prim_types_json_shape_explanation
 let to_json = various_prim_types_to_json
-let of_json = various_prim_types_of_json
+let of_json' = various_prim_types_of_json'
 let env = empty_tdenv
 
 let t : t Alcotest.testable = Alcotest.of_pp pp

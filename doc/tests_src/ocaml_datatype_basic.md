@@ -177,6 +177,16 @@ module Datatype :
                   list ->
       ?type_decl:[ `expr of Ppxlib.expression | `path of string ] ->
       type_decl -> Ppxlib.structure
+    val gen_reflect_signature :
+      ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
+    val gen_signature :
+      ?type_name:string ->
+      ?refl:bool ->
+      ?attrs:Ppxlib.attribute list ->
+      ?codec:Coretype.codec ->
+      ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.signature)
+                  list ->
+      ?type_decl:bool -> type_decl -> Ppxlib.signature
   end
 # #show_module Bindoj.Caml;;
 module Caml = Bindoj.Versioned.V0.Caml

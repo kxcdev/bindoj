@@ -36,6 +36,7 @@
   (gen_js_api (and :with-test (>= 1.1.1)))
   (mdx (and :with-test (>= 2.1.0)))
   (alcotest :with-test)
+  (qcheck :with-test)
   (prr (>= 0.1.1))
   (ppx_inline_test :with-test)
   (lwt :with-test)

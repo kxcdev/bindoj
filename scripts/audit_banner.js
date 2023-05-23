@@ -39,6 +39,7 @@ const sourceDirs = [
 const ignorePatterns = [
   /.+_gen\.[A-Za-z]+$/,
   /.*README\.md$/,
+  /src\/lib_kxclib_testlib/,
 ]
 
 const filetypes = new Map([

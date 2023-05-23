@@ -19,9 +19,8 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Alcotest
 open Kxclib
-open Bindoj_runtime
-open Bindoj_typedesc
 open Bindoj_test_common.Of_json_error_examples
+open Bindoj_runtime
 
 module Testables : sig
   val json_shape_explanation : json_shape_explanation testable
@@ -32,8 +31,7 @@ end = struct
   let jvpath = testable Json.pp_jvpath ( = )
 end
 
-let create_test_cases (module S : Sample) =
-  let typed_decl = Typed_type_desc.Typed.mk S.decl S.reflect in
+let create_test_cases (module S : SampleGenerated) =
   S.name, (S.samples |&> (fun (name, jv, (msg, path)) ->
     let msg =
       if List.empty path then sprintf "%s at root" msg
@@ -41,25 +39,22 @@ let create_test_cases (module S : Sample) =
     in
     test_case name `Quick(fun () ->
       let res_msg, res_path =
-        Bindoj_codec.Json.of_json' ~env:S.env typed_decl jv
+        S.of_json' jv
         |> function
         | Error (msg, path, _) -> Some (msg), Some(path)
         | _ -> None, None
       in
       check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
-      check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path;
+      check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path
     ))) @ [
       test_case "json_shape_explanation" `Quick(fun () ->
-        let actual_json_shape_explanation =
-          Bindoj_codec.Json.explain_encoded_json_shape ~env:S.env typed_decl
-        in
         check' Testables.json_shape_explanation
           ~msg:"json_shape_explanation"
           ~expected:S.expected_json_shape_explanation
-          ~actual:actual_json_shape_explanation
+          ~actual:S.json_shape_explanation
       )]
 
 let () =
-  all
+  all_generated
   |&> create_test_cases
-  |> Alcotest.run "lib_codec.of_json'"
+  |> Alcotest.run "lib_gen.of_json'"

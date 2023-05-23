@@ -39,6 +39,12 @@ let create_test_cases (name: string) (module Ex : T) =
   let open Ex in
   let msg msg = sprintf "%s %s" name msg in
 
+  let of_json jv = of_json' jv |> function
+    | Ok x -> Some x
+    | Error (msg, _, _) -> eprintf "%s\n" msg; None
+  in
+
+
   (* encoding *)
   let check_encoder (value: t Sample_value.t) =
     check Testables.jv (msg "encoding")

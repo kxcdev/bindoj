@@ -47,7 +47,11 @@ let get_encoder_name type_name = function
 let get_decoder_name type_name = function
   | `default -> type_name^"_of_json"
   (* | `codec_val v -> v *)
-  | `in_module m -> m^".of_json"
+  | `in_module m -> m^".of_json'"
+
+let get_json_shape_explanation_name type_name = function
+  | `default -> type_name^"_json_shape_explanation"
+  | `in_module m -> m^".json_shape_explanation"
 
 type builtin_codec = {
   encoder: expression;
@@ -56,71 +60,85 @@ type builtin_codec = {
 }
 
 module Builtin_codecs = struct
-  open struct let loc = Location.none end
+  open struct
+    let loc = Location.none
+    let error_type_mismatch cty_name  =
+      let format_string = sprintf "expecting type '%s' but the given is of type '%%s'" cty_name in
+      [%expr
+      Error (
+        Printf.sprintf [%e estring ~loc format_string]
+          Kxclib.Json.(string_of_jv_kind(classify_jv jv)), path)]
+  end
 
   let unit = {
       encoder = [%expr fun () -> (`num 1. : Kxclib.Json.jv)];
-      decoder = [%expr function
-                      (`bool _ | `num _ | `str _ | `arr [] | `obj []) -> Some () | _ -> None];
+      decoder = [%expr fun path -> function
+        | (`bool _ | `num _ | `str _ | `arr [] | `obj []) -> Ok ()
+        | jv -> [%e error_type_mismatch "unit"]
+      ];
     }
   let bool = {
       encoder = [%expr fun (x : bool) -> (`bool x : Kxclib.Json.jv)];
-      decoder = [%expr function
-        | (`bool x : Kxclib.Json.jv) -> Some x
-        | (_ : Kxclib.Json.jv) -> None
+      decoder = [%expr fun path -> function
+        | (`bool x : Kxclib.Json.jv) -> Ok x
+        | jv -> [%e error_type_mismatch "bool"]
       ];
     }
   let int = {
       encoder = [%expr fun (x : int) -> (`num (float_of_int x) : Kxclib.Json.jv)];
-      decoder = [%expr function
-        | (`num x : Kxclib.Json.jv) -> Some (int_of_float x)
-        | (_ : Kxclib.Json.jv) -> None
+      decoder = [%expr fun path -> function
+        | (`num x : Kxclib.Json.jv) ->
+          if Float.is_integer x then Ok (int_of_float x)
+          else Error (Printf.sprintf "expecting an integer but the given is '%f'" x, path)
+        | jv -> [%e error_type_mismatch "int"]
       ];
     }
   let int53p = {
       encoder = [%expr fun (x : Kxclib.int53p) -> (`num (Kxclib.Int53p.to_float x) : Kxclib.Json.jv)];
-      decoder = [%expr function
-        | (`num x : Kxclib.Json.jv) -> Some (Kxclib.Int53p.of_float x)
-        | (_ : Kxclib.Json.jv) -> None
+      decoder = [%expr fun path -> function
+        | (`num x : Kxclib.Json.jv) -> Ok (Kxclib.Int53p.of_float x)
+        | jv -> [%e error_type_mismatch "int53p"]
       ];
     }
   let float = {
       encoder = [%expr fun (x : float) -> (`num x : Kxclib.Json.jv)];
-      decoder = [%expr function
-        | (`num x : Kxclib.Json.jv) -> Some x
-        | _ -> None
+      decoder = [%expr fun path -> function
+        | (`num x : Kxclib.Json.jv) -> Ok x
+        | jv -> [%e error_type_mismatch "float"]
       ];
     }
   let string = {
       encoder = [%expr fun (x : string) -> (`str x : Kxclib.Json.jv)];
-      decoder = [%expr function
-        | (`str x : Kxclib.Json.jv) -> Some x
-        | _ -> None
+      decoder = [%expr fun path -> function
+        | (`str x : Kxclib.Json.jv) -> Ok x
+        | jv -> [%e error_type_mismatch "string"]
       ];
     }
   let uchar = {
       encoder = [%expr fun (x: Uchar.t) -> (`str (String.of_seq (List.to_seq [Uchar.to_char x])) : Kxclib.Json.jv)];
-      decoder = [%expr function
+      decoder = [%expr fun path -> function
         | (`str x : Kxclib.Json.jv) ->
-            if String.length x = 1 then Some (Uchar.of_char (String.get x 0)) else None
-        | _ -> None
+            if String.length x = 1 then Ok (Uchar.of_char (String.get x 0))
+            else Error (Printf.sprintf "string '%s' is not a valid uchar value" x, path)
+        | jv -> [%e error_type_mismatch "uchar"]
       ];
     }
   let byte = {
       encoder = [%expr fun (x: char) -> (`num (float_of_int (int_of_char x)) : Kxclib.Json.jv)];
-      decoder = [%expr function
+      decoder = [%expr fun path -> function
         | (`num x : Kxclib.Json.jv) ->
             let x = int_of_float x in
-            if 0 <= x && x <= 255 then Some (char_of_int x) else None
-        | (_ : Kxclib.Json.jv) -> None
+            if 0 <= x && x <= 255 then Ok (char_of_int x)
+            else Error (Printf.sprintf "number '%d' is not a valid byte value" x, path)
+        | jv -> [%e error_type_mismatch "byte"]
       ];
     }
   let bytes = {
       encoder = [%expr fun (x : Bytes.t) -> (`str (Kxclib.Base64.encode x) : Kxclib.Json.jv)];
-      decoder = [%expr function
+      decoder = [%expr fun path -> function
         | (`str x : Kxclib.Json.jv) ->
-          (try Some (Kxclib.Base64.decode x) with Invalid_argument _msg -> None)
-        | _ -> None
+          (try Ok (Kxclib.Base64.decode x) with Invalid_argument msg -> Error (msg, path))
+        | jv -> [%e error_type_mismatch "bytes"]
       ];
     }
   let option = {
@@ -128,29 +146,28 @@ module Builtin_codecs = struct
         | Some x -> t_to_json x
         | None -> (`null : Kxclib.Json.jv)
       ];
-      decoder = [%expr fun t_of_json -> function
-        | `null -> Some None
+      decoder = [%expr fun t_of_json path -> function
+        | `null -> Ok None
         | x ->
-          match t_of_json x with
-          | Some x -> Some (Some x)
-          | None -> None
+          match t_of_json path x with
+          | Ok x -> Ok (Some x)
+          | Error msg -> Error msg
       ];
     }
   let list = {
       encoder = [%expr fun t_to_json xs -> (`arr (List.map t_to_json xs) : Kxclib.Json.jv)];
-      decoder = [%expr fun t_of_json -> function
+      decoder = [%expr fun t_of_json path -> function
         | (`arr xs : Kxclib.Json.jv) ->
-          let result = List.filter_map t_of_json xs in
-          if List.length xs = List.length result then
-            Some result
-          else
-            None
-        | _ -> None
+          let open Kxclib.MonadOps(Kxclib.ResultOf(struct type err = string * Kxclib.Json.jvpath end)) in
+          xs |> List.mapi (fun i -> t_of_json (`i i :: path)) |> sequence_list
+        | jv -> [%e error_type_mismatch "list"]
       ];
     }
   let uninhabitable = {
       encoder = [%expr fun () -> (`null : Kxclib.Json.jv)];
-      decoder = [%expr function `null -> Some () | _ -> None];
+      decoder = [%expr fun path -> function
+        | `null -> Ok ()
+        | jv -> [%e error_type_mismatch "**uninhabitable**"]];
     }
   let map = {
       encoder = [%expr fun key_to_string v_to_json fields ->
@@ -159,20 +176,18 @@ module Builtin_codecs = struct
         in
         (`obj fields : Kxclib.Json.jv)
       ];
-      decoder = [%expr fun key_of_string v_of_json -> function
+      decoder = [%expr fun key_of_string v_of_json path -> function
         | `obj fields ->
-          let result =
-            List.filter_map (fun (k, v) ->
-                match key_of_string k, v_of_json v with
-                | Some k, Some v -> Some (k, v)
-                | _, _ -> None
-              ) fields
-          in
-          if List.length fields = List.length result then
-            Some result
-          else
-            None
-        | _ -> None
+          let open Kxclib.MonadOps(Kxclib.ResultOf(struct type err = string * Kxclib.Json.jvpath end)) in
+          fields
+          |> List.map (fun (k, v) ->
+            match key_of_string k, v_of_json (`f k :: path) v with
+            | Some k, Ok v -> Ok (k, v)
+            | None, _ -> Error (Printf.sprintf "'key_of_string %s' failed" k, path)
+            | _, Error x -> Error x
+          )
+          |> sequence_list
+        | jv -> [%e error_type_mismatch "map"]
       ];
     }
 
@@ -234,6 +249,18 @@ let collect_builtin_codecs (td: type_decl) =
     ) state ct.ct_desc
   in
   fold_coretypes folder StringMap.empty td
+
+let bind_results : (pattern * expression) list -> expression -> expression = fun bindings body ->
+  let loc = Location.none in
+  [%expr
+    let (>>=) = Result.bind in
+    [%e List.fold_right (fun (p, e) body ->
+          [%expr [%e e] >>= (fun [%p p] -> [%e body])])
+        bindings body]]
+
+let opt_to_result : expression -> expression =
+  let loc = Location.none in
+  fun err -> [%expr function | Some a -> Ok a | None -> Error [%e err]]
 
 let encoder_of_coretype =
   let open Coretype in
@@ -298,12 +325,15 @@ let decoder_of_coretype =
       | x :: xs -> mk_list [%pat? [%p x] :: [%p acc]] xs
     in
     let ret =
-      let tmp, args, ret =
-        ts |> List.mapi (fun i t -> [%expr [%e go t] [%e evari i]]) |> Exp.tuple,
-        ts |> List.mapi (fun i _ -> [%pat? Some [%p pvari i]]) |> Pat.tuple,
+      let bindings =
+        ts |> List.mapi (fun i t ->
+            [%pat? [%p pvari i]], [%expr [%e go t] (`i [%e eint ~loc i] :: path) [%e evari i]]
+          )
+      in
+      let ret =
         ts |> List.mapi (fun i _ -> [%expr [%e evari i]]) |> Exp.tuple
       in
-      [%expr match [%e tmp] with [%p args] -> Some [%e ret] | _ -> None]
+      bind_results bindings [%expr Ok [%e ret]]
     in
     match Json_config.get_tuple_style configs with
     | `arr ->
@@ -311,24 +341,47 @@ let decoder_of_coretype =
         ts |> List.mapi (fun i _ -> pvari i)
            |> List.rev |> mk_list [%pat? []]
       in
-      [%expr function
+      let tuple_length_error_message =
+        sprintf "expecting a tuple of length %d, but the given has a length of %%d" (List.length ts)
+      in
+      [%expr fun path -> function
         | (`arr [%p args] : Kxclib.Json.jv) -> [%e ret]
-        | _ -> None]
+        | `arr xs ->
+          Error (
+            Printf.sprintf
+              [%e estring ~loc tuple_length_error_message]
+              (List.length xs),
+            path)
+        | jv ->
+          Error (
+            Printf.sprintf
+              "an array is expected for a tuple value, but the given is of type '%s'"
+              Kxclib.Json.(string_of_jv_kind (classify_jv jv)),
+            path)
+      ]
     | `obj `default ->
       let body =
         ts
         |> List.mapi (fun i _ -> i)
         |> List.foldr (fun i ret ->
-          let label = estring ~loc (tuple_index_to_field_name i) in
+          let label_name = tuple_index_to_field_name i in
+          let label = estring ~loc label_name in
+          let error_message = sprintf "mandatory field '%s' does not exist" label_name in
           [%expr
             Bindoj_runtime.StringMap.find_opt [%e label] fields
+            |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
             >>= fun [%p pvari i] -> [%e ret]]) ret
       in
-      [%expr function
+      [%expr fun path -> function
         | (`obj fields : Kxclib.Json.jv) ->
           let fields = Bindoj_runtime.StringMap.of_list fields in
           [%e body]
-        | _ -> None]
+        | jv ->
+          Error (
+            Printf.sprintf
+              "an object is expected for a tuple value, but the given is of type '%s'"
+              Kxclib.Json.(string_of_jv_kind (classify_jv jv)),
+            path)]
   in
   let map_key_converter (k: map_key) = (* key_of_string *)
     match k with
@@ -369,6 +422,111 @@ let gen_builtin_encoders : ?attrs:attrs -> type_decl -> value_binding list =
 let gen_builtin_decoders : ?attrs:attrs -> type_decl -> value_binding list =
   gen_builtin_codecs ~get_name:get_decoder_name ~get_codec:(fun x -> x.decoder)
 
+type json_shape_explanation_resolution =
+  string -> [
+    | `no_resolution
+    | `default
+    | `in_module of string ]
+
+let explain_encoded_json_shape :
+  ?json_shape_explanation_resolution:json_shape_explanation_resolution
+  -> type_decl
+  -> expression =
+  fun ?json_shape_explanation_resolution td ->
+  let loc = Location.none in
+  let json_shape_explanation_resolution =
+    json_shape_explanation_resolution |? (constant `default)
+  in
+  let rec process_td td : expression =
+    let { td_kind; td_name; _ } = td in
+    [%expr `named ([%e estring ~loc td_name], [%e process_kind td_kind])]
+  and process_kind knd : expression = match knd with
+    | Alias_decl ct -> [%expr [%e process_coretype ct.ct_desc ]]
+    | Record_decl fields ->
+       [%expr `object_of [%e fields |&> process_field |> elist ~loc]]
+    | Variant_decl branches ->
+      [%expr `anyone_of [%e
+        branches |&> (fun { vc_name = kind_name; vc_param; _ } ->
+             let discriminator_fname = Json_config.default_variant_discriminator in
+             match vc_param with
+             | `no_param ->
+                process_branch kind_name discriminator_fname []
+             | `tuple_like cts ->
+                let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' |> elist ~loc]] in
+                process_branch kind_name discriminator_fname [
+                  [%expr `mandatory_field (
+                      [%e estring ~loc Json_config.default_name_of_variant_arg],
+                      [%e arg_shape])]]
+             | `inline_record fields ->
+                process_branch kind_name discriminator_fname
+                  (fields |&> process_field)
+             | `reused_inline_record decl ->
+                let fields = decl.td_kind |> function
+                  | Record_decl fields -> fields
+                  | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." kind_name
+                in
+                process_branch kind_name discriminator_fname
+                  (fields |&> process_field))
+        |> elist ~loc ]]
+  and process_field field: expression =
+    let optional, desc =
+      field.rf_type.ct_desc
+      |> (function Option desc -> true, desc | desc -> false, desc)
+    in
+    let inner = process_coretype desc in
+    match optional with
+    | true -> [%expr `optional_field ([%e estring ~loc field.rf_name], [%e inner])]
+    | false -> [%expr `mandatory_field ([%e estring ~loc field.rf_name], [%e inner])]
+  and process_branch kind_name discriminator_field_name proper_fields =
+    (* asuming flat_kind for now *)
+    let kind_field = [%expr
+      `mandatory_field (
+          [%e estring ~loc discriminator_field_name],
+          `exactly (`str [%e estring ~loc kind_name]))] in
+    [%expr `object_of ([%e kind_field] :: [%e proper_fields |> elist ~loc])]
+  and process_coretype' (ct: Coretype.t) : expression = process_coretype ct.ct_desc
+  and process_coretype (desc: Coretype.desc) : expression = match desc with
+    | Prim `unit -> [%expr `special ("unit", `exactly `null)]
+    | Prim `bool -> [%expr `boolean]
+    | Prim `int -> [%expr `integral]
+    | Prim `int53p -> [%expr `proper_int53p]
+    | Prim `float -> [%expr `proper_float]
+    | Prim `string -> [%expr `string]
+    | Prim `uchar -> [%expr `special ("uchar", `string)]
+    | Prim `byte -> [%expr `special ("byte", `string)]
+    | Prim `bytes -> [%expr `base64str]
+    | Uninhabitable -> [%expr `special ("uninhabitable", `exactly `null)]
+    | Ident { id_name=ident; _ } ->
+      begin match json_shape_explanation_resolution ident with
+      | `no_resolution -> [%expr `unresolved [%e estring ~loc ("alias: "^ident)]]
+      | ((`default | `in_module _ ) as resolution) ->
+        let json_shape_explanation_name = get_json_shape_explanation_name ident resolution in
+        [%expr `named ([%e estring ~loc ident], [%e evar json_shape_explanation_name])]
+      end
+    | Option d -> [%expr `nullable [%e process_coretype d]]
+    | Tuple ds -> [%expr `tuple_of [%e ds |&> process_coretype |> elist ~loc]]
+    | List desc -> [%expr `array_of [%e process_coretype desc]]
+    | Map (`string, d) -> [%expr `record_of [%e process_coretype d]]
+    | StringEnum xs -> [%expr `string_enum [%e xs |&> estring ~loc |> elist ~loc]]
+    | Self -> [%expr `self]
+    | _ -> .
+  in
+  [%expr `with_warning ("not considering any config if exists", [%e process_td td])]
+
+let name_with_codec ?(codec=`default) name suffix =
+  match codec with
+  | `default -> sprintf "%s_%s" name suffix
+  | `in_module _ -> suffix
+
+let json_encoder_name ?(codec=`default) td =
+  name_with_codec ~codec td.td_name "to_json"
+
+let json_decoder_name ?(codec=`default) td =
+  name_with_codec ~codec td.td_name "of_json"
+
+let json_shape_explanation_name ?(codec=`default) td =
+  name_with_codec ~codec td.td_name "json_shape_explanation"
+
 let gen_json_encoder :
       ?self_contained:bool
       -> ?codec:Coretype.codec
@@ -377,11 +535,7 @@ let gen_json_encoder :
   fun ?(self_contained=false) ?(codec=`default) td ->
   let { td_name; td_kind=kind; td_configs; _ } = td in
   let loc = Location.none in
-  let self_name =
-    match codec with
-    | `default -> td_name ^ "_to_json"
-    | `in_module _ -> "to_json"
-  in
+  let self_name = json_encoder_name ~codec td in
   let self_pname = pvar self_name in
   let self_ename = evar self_name in
   let vari i = "x"^string_of_int i in
@@ -522,21 +676,22 @@ let gen_json_encoder :
         (wrap_self_contained (pexp_function ~loc cases))
         [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
 
-let gen_json_decoder :
+let gen_json_decoder_result :
       ?self_contained:bool
+      -> ?json_shape_explanation_style:[
+        | `inline of json_shape_explanation_resolution option
+        | `reference ]
       -> ?codec:Coretype.codec
       -> type_decl
       -> value_binding =
-  fun ?(self_contained=false) ?(codec=`default) td ->
+  fun ?(self_contained=false) ?(json_shape_explanation_style = `inline None) ?(codec=`default) td ->
   let { td_name; td_kind=kind; td_configs; _ } = td in
   let loc = Location.none in
-  let self_name =
-    match codec with
-    | `default -> td_name ^ "_of_json"
-    | `in_module _ -> "of_json"
-  in
+  let impl_name = "of_json_impl" in
+  let impl_pname = pvar impl_name in
+  let impl_ename = evar impl_name in
+  let self_name = (json_decoder_name ~codec td) ^ "'" in
   let self_pname = pvar self_name in
-  let self_ename = evar self_name in
   let vari i = "x"^string_of_int i in
   let evari i = evar ~loc (vari i) in
   let pvari i = pvar ~loc (vari i) in
@@ -551,29 +706,26 @@ let gen_json_decoder :
            es e
     else e
   in
-  let bind_options : (pattern * expression) list -> expression -> expression = fun bindings body ->
-    [%expr
-     let (>>=) = Option.bind in
-         [%e List.fold_right (fun (p, e) body ->
-               [%expr [%e e] >>= (fun [%p p] -> [%e body])])
-             bindings body]]
-  in
   let record_bindings : record_field list -> (pattern * expression) list = fun fields ->
     List.mapi (fun i { rf_name; rf_type; rf_configs; _; } ->
-        let json_field_name = Json_config.get_name_opt rf_configs |? rf_name in
-        let expr =
-          if Coretype.is_option rf_type then
-            [%expr
-              List.assoc_opt [%e estring ~loc json_field_name] [%e param_e]
-              |> Option.value ~default:`null
-              |> [%e decoder_of_coretype self_ename rf_type]]
-          else
-            [%expr
-              List.assoc_opt [%e estring ~loc json_field_name] [%e param_e]
-              >>= [%e decoder_of_coretype self_ename rf_type]]
-          in
-        pvari i, expr)
-      fields
+      let json_field_name = Json_config.get_name_opt rf_configs |? rf_name in
+      let json_field = estring ~loc json_field_name in
+      let expr =
+        if Coretype.is_option rf_type then
+          [%expr
+            List.assoc_opt [%e json_field] [%e param_e]
+            |> Option.value ~default:`null
+            |> [%e decoder_of_coretype impl_ename rf_type] (`f [%e json_field] :: path)]
+        else
+          let error_message = sprintf "mandatory field '%s' does not exist" json_field_name in
+          [%expr
+            List.assoc_opt [%e json_field] [%e param_e]
+            |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
+            >>= [%e decoder_of_coretype impl_ename rf_type] (`f [%e json_field] :: path)
+          ]
+        in
+      pvari i, expr)
+    fields
   in
   let record_body : record_field list -> expression = fun fields ->
     pexp_record ~loc
@@ -582,143 +734,313 @@ let gen_json_decoder :
          fields)
       None
   in
-  let variant_params : variant_constructor list -> pattern list = fun cstrs ->
-    cstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
-      let discriminator_fname = Json_config.get_variant_discriminator td_configs in
-      let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
-      let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg vc_configs) in
-      match Json_config.get_variant_style vc_configs with
-      | `flatten -> begin
-        match vc_param with
-        | `no_param ->
-          let discriminator_fname = pstring ~loc discriminator_fname in
-          let cstr = [%pat? ([%p discriminator_fname], `str [%p pstring ~loc discriminator_value])] in
-          [%pat? `obj [[%p cstr]]]
-        | `tuple_like args ->
-          let discriminator_fname = pstring ~loc discriminator_fname in
-          let arg_fname = pstring ~loc arg_fname in
-          let cstr = [%pat? ([%p discriminator_fname], `str [%p pstring ~loc discriminator_value])] in
-          let args = List.mapi (fun i _ -> pvari i) args in
-          begin match args, Json_config.get_tuple_style vc_configs with
-          | [], _ -> [%pat? `obj [[%p cstr]]]
-          | [arg], _ -> [%pat? `obj [[%p cstr]; ([%p arg_fname], [%p arg])]]
-          | _, `arr -> [%pat? `obj [[%p cstr]; ([%p arg_fname], `arr [%p plist ~loc args])]]
-          | _, `obj `default -> [%pat? `obj ([%p cstr] :: fields)]
-          end
-        | `inline_record _
-        | `reused_inline_record _ ->
-          let discriminator_fname = pstring ~loc discriminator_fname in
-          let cstr = [%pat? ([%p discriminator_fname], `str [%p pstring ~loc discriminator_value])] in
-          [%pat? `obj ([%p cstr] :: [%p param_p])]
-      end
-  in
-  let variant_body : variant_constructor list -> expression list = fun cstrs ->
-    let construct name args =
-      match Caml_config.get_variant_type td_configs with
-      | `regular -> Exp.construct (lidloc name) args
-      | `polymorphic -> Exp.variant name args
-    in
-    cstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
-      let of_record_fields ~label fields =
-        begin match fields with
-        | [] -> construct vc_name None
-        | _ ->
-          let bindings = record_bindings fields in
-          let body =
-            match Caml_config.get_variant_type td_configs with
-            | `regular -> record_body fields
-            | `polymorphic -> failwith' "case '%s' with an %s cannot be used in a polymorphic variant" vc_name label
-          in
-          bind_options bindings [%expr Some [%e (construct vc_name (Some body))]]
-        end
+  let object_is_expected_error_record, object_is_expected_error_variant =
+    let object_is_expected_error label jv =
+      let error_message =
+        sprintf "an object is expected for a %s value, but the given is of type '%%s'" label
       in
-      match vc_param with
-      | `no_param -> [%expr Some [%e construct vc_name None]]
-      | `tuple_like args ->
-        let style = Json_config.get_tuple_style vc_configs in
-        begin match args with
-        | [] -> [%expr Some [%e construct vc_name None]]
-        | _ ->
-          let len = List.length args in
-          let bindings : (pattern * expression) list =
-            List.mapi (fun i arg ->
-              match style with
-              | `obj `default when len > 1 -> (
-                let label = estring ~loc (tuple_index_to_field_name i) in
-                pvari i, [%expr
-                  Bindoj_runtime.StringMap.find_opt [%e label] fields >>= [%e decoder_of_coretype self_ename arg]
-                ])
-              | _ -> (pvari i, [%expr [%e decoder_of_coretype self_ename arg] [%e evari i]])
-            ) args in
-          let body : expression =
-            [%expr Some
-                [%e construct
-                    vc_name
-                    (Some (pexp_tuple ~loc (List.mapi (fun i _ -> evari i) args)))]] in
-          match style with
-          | `obj `default when len > 1 ->
-            [%expr let fields = Bindoj_runtime.StringMap.of_list fields in [%e bind_options bindings body]]
-          | _ -> bind_options bindings body
-        end
-      | `inline_record fields ->
-        of_record_fields ~label:"inline record" fields
-      | `reused_inline_record decl ->
-        let fields =
-          decl.td_kind |> function
-          | Record_decl fields -> fields
-          | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+      [%expr
+        Error (
+          Printf.sprintf
+            [%e estring ~loc error_message]
+            Kxclib.Json.(string_of_jv_kind (classify_jv [%e jv])),
+          path)
+      ]
+    in
+    object_is_expected_error "record", object_is_expected_error "variant"
+  in
+  let variant_body : variant_constructor list -> (pattern * expression) list = fun cstrs ->
+    let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+    let discriminator_fname_p = pstring ~loc discriminator_fname in
+    cstrs
+    |&> (fun { vc_name; vc_param; vc_configs; _ } ->
+      let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
+      let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs in
+      let cstr_p tail = [%pat? `obj (([%p discriminator_fname_p], `str [%p pstring ~loc discriminator_value])::[%p tail])] in
+      let construct name args =
+        match Caml_config.get_variant_type td_configs with
+        | `regular -> Exp.construct (lidloc name) args
+        | `polymorphic -> Exp.variant name args
+      in
+      match Json_config.get_variant_style vc_configs with
+      | `flatten ->
+        let of_record_fields ~label fields =
+          match fields with
+          | [] -> construct vc_name None
+          | _ ->
+            let bindings = record_bindings fields in
+            let body =
+              match Caml_config.get_variant_type td_configs with
+              | `regular -> record_body fields
+              | `polymorphic -> failwith' "case '%s' with an %s cannot be used in a polymorphic variant" vc_name label
+            in
+            bind_results bindings [%expr Ok [%e (construct vc_name (Some body))]]
         in
-        of_record_fields ~label:"reused inline record" fields
+        begin match vc_param with
+          | `no_param -> cstr_p [%pat? _], [%expr Ok [%e construct vc_name None]]
+          | `tuple_like ts ->
+            let body : expression =
+              [%expr Ok
+                [%e construct
+                  vc_name
+                  (Some (pexp_tuple ~loc (List.mapi (fun i _ -> evari i) ts)))]] in
+            begin match Json_config.get_tuple_style vc_configs, ts with
+              | _, [] -> cstr_p [%pat? _], [%expr Ok [%e construct vc_name None]]
+              | `obj `default, _ :: _ :: _ ->
+                let bindings =
+                  ts |> List.mapi (fun i arg ->
+                    let label_name = tuple_index_to_field_name i in
+                    let label_name_e = estring ~loc label_name in
+                    let error_message = sprintf "mandatory field '%s' does not exist" label_name in
+                    pvari i, [%expr
+                      List.assoc_opt [%e label_name_e] [%e param_e]
+                      |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
+                      >>= ([%e decoder_of_coretype impl_ename arg] (`f [%e label_name_e] :: path))
+                    ])
+                in
+                cstr_p param_p, [%expr [%e bind_results bindings body]]
+              | _, _ ->
+                cstr_p param_p, (
+                  let path_arg = [%expr `f [%e estring ~loc arg_fname] :: path ] in
+                  match ts with
+                  | [t] ->
+                    [ [%pat? Some arg],
+                      bind_results
+                        [ pvari 0, [%expr [%e decoder_of_coretype impl_ename t] [%e path_arg] arg]]
+                        body; ]
+                  | ts ->
+                    [ [%pat? Some (`arr [%p plist ~loc (List.mapi (fun i _ -> pvari i) ts)])],
+                      bind_results
+                        (List.mapi (fun i arg -> pvari i, [%expr
+                            [%e decoder_of_coretype impl_ename arg]
+                              (`i [%e eint ~loc i] :: [%e path_arg])
+                              [%e evari i]]) ts)
+                        body;
 
-  in
-  begin match kind with
-  | Alias_decl cty ->
-    Vb.mk
-      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
-      self_pname
-      (pexp_constraint ~loc
-         (wrap_self_contained (decoder_of_coretype self_ename cty))
-         [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
-  | Record_decl fields ->
-    let bindings = record_bindings fields in
-    let body = record_body fields in
-    Vb.mk
-      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
-      self_pname
-      (pexp_constraint ~loc
-        (wrap_self_contained
-            [%expr function
-                | `obj [%p param_p] -> [%e bind_options bindings [%expr Some [%e body]]]
-                | _ -> None])
-        [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
-  | Variant_decl ctors ->
-    let params = variant_params ctors in
-    let body = variant_body ctors in
-    let discriminator = Json_config.get_variant_discriminator td_configs in
-    let cases =
-      List.map2
-        (fun p b -> case ~lhs:p ~rhs:b ~guard:None)
-        params body
-      @ [(case ~lhs:(ppat_any ~loc) ~rhs:[%expr None] ~guard:None)] in
-    Vb.mk
-      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
-      self_pname
-      (pexp_constraint ~loc
-        [%expr fun __bindoj_orig ->
-            Kxclib.Jv.pump_field [%e estring ~loc discriminator ] __bindoj_orig
-            |> [%e (wrap_self_contained (pexp_function ~loc cases))]]
-        [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
-  end
+                      [%pat? Some (`arr xs)],
+                      [%expr Error (
+                        Printf.sprintf
+                          [%e sprintf "expecting an array of length %d, but the given has a length of %%d" (List.length ts) |> estring ~loc ]
+                          (List.length xs),
+                        [%e path_arg])];
 
-let gen_json_codec ?self_contained ?codec td =
-  let rec_flag = match td.td_kind with
-    | Alias_decl _ -> Nonrecursive
-    | Record_decl _ | Variant_decl _ -> Recursive
+                      [%pat? Some jv],
+                      [%expr Error (
+                        Printf.sprintf "an array is expected for a tuple value, but the given is of type '%s'"
+                          Kxclib.Json.(string_of_jv_kind (classify_jv jv)),
+                        [%e path_arg])];
+                    ]
+                ) @ [
+                  [%pat? None],
+                  [%expr Error([%e estring ~loc (sprintf "mandatory field '%s' does not exist" arg_fname)], path)];
+                ]
+                |&> (fun (pat, body) -> case ~lhs:pat ~rhs:body ~guard:None)
+                |> pexp_match ~loc [%expr
+                  List.assoc_opt [%e estring ~loc arg_fname] [%e param_e]
+                ]
+            end
+          | `inline_record fields ->
+            cstr_p param_p, of_record_fields ~label:"inline record" fields
+          | `reused_inline_record decl ->
+            let fields =
+              decl.td_kind |> function
+              | Record_decl fields -> fields
+              | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+            in
+            cstr_p param_p, of_record_fields ~label:"reused inline record" fields
+        end)
+    |> fun cases ->
+      let unexpected_discriminator_error_message_format =
+        sprintf "given discriminator field value '%%s' is not one of [ %s ]"
+          (cstrs
+            |&> (fun { vc_configs; vc_name; _} -> sprintf "'%s'" (Json_config.get_name_opt vc_configs |? vc_name))
+            |> String.concat ", ")
+        |> estring ~loc
+      in
+      cases @ [
+        [%pat? `obj (([%p discriminator_fname_p], `str discriminator_value)::_)],
+        [%expr
+          Error (
+            Printf.sprintf [%e unexpected_discriminator_error_message_format] discriminator_value,
+            `f [%e estring ~loc discriminator_fname] :: path)];
+        [%pat? `obj (([%p discriminator_fname_p], jv)::_)],
+        [%expr
+          Error (
+            Printf.sprintf "a string is expected for a variant discriminator, but the given is of type '%s'"
+              Kxclib.Json.(string_of_jv_kind (classify_jv jv)),
+            `f [%e estring ~loc discriminator_fname] :: path)];
+        [%pat? `obj _],
+        [%expr
+          Error ([%e
+            sprintf "discriminator field '%s' does not exist" discriminator_fname
+            |> estring ~loc],
+            path)];
+        [%pat? jv], object_is_expected_error_variant [%expr jv];
+      ]
   in
-  [Str.value rec_flag [
-       gen_json_encoder ?self_contained ?codec td;
-       gen_json_decoder ?self_contained ?codec td;
-  ]]
+  let function_body =
+    match kind with
+    | Alias_decl cty ->
+      (wrap_self_contained (decoder_of_coretype impl_ename cty))
+    | Record_decl fields ->
+      let bindings = record_bindings fields in
+      let body = record_body fields in
+      bind_results bindings [%expr Ok [%e body]]
+      |> fun body -> [%expr function
+        | `obj [%p param_p] -> [%e body]
+        | jv -> [%e object_is_expected_error_record [%expr jv]]
+      ]
+      |> wrap_self_contained
+    | Variant_decl ctors ->
+      let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+      [%expr fun __bindoj_orig ->
+        __bindoj_orig
+        |> Kxclib.Jv.pump_field [%e estring ~loc discriminator_fname]
+        |> [%e
+          variant_body ctors
+          |&> (fun (pat, body) -> case ~lhs:pat ~rhs:body ~guard:None)
+          |> pexp_function ~loc
+          |> wrap_self_contained ]]
+  in
+  Vb.mk
+    ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+    self_pname
+    (pexp_constraint ~loc
+      [%expr fun x ->
+        let rec [%p impl_pname] = fun path -> [%e function_body] in
+        [%e impl_ename] [] x
+        |> Result.map_error (fun (msg, path) ->
+          let msg =
+            match path with
+            | [] -> Printf.sprintf "%s at root" msg
+            | path -> Printf.sprintf "%s at path %s" msg (path |> List.rev |> Kxclib.Json.unparse_jvpath)
+          in
+          (msg, path, [%e
+            match json_shape_explanation_style with
+            | `inline json_shape_explanation_resolution ->
+              explain_encoded_json_shape ?json_shape_explanation_resolution td
+            | `reference ->
+              let self_json_shape_explanation_name = match codec with
+                | `default -> td_name ^ "_json_shape_explanation"
+                | `in_module _ -> "json_shape_explanation"
+              in
+              evar self_json_shape_explanation_name
+          ]))
+      ]
+      [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] Bindoj_runtime.OfJsonResult.t])
+
+let gen_json_decoder_option :
+    ?codec:Coretype.codec
+      -> type_decl
+      -> value_binding =
+  fun ?(codec=`default) td ->
+  let { td_name; _ } = td in
+  let loc = Location.none in
+  let self_name = json_decoder_name ~codec td in
+  let self_pname = pvar self_name in
+  let decoder_result_name = evar (self_name ^ "'") in
+  Vb.mk
+    ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+    self_pname
+    (pexp_constraint ~loc
+      [%expr fun x -> [%e decoder_result_name] x |> Result.to_option ]
+      [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
+
+let gen_json_shape_explanation :
+  ?json_shape_explanation_resolution:json_shape_explanation_resolution
+  -> ?codec:Coretype.codec
+  -> type_decl -> value_binding =
+  fun ?json_shape_explanation_resolution ?(codec=`default) td ->
+  let loc = Location.none in
+  let self_name = json_shape_explanation_name ~codec td in
+  let self_pname = pvar self_name in
+  let json_shape_expression = explain_encoded_json_shape ?json_shape_explanation_resolution td in
+  Vb.mk
+    ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+    self_pname
+    (pexp_constraint ~loc json_shape_expression
+      [%type: Bindoj_runtime.json_shape_explanation])
+
+let gen_json_codec =
+  let gen_json_shape_explanation' = gen_json_shape_explanation in
+
+  fun ?self_contained ?(gen_json_shape_explanation=true) ?json_shape_explanation_resolution ?codec td ->
+  let rec_flag = to_rec_flag td in
+  let bindings =
+    [ gen_json_encoder ?self_contained ?codec td;
+      gen_json_decoder_result
+        ?self_contained
+        ~json_shape_explanation_style:
+          ( if gen_json_shape_explanation then `reference
+            else `inline json_shape_explanation_resolution )
+        ?codec
+        td;
+      gen_json_decoder_option ?codec td; ]
+  in
+  let bindings =
+    if gen_json_shape_explanation then
+      gen_json_shape_explanation' ?json_shape_explanation_resolution ?codec td :: bindings
+    else bindings
+  in
+  [ Str.value rec_flag bindings ]
+
+let gen_json_encoder_signature :
+  ?codec:Coretype.codec
+  -> type_decl
+  -> Ppxlib.value_description =
+  fun ?(codec=`default) td ->
+    let loc = Location.none in
+    let self_name = json_encoder_name ~codec td in
+    Val.mk ~loc (strloc ~loc self_name)
+      [%type: [%t typcons ~loc td.td_name] -> Kxclib.Json.jv]
+
+let gen_json_decoder_result_signature :
+  ?codec:Coretype.codec
+  -> type_decl
+  -> Ppxlib.value_description =
+  fun ?(codec=`default) td ->
+    let loc = Location.none in
+    let self_name = (json_decoder_name ~codec td) ^ "'" in
+    Val.mk ~loc (strloc ~loc self_name)
+      [%type: Kxclib.Json.jv -> [%t typcons ~loc td.td_name] Bindoj_runtime.OfJsonResult.t]
+
+let gen_json_decoder_option_signature :
+  ?codec:Coretype.codec
+  -> type_decl
+  -> Ppxlib.value_description =
+  fun ?(codec=`default) td ->
+    let loc = Location.none in
+    let self_name = json_decoder_name ~codec td in
+    Val.mk ~loc (strloc ~loc self_name)
+      [%type: Kxclib.Json.jv -> [%t typcons ~loc td.td_name] option]
+
+let gen_json_shape_explanation_signature :
+  ?codec:Coretype.codec
+  -> type_decl
+  -> Ppxlib.value_description =
+  fun ?(codec=`default) td ->
+    let loc = Location.none in
+    let self_name = json_shape_explanation_name ~codec td in
+    Val.mk ~loc (strloc ~loc self_name)
+      [%type: Bindoj_runtime.json_shape_explanation]
+
+let gen_json_codec_signature :
+  ?gen_json_shape_explanation:bool
+  -> ?codec:Coretype.codec
+  -> type_decl
+  -> Ppxlib.signature =
+  fun ?(gen_json_shape_explanation=true) ?codec td ->
+    let bindings =
+      [ gen_json_encoder_signature ?codec td;
+        gen_json_decoder_result_signature ?codec td;
+        gen_json_decoder_option_signature ?codec td; ]
+    in
+    let bindings =
+      if gen_json_shape_explanation then
+        gen_json_shape_explanation_signature ?codec td :: bindings
+      else bindings
+    in
+    List.map Sig.value bindings
 
 open Bindoj_openapi.V3
 

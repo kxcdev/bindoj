@@ -239,6 +239,7 @@ module Json_shape = struct
     | `special of string*shape_explanation
     | `with_warning of string*shape_explanation
     | `exactly of jv
+    | `any_json_value
     | `unresolved of string
     | `anyone_of of shape_explanation list
     | `string_enum of string list
@@ -268,3 +269,17 @@ type json_field_shape_explanation = Json_shape.field_shape_explanation
 
 let string_of_json_shape_explanation = Json_shape.string_of_shape_explanation
 let string_of_json_field_shape_explanation = Json_shape.string_of_field_shape_explanation
+
+module OfJsonResult = struct
+  module Err = struct
+    type t = string * jvpath * json_shape_explanation
+    let to_string (msg, _, _) = Some msg
+  end
+
+  module R0 = ResultOf'(struct
+                  type nonrec err = Err.t
+                  let string_of_err = Err.to_string
+                end)
+  include R0
+  module Ops_monad = MonadOps(R0)
+end

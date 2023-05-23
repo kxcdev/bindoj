@@ -55,3 +55,10 @@ let sprintf fmt = Format.asprintf fmt
 let escape_as_constructor_name (s: string) =
   (* TODO #128: proper escaping *)
   s
+
+open Bindoj_base.Type_desc
+
+let to_rec_flag { td_kind; _ } =
+  match td_kind with
+  | Alias_decl _ -> Nonrecursive
+  | Record_decl _ | Variant_decl _ -> Recursive

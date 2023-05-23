@@ -27,8 +27,9 @@ type t = int_list =
 let decl = Bindoj_test_common_typedesc_examples.Ex03_objtuple.decl
 let reflect = int_list_reflect
 
+let json_shape_explanation = int_list_json_shape_explanation
 let to_json = int_list_to_json
-let of_json = int_list_of_json
+let of_json' = int_list_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 

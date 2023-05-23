@@ -35,8 +35,9 @@ type t = named_json = { name : string; json : jv; } [@@deriving show]
 let decl = Bindoj_test_common_typedesc_examples.Ex08.decl
 let reflect = named_json_reflect
 
+let json_shape_explanation = named_json_json_shape_explanation
 let to_json = named_json_to_json
-let of_json = named_json_of_json
+let of_json' = named_json_of_json'
 let env =
   empty_tdenv
   |> Bindoj_std.Tdenv_wrappers.json

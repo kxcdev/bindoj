@@ -27,8 +27,9 @@ type t = with_int53p = { value : int53p; } [@@deriving show]
 let decl = Bindoj_test_common_typedesc_examples.Ex09.decl
 let reflect = with_int53p_reflect
 
+let json_shape_explanation = with_int53p_json_shape_explanation
 let to_json = with_int53p_to_json
-let of_json = with_int53p_of_json
+let of_json' = with_int53p_of_json'
 let env =
   empty_tdenv
   |> Bindoj_std.Tdenv_wrappers.json

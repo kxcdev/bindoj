@@ -144,13 +144,14 @@ let vari ?(basename="x") i = sprintf "%s%d" basename i
 let evari ?(basename="x") i = evar (vari ~basename i)
 let pvari ?(basename="x") i = pvar (vari ~basename i)
 
+let gen_reflect_name ?(codec=(`default : Coretype.codec)) td =
+  match codec with
+  | `default -> td.td_name ^ "_reflect"
+  | `in_module _ -> "reflect"
+
 let rec gen_reflect ?(codec=(`default : Coretype.codec)) td : value_binding =
   let loc = Location.none in
-  let self_name =
-    match codec with
-    | `default -> td.td_name ^ "_reflect"
-    | `in_module _ -> "reflect"
-  in
+  let self_name = gen_reflect_name ~codec td in
   let body =
     match td.td_kind with
     | Alias_decl cty -> gen_reflect_alias ~self_name cty
@@ -440,6 +441,8 @@ and gen_reflect_variant ~self_name ?(poly=false) (ctors: variant_constructor lis
     [%expr let [%p pat] = [%e refl_ctor] in [%e body]]
   ) [%expr Refl.Variant { constructors = [%e constructors]; classify = [%e classify]}]
 
+let mayappend cond x xs = if cond then xs@[x] else xs
+
 let gen_structure :
   ?type_name:string
   -> ?refl:bool
@@ -449,17 +452,13 @@ let gen_structure :
   -> ?type_decl:[`path of string | `expr of expression]
   -> type_decl -> structure =
   fun ?type_name ?(refl=true) ?attrs ?(codec=`default) ?(generators=[]) ?type_decl td ->
-    let rec_flag = match td.td_kind with
-      | Alias_decl _ -> Nonrecursive
-      | Record_decl _ | Variant_decl _ -> Recursive
-    in
+    let rec_flag = to_rec_flag td in
     let decl =
       Str.type_ rec_flag [type_declaration_of_type_decl ?type_name ?attrs td]
     in
     let reflect = gen_reflect ~codec td in
     let generators =
       generators |> List.concat_map (fun gen -> gen ?codec:(Some codec) td) in
-    let mayappend cond x xs = if cond then xs@[x] else xs in
     let type_decl =
       match type_decl with
       | None -> []
@@ -492,4 +491,50 @@ let gen_structure :
     in
     ([decl]
      |> mayappend refl (Str.value rec_flag [reflect]))
+    @ generators @ type_decl
+
+let gen_reflect_signature :
+  ?codec:Coretype.codec
+  -> type_decl
+  -> value_description =
+  fun ?(codec=`default) td ->
+    let loc = Location.none in
+    let self_name = gen_reflect_name ~codec td in
+    Val.mk ~loc (strloc ~loc self_name)
+      [%type: [%t typcons ~loc td.td_name] Bindoj_runtime.Refl.t]
+
+let gen_signature :
+  ?type_name:string
+  -> ?refl:bool
+  -> ?attrs:attribute list
+  -> ?codec:Coretype.codec
+  -> ?generators:(?codec:Coretype.codec -> type_decl -> signature) list
+  -> ?type_decl:bool
+  -> type_decl -> signature =
+  fun ?type_name ?(refl=true) ?attrs ?(codec=`default) ?(generators=[]) ?(type_decl = false) td ->
+    let loc = Location.none in
+    let rec_flag = to_rec_flag td in
+    let decl =
+      Sig.type_ rec_flag [type_declaration_of_type_decl ?type_name ?attrs td]
+    in
+    let reflect = gen_reflect_signature ~codec td in
+    let generators =
+      generators |> List.concat_map (fun gen -> gen ?codec:(Some codec) td) in
+    let type_decl =
+      if type_decl then
+        let decl_typ =[%type: Bindoj_typedesc.Type_desc.type_decl] in
+        let get_name suffix =
+          match codec with
+          | `default -> td.td_name ^ "_" ^ suffix
+          | `in_module _ -> suffix
+        in
+        let mk (name : string) typ = Sig.value ~loc (Val.mk ~loc (strloc ~loc name) typ) in
+        [ mk (get_name "decl") decl_typ ]
+        |> mayappend refl
+             (mk (get_name "typed_decl")
+                [%type: ([%t decl_typ], [%t typcons ~loc td.td_name]) Bindoj_runtime.generic_typed_type_decl])
+      else []
+    in
+    ([decl]
+     |> mayappend refl (Sig.value reflect))
     @ generators @ type_decl

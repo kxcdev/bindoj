@@ -44,6 +44,7 @@ module Config = struct
       json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
     | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
+    | Config_json_custom_shape_explanation : json_shape_explanation -> ([`coretype], [`json_custom_shape_explanation]) config
 
   let tuple_index_to_field_name i = "_" ^ string_of_int i
 
@@ -95,6 +96,10 @@ module Config = struct
     let custom_decoder decoder_name = Config_json_custom_decoder decoder_name
     let get_custom_decoder =
       Configs.find (function | Config_json_custom_decoder s -> Some s | _ -> None)
+
+    let custom_shape_explanation json_shape_explanation = Config_json_custom_shape_explanation json_shape_explanation
+    let get_custom_shape_explanation =
+      Configs.find (function | Config_json_custom_shape_explanation s -> Some s | _ -> None)
   end
 end
 
@@ -127,17 +132,12 @@ let lookup_primitive_codec ~(env: tdenv) ident_name : unsafe_primitive_codec opt
       )
   )
 
-module OfJsonResult = struct
-  include ResultOf(struct type err = string * jvpath * json_shape_explanation end)
-  module Ops_monad = MonadOps(ResultOf(struct type err = string * jvpath * json_shape_explanation end))
-end
-
 let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_shape_explanation =
   let rec process_td td : json_shape_explanation =
     let { td_kind; td_name; _ } = Typed.decl td in
     `named (td_name, process_kind td_kind)
   and process_kind knd : json_shape_explanation = match knd with
-    | Alias_decl ct -> process_coretype ct.ct_desc
+    | Alias_decl ct -> process_coretype' ct
     | Record_decl fields ->
        `object_of (fields |&> process_field)
     | Variant_decl branches ->
@@ -167,7 +167,7 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
       field.rf_type.ct_desc
       |> (function Option desc -> true, desc | desc -> false, desc)
     in
-    let inner = process_coretype desc in
+    let inner = process_coretype ~configs:field.rf_type.ct_configs desc in
     match optional with
     | true -> `optional_field (field.rf_name, inner)
     | false -> `mandatory_field (field.rf_name, inner)
@@ -178,8 +178,9 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
           discriminator_field_name,
           `exactly (`str kind_name)) in
     `object_of (kind_field :: proper_fields)
-  and process_coretype' (ct: Coretype.t) : json_shape_explanation = process_coretype ct.ct_desc
-  and process_coretype (desc: Coretype.desc) : json_shape_explanation = match desc with
+  and process_coretype' ({ ct_desc; ct_configs }: Coretype.t) : json_shape_explanation =
+    process_coretype ~configs:ct_configs ct_desc
+  and process_coretype ?(configs: [`coretype] configs = Configs.empty) (desc: Coretype.desc) : json_shape_explanation = match desc with
     | Prim `unit -> `special ("unit", `exactly `null)
     | Prim `bool -> `boolean
     | Prim `int -> `integral
@@ -191,11 +192,13 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
     | Prim `bytes -> `base64str
     | Uninhabitable -> `special ("uninhabitable", `exactly `null)
     | Ident { id_name = ident; id_codec = `default } ->
-       StringMap.find_opt ident env.alias_ident_typemap
-       >? (fun (Boxed ((module T) as ttd)) -> `named (T.decl.td_name, process_td (Obj.magic ttd)))
-       |? `unresolved ("alias: "^ident)
+      StringMap.find_opt ident env.alias_ident_typemap
+      >? (fun (Boxed ((module T) as ttd)) -> process_td (Obj.magic ttd))
+      |? `unresolved ("alias: "^ident)
     | Ident { id_name = ident; id_codec = _ } ->
-       `unresolved ("alias with special custom:  "^ident)
+      Json_config.get_custom_shape_explanation configs
+      >? (fun s -> `named (ident, s))
+      |? `unresolved ("alias with special custom: "^ident)
     | Option d -> `nullable (process_coretype d)
     | Tuple ds -> `tuple_of (ds |&> process_coretype)
     | List desc -> `array_of (process_coretype desc)
@@ -217,15 +220,6 @@ let rec coretype_desc_to_string (desc: Coretype.desc) =
   | Option t -> (coretype_desc_to_string t) ^ " option"
   | StringEnum cases -> cases |> String.concat " | " |> sprintf "(%s)"
   | Tuple ds -> ds |&> coretype_desc_to_string |> String.concat " * " |> sprintf "(%s)"
-
-let jv_type_to_string (jv: jv) =
-  match jv with
-  | `null -> "null"
-  | `bool _ -> "bool"
-  | `num _ -> "number"
-  | `str _ -> "string"
-  | `arr _ -> "array"
-  | `obj _ -> "obj"
 
 open MonadOps(ResultOf(struct type err = string * jvpath end))
 
@@ -316,12 +310,12 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
               Result.error (msg, path)
           end
           | _, `arr ->
-            Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv_type_to_string jv), path)
+            Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
           | `obj fields, `obj `default ->
             parse_obj_style_tuple path go ts (StringMap.of_list fields)
             >|= (fun xs -> Expr.Tuple xs)
           | _, `obj `default ->
-            Result.error (sprintf "an object is expected for a tuple value, but the given is of type '%s'" (jv_type_to_string jv), path)
+            Result.error (sprintf "an object is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
         )
       | Map (`string, t), `obj fields ->
         fields |> List.map (fun (name, x) -> go (`f name :: path) t x >|= (fun v -> name, v))
@@ -332,7 +326,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       | _, _ ->
         let msg =
           sprintf "expecting type '%s' but the given is of type '%s'"
-            (coretype_desc_to_string d) (jv_type_to_string jv)
+            (coretype_desc_to_string d) (jv |> classify_jv |> string_of_jv_kind)
         in
         Result.error (msg, path)
     in
@@ -349,7 +343,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
         | Some jv -> expr_of_json (`f json_field_name :: path) rf_type jv >>= fun expr -> Result.ok (rf_name, expr)
         | None -> Result.error (sprintf "mandatory field '%s' does not exist" json_field_name, path)
       ) |> sequence_list >|= StringMap.of_list
-    | _ -> Result.error (sprintf "an object is expected for a record value, but the given is of type '%s'" (jv_type_to_string jv), path)
+    | _ -> Result.error (sprintf "an object is expected for a record value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
   in
   let fail () = invalid_arg "inconsistent type_decl and reflection result" in
   let constructor_of_json (path: jvpath) (ctors: variant_constructor list) (ref_ctors: 'a Refl.constructor StringMap.t) (jv: jv) : ('a, string * jvpath) result =
@@ -407,7 +401,8 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
                               ts_len xs_len
                           in
                           Result.error (msg, path))
-                  | _ -> Result.error ("invalid tuple", path))
+                  | _, jv -> Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
+                )
               end
             | `inline_record fields, InlineRecord { mk; _ } ->
               record_fields_of_json path fields jv
@@ -422,9 +417,10 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
             | _ -> fail ()
             end
         )
-      | _ -> Result.error (sprintf "discriminator field '%s' does not exist" discriminator_fname, path)
+      | Some jv -> Result.error (sprintf "a string is expected for a variant discriminator, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), `f discriminator_fname :: path)
+      | None -> Result.error (sprintf "discriminator field '%s' does not exist" discriminator_fname, path)
       end
-    | _ -> Result.error (sprintf "an object is expected for a variant value, but the given is of type '%s'" (jv_type_to_string jv), path)
+    | _ -> Result.error (sprintf "an object is expected for a variant value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
   in
   match td_kind, Typed.reflect a with
   | Alias_decl ct, Alias { mk; _ } ->

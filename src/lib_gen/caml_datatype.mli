@@ -51,3 +51,30 @@ val gen_structure :
   -> ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.structure) list
   -> ?type_decl:[`path of string | `expr of Ppxlib.expression]
   -> type_decl -> Ppxlib.structure
+
+val gen_reflect_signature :
+  ?codec:Coretype.codec
+  -> type_decl
+  -> Ppxlib.value_description
+
+(**
+  generate the whole signature containing the results of [type_declaration_of_type_decl] and [gen_reflect_signature].
+
+  @param refl if [true], a field [type_name_reflect] will be generated.
+              if additionally [?type_decl] is given, then a field [typed_decl]
+              will also be generated.
+
+  @param generators additional generators e.g. [Json_codec.gen_json_encoder_signature].
+
+  @param type_decl the expression of / the path to the [type_decl] value.
+  If present, [val <type_name>_decl] and [val <type_name>_typed_decl] are also generated.
+  If [codec] is [`in_module _], [val decl] and [val typed_decl] are generated instead.
+*)
+val gen_signature :
+  ?type_name:string
+  -> ?refl:bool
+  -> ?attrs:Ppxlib.attribute list
+  -> ?codec:Coretype.codec
+  -> ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.signature) list
+  -> ?type_decl:bool
+  -> type_decl -> Ppxlib.signature

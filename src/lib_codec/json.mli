@@ -44,6 +44,7 @@ module Config : sig
       json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
     | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
+    | Config_json_custom_shape_explanation : json_shape_explanation -> ([`coretype], [`json_custom_shape_explanation]) config
 
   val tuple_index_to_field_name : int -> string
 
@@ -77,30 +78,15 @@ module Config : sig
 
     val custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
     val get_custom_decoder : [`coretype] configs -> string option
+
+    val custom_shape_explanation : json_shape_explanation -> ([`coretype], [`json_custom_shape_explanation]) config
+    val get_custom_shape_explanation : [`coretype] configs -> json_shape_explanation option
   end
 end
 
 include module type of Config
 
 open Kxclib.Json
-
-module OfJsonResult : sig
-  (**
-    This module provides types and functions to handle the results of JSON parsing.
-
-    Main features:
-    - Result type: Represents the success or failure of JSON parsing. In case of failure, it includes a `string` error message, `jvpath`, and `json_shape_explanation`.
-    - Ops_monad module: A submodule that provides monadic operations. It includes functionalities for handling instances of the Result type.
-
-    WARNING: *_explanation types are purely for debugging purpose and are subjected to change without any advance notice.
-  *)
-
-  open Kxclib
-  include module type of ResultOf(struct type err = string * jvpath * json_shape_explanation end)
-  module Ops_monad : sig
-    include module type of MonadOps(ResultOf(struct type err = string * jvpath * json_shape_explanation end))
-  end
-end
 
 val explain_encoded_json_shape : env:tdenv -> 't typed_type_decl -> json_shape_explanation
 

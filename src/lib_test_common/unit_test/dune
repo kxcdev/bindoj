@@ -1,0 +1,8 @@
+(tests
+ (names comparing_of_json)
+ (libraries
+  bindoj_test_common bindoj_codec bindoj_typedesc
+  kxclib_priv_test_lib kxclib
+  qcheck)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.eq)))

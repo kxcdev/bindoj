@@ -24,8 +24,9 @@ type t = xy_opt = { x_opt : int option; y_opt : int option } [@@deriving show]
 let decl = Bindoj_test_common_typedesc_examples.Ex10.decl
 let reflect = xy_opt_reflect
 
+let json_shape_explanation = xy_opt_json_shape_explanation
 let to_json = xy_opt_to_json
-let of_json = xy_opt_of_json
+let of_json' = xy_opt_of_json'
 let env =
   empty_tdenv
   |> Bindoj_std.Tdenv_wrappers.json

@@ -27,26 +27,50 @@ let modules =
     name ^ "_docstr", Ex.decl_with_docstr, Ex.example_module_path;
   ])
 
-let mapping =
-  modules |> List.map (fun (s, m, p) -> sprintf "%s_gen.ml" s, (m, p))
+type generate_target = [
+  | `structure
+  | `signature
+]
 
-let gen_with_json_codec ?self_contained ?codec ~gen_type_decl (decl, emp) =
-  let open Bindoj_gen.Caml_datatype in
-  let open Bindoj_gen.Json_codec in
+let mapping : (string * (generate_target * (type_decl * string))) list =
+  modules |> List.concat_map (fun (s, m, p) -> [
+    sprintf "%s_gen.ml" s, (`structure, (m, p));
+    sprintf "%s_gen.mli" s, (`signature, (m, p));
+  ])
+
+let gen_structure_with_json_codec ?self_contained ?gen_json_shape_explanation ?json_shape_explanation_resolution ?codec ~gen_type_decl (decl, emp) =
+  let open Bindoj_gen in
   let type_decl =
     if gen_type_decl then (
       `path (emp^".decl") |> some
     ) else none in
   let structure =
-    gen_structure
+    Caml_datatype.gen_structure
       ?type_decl
       ?codec
       ~generators:[
-        gen_json_codec ?self_contained;
+        Json_codec.gen_json_codec
+          ?self_contained
+          ?gen_json_shape_explanation
+          ?json_shape_explanation_resolution;
       ]
       decl
   in
   Astlib.Pprintast.structure Format.std_formatter structure
+
+let gen_signature_with_json_codec ?gen_json_shape_explanation ?codec ~gen_type_decl (decl, _) =
+  let open Bindoj_gen in
+  let structure =
+    Caml_datatype.gen_signature
+      ~type_decl:gen_type_decl
+      ?codec
+      ~generators:[
+        Json_codec.gen_json_codec_signature
+          ?gen_json_shape_explanation;
+      ]
+      decl
+  in
+  Astlib.Pprintast.signature Format.std_formatter structure
 
 let () =
   let gen_type_decl = ArgOptions.has_flag "-gen-type-decl" in
@@ -56,4 +80,5 @@ let () =
   | name :: _ ->
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some decl -> gen_with_json_codec ~self_contained:true decl ~gen_type_decl
+    | Some (`structure, decl) -> gen_structure_with_json_codec ~self_contained:true ~gen_json_shape_explanation:true decl ~gen_type_decl
+    | Some (`signature, decl) -> gen_signature_with_json_codec ~gen_json_shape_explanation:true decl ~gen_type_decl

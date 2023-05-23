@@ -24,8 +24,9 @@ type t = student = { admission_year: int; name: string } [@@deriving show]
 let decl = Bindoj_test_common_typedesc_examples.Ex01.decl
 let reflect = student_reflect
 
+let json_shape_explanation = student_json_shape_explanation
 let to_json = student_to_json
-let of_json = student_of_json
+let of_json' = student_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 

@@ -182,6 +182,7 @@ module Json_shape : sig
     | `special of string*shape_explanation
     | `with_warning of string*shape_explanation
     | `exactly of Kxclib.Json.jv
+    | `any_json_value
     | `unresolved of string
     | `anyone_of of shape_explanation list
     | `string_enum of string list
@@ -215,3 +216,25 @@ type json_field_shape_explanation = Json_shape.field_shape_explanation
 
 val string_of_json_shape_explanation : json_shape_explanation -> string
 val string_of_json_field_shape_explanation : json_field_shape_explanation -> string
+
+module OfJsonResult : sig
+  (**
+    This module provides types and functions to handle the results of JSON parsing.
+
+    Main features:
+    - Result type: Represents the success or failure of JSON parsing. In case of failure, it includes a `string` error message, `jvpath`, and `json_shape_explanation`.
+    - Ops_monad module: A submodule that provides monadic operations. It includes functionalities for handling instances of the Result type.
+
+    WARNING: *_explanation types are purely for debugging purpose and are subjected to change without any advance notice.
+  *)
+
+  open Kxclib.Json
+
+  module Err : sig
+    type t = string * jvpath * json_shape_explanation
+    val to_string : t -> string option
+  end
+
+  include ResultOfS' with type err = Err.t
+  module Ops_monad : MonadOpsS with type 'x t := 'x t
+end

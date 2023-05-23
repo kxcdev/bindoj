@@ -67,19 +67,49 @@ val gen_builtin_encoders :
 val gen_builtin_decoders :
   ?attrs:Ppxlib.attributes -> type_decl -> Ppxlib.value_binding list
 
+type json_shape_explanation_resolution =
+  string (** td_name, i.e. type name *) -> [
+    | `no_resolution (** resolve as [`unresolved] *)
+    | `default (** resolve as [`named(type_name, type_name^"_json_shape_explanation")] *)
+    | `in_module of string (*** resolve as [`named(type_name, m^".json_shape_explanation")] *)
+    ]
+
 val gen_json_encoder :
   ?self_contained:bool
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.value_binding
-val gen_json_decoder :
+val gen_json_decoder_result :
   ?self_contained:bool
+  -> ?json_shape_explanation_style:
+    [ `inline of json_shape_explanation_resolution option
+    | `reference ]
+  -> ?codec:Coretype.codec
+  -> type_decl -> Ppxlib.value_binding
+val gen_json_decoder_option :
+  ?codec:Coretype.codec
+  -> type_decl -> Ppxlib.value_binding
+
+val gen_json_shape_explanation :
+  ?json_shape_explanation_resolution:json_shape_explanation_resolution
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.value_binding
 
 val gen_json_codec :
   ?self_contained:bool
+  -> ?gen_json_shape_explanation:bool
+  -> ?json_shape_explanation_resolution:json_shape_explanation_resolution
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.structure
+
+val gen_json_encoder_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
+val gen_json_decoder_result_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
+val gen_json_decoder_option_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
+val gen_json_shape_explanation_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
+val gen_json_codec_signature :
+  ?gen_json_shape_explanation:bool
+  -> ?codec:Coretype.codec
+  -> type_decl
+  -> Ppxlib.signature
 
 open Bindoj_openapi.V3
 

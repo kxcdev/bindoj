@@ -29,8 +29,9 @@ type t = person =
 let decl = Bindoj_test_common_typedesc_examples.Ex02.decl
 let reflect = person_reflect
 
+let json_shape_explanation = person_json_shape_explanation
 let to_json = person_to_json
-let of_json = person_of_json
+let of_json' = person_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 

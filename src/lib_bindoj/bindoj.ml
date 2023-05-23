@@ -114,9 +114,14 @@ module Versioned = struct
             |> may_append gen_json_codec (fun() ->
                    [ Json_codec.gen_json_encoder type_decl
                        ~codec:(`in_module module_name) |> binding;
-                     Json_codec.gen_json_decoder type_decl
+                     Json_codec.gen_json_shape_explanation type_decl
+                      ~codec:(`in_module module_name) |> binding;
+                     Json_codec.gen_json_decoder_result type_decl
+                       ~json_shape_explanation_style:(`reference)
                        ~codec:(`in_module module_name) |> binding;
-                     [%stri let jv_codec = to_json, of_json];
+                     Json_codec.gen_json_decoder_option type_decl
+                       ~codec:(`in_module module_name) |> binding;
+                     [%stri let jv_codec = to_json, of_json'];
                  ])
           in
           let modul =

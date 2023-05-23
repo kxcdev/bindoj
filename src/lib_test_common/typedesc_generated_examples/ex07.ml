@@ -27,8 +27,9 @@ type t = customized_union =
 let decl = Bindoj_test_common_typedesc_examples.Ex07.decl
 let reflect = customized_union_reflect
 
+let json_shape_explanation = customized_union_json_shape_explanation
 let to_json = customized_union_to_json
-let of_json = customized_union_of_json
+let of_json' = customized_union_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
