@@ -22,10 +22,41 @@ open Bindoj_typedesc.Type_desc
 open Bindoj_gen_ts.Typescript_datatype
 open Bindoj_test_common
 
+type resolution_strategy = [
+  | `import_location of string
+  | `no_resolution
+]
+
+let resolution_strategy : type_decl -> resolution_strategy = function
+  | { td_name = "teacher"; _ } -> `import_location "./reused_types/teacher"
+  | _ -> `no_resolution
+
 let modules =
   let module ExG = Typedesc_generated_examples in
   ExG.all |&> (fun (name, (module G: ExG.T)) ->
     let gen () =
+      let reused_intersection_types : type_decl list =
+        match G.decl.td_kind with
+        | Variant_decl ctors ->
+          ctors |&?> (function
+            | { vc_param = `reused_inline_record d; vc_configs; _ } ->
+              begin match Ts_config.get_reused_variant_inline_record_style_opt vc_configs with
+              | Some `intersection_type -> Some d
+              | _ -> None
+              end
+            | _ -> None
+          )
+        | _ -> []
+      in
+      reused_intersection_types
+      |> List.group_by resolution_strategy
+      |&?> (function | (`import_location loc, tds) -> Some (loc, tds) | _ -> None)
+      |> List.iter (fun (loc, tds) ->
+        let tnames = tds |&> (fun td -> td.td_name) |> List.sort_uniq compare in
+        sprintf "import { %s } from \"%s\";" (String.concat ", " tnames) loc
+        |> print_endline
+      );
+
       let types = ref [ G.decl.td_name ] in
       StringMap.iter (fun name boxed ->
           let typed_decl = Typed_type_desc.Typed.unbox boxed in

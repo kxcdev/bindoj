@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05"
@@ -80,16 +79,15 @@ let decl_with_docstr : type_decl =
       ~doc:(`docstr "map<string, int>");
   ] ~doc:(`docstr "collection of complex types")
 
-let fwrt : (unit, unit) fwrt_decl =
-  let annot = () in
-  "complex_types", FwrtTypeEnv.(
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "complex_types", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot "complex_types" [
-      field ~annot "option" (Coretype.(mk_option (prim `int)));
-      field ~annot "list"   (Coretype.(mk_list (prim `int)));
-      field ~annot "tuple"  (Coretype.(mk_tuple [prim `int; prim `int]));
-      field ~annot "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]));
-      field ~annot "nested" (
+    |> bind_object "complex_types" [
+      field "option" (Coretype.(mk_option (prim `int)));
+      field "list"   (Coretype.(mk_list (prim `int)));
+      field "tuple"  (Coretype.(mk_tuple [prim `int; prim `int]));
+      field "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]));
+      field "nested" (
         Coretype.(
           mk_tuple [
             option (prim `int);
@@ -98,7 +96,7 @@ let fwrt : (unit, unit) fwrt_decl =
           ]
         )
       );
-      field ~annot "map" (Coretype.(mk_map `string (prim `int)));
+      field "map" (Coretype.(mk_map `string (prim `int)));
     ]
   )
 

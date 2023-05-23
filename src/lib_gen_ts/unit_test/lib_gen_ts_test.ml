@@ -20,10 +20,20 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_gen_ts.Typescript_datatype
 open Bindoj_gen_ts.Typescript_datatype.Internals
 open Bindoj_test_common
+open Bindoj_gen_foreign
 
 module Ast = struct
   let testable_ts_ast =
     Alcotest.testable pp_ts_ast equal_ts_ast
+
+  let annotate_fwrt_decl : bool -> bool -> (unit, unit) ts_fwrt_decl -> fwrt_decl_of_ts =
+    fun export readonly (name, env) ->
+      (name,
+      Foreign_datatype.FwrtTypeEnv.annotate
+        name
+        (if export then ([`export], []) else ([], []))
+        (if readonly then ([`readonly], []) else ([], []))
+        env)
 
   let create_cases doc (module Ex : Typedesc_examples.T) =
     let open Alcotest in

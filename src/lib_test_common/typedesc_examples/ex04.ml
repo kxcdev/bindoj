@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex04"
@@ -46,15 +45,14 @@ let decl_with_docstr : type_decl =
     Caml_config.variant_type `polymorphic
   ] ~doc:(`docstr "polyvariant")
 
-let fwrt : (unit, unit) fwrt_decl =
+let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "foo" in
-  let annot = () in
-  "foo", FwrtTypeEnv.(
+  "foo", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot ~configs:[Caml_config.variant_type `polymorphic] "foo" []
-    |> bind_constructor ~parent ~annot "Foo0"
-    |> bind_constructor ~parent ~annot "Foo1" ~args:[cty_int]
-    |> bind_constructor ~parent ~annot "Foo2" ~args:[cty_int; cty_int]
+    |> bind_object ~configs:[Caml_config.variant_type `polymorphic] "foo" []
+    |> bind_constructor ~parent "Foo0"
+    |> bind_constructor ~parent "Foo1" ~args:[cty_int]
+    |> bind_constructor ~parent "Foo2" ~args:[cty_int; cty_int]
   )
 
 let ts_ast : ts_ast option =

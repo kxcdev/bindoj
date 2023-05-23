@@ -21,21 +21,30 @@ open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_test_common
 
 let testable_fwrt =
-  let pp : (unit, unit) fwrt_decl Fmt.t =
+  let pp : (unit, unit, unit*unit*unit) fwrt_decl Fmt.t =
     let pp_unit fmt () = Format.pp_print_string fmt "()" in
-    pp_fwrt_decl pp_unit pp_unit
+    pp_fwrt_decl pp_unit pp_unit pp_unit pp_unit pp_unit
   in
-  let equal : (unit, unit) fwrt_decl -> (unit, unit) fwrt_decl -> bool =
+  let equal : (unit, unit, unit*unit*unit) fwrt_decl -> (unit, unit, unit*unit*unit) fwrt_decl -> bool =
     let equal_unit () () = true in
-    equal_fwrt_decl equal_unit equal_unit
+    equal_fwrt_decl equal_unit equal_unit equal_unit equal_unit equal_unit
   in
   Alcotest.testable pp equal
 
+let fc_annot_to_unit desc : (unit, unit, unit*unit*unit) fwrt_desc =
+  { desc with
+    fd_kind = match desc.fd_kind with
+      | Fwrt_constructor c ->
+        Fwrt_constructor { c with fc_annot = () }
+      | Fwrt_alias a -> Fwrt_alias a
+      | Fwrt_object o -> Fwrt_object o }
+
 let create_cases doc (module Ex : Typedesc_examples.T) =
   let open Alcotest in
+  let open Kxclib in
   let create_test () =
     Alcotest.check testable_fwrt doc
-      (fwrt_decl_of_type_decl Ex.decl) Ex.fwrt in
+      (fwrt_decl_of_type_decl Ex.decl) (Ex.fwrt /> FwrtTypeEnv.map fc_annot_to_unit) in
   (doc, [test_case "fwrt_decl_of_type_decl works" `Quick create_test])
 
 let () =

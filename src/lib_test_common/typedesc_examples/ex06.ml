@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex06"
@@ -37,13 +36,12 @@ let decl_with_docstr : type_decl =
     record_field name ct ~doc:(`docstr name)
   )) ~doc:(`docstr "various primitive types")
 
-let fwrt : (unit, unit) fwrt_decl =
-  let annot = () in
-  "various_prim_types", FwrtTypeEnv.(
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "various_prim_types", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot "various_prim_types" (
+    |> bind_object "various_prim_types" (
       prims |> List.map (fun (name, ct) ->
-        field ~annot name ct
+        field name ct
       ))
   )
 

@@ -20,29 +20,34 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_runtime
 open Bindoj_typedesc.Type_desc
 
-type ('ann0, 'ann1) fwrt_desc = {
+type ('ann_d, 'ann_f, 'ann_k) fwrt_desc = {
   fd_name : string;
   fd_parent : string option;
-  fd_kind : 'ann1 fwrt_desc_kind;
-  fd_annot : 'ann0;
+  fd_kind : ('ann_f, 'ann_k) fwrt_desc_kind;
+  fd_annot : 'ann_d;
   fd_doc : doc;
 }
+  constraint 'ann_k = _*_*_
 
-and 'ann fwrt_desc_kind =
+and ('ann_f, 'ann_k) fwrt_desc_kind =
   | Fwrt_object of {
-      fo_fields: 'ann fwrt_field_desc list;
+      fo_fields: 'ann_f fwrt_field_desc list;
       fo_children : string list;
-      fo_configs: [`type_decl] configs
+      fo_configs: [`type_decl] configs;
+      fo_annot : 'ann_ko;
     }
   | Fwrt_alias of {
       fa_type: coretype;
-      fa_configs: [`type_decl] configs
+      fa_configs: [`type_decl] configs;
+      fa_annot : 'ann_ka;
     }
   | Fwrt_constructor of {
       fc_args: coretype list;
-      fc_fields: 'ann fwrt_field_desc list;
-      fc_configs: [`variant_constructor] configs
+      fc_fields: 'ann_f fwrt_field_desc list;
+      fc_configs: [`variant_constructor] configs;
+      fc_annot : 'ann_kc;
     }
+  constraint 'ann_k = 'ann_ko * 'ann_ka * 'ann_kc
 
 and 'ann fwrt_field_desc = {
   ff_name : string;
@@ -52,70 +57,220 @@ and 'ann fwrt_field_desc = {
   ff_doc : doc;
 }
 
-module FwrtTypeEnv : sig
-  type ('ann0, 'ann1) t
+type ('ann_d, 'ann_f, 'ann_k) fwrt_type_env
+constraint 'ann_k = _*_*_
 
-  val init : ('ann0, 'ann1) t
+module FwrtTypeEnv : sig
+  type ('ann_d, 'ann_f, 'ann_k) t = ('ann_d, 'ann_f, 'ann_k) fwrt_type_env
+
+  val init : ('ann_d, 'ann_f, 'ann_k) t
 
   val field :
        ?doc:([`docstr of string | `nodoc])
     -> ?configs:[`record_field] configs
-    -> annot:'ann0
+    -> annot:'ann_f
     -> string
     -> coretype
-    -> 'ann0 fwrt_field_desc
+    -> 'ann_f fwrt_field_desc
 
   val bind :
        ?doc:([`docstr of string | `nodoc])
     -> ?parent:string
-    -> annot:'ann0
+    -> annot_d:'ann_d
     -> string
-    -> 'ann1 fwrt_desc_kind
-    -> ('ann0, 'ann1) t -> ('ann0, 'ann1) t
+    -> ('ann_f, 'ann_k) fwrt_desc_kind
+    -> ('ann_d, 'ann_f, 'ann_k) t -> ('ann_d, 'ann_f, 'ann_k) t
 
   val bind_object :
        ?doc:([`docstr of string | `nodoc])
     -> ?parent:string
     -> ?configs:[`type_decl] configs
-    -> annot:'ann0
+    -> annot_d:(('ann_f, 'ann_ko*'ann_ka*'ann_kc) fwrt_desc_kind -> 'ann_d)
+    -> annot_ko:'ann_ko
     -> string
-    -> 'ann1 fwrt_field_desc list
-    -> ('ann0, 'ann1) t -> ('ann0, 'ann1) t
+    -> 'ann_f fwrt_field_desc list
+    -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) t -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) t
 
   val bind_alias :
        ?doc:([`docstr of string | `nodoc])
     -> ?parent:string
     -> ?configs:[`type_decl] configs
-    -> annot:'ann0
+    -> annot_d:(('ann_f, 'ann_ko*'ann_ka*'ann_kc) fwrt_desc_kind -> 'ann_d)
+    -> annot_ka:'ann_ka
     -> string
     -> coretype
-    -> ('ann0, 'ann1) t -> ('ann0, 'ann1) t
+    -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) t -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) t
 
   val bind_constructor :
        ?doc:([`docstr of string | `nodoc])
     -> ?parent:string
     -> ?configs:[`variant_constructor] configs
-    -> annot:'ann0
+    -> annot_d:(('ann_f, 'ann_ko*'ann_ka*'ann_kc) fwrt_desc_kind -> 'ann_d)
+    -> annot_kc:'ann_kc
     -> ?args:coretype list
-    -> ?fields:'ann1 fwrt_field_desc list
+    -> ?fields:'ann_f fwrt_field_desc list
     -> string
-    -> ('ann0, 'ann1) t -> ('ann0, 'ann1) t
+    -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) t -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) t
 
-  val lookup : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc
+  val lookup : string -> ('ann_d, 'ann_f, 'ann_k) t -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc
 
-  val lookup_opt : string -> ('ann0, 'ann1) t -> ('ann0, 'ann1) fwrt_desc option
+  val lookup_opt : string -> ('ann_d, 'ann_f, 'ann_k) t -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc option
 
-  val annotate : string -> ('ann0 * 'ann0) -> ('ann1 * 'ann1) -> (_, _) t -> ('ann0, 'ann1) t
+  val annotate :
+    string
+    -> ('ann_d * 'ann_d)
+    -> ('ann_f * 'ann_f)
+    -> (_, _, 'ann_k) t
+    -> ('ann_d, 'ann_f, 'ann_k) t
 
-  val bindings : ('ann0, 'ann1) t -> (string * ('ann0, 'ann1) fwrt_desc) list
+  val bindings : ('ann_d, 'ann_f, 'ann_k) t -> (string * ('ann_d, 'ann_f, 'ann_k) fwrt_desc) list
+
+  val map :
+    (('ann_d1, 'ann_f1, 'ann_k1) fwrt_desc -> ('ann_d2, 'ann_f2, 'ann_k2) fwrt_desc)
+    -> ('ann_d1, 'ann_f1, 'ann_k1) t
+    -> ('ann_d2, 'ann_f2, 'ann_k2) t
 end
 
-type ('ann0, 'ann1) fwrt_type_env = ('ann0, 'ann1) FwrtTypeEnv.t
+module FwrtTypeEnv'(D : sig
+  type annot_d
+  type annot_f
+  type annot_ko
+  type annot_ka
+  type annot_kc
 
-type ('ann0, 'ann1) fwrt_decl = string * ('ann0, 'ann1) fwrt_type_env
+  val default_annot_d : annot_d
+  val default_annot_f : annot_f
+  val default_annot_ko : annot_ko
+  val default_annot_ka : annot_ka
+  val default_annot_kc : annot_kc
 
-val pp_fwrt_decl : (ppf->'a->unit) -> (ppf->'b->unit) -> ppf -> ('a, 'b) fwrt_decl -> unit
-val show_fwrt_decl : (ppf->'a->unit) -> (ppf->'b->unit) -> ('a, 'b) fwrt_decl -> string
-val equal_fwrt_decl : ('a->'a->bool) -> ('b->'b->bool) -> ('a, 'b) fwrt_decl -> ('a, 'b) fwrt_decl -> bool
+  val default_annot_d_f : (annot_f, annot_ko*annot_ka*annot_kc) fwrt_desc_kind -> annot_d
+end) : sig
+  type t = (D.annot_d, D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_type_env
 
-val fwrt_decl_of_type_decl : type_decl -> (unit, unit) fwrt_decl
+  val init : t
+
+  val field :
+       ?doc:([`docstr of string | `nodoc])
+    -> ?configs:[`record_field] configs
+    -> ?annot:D.annot_f
+    -> string
+    -> coretype
+    -> D.annot_f fwrt_field_desc
+
+  val bind :
+       ?doc:([`docstr of string | `nodoc])
+    -> ?parent:string
+    -> ?annot_d:D.annot_d
+    -> string
+    -> (D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc_kind
+    -> t -> t
+
+  val bind_object :
+       ?doc:([`docstr of string | `nodoc])
+    -> ?parent:string
+    -> ?configs:[`type_decl] configs
+    -> ?annot_d:((D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc_kind -> D.annot_d)
+    -> ?annot_ko:D.annot_ko
+    -> string
+    -> D.annot_f fwrt_field_desc list
+    -> t -> t
+
+  val bind_alias :
+       ?doc:([`docstr of string | `nodoc])
+    -> ?parent:string
+    -> ?configs:[`type_decl] configs
+    -> ?annot_d:((D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc_kind -> D.annot_d)
+    -> ?annot_ka:D.annot_ka
+    -> string
+    -> coretype
+    -> t -> t
+
+  val bind_constructor :
+       ?doc:([`docstr of string | `nodoc])
+    -> ?parent:string
+    -> ?configs:[`variant_constructor] configs
+    -> ?annot_d:((D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc_kind -> D.annot_d)
+    -> ?annot_kc:D.annot_kc
+    -> ?args:coretype list
+    -> ?fields:D.annot_f fwrt_field_desc list
+    -> string
+    -> t -> t
+
+  val lookup : string -> t -> (D.annot_d, D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc
+
+  val lookup_opt : string -> t -> (D.annot_d, D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc option
+
+  val annotate :
+    string
+    -> (D.annot_d * D.annot_d)
+    -> (D.annot_f * D.annot_f)
+    -> t
+    -> t
+
+  val bindings : t -> (string * (D.annot_d, D.annot_f, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc) list
+end
+
+type ('ann_d, 'ann_f, 'ann_k) fwrt_decl = string * ('ann_d, 'ann_f, 'ann_k) fwrt_type_env
+
+val pp_fwrt_decl :
+  (ppf -> 'ann_d -> unit)
+  -> (ppf -> 'ann_f -> unit)
+  -> (ppf -> 'ann_ko -> unit)
+  -> (ppf -> 'ann_ka -> unit)
+  -> (ppf -> 'ann_kc -> unit)
+  -> ppf
+  -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) fwrt_decl
+  -> unit
+
+val show_fwrt_decl :
+  (ppf -> 'ann_d -> unit)
+  -> (ppf -> 'ann_f -> unit)
+  -> (ppf -> 'ann_ko -> unit)
+  -> (ppf -> 'ann_ka -> unit)
+  -> (ppf -> 'ann_kc -> unit)
+  -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) fwrt_decl
+  -> string
+
+val equal_fwrt_decl :
+  ('ann_d -> 'ann_d -> bool)
+  -> ('ann_f -> 'ann_f -> bool)
+  -> ('ann_ko -> 'ann_ko -> bool)
+  -> ('ann_ka -> 'ann_ka -> bool)
+  -> ('ann_kc -> 'ann_kc -> bool)
+  -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) fwrt_decl
+  -> ('ann_d, 'ann_f, 'ann_ko*'ann_ka*'ann_kc) fwrt_decl
+  -> bool
+
+type ('ann_d, 'ann_f, 'ann_k) simple_annotator = {
+  annotate_decl : type_decl -> ('ann_f, 'ann_k) fwrt_desc_kind -> 'ann_d;
+  annotate_kind_object :
+    fields:('ann_f fwrt_field_desc list)
+    -> children:(string list)
+    -> configs:([`type_decl] configs)
+    -> 'ann_ko;
+  annotate_kind_alias :
+    type_:coretype
+    -> configs:([`type_decl] configs)
+    -> 'ann_ka;
+  annotate_kind_constructor :
+    param:[
+      | `no_param
+      | `tuple_like of coretype list
+      | `inline_record of record_field list
+      | `reused_inline_record of type_decl
+    ]
+    -> configs:([`variant_constructor] configs)
+    -> 'ann_kc;
+  annotate_field :
+    name:string
+    -> type_:coretype
+    -> configs:([`record_field] configs)
+    -> 'ann_f;
+} constraint 'ann_k = 'ann_ko * 'ann_ka * 'ann_kc
+
+val fwrt_decl_of_type_decl' :
+  annotator:('ann_d, 'ann_f, 'ann_k) simple_annotator
+  -> type_decl -> ('ann_d, 'ann_f, 'ann_k) fwrt_decl
+
+val fwrt_decl_of_type_decl : type_decl -> (unit, unit, unit*unit*unit) fwrt_decl

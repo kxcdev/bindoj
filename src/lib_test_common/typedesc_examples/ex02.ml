@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex02"
@@ -69,21 +68,20 @@ let decl_with_docstr : type_decl =
 
   ] ~doc:(`docstr "definition of person type")
 
-let fwrt : (unit, unit) fwrt_decl =
+let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "person" in
-  let annot = () in
-  "person", FwrtTypeEnv.(
+  "person", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot "person" []
-    |> bind_constructor ~parent ~annot "Anonymous"
-    |> bind_constructor ~parent ~annot "With_id" ~args:[cty_int]
-    |> bind_constructor ~parent ~annot "Student" ~fields:[
-      field ~annot "student_id" cty_int;
-      field ~annot "name" cty_string]
-    |> bind_constructor ~parent ~annot "Teacher" ~fields:[
-      field ~annot "faculty_id" cty_int;
-      field ~annot "name" cty_string;
-      field ~annot "department" cty_string]
+    |> bind_object "person" []
+    |> bind_constructor ~parent "Anonymous"
+    |> bind_constructor ~parent "With_id" ~args:[cty_int]
+    |> bind_constructor ~parent "Student" ~fields:[
+      field "student_id" cty_int;
+      field "name" cty_string]
+    |> bind_constructor ~parent "Teacher" ~fields:[
+      field "faculty_id" cty_int;
+      field "name" cty_string;
+      field "department" cty_string]
   )
 
 let ts_ast : ts_ast option =

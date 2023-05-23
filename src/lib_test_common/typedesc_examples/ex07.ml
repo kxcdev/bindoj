@@ -19,7 +19,6 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
 open Bindoj_gen.Json_codec
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex07"
@@ -68,27 +67,26 @@ let decl_with_docstr : type_decl =
   ] ~configs:variant_configs
     ~doc:(`docstr "variant with customized discriminator and argument names")
 
-let fwrt : (unit, unit) fwrt_decl =
+let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "customized_union" in
-  let annot = () in
-  parent, FwrtTypeEnv.(
+  parent, Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot ~configs:variant_configs parent []
-    |> bind_constructor ~parent ~annot "Case1"
+    |> bind_object ~configs:variant_configs parent []
+    |> bind_constructor ~parent "Case1"
         ~configs:[
           Json_config.name "Case1_";
           Json_config.name_of_variant_arg "value";
         ]
         ~args:[cty_int]
-    |> bind_constructor ~parent ~annot "Case2"
+    |> bind_constructor ~parent "Case2"
         ~configs:[
           Json_config.name "Case2_";
           Json_config.name_of_variant_arg "values";
         ]
         ~fields:[
-          field ~annot "x" cty_int
+          field "x" cty_int
             ~configs:[ Json_config.name "x_" ];
-          field ~annot "y" cty_int
+          field "y" cty_int
             ~configs:[ Json_config.name "y_" ];
         ]
   )

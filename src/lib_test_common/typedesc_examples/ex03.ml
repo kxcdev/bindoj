@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex03"
@@ -44,14 +43,13 @@ let decl_with_docstr : type_decl =
 
   ] ~doc:(`docstr "int list")
 
-let fwrt : (unit, unit) fwrt_decl =
+let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "int_list" in
-  let annot = () in
-  "int_list", FwrtTypeEnv.(
+  "int_list", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot "int_list" []
-    |> bind_constructor ~parent ~annot "IntNil"
-    |> bind_constructor ~parent ~annot "IntCons" ~args:[Coretype.mk_prim `int; Coretype.mk_self ()]
+    |> bind_object "int_list" []
+    |> bind_constructor ~parent "IntNil"
+    |> bind_constructor ~parent "IntCons" ~args:[Coretype.mk_prim `int; Coretype.mk_self ()]
   )
 
 let ts_ast : ts_ast option =

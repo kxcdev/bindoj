@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex05_notuple"
@@ -48,14 +47,13 @@ let decl_with_docstr : type_decl =
       ~doc:(`docstr "map<string, int>");
   ] ~doc:(`docstr "collection of complex types")
 
-let fwrt : (unit, unit) fwrt_decl =
-  let annot = () in
-  "complex_types", FwrtTypeEnv.(
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "complex_types", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot "complex_types" [
-      field ~annot "option" cty_int_opt;
-      field ~annot "list" cty_int_lst;
-      field ~annot "map" cty_int_map;
+    |> bind_object "complex_types" [
+      field "option" cty_int_opt;
+      field "list" cty_int_lst;
+      field "map" cty_int_map;
     ]
   )
 

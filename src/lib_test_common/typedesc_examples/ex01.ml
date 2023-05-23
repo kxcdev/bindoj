@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex01"
@@ -38,12 +37,12 @@ let decl_with_docstr : type_decl =
     record_field "name" cty_string ~doc:( `docstr "name field");
   ] ~doc:(`docstr "definition of student type")
 
-let fwrt : (unit, unit) fwrt_decl =
-  "student", FwrtTypeEnv.(
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "student", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot:() "student"
-      [ field ~annot:() "admission_year" cty_int;
-        field ~annot:() "name" cty_string; ]
+    |> bind_object "student"
+      [ field "admission_year" cty_int;
+        field "name" cty_string; ]
   )
 
 let ts_ast : ts_ast option =

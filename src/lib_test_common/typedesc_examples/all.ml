@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 (** each example module should have this module type *)
@@ -27,7 +26,7 @@ module type T = sig
   val example_module_path: string
 
   val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) fwrt_decl
+  val fwrt: (unit, unit) ts_fwrt_decl
   val ts_ast: ts_ast option
 end
 

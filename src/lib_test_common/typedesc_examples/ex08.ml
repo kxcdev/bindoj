@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex08"
@@ -38,12 +37,12 @@ let decl_with_docstr : type_decl =
     record_field "json" cty_json ~doc:(`docstr "a json datum");
   ] ~doc:(`docstr "record of name and json datum")
 
-let fwrt : (unit, unit) fwrt_decl =
-  "named_json", FwrtTypeEnv.(
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "named_json", Util.FwrtTypeEnv.(
       init
-      |> bind_object ~annot:() "named_json"
-        [ field ~annot:() "name" cty_string;
-          field ~annot:() "json" cty_json; ]
+      |> bind_object "named_json"
+        [ field "name" cty_string;
+          field "json" cty_json; ]
     )
 
 let ts_ast : ts_ast option = Some [

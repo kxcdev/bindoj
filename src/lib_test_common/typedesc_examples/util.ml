@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_gen_ts.Typescript_datatype
+open Bindoj_gen_foreign.Foreign_datatype
 
 module Ts_ast = struct
   type options =
@@ -106,3 +107,18 @@ module Ts_ast = struct
                          statement)
                     | _ -> failwith "impossible case in test") ]; } ) ]
 end
+
+module FwrtTypeEnv =
+  FwrtTypeEnv'(struct
+    type annot_d = unit
+    type annot_f = unit
+    type annot_ko = unit
+    type annot_ka = unit
+    type annot_kc = ts_fwrt_constructor_kind_annot
+    let default_annot_d = ()
+    let default_annot_f = ()
+    let default_annot_ko = ()
+    let default_annot_ka = ()
+    let default_annot_kc = None
+    let default_annot_d_f = constant ()
+  end)

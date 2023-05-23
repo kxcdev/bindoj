@@ -18,7 +18,8 @@
   (alias apidir-typescript-tests/gen_mock_server)
   (source_tree unit-tests)
   (source_tree public-packages)
-  (source_tree apidir-typescript-tests/tests))
+  (source_tree apidir-typescript-tests/tests)
+  (source_tree compile-tests/reused_types))
  (action
   (progn
    (run yarn install --frozen-lockfile)

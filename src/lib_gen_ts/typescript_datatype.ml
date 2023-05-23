@@ -169,6 +169,16 @@ open Bindoj_runtime
 open Bindoj_typedesc.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 
+type ts_fwrt_constructor_kind_annot = ts_fwrt_constructor_kind_info option
+[@@deriving show, eq]
+
+and ts_fwrt_constructor_kind_info =
+  | Tfcki_reused_variant_inline_record of type_decl
+[@@deriving show, eq]
+
+let string_of_ts_fwrt_constructor_kind_annot = show_ts_fwrt_constructor_kind_annot
+let string_of_ts_fwrt_constructor_kind_info = show_ts_fwrt_constructor_kind_info
+
 type typescript
 type ('tag, 'datatype_expr) foreign_language +=
    | Foreign_language_TypeScript :
@@ -183,6 +193,8 @@ module Ts_config = struct
   type ('pos, 'kind) config +=
     | Config_ts_reused_variant_inline_record_style : reused_variant_inline_record_style -> ('pos, reused_variant_inline_record_style) config
 
+  let default_reused_variant_inline_record_style = `intersection_type
+
   let reused_variant_inline_record_style style =
     Config_ts_reused_variant_inline_record_style style
 
@@ -195,15 +207,6 @@ module Ts_config = struct
   let typescript_type expr =
     Configs.Config_foreign_type_expression (typescript, expr)
 end
-
-let annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`readonly] list) fwrt_decl =
-  fun export readonly (name, env) ->
-  (name,
-   FwrtTypeEnv.annotate
-     name
-     (if export then ([`export], []) else ([], []))
-     (if readonly then ([`readonly], []) else ([], []))
-     env)
 
 let type_of_prim : Coretype.prim -> ts_type_desc = function
   | `unit -> `literal_type (`numeric_literal 1.)
@@ -257,15 +260,42 @@ let type_of_coretype :
     ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
 
-let get_name_of_fwrt_desc_opt : ('ann0, 'ann1) fwrt_desc -> string option =
+let get_name_of_fwrt_desc_opt : ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string option =
   fun desc ->
   match desc.fd_kind with
   | Fwrt_object { fo_configs; _ } -> Ts_config.get_name_opt fo_configs
   | Fwrt_alias { fa_configs; _ } -> Ts_config.get_name_opt fa_configs
   | Fwrt_constructor { fc_configs; _ } -> Ts_config.get_name_opt fc_configs
 
-let rec ts_ast_of_fwrt_decl :
-  (ts_modifier list, [`readonly] list) fwrt_decl -> ts_ast =
+type ('ann_d, 'ann_f) ts_fwrt_decl = ('ann_d, 'ann_f, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
+type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list) ts_fwrt_decl
+
+let ts_fwrt_decl_of_type_decl :
+  export:bool
+  -> readonly:bool
+  -> type_decl
+  -> fwrt_decl_of_ts =
+  fun ~export ~readonly decl ->
+  fwrt_decl_of_type_decl' ~annotator:{
+    annotate_decl = (
+      if export then (fun _ _ ->  [`export])
+      else (fun _ _ -> [])
+    );
+    annotate_kind_object = (fun ~fields:_ ~children:_ ~configs:_ -> ());
+    annotate_kind_alias = (fun ~type_:_ ~configs:_ -> ());
+    annotate_kind_constructor = (fun ~param ~configs:_ ->
+      match param with
+      | `reused_inline_record td ->
+        Some (Tfcki_reused_variant_inline_record td)
+      | _ -> None
+    );
+    annotate_field = (
+      if readonly then (fun ~name:_ ~type_:_ ~configs:_ -> [`readonly])
+      else (fun ~name:_ ~type_:_ ~configs:_ -> [])
+    );
+  } decl
+
+let rec ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast =
   fun fwrt_decl ->
   let self_type_name = fst fwrt_decl in
   match FwrtTypeEnv.lookup (fst fwrt_decl) (snd fwrt_decl) with
@@ -276,13 +306,13 @@ let rec ts_ast_of_fwrt_decl :
     [ `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl) ]
 
 and ts_type_alias_decl_of_fwrt_decl :
-  self_type_name:string -> (ts_modifier list, [`readonly] list) fwrt_decl -> ts_type_alias_decl =
+  self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
   fun ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _ } = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
   let desc =
     match fd_kind with
-    | Fwrt_object { fo_fields; fo_children; fo_configs } ->
+    | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
       let members =
         fo_fields |&> fun { ff_name; ff_type; ff_annot; _ } ->
           { tsps_modifiers = ff_annot;
@@ -301,7 +331,8 @@ and ts_type_alias_decl_of_fwrt_decl :
               tsps_type_desc = `literal_type (`string_literal discriminator_value); } in
           begin match tsa_type_desc with
             | `type_literal fields -> `type_literal (kind_field :: fields)
-            | _ -> failwith "tsa_type_desc in children must be type literal"
+            | `intersection typs -> `intersection (`type_literal [ kind_field ] :: typs)
+            | _ -> `intersection [ `type_literal [ kind_field ]; tsa_type_desc]
           end
       in
       let desc = match members, children with
@@ -309,11 +340,14 @@ and ts_type_alias_decl_of_fwrt_decl :
         | [], _ -> `union children
         | _ -> `intersection [`type_literal members; `union children] in
       desc
-    | Fwrt_alias { fa_type; _ } -> type_of_coretype ~definitive:true ~self_type_name fa_type
-    | Fwrt_constructor { fc_args; fc_fields; fc_configs } ->
-      match Ts_config.get_reused_variant_inline_record_style_opt fc_configs with
-      | Some `intersection_type ->
-        failwith "noimpl: reused inlnie record with intersection type style."
+    | Fwrt_alias { fa_type; fa_annot=(); _ } -> type_of_coretype ~definitive:true ~self_type_name fa_type
+    | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
+      let inline_record_style =
+        Ts_config.(get_reused_variant_inline_record_style_opt fc_configs |? default_reused_variant_inline_record_style)
+      in
+      match fc_annot, inline_record_style with
+      | Some (Tfcki_reused_variant_inline_record decl), `intersection_type ->
+        `type_reference decl.td_name
       | _ ->
         let arg_name = Ts_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
         let members =
@@ -356,7 +390,7 @@ and ts_type_alias_decl_of_fwrt_decl :
     tsa_type_desc = desc }
 
 and ts_func_decl_of_fwrt_decl :
-  self_type_name:string -> (ts_modifier list, [`readonly] list) fwrt_decl -> ts_func_decl =
+  self_type_name:string -> fwrt_decl_of_ts -> ts_func_decl =
   fun ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _; } = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
@@ -379,7 +413,8 @@ and ts_func_decl_of_fwrt_decl :
         let desc =
           match decl.tsa_type_desc with
           | `type_literal fields -> `type_literal (kind_field :: fields)
-          | _ -> failwith "tsa_type_desc in children must be type literal"
+          | `intersection typs -> `intersection (`type_literal [ kind_field ] :: typs)
+          | desc -> `intersection [ `type_literal [ kind_field]; desc]
         in
         { tsps_modifiers = [];
           tsps_name = discriminator_value;
@@ -718,26 +753,11 @@ module Internals = struct
   let rope_of_ts_expression = rope_of_ts_expression
 end
 
-let set_default_reused_variant_inline_record_style = function
-  | { td_kind = Variant_decl ctors; _ } as td ->
-    let ctors = ctors |&> (function
-      | { vc_param = `reused_inline_record _; vc_configs; _ } as ctor ->
-        begin match Ts_config.get_reused_variant_inline_record_style_opt vc_configs with
-          | None -> { ctor with vc_configs = Ts_config.reused_variant_inline_record_style `intersection_type :: vc_configs }
-          | _ -> ctor
-        end
-      | ctor -> ctor )
-    in
-    { td with td_kind = Variant_decl ctors }
-  | td -> td
-
 let gen_ts_type : ?export:bool -> type_decl -> string =
   fun ?(export=true) type_decl ->
   let fwrt_decl =
     type_decl
-    |> set_default_reused_variant_inline_record_style
-    |> fwrt_decl_of_type_decl
-    |> annotate_fwrt_decl export false
+    |> ts_fwrt_decl_of_type_decl ~export ~readonly:false
   in
   let self_type_name = fst fwrt_decl in
   let ts_type_alias_decl = ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl in
@@ -748,9 +768,7 @@ let gen_ts_case_analyzer : ?export:bool -> ?name:string -> type_decl -> string =
   fun ?(export=true) ?name type_decl ->
   let fwrt_decl =
     type_decl
-    |> set_default_reused_variant_inline_record_style
-    |> fwrt_decl_of_type_decl
-    |> annotate_fwrt_decl export false
+    |> ts_fwrt_decl_of_type_decl ~export ~readonly:false
   in
   let self_type_name = fst fwrt_decl in
   let ts_func_decl = ts_func_decl_of_fwrt_decl ~self_type_name fwrt_decl in

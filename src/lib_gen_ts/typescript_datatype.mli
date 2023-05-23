@@ -167,6 +167,18 @@ and ts_modifier = [
   | `readonly
 ]
 
+type ts_fwrt_constructor_kind_annot = ts_fwrt_constructor_kind_info option
+and ts_fwrt_constructor_kind_info =
+  | Tfcki_reused_variant_inline_record of type_decl
+
+val pp_ts_fwrt_constructor_kind_annot : ppf -> ts_fwrt_constructor_kind_annot -> unit
+val string_of_ts_fwrt_constructor_kind_annot : ts_fwrt_constructor_kind_annot -> string
+val equal_ts_fwrt_constructor_kind_annot : ts_fwrt_constructor_kind_annot -> ts_fwrt_constructor_kind_annot -> bool
+
+val pp_ts_fwrt_constructor_kind_info : ppf -> ts_fwrt_constructor_kind_info -> unit
+val string_of_ts_fwrt_constructor_kind_info : ts_fwrt_constructor_kind_info -> string
+val equal_ts_fwrt_constructor_kind_info : ts_fwrt_constructor_kind_info -> ts_fwrt_constructor_kind_info -> bool
+
 type typescript
 type ('tag, 'datatype_expr) foreign_language +=
    | Foreign_language_TypeScript :
@@ -182,6 +194,8 @@ module Ts_config : sig
   type ('pos, 'kind) config +=
     | Config_ts_reused_variant_inline_record_style : reused_variant_inline_record_style -> ('pos, reused_variant_inline_record_style) config
 
+  val default_reused_variant_inline_record_style : reused_variant_inline_record_style
+
   val reused_variant_inline_record_style : reused_variant_inline_record_style -> ([< pos], reused_variant_inline_record_style) config
 
   val get_reused_variant_inline_record_style_opt : [< pos] configs -> reused_variant_inline_record_style option
@@ -194,9 +208,13 @@ val pp_ts_ast : ppf -> ts_ast -> unit
 val show_ts_ast : ts_ast -> string
 val equal_ts_ast : ts_ast -> ts_ast -> bool
 
-val ts_ast_of_fwrt_decl : (ts_modifier list, [`readonly] list) fwrt_decl -> ts_ast
-val annotate_fwrt_decl : bool -> bool -> (unit, unit) fwrt_decl -> (ts_modifier list, [`readonly] list) fwrt_decl
-val ts_type_alias_decl_of_fwrt_decl : self_type_name:string -> (ts_modifier list, [`readonly] list) fwrt_decl -> ts_type_alias_decl
+type ('ann_d, 'ann_f) ts_fwrt_decl = ('ann_d, 'ann_f, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
+
+type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list) ts_fwrt_decl
+
+val ts_fwrt_decl_of_type_decl : export:bool -> readonly:bool -> type_decl -> fwrt_decl_of_ts
+val ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast
+val ts_type_alias_decl_of_fwrt_decl : self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl
 
 module Rope : sig
   type t

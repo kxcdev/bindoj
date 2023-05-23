@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex09"
@@ -35,11 +34,11 @@ let decl_with_docstr : type_decl =
     record_field "value" cty_int53p ~doc:(`docstr "an int53p value");
   ] ~doc:(`docstr "record of an int53p value")
 
-let fwrt : (unit, unit) fwrt_decl =
-  "with_int53p", FwrtTypeEnv.(
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "with_int53p", Util.FwrtTypeEnv.(
       init
-      |> bind_object ~annot:() "with_int53p"
-        [ field ~annot:() "value" cty_int53p; ]
+      |> bind_object "with_int53p"
+        [ field "value" cty_int53p; ]
     )
 
 let ts_ast : ts_ast option = Some [

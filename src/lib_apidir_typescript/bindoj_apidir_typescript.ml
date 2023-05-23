@@ -88,12 +88,11 @@ let gen_raw :
     let name = T.decl.td_name in
     match resolution_strategy typ with
     | `inline_type_definition ->
-      let open Bindoj_gen_foreign.Foreign_datatype in
       let () = if is_recursive T.decl then
         failwith' "%s - Recursive type '%s' cannot be defined inline." __FILE__ name
       in
-      fwrt_decl_of_type_decl T.decl
-      |> annotate_fwrt_decl false false
+      T.decl
+      |> ts_fwrt_decl_of_type_decl ~export:false ~readonly:false
       |> ts_type_alias_decl_of_fwrt_decl ~self_type_name:name
       |> fun t -> t.tsa_type_desc
     | _ -> `type_reference name

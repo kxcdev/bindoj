@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex02_reused"
@@ -54,7 +53,7 @@ let decl : type_decl =
       record_field "name" cty_string;
     ]);
     variant_constructor "Teacher" (`reused_inline_record teacher_decl)
-      ~configs: [ Ts_config.reused_variant_inline_record_style `inline_fields ]
+      ~configs: [ Ts_config.reused_variant_inline_record_style `intersection_type ]
   ]
 
 let decl_with_docstr : type_decl =
@@ -74,26 +73,27 @@ let decl_with_docstr : type_decl =
 
     variant_constructor "Teacher" (`reused_inline_record teacher_decl_with_docstr)
       ~doc:(`docstr "Teacher constructor")
-      ~configs: [ Ts_config.reused_variant_inline_record_style `inline_fields ]
+      ~configs: [ Ts_config.reused_variant_inline_record_style `intersection_type ]
 
   ] ~doc:(`docstr "definition of person type")
 
-let fwrt : (unit, unit) fwrt_decl =
+let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "person" in
-  let annot = () in
-  "person", FwrtTypeEnv.(
+  "person", Util.FwrtTypeEnv.(
     init
-    |> bind_object ~annot "person" []
-    |> bind_constructor ~parent ~annot "Anonymous"
-    |> bind_constructor ~parent ~annot "With_id" ~args:[cty_int]
-    |> bind_constructor ~parent ~annot "Student" ~fields:[
-      field ~annot "student_id" cty_int;
-      field ~annot "name" cty_string]
-    |> bind_constructor ~parent ~annot "Teacher" ~fields:[
-      field ~annot "faculty_id" cty_int;
-      field ~annot "name" cty_string;
-      field ~annot "department" cty_string]
-      ~configs: [ Ts_config.reused_variant_inline_record_style `inline_fields ]
+    |> bind_object "person" []
+    |> bind_constructor ~parent "Anonymous"
+    |> bind_constructor ~parent "With_id" ~args:[cty_int]
+    |> bind_constructor ~parent "Student" ~fields:[
+      field "student_id" cty_int;
+      field "name" cty_string]
+    |> bind_constructor ~parent
+      ~annot_kc:(Some (Tfcki_reused_variant_inline_record teacher_decl))
+      "Teacher" ~fields:[
+      field "faculty_id" cty_int;
+      field "name" cty_string;
+      field "department" cty_string]
+      ~configs: [ Ts_config.reused_variant_inline_record_style `intersection_type ]
   )
 
 let ts_ast : ts_ast option =
@@ -128,19 +128,13 @@ let ts_ast : ts_ast option =
           tsps_name = "name";
           tsps_type_desc = `type_reference "string"; } ] in
   let teacher =
-    `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Teacher"); };
-        { tsps_modifiers = [];
-          tsps_name = "faculty_id";
-          tsps_type_desc = `type_reference "number"; };
-        { tsps_modifiers = [];
-          tsps_name = "name";
-          tsps_type_desc = `type_reference "string"; };
-        { tsps_modifiers = [];
-          tsps_name = "department";
-          tsps_type_desc = `type_reference "string"; }; ] in
+    `intersection
+      [`type_literal
+          [ { tsps_modifiers = [];
+            tsps_name = discriminator;
+            tsps_type_desc = `literal_type (`string_literal "Teacher"); }];
+        `type_reference "teacher"
+      ] in
   let person = [
     "With_id", with_id;
     "Teacher", teacher;

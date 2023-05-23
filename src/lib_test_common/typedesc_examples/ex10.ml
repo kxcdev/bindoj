@@ -18,7 +18,6 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
-open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_gen_ts.Typescript_datatype
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex10"
@@ -37,12 +36,12 @@ let decl_with_docstr : type_decl =
     record_field "y_opt" cty_int_opt ~doc:(`docstr "an optional int y");
   ] ~doc:(`docstr "record of optional int x and optional int y")
 
-let fwrt : (unit, unit) fwrt_decl =
-  "xy_opt", FwrtTypeEnv.(
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "xy_opt", Util.FwrtTypeEnv.(
       init
-      |> bind_object ~annot:() "xy_opt"
-        [ field ~annot:() "x_opt" cty_int_opt;
-          field ~annot:() "y_opt" cty_int_opt; ]
+      |> bind_object "xy_opt"
+        [ field "x_opt" cty_int_opt;
+          field "y_opt" cty_int_opt; ]
     )
 
 let ts_ast : ts_ast option = None
