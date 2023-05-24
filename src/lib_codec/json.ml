@@ -133,44 +133,46 @@ let lookup_primitive_codec ~(env: tdenv) ident_name : unsafe_primitive_codec opt
   )
 
 let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_shape_explanation =
-  let rec process_td td : json_shape_explanation =
-    let { td_kind; td_name; _ } = Typed.decl td in
-    `named (td_name, process_kind td_kind)
-  and process_kind knd : json_shape_explanation = match knd with
+  let rec process_td ttd : json_shape_explanation =
+    let { td_name; _ } as td = Typed.decl ttd in
+    `named (td_name, process_kind td)
+  and process_kind { td_kind; td_configs; _} : json_shape_explanation =
+    match td_kind with
     | Alias_decl ct -> process_coretype' ct
     | Record_decl fields ->
        `object_of (fields |&> process_field)
     | Variant_decl branches ->
-       `anyone_of (branches |&> (fun { vc_name = kind_name; vc_param; _ } ->
-             let discriminator_fname = Json_config.default_variant_discriminator in
+       `anyone_of (branches |&> (fun { vc_name; vc_param; vc_configs; _ } ->
+             let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+             let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
              match vc_param with
              | `no_param ->
-                process_branch kind_name discriminator_fname []
+                process_branch discriminator_value discriminator_fname []
              | `tuple_like cts ->
+                let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs in
                 let arg_shape = `tuple_of (cts |&> process_coretype') in
-                process_branch kind_name discriminator_fname [
-                  `mandatory_field (
-                      Json_config.default_name_of_variant_arg,
-                      arg_shape)]
+                process_branch discriminator_value discriminator_fname [
+                  `mandatory_field (arg_fname, arg_shape)]
              | `inline_record fields ->
-                process_branch kind_name discriminator_fname
+                process_branch discriminator_value discriminator_fname
                   (fields |&> process_field)
              | `reused_inline_record decl ->
                 let fields = decl.td_kind |> function
                   | Record_decl fields -> fields
-                  | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." kind_name
+                  | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." vc_name
                 in
-                process_branch kind_name discriminator_fname
+                process_branch discriminator_value discriminator_fname
                   (fields |&> process_field)))
-  and process_field field: json_field_shape_explanation =
+  and process_field { rf_name; rf_type; rf_configs; _ }: json_field_shape_explanation =
     let optional, desc =
-      field.rf_type.ct_desc
+      rf_type.ct_desc
       |> (function Option desc -> true, desc | desc -> false, desc)
     in
-    let inner = process_coretype ~configs:field.rf_type.ct_configs desc in
+    let json_field_name = Json_config.get_name_opt rf_configs |? rf_name in
+    let inner = process_coretype ~configs:rf_type.ct_configs desc in
     match optional with
-    | true -> `optional_field (field.rf_name, inner)
-    | false -> `mandatory_field (field.rf_name, inner)
+    | true -> `optional_field (json_field_name, inner)
+    | false -> `mandatory_field (json_field_name, inner)
   and process_branch kind_name discriminator_field_name proper_fields =
     (* asuming flat_kind for now *)
     let kind_field =

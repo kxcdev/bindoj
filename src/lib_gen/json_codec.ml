@@ -438,45 +438,50 @@ let explain_encoded_json_shape :
     json_shape_explanation_resolution |? (constant `default)
   in
   let rec process_td td : expression =
-    let { td_kind; td_name; _ } = td in
-    [%expr `named ([%e estring ~loc td_name], [%e process_kind td_kind])]
-  and process_kind knd : expression = match knd with
+    let { td_name; _ } = td in
+    [%expr `named ([%e estring ~loc td_name], [%e process_kind td])]
+  and process_kind { td_kind; td_configs; _ } : expression =
+    match td_kind with
     | Alias_decl ct -> [%expr [%e process_coretype ct.ct_desc ]]
     | Record_decl fields ->
        [%expr `object_of [%e fields |&> process_field |> elist ~loc]]
     | Variant_decl branches ->
       [%expr `anyone_of [%e
-        branches |&> (fun { vc_name = kind_name; vc_param; _ } ->
-             let discriminator_fname = Json_config.default_variant_discriminator in
-             match vc_param with
-             | `no_param ->
-                process_branch kind_name discriminator_fname []
-             | `tuple_like cts ->
-                let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' |> elist ~loc]] in
-                process_branch kind_name discriminator_fname [
-                  [%expr `mandatory_field (
-                      [%e estring ~loc Json_config.default_name_of_variant_arg],
-                      [%e arg_shape])]]
-             | `inline_record fields ->
-                process_branch kind_name discriminator_fname
-                  (fields |&> process_field)
-             | `reused_inline_record decl ->
-                let fields = decl.td_kind |> function
-                  | Record_decl fields -> fields
-                  | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." kind_name
-                in
-                process_branch kind_name discriminator_fname
-                  (fields |&> process_field))
+        branches |&> (fun { vc_name; vc_param; vc_configs;  _ } ->
+            let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+            let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
+            match vc_param with
+            | `no_param ->
+              process_branch discriminator_value discriminator_fname []
+            | `tuple_like cts ->
+              let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs in
+              let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' |> elist ~loc]] in
+              process_branch discriminator_value discriminator_fname [
+                [%expr `mandatory_field ([%e estring ~loc arg_fname], [%e arg_shape])]]
+            | `inline_record fields ->
+              process_branch discriminator_value discriminator_fname
+                (fields |&> process_field)
+            | `reused_inline_record decl ->
+              let fields = decl.td_kind |> function
+                | Record_decl fields -> fields
+                | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." vc_name
+              in
+              process_branch discriminator_value discriminator_fname
+                (fields |&> process_field))
         |> elist ~loc ]]
-  and process_field field: expression =
+  and process_field { rf_name; rf_type; rf_configs; _ }: expression =
     let optional, desc =
-      field.rf_type.ct_desc
+      rf_type.ct_desc
       |> (function Option desc -> true, desc | desc -> false, desc)
+    in
+    let json_field_name =
+      Json_config.get_name_opt rf_configs |? rf_name
+      |> estring ~loc
     in
     let inner = process_coretype desc in
     match optional with
-    | true -> [%expr `optional_field ([%e estring ~loc field.rf_name], [%e inner])]
-    | false -> [%expr `mandatory_field ([%e estring ~loc field.rf_name], [%e inner])]
+    | true -> [%expr `optional_field ([%e json_field_name], [%e inner])]
+    | false -> [%expr `mandatory_field ([%e json_field_name], [%e inner])]
   and process_branch kind_name discriminator_field_name proper_fields =
     (* asuming flat_kind for now *)
     let kind_field = [%expr

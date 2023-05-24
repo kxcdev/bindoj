@@ -336,12 +336,12 @@ module SampleEx07 : SampleGenerated = struct
           ("customized_union",
             (`anyone_of
                 [`object_of
-                  [`mandatory_field ("kind", (`exactly (`str "Case1")));
-                  `mandatory_field ("arg", (`tuple_of [`integral]))];
+                  [`mandatory_field ("tag", (`exactly (`str "Case1_")));
+                  `mandatory_field ("value", (`tuple_of [`integral]))];
                 `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "Case2")));
-                  `mandatory_field ("x", `integral);
-                  `mandatory_field ("y", `integral)]]))))
+                  [`mandatory_field ("tag", (`exactly (`str "Case2_")));
+                  `mandatory_field ("x_", `integral);
+                  `mandatory_field ("y_", `integral)]]))))
 end
 
 module SampleEx08 : SampleGenerated = struct
