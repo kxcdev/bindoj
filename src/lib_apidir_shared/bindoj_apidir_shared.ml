@@ -364,8 +364,18 @@ end
 module MakeRegistry () : MakeRegistryS = struct
   let invp_meta_registry : invocation_point_meta list ref = ref []
   let invp_registry : (invocation_point_meta, untyped_invocation_point_additional_info) Hashtbl.t = Hashtbl.create 0
-  let type_registry : type_decl_info list ref = ref []
+  let type_registry : type_decl_info StringMap.t ref = ref StringMap.empty
   let tdenv_wrappers : tdenv endo list ref = ref []
+
+  let append_to_type_registry ({ tdi_name; _} as tdi : type_decl_info) =
+    let to_decl { tdi_decl = Boxed td; _ } = Typed.decl td in
+    StringMap.update tdi_name
+      (function
+        | Some tdi' when to_decl tdi' <> to_decl tdi ->
+          invalid_arg' "duplicated registration of same type_decl named '%s'" tdi_name
+        | _ -> Some tdi
+      )
+    |> refupdate type_registry
 
   let register :
     type_decl_info list
@@ -375,7 +385,7 @@ module MakeRegistry () : MakeRegistryS = struct
     let invp_meta = to_invocation_point_info_meta invp in
     Hashtbl.replace invp_registry invp_meta (InvpAdditionalInfo (to_invocation_point_additional_info invp));
     refappend invp_meta_registry invp_meta;
-    refupdate type_registry (( @ ) typs)
+    typs |!> append_to_type_registry
 
   let register_type_decl_info ?name ?doc ttd =
     let td = Typed.decl ttd in
@@ -384,7 +394,7 @@ module MakeRegistry () : MakeRegistryS = struct
                           | `nodoc -> tdi_name
                           | `docstr str -> str ) in
     { tdi_name; tdi_doc; tdi_decl = Boxed ttd; }
-    |> refappend type_registry
+    |> append_to_type_registry
 
   let add_type_decl_environment_wrapper wrapper = refappend tdenv_wrappers wrapper
 
@@ -523,7 +533,7 @@ module MakeRegistry () : MakeRegistryS = struct
     type registry_info = invocation_point_collection * type_decl_collection
     let registry_info () : registry_info =
       let tdcoll = {
-          type_declarations = !type_registry;
+          type_declarations = !type_registry |> StringMap.bindings |&> snd;
           type_decl_environment_wrappers = !tdenv_wrappers;
         } in
       let invp_collection : invocation_point_collection =

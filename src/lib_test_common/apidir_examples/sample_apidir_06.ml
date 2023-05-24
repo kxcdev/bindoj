@@ -55,12 +55,9 @@ let get_x =
     ~resp_type:T.int_opt
 
 let get_y =
-  let xy_opt =
-    let env = R.Public.registry_info() |> tdenv_of_registry_info in
-    T.xy_opt |> Coretypes.(ident' &> to_typed_type_decl "xy_opt" ~env) in
   R.register_post "get-y"
     ~urlpath:"/xy-opt/y"
-    ~req_type:xy_opt
+    ~req_type:T.xy_opt
     ~resp_type:T.int_opt
 
 let () = begin

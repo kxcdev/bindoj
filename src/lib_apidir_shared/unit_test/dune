@@ -1,8 +1,18 @@
 (test
  (name run)
+ (modules run)
  (libraries
    alcotest
    bindoj_test_common bindoj_apidir_shared bindoj_base
    js_of_ocaml
    kxclib yojson jsonm)
+ (flags (:standard -open Kxclib)))
+
+(test
+ (name duplicated_registration_test)
+ (modules duplicated_registration_test)
+ (libraries
+  alcotest
+   bindoj_apidir_shared bindoj_typedesc
+   kxclib)
  (flags (:standard -open Kxclib)))
