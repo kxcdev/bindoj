@@ -35,7 +35,7 @@ module Config = struct
 
   type ('pos, 'kind) config +=
     | Config_json_name : string -> ('pos, [`json_name]) config
-    | Config_json_name_of_variant_arg : string -> ('pos, [`json_name_of_variant_arg]) config
+    | Config_json_name_of_variant_arg : string -> ([`variant_constructor], [`json_name_of_variant_arg]) config
     | Config_json_variant_style :
       json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
     | Config_json_variant_discriminator :
@@ -50,13 +50,14 @@ module Config = struct
 
   module Json_config = struct
     let name name = Config_json_name name
-    let name_of_variant_arg name = Config_json_name_of_variant_arg name
 
     let get_name_opt configs =
       Configs.find (function
         | Config_json_name s -> Some s
         | _ -> None
       ) configs
+
+    let name_of_variant_arg name = Config_json_name_of_variant_arg name
 
     let get_name_of_variant_arg default =
       Configs.find_or_default ~default (function
