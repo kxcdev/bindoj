@@ -32,5 +32,5 @@ jobs:
       - name: Install dependencies
         run: opam install . --yes --deps-only --with-test --verbose
 
-      - name: build
-        run: opam exec -- dune build
+      - name: build & test
+        run: ./scripts/ci_run.sh
