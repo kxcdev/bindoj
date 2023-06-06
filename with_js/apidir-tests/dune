@@ -47,9 +47,8 @@
     sample_apidir_06.json
   )
   (file ../.redocly.yaml)
-  (alias ../node_modules))
+  ../node_modules)
  (action
   (progn
-   (run yarn --cwd ../ install --frozen-lockfile)
    (with-accepted-exit-codes 0
     (run npx redocly lint --config ../.redocly.yaml %{outputs})))))

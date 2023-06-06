@@ -21,10 +21,9 @@
  (deps
   (sandbox none)
   (:test (file ./run.bc.js))
-  (alias ../node_modules)
+  ../node_modules
   (alias ../compile-tests/gen))
  (action
   (progn
-   (run yarn --cwd ../ install --frozen-lockfile)
-   (run yarn build)
+   (run yarn --cwd ../ build)
    (run node %{test}))))

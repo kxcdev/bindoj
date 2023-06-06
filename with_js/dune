@@ -1,20 +1,16 @@
 (rule
- (alias node_modules)
- (deps
-  (sandbox none)
-  (source_tree src)
-  (glob_files *))
- (action
-  (progn
-   (run yarn install --frozen-lockfile)
-   (run yarn clean))))
+ (alias init)
+ (targets (dir node_modules))
+ (deps package.json yarn.lock tsconfig.json)
+ (action (run yarn install --frozen-lockfile)))
 
 (rule
  (alias runtest)
  (deps
   (sandbox none)
-  (alias node_modules)
+  node_modules
   (alias compile-tests/gen)
+  (alias apidir-typescript-tests/gen)
   (alias apidir-typescript-tests/gen_mock_server)
   (source_tree unit-tests)
   (source_tree public-packages)
@@ -22,7 +18,6 @@
   (source_tree compile-tests/reused_types))
  (action
   (progn
-   (run yarn install --frozen-lockfile)
    (run yarn test))))
 
 (dirs :standard \ node_modules)

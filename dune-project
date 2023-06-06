@@ -1,5 +1,6 @@
 (lang dune 3.0)
 (using mdx 0.2)
+(using directory-targets 0.1)
 (name bindoj)
 
 (license Apache-2.0)
