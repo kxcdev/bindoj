@@ -1,0 +1,30 @@
+(rule
+  (alias jsoo_gen)
+  (targets jsoo_gen_ml.js)
+  (deps
+    gen/jsoo_gen_ml.bc.js
+    (alias ../../src/lib_gen/unit_test/gen/output/default)
+    (alias ../../src/lib_gen/unit_test/gen/output_with_decl/default))
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias jsoo_gen)
+  (targets jsoo_gen_ts.js)
+  (deps gen/jsoo_gen_ts.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias jsoo_gen)
+  (targets jsoo_gen_json.js)
+  (deps gen/jsoo_gen_json.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias jsoo_gen)
+  (targets jsoo_gen_schema.js)
+  (deps gen/jsoo_gen_schema.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))

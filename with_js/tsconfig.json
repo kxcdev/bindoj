@@ -15,6 +15,8 @@
     "./unit-tests/",
     "./apidir-typescript-tests/",
     "./apidir-typescript-tests/tests/",
+    "./jsoo-gen/",
+    "./jsoo-gen/tests/",
   ],
   "exclude": [
     "./node_modules"

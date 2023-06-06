@@ -34,6 +34,7 @@ const sourceDirs = [
   "./with_js/compile-tests",
   "./with_js/apidir-typescript-tests/gen",
   "./with_js/jsoo-integration-tests",
+  "./with_js/jsoo-gen/gen",
 ]
 
 const ignorePatterns = [

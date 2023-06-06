@@ -1,0 +1,44 @@
+(executable
+ (name jsoo_gen_ml)
+ (modules jsoo_gen_ml)
+ (modes js)
+ (libraries
+  js_of_ocaml
+  bindoj_gen_test_common
+  bindoj_test_common_jsoo_utils)
+ (preprocess (pps js_of_ocaml-ppx))
+ (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name jsoo_gen_ts)
+ (modules jsoo_gen_ts)
+ (modes js)
+ (libraries
+  js_of_ocaml
+  bindoj_gen_ts_test_common
+  bindoj_test_common_jsoo_utils)
+ (preprocess (pps js_of_ocaml-ppx))
+ (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name jsoo_gen_json)
+ (modules jsoo_gen_json)
+ (modes js)
+ (libraries
+  js_of_ocaml
+  bindoj_test_common
+  bindoj_test_common_jsoo_utils)
+ (preprocess (pps js_of_ocaml-ppx))
+ (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name jsoo_gen_schema)
+ (modules jsoo_gen_schema)
+ (modes js)
+ (libraries
+  js_of_ocaml
+  bindoj_gen
+  bindoj_test_common
+  bindoj_test_common_jsoo_utils)
+ (preprocess (pps js_of_ocaml-ppx))
+ (flags (:standard -open Kxclib -w "-32-33")))

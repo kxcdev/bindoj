@@ -27,7 +27,8 @@
     ],
     "roots": [
       "unit-tests",
-      "apidir-typescript-tests/tests"
+      "apidir-typescript-tests/tests",
+      "jsoo-gen/tests"
     ],
     "transform": {
       "^.+\\.ts$": "ts-jest"

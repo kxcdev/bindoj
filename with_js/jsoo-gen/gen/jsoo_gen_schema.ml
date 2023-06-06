@@ -17,16 +17,30 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_gen_ts_test_common
+open Bindoj_test_common.Typedesc_examples
+open Bindoj_gen
+open Bindoj_openapi.V3
 
-let mapping =
-  modules |> List.map (fun (s, m) -> sprintf "%s_gen.ts" s, m)
+
+let schema_to_json (module Ex : T) =
+  Ex.decl_with_docstr
+  |> Json_codec.gen_json_schema
+  |> Schema_object.to_json
+  |> Json.to_yojson
+  |> Yojson.Safe.to_string
+  |> fun s -> s ^ "\n"
+
+open Bindoj_test_common_jsoo_utils
+open Prr
 
 let () =
-  match Array.to_list Sys.argv |> List.tl with
-  | [] | _ :: _ :: _ ->
-    failwith "usage: gen <filename>"
-  | [name] ->
-    match List.assoc_opt name mapping with
-    | None -> failwith (sprintf "unknown example %s" name)
-    | Some gen -> gen () |> print_endline
+  Js_of_ocaml.Js.export "jsoo_gen_schema" (object%js
+    val generator_js = object%js
+      val module_names_js = all |> Jv.(of_list (fst &> of_string)) |> cast
+      method generate_js name =
+        let name = ostr name in
+        match List.assoc_opt name all with
+        | None -> failwith' "unknown example %s" name
+        | Some m -> schema_to_json m |> jstr
+    end
+  end)

@@ -12,10 +12,12 @@
   (alias compile-tests/gen)
   (alias apidir-typescript-tests/gen)
   (alias apidir-typescript-tests/gen_mock_server)
+  (alias jsoo-gen/jsoo_gen)
   (source_tree unit-tests)
   (source_tree public-packages)
   (source_tree apidir-typescript-tests/tests)
-  (source_tree compile-tests/reused_types))
+  (source_tree compile-tests/reused_types)
+  (source_tree jsoo-gen/tests))
  (action
   (progn
    (run yarn test))))
