@@ -19,6 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_typedesc.Typed_type_desc
 open Bindoj_test_common.Apidir_examples
+open Bindoj_codec.Json
 
 let print_typescript name (module Dir : T) =
   let reg_info = Dir.registry_info () in
@@ -26,7 +27,13 @@ let print_typescript name (module Dir : T) =
   Bindoj_apidir_typescript.gen_raw
     ~resolution_strategy:(Typed.unbox &> Typed.decl &> function
       | { td_name = "student"; _ } -> `import_location "../compile-tests/ex01_gen"
-      | { td_name = "person"; _ } -> `import_location "../compile-tests/ex02_gen"
+      | { td_name = "person"; td_configs; _ } ->
+        begin match Json_config.get_mangling_style td_configs with
+        | `default ->
+          `import_location "../compile-tests/ex02_gen"
+        | `no_mangling ->
+          `import_location "../compile-tests/ex02_no_mangling_gen"
+        end
       | { td_name = "int_list"; _ } -> `import_location "../compile-tests/ex03_objtuple_gen"
       | { td_name = "foo"; _ } -> `import_location "../compile-tests/ex04_gen"
       | { td_name = "complex_types"; _ } -> `import_location "../compile-tests/ex05_gen"

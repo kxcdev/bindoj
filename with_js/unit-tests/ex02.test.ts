@@ -5,7 +5,7 @@ import {Schema, Validator} from "jsonschema"
 var validator = new Validator();
 
 // also typecheck the generate JSON
-const samples : ex02.person[] = <ex02.person[]>samples_tmp;
+const samples : ex02.Person[] = <ex02.Person[]>samples_tmp;
 const schema : Schema = <Schema><unknown>schema_tmp;
 
 type AnalyzeResult = string | number | [string, number] | [string, number, string]
@@ -26,13 +26,13 @@ describe('ex02', (): void => {
 
   test('the case analyzer works', (): void => {
     let analyzer =
-      ex02.analyze_person<AnalyzeResult>({
-        Anonymous: _ => "anonymous",
-        With_id:   v => v.arg,
-        Student:   v => [v.name, v.student_id],
-        Teacher:   v => [v.name, v.faculty_id, v.department]
+      ex02.analyzePerson<AnalyzeResult>({
+        anonymous: _ => "Anonymous",
+        "with-id":   v => v.arg,
+        student:   v => [v.name, v.studentId],
+        teacher:   v => [v.name, v.facultyId, v.department]
       });
-    expect(analyzer(samples[0])).toBe("anonymous")
+    expect(analyzer(samples[0])).toBe("Anonymous")
     expect(analyzer(samples[1])).toBe(1619)
     expect(analyzer(samples[2])).toStrictEqual(["Ray Bradbury", 451])
     expect(analyzer(samples[3])).toStrictEqual(["Arthur C. Clark", 2001, "Space"])

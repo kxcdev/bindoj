@@ -38,11 +38,11 @@ let t : t Alcotest.testable = Alcotest.of_pp pp
 open Sample_value
 open Sample_value.JvHelper
 
-let sample_value01 = { orig = Anonymous; jv = ctor0 "Anonymous" }
+let sample_value01 = { orig = Anonymous; jv = ctor0 "anonymous" }
 
 let sample_value02 = {
   orig = With_id 1619;
-  jv = ctor1 "With_id" (`num 1619.);
+  jv = ctor1 "with-id" (`num 1619.);
 }
 
 let sample_value03 = {
@@ -52,8 +52,8 @@ let sample_value03 = {
       name = "Ray Bradbury";
     };
   jv =
-    ctor_record "Student" [
-      ("student_id", `num 451.);
+    ctor_record "student" [
+      ("studentId", `num 451.);
       ("name", `str "Ray Bradbury");
     ];
 }
@@ -66,8 +66,8 @@ let sample_value04 = {
       department = "Space";
     };
   jv =
-    ctor_record "Teacher" [
-      ("faculty_id", `num 2001.);
+    ctor_record "teacher" [
+      ("facultyId", `num 2001.);
       ("name", `str "Arthur C. Clark");
       ("department", `str "Space");
     ];

@@ -2,7 +2,7 @@ import * as ex07 from "../compile-tests/ex07_gen"
 import * as tmp from "../compile-tests/ex07_examples.json"
 
 // also typecheck the generate JSON
-const samples : ex07.customized_union[] = <ex07.customized_union[]>tmp;
+const samples : ex07.CustomizedUnion[] = <ex07.CustomizedUnion[]>tmp;
 
 describe('ex07', (): void => {
   test('it compiles', (): void => {
@@ -10,10 +10,10 @@ describe('ex07', (): void => {
   })
 
   test('the case analyzer works', (): void => {
-    function analyzer(x: ex07.customized_union) {;
-      return ex07.analyze_customized_union<number>({
-        Case1_: v => v.value,
-        Case2_: v => v.x_ + v.y_,
+    function analyzer(x: ex07.CustomizedUnion) {;
+      return ex07.analyzeCustomizedUnion<number>({
+        "case1'": v => v.value,
+        "case2'": v => v["x'"] + v["y'"],
       })(x);
     };
 

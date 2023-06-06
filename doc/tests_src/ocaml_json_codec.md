@@ -152,8 +152,8 @@ val person_desc : type_decl =
 let student_to_json =
   (fun { admission_year = x0; full_name = x1 } ->
      `obj
-       [("admission_year", (int_to_json x0));
-       ("full_name", (string_to_json x1))] : student -> Kxclib.Json.jv)
+       [("admissionYear", (int_to_json x0));
+       ("fullName", (string_to_json x1))] : student -> Kxclib.Json.jv)
   [@@warning "-39"]
 - : unit = ()
 # Bindoj.(
@@ -165,24 +165,24 @@ let student_of_json' =
        function
        | `obj param ->
            let (>>=) = Result.bind in
-           (((List.assoc_opt "admission_year" param) |>
+           (((List.assoc_opt "admissionYear" param) |>
                (function
                 | Some a -> Ok a
                 | None ->
                     Error
-                      ("mandatory field 'admission_year' does not exist",
+                      ("mandatory field 'admissionYear' does not exist",
                         path)))
-              >>= (int_of_json ((`f "admission_year") :: path)))
+              >>= (int_of_json ((`f "admissionYear") :: path)))
              >>=
              ((fun x0 ->
-                 (((List.assoc_opt "full_name" param) |>
+                 (((List.assoc_opt "fullName" param) |>
                      (function
                       | Some a -> Ok a
                       | None ->
                           Error
-                            ("mandatory field 'full_name' does not exist",
+                            ("mandatory field 'fullName' does not exist",
                               path)))
-                    >>= (string_of_json ((`f "full_name") :: path)))
+                    >>= (string_of_json ((`f "fullName") :: path)))
                    >>= (fun x1 -> Ok { admission_year = x0; full_name = x1 })))
        | jv ->
            Error
@@ -203,10 +203,10 @@ let student_of_json' =
                (`with_warning
                   ("not considering any config if exists",
                     (`named
-                       ("student",
+                       ("Student",
                          (`object_of
-                            [`mandatory_field ("admission_year", `integral);
-                            `mandatory_field ("full_name", `string)])))))))) :
+                            [`mandatory_field ("admissionYear", `integral);
+                            `mandatory_field ("fullName", `string)])))))))) :
   Kxclib.Json.jv -> student Bindoj_runtime.OfJsonResult.t)[@@warning "-39"]
 - : unit = ()
 # Bindoj.(
@@ -214,18 +214,18 @@ let student_of_json' =
    Caml.Structure.([binding person_encoder] |> printf "%a@?" pp_caml));;
 let person_to_json =
   (function
-   | Anonymous -> `obj [("kind", (`str "Anonymous"))]
+   | Anonymous -> `obj [("kind", (`str "anonymous"))]
    | With_id (x0) ->
-       `obj [("kind", (`str "With_id")); ("arg", (int_to_json x0))]
+       `obj [("kind", (`str "with-id")); ("arg", (int_to_json x0))]
    | Student { student_id = x0; name = x1 } ->
        `obj
-         [("kind", (`str "Student"));
-         ("student_id", (int_to_json x0));
+         [("kind", (`str "student"));
+         ("studentId", (int_to_json x0));
          ("name", (string_to_json x1))]
    | Teacher { faculty_id = x0; name = x1; department = x2 } ->
        `obj
-         [("kind", (`str "Teacher"));
-         ("faculty_id", (int_to_json x0));
+         [("kind", (`str "teacher"));
+         ("facultyId", (int_to_json x0));
          ("name", (string_to_json x1));
          ("department", (string_to_json x2))] : person -> Kxclib.Json.jv)
   [@@warning "-39"]
@@ -238,24 +238,23 @@ let person_of_json' =
      let rec of_json_impl path __bindoj_orig =
        (__bindoj_orig |> (Kxclib.Jv.pump_field "kind")) |>
          (function
-          | `obj (("kind", `str "Anonymous")::_) -> Ok Anonymous
-          | `obj (("kind", `str "With_id")::param) ->
+          | `obj (("kind", `str "anonymous")::_) -> Ok Anonymous
+          | `obj (("kind", `str "with-id")::param) ->
               (match List.assoc_opt "arg" param with
                | Some arg ->
                    let (>>=) = Result.bind in
                    (int_of_json ((`f "arg") :: path) arg) >>=
                      ((fun x0 -> Ok (With_id x0)))
                | None -> Error ("mandatory field 'arg' does not exist", path))
-          | `obj (("kind", `str "Student")::param) ->
+          | `obj (("kind", `str "student")::param) ->
               let (>>=) = Result.bind in
-              (((List.assoc_opt "student_id" param) |>
+              (((List.assoc_opt "studentId" param) |>
                   (function
                    | Some a -> Ok a
                    | None ->
                        Error
-                         ("mandatory field 'student_id' does not exist",
-                           path)))
-                 >>= (int_of_json ((`f "student_id") :: path)))
+                         ("mandatory field 'studentId' does not exist", path)))
+                 >>= (int_of_json ((`f "studentId") :: path)))
                 >>=
                 ((fun x0 ->
                     (((List.assoc_opt "name" param) |>
@@ -268,16 +267,15 @@ let person_of_json' =
                        >>= (string_of_json ((`f "name") :: path)))
                       >>=
                       (fun x1 -> Ok (Student { student_id = x0; name = x1 }))))
-          | `obj (("kind", `str "Teacher")::param) ->
+          | `obj (("kind", `str "teacher")::param) ->
               let (>>=) = Result.bind in
-              (((List.assoc_opt "faculty_id" param) |>
+              (((List.assoc_opt "facultyId" param) |>
                   (function
                    | Some a -> Ok a
                    | None ->
                        Error
-                         ("mandatory field 'faculty_id' does not exist",
-                           path)))
-                 >>= (int_of_json ((`f "faculty_id") :: path)))
+                         ("mandatory field 'facultyId' does not exist", path)))
+                 >>= (int_of_json ((`f "facultyId") :: path)))
                 >>=
                 ((fun x0 ->
                     (((List.assoc_opt "name" param) |>
@@ -310,7 +308,7 @@ let person_of_json' =
           | `obj (("kind", `str discriminator_value)::_) ->
               Error
                 ((Printf.sprintf
-                    "given discriminator field value '%s' is not one of [ 'Anonymous', 'With_id', 'Student', 'Teacher' ]"
+                    "given discriminator field value '%s' is not one of [ 'anonymous', 'with-id', 'student', 'teacher' ]"
                     discriminator_value), ((`f "kind") :: path))
           | `obj (("kind", jv)::_) ->
               Error
@@ -340,25 +338,25 @@ let person_of_json' =
                (`with_warning
                   ("not considering any config if exists",
                     (`named
-                       ("person",
+                       ("Person",
                          (`anyone_of
                             [`object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "Anonymous")))];
+                                  ("kind", (`exactly (`str "anonymous")))];
                             `object_of
                               [`mandatory_field
-                                 ("kind", (`exactly (`str "With_id")));
+                                 ("kind", (`exactly (`str "with-id")));
                               `mandatory_field
                                 ("arg", (`tuple_of [`integral]))];
                             `object_of
                               [`mandatory_field
-                                 ("kind", (`exactly (`str "Student")));
-                              `mandatory_field ("student_id", `integral);
+                                 ("kind", (`exactly (`str "student")));
+                              `mandatory_field ("studentId", `integral);
                               `mandatory_field ("name", `string)];
                             `object_of
                               [`mandatory_field
-                                 ("kind", (`exactly (`str "Teacher")));
-                              `mandatory_field ("faculty_id", `integral);
+                                 ("kind", (`exactly (`str "teacher")));
+                              `mandatory_field ("facultyId", `integral);
                               `mandatory_field ("name", `string);
                               `mandatory_field ("department", `string)]])))))))) :
   Kxclib.Json.jv -> person Bindoj_runtime.OfJsonResult.t)[@@warning "-39"]

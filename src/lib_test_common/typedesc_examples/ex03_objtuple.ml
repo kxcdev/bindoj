@@ -58,45 +58,34 @@ let fwrt : (unit, unit) ts_fwrt_decl =
   )
 
 let ts_ast : ts_ast option =
-  let ret = "__bindoj_ret" in
   let discriminator = "kind" in
-  let var_v = "__bindoj_v" in
-  let var_x = "__bindoj_x" in
-  let var_fns = "__bindoj_fns" in
   let int_nil =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "IntNil"); } ] in
+          tsps_type_desc = `literal_type (`string_literal "intnil"); } ] in
   let int_cons =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "IntCons"); };
+          tsps_type_desc = `literal_type (`string_literal "intcons"); };
         { tsps_modifiers = [];
           tsps_name = "_0";
           tsps_type_desc = `type_reference "number" };
         { tsps_modifiers = [];
           tsps_name = "_1";
-          tsps_type_desc = `type_reference "int_list" } ] in
-  let cstrs = ["IntNil", int_nil; "IntCons", int_cons] in
+          tsps_type_desc = `type_reference "IntList" } ] in
+  let cstrs = ["intnil", int_nil; "intcons", int_cons] in
+  let options : Util.Ts_ast.options =
+    { discriminator;
+      var_v = "__bindoj_v";
+      var_x = "__bindoj_x";
+      var_fns = "__bindoj_fns";
+      ret = "__bindoj_ret" } in
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "int_list";
+          tsa_name = "IntList";
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd cstrs); };
-      `function_declaration
-        { tsf_modifiers = [`export];
-          tsf_name = "analyze_int_list";
-          tsf_type_parameters = [ret];
-          tsf_parameters =
-            Util.Ts_ast.(case_analyzer_parameters { discriminator; var_x; var_v; var_fns; ret; } cstrs);
-          tsf_type_desc =
-            `func_type
-              { tsft_parameters =
-                  [ { tsp_name = var_x;
-                      tsp_type_desc = `type_reference "int_list"; } ];
-                tsft_type_desc = `type_reference ret; };
-          tsf_body =
-            Util.Ts_ast.(case_analyzer_body "int_list" { discriminator; var_x; var_v; var_fns; ret; } cstrs); } ]
+      Util.Ts_ast.case_analyzer "IntList" "analyzeIntList" options cstrs; ]

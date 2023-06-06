@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_codec
 open Bindoj_apidir_shared
 
 module Ttd = Bindoj_typedesc.Typed_type_desc
@@ -46,7 +47,6 @@ let gen_raw :
     | None -> invalid_arg' "?bindoj_namespace is not specified" in
   let open Bindoj_gen_ts.Typescript_datatype in
   let open Bindoj_typedesc.Typed_type_desc in
-  let td_name (Ttd.Boxed (module T)) = T.decl.td_name in
   let resolution_strategy =
     resolution_strategy |? (constant `no_resolution)
   in
@@ -69,7 +69,11 @@ let gen_raw :
     |> List.group_by resolution_strategy
     |&?> (function | (`import_location loc, tds) -> Some (loc, tds) | _ -> None)
     |&> (fun (loc, tds) ->
-      let tnames = tds |&> td_name |> List.sort_uniq compare in
+      let tnames =
+        tds
+        |&> (fun (Ttd.Boxed (module T)) -> Json.Json_config.get_mangled_name_of_type T.decl)
+        |> List.sort_uniq compare
+      in
       sprintf "import { %s } from \"%s\";"
           (String.concat ", " tnames)
           loc
@@ -85,17 +89,18 @@ let gen_raw :
         | _ -> None)
   in
   let make_ts_type_desc (Ttd.Boxed (module T) as typ): ts_type_desc =
-    let name = T.decl.td_name in
+    let { td_name; td_configs; _ } = T.decl in
+    let json_name = Json.Json_config.get_name_opt td_configs |? td_name in
     match resolution_strategy typ with
     | `inline_type_definition ->
       let () = if is_recursive T.decl then
-        failwith' "%s - Recursive type '%s' cannot be defined inline." __FILE__ name
+        failwith' "%s - Recursive type '%s' cannot be defined inline." __FILE__ td_name
       in
       T.decl
       |> ts_fwrt_decl_of_type_decl ~export:false ~readonly:false
-      |> ts_type_alias_decl_of_fwrt_decl ~self_type_name:name
+      |> ts_type_alias_decl_of_fwrt_decl ~self_type_name:json_name
       |> fun t -> t.tsa_type_desc
-    | _ -> `type_reference name
+    | _ -> `type_reference (json_name |> Json.Json_config.mangled `type_name td_configs)
   in
   let typescript_resptypes (Invp invp) : ts_type_desc =
     let branches = resptypes invp |&> make_ts_type_desc in

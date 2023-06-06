@@ -5,7 +5,7 @@ import {Schema,Validator} from "jsonschema"
 var validator = new Validator();
 
 // also typecheck the generate JSON
-const samples : ex04.foo[] = <ex04.foo[]>samples_tmp;
+const samples : ex04.Foo[] = <ex04.Foo[]>samples_tmp;
 const schema : Schema = <Schema><unknown>schema_tmp;
 
 describe('ex04', (): void => {
@@ -23,11 +23,11 @@ describe('ex04', (): void => {
   });
 
   test('the case analyzer works', (): void => {
-    function analyzer(x: ex04.foo) {;
-      return ex04.analyze_foo<number>({
-        Foo0: _ => 0,
-        Foo1: v => v.arg,
-        Foo2: v => v.arg.reduce((x,y) => x+y, 0),
+    function analyzer(x: ex04.Foo) {;
+      return ex04.analyzeFoo<number>({
+        foo0: _ => 0,
+        foo1: v => v.arg,
+        foo2: v => v.arg.reduce((x,y) => x+y, 0),
       })(x);
     };
 

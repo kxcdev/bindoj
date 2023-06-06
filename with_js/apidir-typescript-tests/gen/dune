@@ -24,13 +24,15 @@
  (name gen_mock_server_01)
  (modules gen_mock_server_01)
  (modes js)
- (libraries
-   gen_mock_server
-   bindoj_test_common bindoj_base alcotest
-   bindoj_apidir_shared bindoj_apidir_runtime bindoj_apidir_typescript
-   bindoj_test_common_jsoo_utils
-   js_of_ocaml prr
-   kxclib kxclib.jsoo)
+ (libraries gen_mock_server)
+ (preprocess (pps js_of_ocaml-ppx))
+ (flags (:standard -open Kxclib)))
+
+(executable
+ (name gen_mock_server_01_no_mangling)
+ (modules gen_mock_server_01_no_mangling)
+ (modes js)
+ (libraries gen_mock_server)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib)))
 
@@ -38,13 +40,7 @@
  (name gen_mock_server_02)
  (modules gen_mock_server_02)
  (modes js)
- (libraries
-   gen_mock_server
-   bindoj_test_common bindoj_base alcotest
-   bindoj_apidir_shared bindoj_apidir_runtime bindoj_apidir_typescript
-   bindoj_test_common_jsoo_utils
-   js_of_ocaml prr
-   kxclib kxclib.jsoo)
+ (libraries gen_mock_server)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib)))
 
@@ -52,13 +48,7 @@
  (name gen_mock_server_03)
  (modules gen_mock_server_03)
  (modes js)
- (libraries
-   gen_mock_server
-   bindoj_test_common bindoj_base alcotest
-   bindoj_apidir_shared bindoj_apidir_runtime bindoj_apidir_typescript
-   bindoj_test_common_jsoo_utils
-   js_of_ocaml prr
-   kxclib kxclib.jsoo)
+ (libraries gen_mock_server)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib)))
 
@@ -66,13 +56,7 @@
  (name gen_mock_server_04)
  (modules gen_mock_server_04)
  (modes js)
- (libraries
-   gen_mock_server
-   bindoj_test_common bindoj_base alcotest
-   bindoj_apidir_shared bindoj_apidir_runtime bindoj_apidir_typescript
-   bindoj_test_common_jsoo_utils
-   js_of_ocaml prr
-   kxclib kxclib.jsoo)
+ (libraries gen_mock_server)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib)))
 
@@ -80,13 +64,7 @@
  (name gen_mock_server_05)
  (modules gen_mock_server_05)
  (modes js)
- (libraries
-   gen_mock_server
-   bindoj_test_common bindoj_base alcotest
-   bindoj_apidir_shared bindoj_apidir_runtime bindoj_apidir_typescript
-   bindoj_test_common_jsoo_utils
-   js_of_ocaml prr
-   kxclib kxclib.jsoo)
+ (libraries gen_mock_server)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib)))
 
@@ -94,12 +72,6 @@
  (name gen_mock_server_06)
  (modules gen_mock_server_06)
  (modes js)
- (libraries
-   gen_mock_server
-   bindoj_test_common bindoj_base alcotest
-   bindoj_apidir_shared bindoj_apidir_runtime bindoj_apidir_typescript
-   bindoj_test_common_jsoo_utils
-   js_of_ocaml prr
-   kxclib kxclib.jsoo)
+ (libraries gen_mock_server)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib)))

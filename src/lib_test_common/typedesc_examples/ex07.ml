@@ -33,17 +33,17 @@ let decl : type_decl =
   variant_decl "customized_union" [
     variant_constructor "Case1" (`tuple_like [cty_int])
       ~configs:[
-        Json_config.name "Case1_";
+        Json_config.name "Case1'";
         Json_config.name_of_variant_arg "value";
       ];
     variant_constructor "Case2" (`inline_record [
       record_field "x" cty_int
-        ~configs:[ Json_config.name "x_" ];
+        ~configs:[ Json_config.name "x'" ];
       record_field "y" cty_int
-        ~configs:[ Json_config.name "y_" ];
+        ~configs:[ Json_config.name "y'" ];
     ])
       ~configs:[
-        Json_config.name "Case2_";
+        Json_config.name "Case2'";
       ];
   ] ~configs:variant_configs
 
@@ -51,18 +51,18 @@ let decl_with_docstr : type_decl =
   variant_decl "customized_union" [
     variant_constructor "Case1" (`tuple_like [cty_int])
       ~configs:[
-        Json_config.name "Case1_";
+        Json_config.name "Case1'";
         Json_config.name_of_variant_arg "value";
       ]
       ~doc:(`docstr "custom arg name (value)");
     variant_constructor "Case2" (`inline_record [
       record_field "x" cty_int
-        ~configs:[ Json_config.name "x_" ];
+        ~configs:[ Json_config.name "x'" ];
       record_field "y" cty_int
-        ~configs:[ Json_config.name "y_" ];
+        ~configs:[ Json_config.name "y'" ];
     ])
       ~configs:[
-        Json_config.name "Case2_";
+        Json_config.name "Case2'";
       ];
   ] ~configs:variant_configs
     ~doc:(`docstr "variant with customized discriminator and argument names")
@@ -74,34 +74,30 @@ let fwrt : (unit, unit) ts_fwrt_decl =
     |> bind_object ~configs:variant_configs parent []
     |> bind_constructor ~parent "Case1"
         ~configs:[
-          Json_config.name "Case1_";
+          Json_config.name "Case1'";
           Json_config.name_of_variant_arg "value";
         ]
         ~args:[cty_int]
     |> bind_constructor ~parent "Case2"
         ~configs:[
-          Json_config.name "Case2_";
+          Json_config.name "Case2'";
           Json_config.name_of_variant_arg "values";
         ]
         ~fields:[
           field "x" cty_int
-            ~configs:[ Json_config.name "x_" ];
+            ~configs:[ Json_config.name "x'" ];
           field "y" cty_int
-            ~configs:[ Json_config.name "y_" ];
+            ~configs:[ Json_config.name "y'" ];
         ]
   )
 
 let ts_ast : ts_ast option =
   let discriminator = "tag" in
-  let var_v = "__bindoj_v" in
-  let var_x = "__bindoj_x" in
-  let var_fns = "__bindoj_fns" in
-  let ret = "__bindoj_ret" in
   let case1 =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Case1_"); };
+          tsps_type_desc = `literal_type (`string_literal "case1'"); };
         { tsps_modifiers = [];
           tsps_name = "value";
           tsps_type_desc = `type_reference "number"; }; ] in
@@ -109,34 +105,27 @@ let ts_ast : ts_ast option =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Case2_"); };
+          tsps_type_desc = `literal_type (`string_literal "case2'"); };
         { tsps_modifiers = [];
-          tsps_name = "x_";
+          tsps_name = "x'";
           tsps_type_desc = `type_reference "number"; };
         { tsps_modifiers = [];
-          tsps_name = "y_";
+          tsps_name = "y'";
           tsps_type_desc = `type_reference "number"; }; ] in
   let customized_union = [
-    "Case1_", case1;
-    "Case2_", case2;
+    "case1'", case1;
+    "case2'", case2;
   ] in
+  let options : Util.Ts_ast.options =
+    { discriminator;
+      var_v = "__bindoj_v";
+      var_x = "__bindoj_x";
+      var_fns = "__bindoj_fns";
+      ret = "__bindoj_ret" } in
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "customized_union";
+          tsa_name = "CustomizedUnion";
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd customized_union); };
-      `function_declaration
-        { tsf_modifiers = [`export];
-          tsf_name = "analyze_customized_union";
-          tsf_type_parameters = [ret];
-          tsf_parameters =
-            Util.Ts_ast.(case_analyzer_parameters { discriminator; var_x; var_v; var_fns; ret } customized_union);
-          tsf_type_desc =
-            `func_type
-              { tsft_parameters =
-                  [ { tsp_name = var_x;
-                      tsp_type_desc = `type_reference "customized_union"; } ];
-                tsft_type_desc = `type_reference ret; };
-          tsf_body =
-            Util.Ts_ast.(case_analyzer_body "customized_union" { discriminator; var_x; var_v; var_fns; ret; } customized_union); } ]
+      Util.Ts_ast.case_analyzer "CustomizedUnion" "analyzeCustomizedUnion" options customized_union; ]

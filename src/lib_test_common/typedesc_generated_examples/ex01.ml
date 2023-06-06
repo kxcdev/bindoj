@@ -36,7 +36,7 @@ let sample_value01 : t Sample_value.t = {
     name = "William Gibson";
   };
   jv = `obj [
-    ("admission_year", `num 1984.);
+    ("admissionYear", `num 1984.);
     ("name", `str "William Gibson")
   ];
 }

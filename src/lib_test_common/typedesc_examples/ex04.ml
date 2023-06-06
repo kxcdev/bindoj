@@ -56,22 +56,18 @@ let fwrt : (unit, unit) ts_fwrt_decl =
   )
 
 let ts_ast : ts_ast option =
-  let ret = "__bindoj_ret" in
   let discriminator = "kind" in
   let arg_fname = "arg" in
-  let var_v = "__bindoj_v" in
-  let var_x = "__bindoj_x" in
-  let var_fns = "__bindoj_fns" in
   let foo0 =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Foo0"); } ] in
+          tsps_type_desc = `literal_type (`string_literal "foo0"); } ] in
   let foo1 =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Foo1"); };
+          tsps_type_desc = `literal_type (`string_literal "foo1"); };
         { tsps_modifiers = [];
           tsps_name = arg_fname;
           tsps_type_desc = `type_reference "number"; } ] in
@@ -79,28 +75,21 @@ let ts_ast : ts_ast option =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Foo2"); };
+          tsps_type_desc = `literal_type (`string_literal "foo2"); };
         { tsps_modifiers = [];
           tsps_name = arg_fname;
           tsps_type_desc = `tuple [`type_reference "number"; `type_reference "number"]; } ] in
-  let foos = ["Foo0", foo0; "Foo1", foo1; "Foo2", foo2] in
+  let foos = ["foo0", foo0; "foo1", foo1; "foo2", foo2] in
+  let options : Util.Ts_ast.options =
+    { discriminator;
+      var_v = "__bindoj_v";
+      var_x = "__bindoj_x";
+      var_fns = "__bindoj_fns";
+      ret = "__bindoj_ret" } in
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "foo";
+          tsa_name = "Foo";
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd foos); };
-      `function_declaration
-        { tsf_modifiers = [`export];
-          tsf_name = "analyze_foo";
-          tsf_type_parameters = [ret];
-          tsf_parameters =
-            Util.Ts_ast.(case_analyzer_parameters { discriminator; var_x; var_v; var_fns; ret; } foos);
-          tsf_type_desc =
-            `func_type
-              { tsft_parameters =
-                  [ { tsp_name = var_x;
-                      tsp_type_desc = `type_reference "foo"; } ];
-                tsft_type_desc = `type_reference ret; };
-          tsf_body =
-            Util.Ts_ast.(case_analyzer_body "foo" { discriminator; var_x; var_v; var_fns; ret; } foos); } ]
+      Util.Ts_ast.case_analyzer "Foo" "analyzeFoo" options foos ]

@@ -63,7 +63,7 @@ let ts_ast : ts_ast option =
       ] in
   [ `type_alias_declaration {
         tsa_modifiers = [`export];
-        tsa_name = "various_prim_types";
+        tsa_name = "VariousPrimTypes";
         tsa_type_parameters = [];
         tsa_type_desc = lit
       };

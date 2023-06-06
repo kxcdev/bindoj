@@ -36,8 +36,8 @@ let t : t Alcotest.testable = Alcotest.of_pp pp
 open Sample_value
 open Sample_value.JvHelper
 
-let intCons a b = ctor2 "IntCons" (`num (float_of_int a)) b
-let intNil = ctor0 "IntNil"
+let intCons a b = ctor2 "intcons" (`num (float_of_int a)) b
+let intNil = ctor0 "intnil"
 
 let sample_value01 = { orig = IntNil; jv = intNil }
 

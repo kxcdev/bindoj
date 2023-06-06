@@ -31,7 +31,13 @@ val to_coretype : 'x t -> coretype
 val of_typed_type_decl : ?codec:Coretype.codec -> 'x Typed_type_desc.typed_type_decl -> 'x t
 val of_ : ?codec:Coretype.codec -> 'x Typed_type_desc.typed_type_decl -> 'x t
 
-val to_typed_type_decl : ?env:Typed_type_desc.tdenv -> ?self:'x Refl.t -> string -> 'x t -> 'x Typed_type_desc.typed_type_decl
+val to_typed_type_decl :
+  ?env:Typed_type_desc.tdenv
+  -> ?configs:[`type_decl] configs
+  -> ?self:'x Refl.t
+  -> string
+  -> 'x t
+  -> 'x Typed_type_desc.typed_type_decl
 
 module Prims : sig
   val unit : unit t

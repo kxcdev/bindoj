@@ -6,6 +6,12 @@
 
 (rule
  (alias gen)
+ (target sample_apidir_01_no_mangling.ts)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
  (target sample_apidir_02.ts)
  (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
  (mode (promote (until-clean))))
@@ -38,6 +44,13 @@
   (alias gen_mock_server)
   (targets sample_apidir_01_server.js)
   (deps gen/gen_mock_server_01.bc.js)
+  (mode (promote (until-clean)))
+  (action (copy %{deps} %{targets})))
+
+(rule
+  (alias gen_mock_server)
+  (targets sample_apidir_01_no_mangling_server.js)
+  (deps gen/gen_mock_server_01_no_mangling.bc.js)
   (mode (promote (until-clean)))
   (action (copy %{deps} %{targets})))
 

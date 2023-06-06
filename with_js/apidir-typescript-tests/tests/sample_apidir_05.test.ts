@@ -1,6 +1,6 @@
 import { MockServer, createMockClient } from "./lib";
 import { Sample_apidir_05InvpInfo as invpInfo, Sample_apidir_05ClientIntf as clientIntf } from "../sample_apidir_05";
-import { complex_types } from "../../compile-tests/ex05_gen";
+import { ComplexTypes } from "../../compile-tests/ex05_gen";
 
 const b = require("../sample_apidir_05_server.js").bindoj_jsoo_bridge;
 
@@ -26,7 +26,7 @@ describe("apidir-typescript-tests-sample05", () => {
   });
 
   describe("option-of-string", () => {
-    const sample_values: complex_types[] = [
+    const sample_values: ComplexTypes[] = [
       {
         option: 42,
         list: [1, 2, 3, 4],
@@ -35,12 +35,7 @@ describe("apidir-typescript-tests-sample05", () => {
         objtuple: { _0: 1, _1: 2 },
         tuple: [3, 4],
       },
-      { option: null,
-        list: [],
-        map: {},
-        nested: [null, [0, 1, 2], [1, 2]],
-        objtuple: { _0: 1, _1: 2 },
-        tuple: [3, 4] },
+      { option: null, list: [], map: {}, nested: [null, [0, 1, 2], [1, 2]], objtuple: { _0: 1, _1: 2 }, tuple: [3, 4] },
     ];
     sample_values.forEach((x, i) => {
       test(`test ${i}`, async () => {

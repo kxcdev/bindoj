@@ -49,12 +49,12 @@ let ts_ast : ts_ast option =
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "student";
+          tsa_name = "Student";
           tsa_type_parameters = [];
           tsa_type_desc =
             `type_literal
               [ { tsps_modifiers = [];
-                  tsps_name = "admission_year";
+                  tsps_name = "admissionYear";
                   tsps_type_desc = `type_reference "number"; };
                 { tsps_modifiers = [];
                   tsps_name = "name";

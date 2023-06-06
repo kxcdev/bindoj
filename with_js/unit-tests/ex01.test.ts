@@ -5,12 +5,12 @@ import {Schema, Validator} from "jsonschema"
 var validator = new Validator();
 
 // also typecheck the generate JSON
-const samples : ex01.student[] = <ex01.student[]>samples_tmp;
+const samples : ex01.Student[] = <ex01.Student[]>samples_tmp;
 const schema : Schema = <Schema><unknown>schema_tmp;
 
 describe('ex01', (): void => {
   test('it compiles', (): void => {
-    expect(samples[0].admission_year).toBe(1984);
+    expect(samples[0].admissionYear).toBe(1984);
     expect(samples[0].name).toBe("William Gibson");
     return;
   });

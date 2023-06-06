@@ -54,10 +54,13 @@ end = struct
             Bindoj_openapi.V3.Schema_object.any ()
           );
           Json.Json_config.custom_shape_explanation Bindoj_std_runtime.json_value_json_shape_explanation;
+          Json.Json_config.no_mangling;
         ]
         ~codec:(`in_module "Bindoj_std_runtime.Json_value")
         type_name
-    let untyped : type_decl = alias_decl type_name coretype
+    let untyped : type_decl = alias_decl ~configs:[
+      Json.Json_config.no_mangling;
+    ] type_name coretype
     let typed : t Typed_type_desc.typed_type_decl =
       Typed_type_desc.Typed.mk untyped reflect
     let boxed = Boxed typed

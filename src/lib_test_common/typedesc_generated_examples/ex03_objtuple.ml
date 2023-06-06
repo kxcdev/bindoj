@@ -37,11 +37,11 @@ open Sample_value
 open Sample_value.JvHelper
 
 let intCons a b =
-  ctor_record "IntCons" [
+  ctor_record "intcons" [
     "_0", `num (float_of_int a);
     "_1", b
   ]
-let intNil = ctor0 "IntNil"
+let intNil = ctor0 "intnil"
 
 let sample_value01 = { orig = IntNil; jv = intNil }
 

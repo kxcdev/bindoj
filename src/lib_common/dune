@@ -1,0 +1,3 @@
+(library
+ (name bindoj_common)
+ (public_name bindoj.common))

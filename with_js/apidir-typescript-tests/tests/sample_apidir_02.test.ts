@@ -1,6 +1,6 @@
 import { MockServer, createMockClient } from "./lib";
 import { Sample_apidir_02InvpInfo as invpInfo, Sample_apidir_02ClientIntf as clientIntf } from "../sample_apidir_02";
-import { int_list } from "../../compile-tests/ex03_objtuple_gen";
+import { IntList } from "../../compile-tests/ex03_objtuple_gen";
 
 const b = require("../sample_apidir_02_server.js").bindoj_jsoo_bridge;
 
@@ -8,11 +8,11 @@ const mockServer: MockServer = b.server_mock;
 
 const mockClient: clientIntf = createMockClient(invpInfo)(mockServer);
 
-const createIntList = (nums: number[]): int_list => {
+const createIntList = (nums: number[]): IntList => {
   if (nums.length === 0) {
-    return { kind: "IntNil" };
+    return { kind: "intnil" };
   } else {
-    return { kind: "IntCons", _0: nums[0], _1: createIntList(nums.slice(1)) } as unknown as int_list;
+    return { kind: "intcons", _0: nums[0], _1: createIntList(nums.slice(1)) } as unknown as IntList;
   }
 };
 
@@ -20,7 +20,7 @@ describe("apidir-typescript-tests-sample02", () => {
   test("get-any-int-list", async () => {
     const { body, status_code } = await mockClient["get-any-int-list"]();
     expect(status_code).toBe(200);
-    expect(body).toStrictEqual<int_list>(createIntList([1, 2, 3, 4]));
+    expect(body).toStrictEqual<IntList>(createIntList([1, 2, 3, 4]));
   });
 
   const sample_values = [

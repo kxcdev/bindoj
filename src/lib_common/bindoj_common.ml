@@ -17,33 +17,22 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base.Type_desc
-open Bindoj_gen_ts.Typescript_datatype
+module Mangling = struct
+  let snake_to_upper_camel snake_str =
+    String.split_on_char '_' snake_str
+    |> List.map String.capitalize_ascii
+    |> String.concat ""
 
-(** each example module should have this module type *)
-module type T = sig
-  val decl: type_decl
-  val example_module_path: string
+  let snake_to_lower_camel snake_str =
+    String.split_on_char '_' snake_str
+    |> function
+    | [] -> ""
+    | h :: t ->
+      (h :: (List.map String.capitalize_ascii t))
+      |> String.concat ""
 
-  val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) ts_fwrt_decl
-  val ts_ast: ts_ast option
+  let cap_snake_to_kebab cap_snake_str =
+    String.split_on_char '_' cap_snake_str
+    |> List.map String.lowercase_ascii
+    |> String.concat "-"
 end
-
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex02", (module Ex02);
-  "ex02_reused", (module Ex02_reused);
-  "ex02_no_mangling", (module Ex02_no_mangling);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-  "ex09", (module Ex09);
-  "ex10", (module Ex10);
-]

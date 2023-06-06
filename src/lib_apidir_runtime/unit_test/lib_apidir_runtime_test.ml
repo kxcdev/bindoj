@@ -81,12 +81,11 @@ let all =
     let module Test = MakeTest (Sample) (DirectIo) in
     (name, (module Test : TestS))
 
-let make_examples () =
+let make_examples (module Test : TestS) =
   let examples = Examples.empty () in
 
   (* register expected value to expected and invocation point info to server bridge *)
   let () =
-    List.iter begin fun (_, (module Test : TestS)) ->
       let open Test in
       let builder : (module Samples.MockServerBuilder) = (module struct
         module Io = Io
@@ -100,9 +99,8 @@ let make_examples () =
           Examples.register_post examples path uinvp ~orig_resp ~orig_req ~jv_resp ~jv_req ~pp
       end) in
       Dir.build_mock_server builder
-    end all in
+  in
   examples
-let examples = make_examples ()
 
 open Alcotest
 
@@ -128,12 +126,13 @@ end
 let bridge_path_handler_cases =
   (all |&>
    fun (name, test) ->
+     let examples = make_examples(test) in
      let module Test = (val test : TestS) in
      let open Test in
      let open MonadOps(Io) in
      let open MakeJvIo(Io) in
      begin get_paths |&> fun path ->
-         test_case "register_get_handler, path_index_get and handle_path_json_get work"
+         test_case (name ^ ": register_get_handler, path_index_get and handle_path_json_get work")
            `Quick
            (fun () ->
               match Examples.find_get_by_path examples path with
@@ -144,7 +143,7 @@ let bridge_path_handler_cases =
                   (Io.return get.jv)
                   (Bridge.handle_path_json_get path >|= snd))
      end @ begin post_paths |&> fun path ->
-         test_case "register_post_handler, path_index_post and handle_path_json_post work."
+         test_case (name ^ ": register_post_handler, path_index_post and handle_path_json_post work.")
            `Quick
            (fun () ->
               match Examples.find_post_by_path examples path with
@@ -161,12 +160,13 @@ let bridge_path_handler_cases =
 let bridge_handler_cases =
   (all |&>
    fun (name, test) ->
+     let examples = make_examples(test) in
      let module Test = (val test : TestS) in
      let open Test in
      let open MonadOps(Io) in
      let open MakeJvIo(Io) in
      invps |&> fun (Invp invp as uinvp) ->
-       test_case "register_get/post_handler and handle_json_get/post work"
+       test_case (name ^ ": register_get/post_handler and handle_json_get/post work")
          `Quick
          (fun () ->
             match invp.ip_method with
@@ -192,11 +192,12 @@ let bridge_handler_cases =
 let client_cases =
   (all |&>
    fun (name, test) ->
+     let examples = make_examples(test) in
      let module Test = (val test : TestS) in
      let open Test in
      begin invps |&> fun (Invp invp as uinvp) ->
          let open MakeJvIo(Io) in
-         test_case "Bridge.register_get_handler and Client.perform_json_get work."
+         test_case (name ^ ": Bridge.register_get_handler and Client.perform_json_get work.")
            `Quick
            (fun () ->
               match invp.ip_method with

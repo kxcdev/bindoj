@@ -17,8 +17,8 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               */
-export type teacher = {
-  faculty_id : number;
+export type Teacher = {
+  facultyId : number;
   name : string;
   department : string;
 }

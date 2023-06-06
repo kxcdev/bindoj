@@ -17,42 +17,65 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-include Bindoj_gen_test_gen_output.Ex07_gen
+include Bindoj_gen_test_gen_output.Ex02_no_mangling_gen
 open Bindoj_base
 
-type t = customized_union =
-  | Case1 of int
-  | Case2 of { x: int; y: int }
-[@@deriving show]
-let decl = Bindoj_test_common_typedesc_examples.Ex07.decl
-let reflect = customized_union_reflect
+type t = person =
+  | Anonymous
+  | With_id of int
+  | Student of { student_id: int; name: string }
+  | Teacher of { faculty_id: int; name: string; department: string }
+  [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex02_no_mangling.decl
+let reflect = person_reflect
 
-let json_shape_explanation = customized_union_json_shape_explanation
-let to_json = customized_union_to_json
-let of_json' = customized_union_of_json'
+let json_shape_explanation = person_json_shape_explanation
+let to_json = person_to_json
+let of_json' = person_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
-type sample = t Sample_value.t
 open Sample_value
 open Sample_value.JvHelper
 
-let discriminator = "tag"
+let sample_value01 = { orig = Anonymous; jv = ctor0 "Anonymous" }
 
-let sample_value01 : sample = {
-  orig = Case1 42;
-  jv = ctor1 ~discriminator ~arg:"value" "case1'" (`num 42.);
+let sample_value02 = {
+  orig = With_id 1619;
+  jv = ctor1 "With_id" (`num 1619.);
 }
 
-let sample_value02 : sample = {
-  orig = Case2 { x = 4; y = 2 };
-  jv = ctor_record ~discriminator "case2'" [
-    "x'", `num 4.;
-    "y'", `num 2.;
-  ]
+let sample_value03 = {
+  orig =
+    Student {
+      student_id = 451;
+      name = "Ray Bradbury";
+    };
+  jv =
+    ctor_record "Student" [
+      ("student_id", `num 451.);
+      ("name", `str "Ray Bradbury");
+    ];
+}
+
+let sample_value04 = {
+  orig =
+    Teacher {
+      faculty_id = 2001;
+      name = "Arthur C. Clark";
+      department = "Space";
+    };
+  jv =
+    ctor_record "Teacher" [
+      ("faculty_id", `num 2001.);
+      ("name", `str "Arthur C. Clark");
+      ("department", `str "Space");
+    ];
 }
 
 let sample_values = [
   sample_value01;
   sample_value02;
+  sample_value03;
+  sample_value04;
 ]

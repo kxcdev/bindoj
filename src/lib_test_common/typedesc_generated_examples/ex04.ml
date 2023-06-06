@@ -36,17 +36,17 @@ open Sample_value.JvHelper
 
 let sample_value01 : sample = {
   orig = `Foo0;
-  jv = ctor0 "Foo0";
+  jv = ctor0 "foo0";
 }
 
 let sample_value02 : sample = {
   orig = `Foo1 1;
-  jv = ctor1 "Foo1" (`num 1.);
+  jv = ctor1 "foo1" (`num 1.);
 }
 
 let sample_value03 : sample = {
   orig = `Foo2 (1, 2);
-  jv = ctor2 "Foo2" (`num 1.) (`num 2.);
+  jv = ctor2 "foo2" (`num 1.) (`num 2.);
 }
 
 let sample_values = [

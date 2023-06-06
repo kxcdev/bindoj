@@ -27,14 +27,14 @@ module Types = struct
   type student = Ex01.student
   let student : student typed_type_decl = Typed.mk Ex01.decl Ex01.reflect
 
-  type person = Ex02.person
-  let person : person typed_type_decl = Typed.mk Ex02.decl Ex02.reflect
+  type person = Ex02_no_mangling.person
+  let person : person typed_type_decl = Typed.mk Ex02_no_mangling.decl Ex02_no_mangling.reflect
 end
 
 module Functions = struct
   let student_of_person = function
     (** returns ``response'' from ``request'' *)
-    | Ex02.Student { student_id; name; } -> Ex01.{ admission_year = student_id; name; }
+    | Ex02_no_mangling.Student { student_id; name; } -> Ex01.{ admission_year = student_id; name; }
     | Anonymous -> failwith "anonymous, not student"
     | With_id _ -> failwith "with_id, not student"
     | Teacher _ -> failwith "teacher, not student"
@@ -71,8 +71,8 @@ let () = begin
   get_student_from_person
   |> R.register_usage_sample
     ~status:`default
-    ~req:(Ex02.sample_value03.orig)
-    ~resp:(Functions.student_of_person Ex02.sample_value03.orig)
+    ~req:(Ex02_no_mangling.sample_value03.orig)
+    ~resp:(Functions.student_of_person Ex02_no_mangling.sample_value03.orig)
 end
 
 include R.Public
@@ -129,17 +129,17 @@ let build_mock_server (module M: MockServerBuilder) =
         ~jv_resp:(student_of_person orig |> Ex01.student_to_json) ~jv_req:jv
         ~pp:Ex01.pp in
 
-    reg_sample Ex02.sample_value03;
+    reg_sample Ex02_no_mangling.sample_value03;
     let sample =
       let orig =
-        Ex02.(Student {
+        Ex02_no_mangling.(Student {
             student_id = 1984;
             name = "William Gibson";
           }) in
       let jv =
         JvHelper.ctor_record
-          "student" [
-          ("studentId", `num 1984.);
+          "Student" [
+          ("student_id", `num 1984.);
           ("name", `str "William Gibson");
         ] in
       { orig; jv } in

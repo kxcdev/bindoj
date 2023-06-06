@@ -39,8 +39,8 @@ let sample_value01 : t Sample_value.t = {
     y_opt = None;
   };
   jv = `obj [
-    "x_opt", `null;
-    "y_opt", `null;
+    "xOpt", `null;
+    "yOpt", `null;
   ]
 }
 
@@ -50,8 +50,8 @@ let sample_value02 : t Sample_value.t = {
     y_opt = Some 42;
   };
   jv = `obj [
-    "x_opt", `null;
-    "y_opt", `num 42.;
+    "xOpt", `null;
+    "yOpt", `num 42.;
   ]
 }
 
@@ -61,8 +61,8 @@ let sample_value03 : t Sample_value.t = {
     y_opt = None;
   };
   jv = `obj [
-    "x_opt", `num (-25.);
-    "y_opt", `null;
+    "xOpt", `num (-25.);
+    "yOpt", `null;
   ]
 }
 
@@ -72,8 +72,8 @@ let sample_value04 : t Sample_value.t = {
     y_opt = Some (-119);
   };
   jv = `obj [
-    "x_opt", `num 512.;
-    "y_opt", `num (-119.);
+    "xOpt", `num 512.;
+    "yOpt", `num (-119.);
   ]
 }
 

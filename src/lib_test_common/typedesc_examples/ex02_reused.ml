@@ -99,20 +99,16 @@ let fwrt : (unit, unit) ts_fwrt_decl =
 let ts_ast : ts_ast option =
   let discriminator = "kind" in
   let arg_fname = "arg" in
-  let var_v = "__bindoj_v" in
-  let var_x = "__bindoj_x" in
-  let var_fns = "__bindoj_fns" in
-  let ret = "__bindoj_ret" in
   let anonymous =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Anonymous"); } ] in
+          tsps_type_desc = `literal_type (`string_literal "anonymous"); } ] in
   let with_id =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "With_id"); };
+          tsps_type_desc = `literal_type (`string_literal "with-id"); };
         { tsps_modifiers = [];
           tsps_name = arg_fname;
           tsps_type_desc = `type_reference "number"; }; ] in
@@ -120,9 +116,9 @@ let ts_ast : ts_ast option =
     `type_literal
       [ { tsps_modifiers = [];
           tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Student"); };
+          tsps_type_desc = `literal_type (`string_literal "student"); };
         { tsps_modifiers = [];
-          tsps_name = "student_id";
+          tsps_name = "studentId";
           tsps_type_desc = `type_reference "number"; };
         { tsps_modifiers = [];
           tsps_name = "name";
@@ -132,32 +128,25 @@ let ts_ast : ts_ast option =
       [`type_literal
           [ { tsps_modifiers = [];
             tsps_name = discriminator;
-            tsps_type_desc = `literal_type (`string_literal "Teacher"); }];
-        `type_reference "teacher"
+            tsps_type_desc = `literal_type (`string_literal "teacher"); }];
+        `type_reference "Teacher"
       ] in
   let person = [
-    "With_id", with_id;
-    "Teacher", teacher;
-    "Student", student;
-    "Anonymous", anonymous;
+    "with-id", with_id;
+    "teacher", teacher;
+    "student", student;
+    "anonymous", anonymous;
   ] in
+  let options : Util.Ts_ast.options =
+    { discriminator;
+      var_v = "__bindoj_v";
+      var_x = "__bindoj_x";
+      var_fns = "__bindoj_fns";
+      ret = "__bindoj_ret" } in
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "person";
+          tsa_name = "Person";
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd person); };
-      `function_declaration
-        { tsf_modifiers = [`export];
-          tsf_name = "analyze_person";
-          tsf_type_parameters = [ret];
-          tsf_parameters =
-            Util.Ts_ast.(case_analyzer_parameters { discriminator; var_x; var_v; var_fns; ret; } person);
-          tsf_type_desc =
-            `func_type
-              { tsft_parameters =
-                  [ { tsp_name = var_x;
-                      tsp_type_desc = `type_reference "person"; } ];
-                tsft_type_desc = `type_reference ret; };
-          tsf_body =
-            Util.Ts_ast.(case_analyzer_body "person" { discriminator; var_x; var_v; var_fns; ret; } person); } ]
+      Util.Ts_ast.case_analyzer "Person" "analyzePerson" options person; ]

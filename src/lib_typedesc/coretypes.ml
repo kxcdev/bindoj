@@ -266,12 +266,13 @@ let of_typed_type_decl :
 let of_ = of_typed_type_decl
 
 let to_typed_type_decl :
-    ?env:Typed_type_desc.tdenv ->
-    ?self:'x Refl.t ->
-    string ->
-    'x t ->
-    'x Typed_type_desc.typed_type_decl =
-  fun ?(env=Type_decl_environment.empty) ?self name ct ->
-  let decl = alias_decl name (to_coretype ct) in
+    ?env:Typed_type_desc.tdenv
+    -> ?configs: [`type_decl] configs
+    -> ?self:'x Refl.t
+    -> string
+    -> 'x t
+    -> 'x Typed_type_desc.typed_type_decl =
+  fun ?(env=Type_decl_environment.empty) ?configs ?self name ct ->
+  let decl = alias_decl ?configs name (to_coretype ct) in
   let refl = to_refl ~env ?self ct in
   Typed_type_desc.Typed.mk decl refl

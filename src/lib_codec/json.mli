@@ -33,6 +33,28 @@ module Config : sig
     | `obj of [`default]
   ]
 
+  type json_mangling_style = [
+    | `default
+    (** the default mangling style mangles as the following
+
+        {2 type name}
+        snake_case to UpperCamelCase, e.g.
+        - ocaml: `some_type_name`
+        - typescript: `SomeTypeName`
+
+        {2 field name}
+        snake_case to lowerCamelCase, e.g.
+        - ocaml: `some_field_foo`
+        - json: `someFieldFoo`
+
+        {2 variant name}
+        Capitalized_snake_case to kebab-case
+        - ocaml: `Some_branch_foo`
+        - json: `some-branch-foo`
+      *)
+    | `no_mangling (** do not mangle *)
+  ]
+
   type ('pos, 'kind) config +=
     | Config_json_name : string -> ('pos, [`json_name]) config
     | Config_json_name_of_variant_arg : string -> ([`variant_constructor], [`json_name_of_variant_arg]) config
@@ -42,6 +64,7 @@ module Config : sig
       string -> ([`type_decl], [`json_variant_discriminator]) config
     | Config_json_tuple_style :
       json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
+    | Config_json_mangling_style : json_mangling_style -> ('pos, [`json_mangling_style]) config
     | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
     | Config_json_custom_shape_explanation : json_shape_explanation -> ([`coretype], [`json_custom_shape_explanation]) config
@@ -72,6 +95,18 @@ module Config : sig
     val default_tuple_style : json_tuple_style
     val tuple_style : json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
     val get_tuple_style : [< `coretype | `variant_constructor] configs -> json_tuple_style
+
+    val default_mangling_style : json_mangling_style
+    val mangling_style : json_mangling_style -> ([< pos], [`json_mangling_style]) config
+    val no_mangling : ([< pos], [`json_mangling_style]) config
+    val default_mangling : ([< pos], [`json_mangling_style]) config
+    val get_mangling_style : [< pos] configs -> json_mangling_style
+
+    val mangled : [ `type_name | `field_name | `discriminator_value ] -> [< pos] configs -> string -> string
+
+    val get_mangled_name_of_type : type_decl -> string
+    val get_mangled_name_of_field : [`type_decl] configs -> record_field -> string
+    val get_mangled_name_of_discriminator : [`type_decl] configs -> variant_constructor -> string
 
     val custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     val get_custom_encoder : [`coretype] configs -> string option

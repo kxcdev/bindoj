@@ -24,6 +24,7 @@ open Utils
 open Bindoj_runtime
 open Bindoj_base
 open Bindoj_base.Type_desc
+open Bindoj_codec
 
 include Bindoj_codec.Json.Config
 
@@ -438,44 +439,51 @@ let explain_encoded_json_shape :
     json_shape_explanation_resolution |? (constant `default)
   in
   let rec process_td td : expression =
-    let { td_name; _ } = td in
-    [%expr `named ([%e estring ~loc td_name], [%e process_kind td])]
+    let json_type_name = Json_config.get_mangled_name_of_type td in
+    [%expr `named ([%e estring ~loc json_type_name], [%e process_kind td])]
   and process_kind { td_kind; td_configs; _ } : expression =
     match td_kind with
     | Alias_decl ct -> [%expr [%e process_coretype ct.ct_desc ]]
     | Record_decl fields ->
-       [%expr `object_of [%e fields |&> process_field |> elist ~loc]]
+       [%expr `object_of [%e fields |&> process_field td_configs |> elist ~loc]]
     | Variant_decl branches ->
       [%expr `anyone_of [%e
-        branches |&> (fun { vc_name; vc_param; vc_configs;  _ } ->
-            let discriminator_fname = Json_config.get_variant_discriminator td_configs in
-            let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
+        branches |&> (fun ctor ->
+            let { vc_name; vc_param; vc_configs; _ } = ctor in
+            let discriminator_fname =
+              Json_config.get_variant_discriminator td_configs
+              |> Json_config.mangled `field_name td_configs
+            in
+            let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
             match vc_param with
             | `no_param ->
               process_branch discriminator_value discriminator_fname []
             | `tuple_like cts ->
-              let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs in
+              let arg_fname =
+                Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
+                |> Json_config.mangled `field_name vc_configs
+              in
               let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' |> elist ~loc]] in
               process_branch discriminator_value discriminator_fname [
                 [%expr `mandatory_field ([%e estring ~loc arg_fname], [%e arg_shape])]]
             | `inline_record fields ->
               process_branch discriminator_value discriminator_fname
-                (fields |&> process_field)
+                (fields |&> process_field td_configs)
             | `reused_inline_record decl ->
               let fields = decl.td_kind |> function
                 | Record_decl fields -> fields
                 | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." vc_name
               in
               process_branch discriminator_value discriminator_fname
-                (fields |&> process_field))
+                (fields |&> process_field td_configs))
         |> elist ~loc ]]
-  and process_field { rf_name; rf_type; rf_configs; _ }: expression =
+  and process_field td_configs field: expression =
     let optional, desc =
-      rf_type.ct_desc
+      field.rf_type.ct_desc
       |> (function Option desc -> true, desc | desc -> false, desc)
     in
     let json_field_name =
-      Json_config.get_name_opt rf_configs |? rf_name
+      Json_config.get_mangled_name_of_field td_configs field
       |> estring ~loc
     in
     let inner = process_coretype desc in
@@ -563,10 +571,10 @@ let gen_json_encoder :
       Closed
   in
   let member_of_field : int -> record_field -> expression =
-    fun i { rf_name; rf_type; rf_configs; _ } ->
-    let json_field_name = Json_config.get_name_opt rf_configs |? rf_name in
+    fun i field ->
+    let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
     [%expr ([%e estring ~loc json_field_name],
-            [%e encoder_of_coretype self_ename rf_type] [%e evari i])]
+            [%e encoder_of_coretype self_ename field.rf_type] [%e evari i])]
   in
   let record_body : record_field list -> expression = fun fields ->
     let members = List.mapi member_of_field fields in
@@ -604,15 +612,21 @@ let gen_json_encoder :
         of_record_fields ~label:"reused inline record" fields
   in
   let variant_body : variant_constructor list -> expression list = fun cnstrs ->
-    cnstrs |&> fun { vc_name; vc_param; vc_configs; _ } ->
-      let discriminator_fname = Json_config.get_variant_discriminator td_configs in
-      let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
-      let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg vc_configs) in
+    cnstrs |&> fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
+      let discriminator_fname =
+        Json_config.get_variant_discriminator td_configs
+        |> Json.Json_config.mangled `field_name td_configs
+      in
+      let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
+      let arg_fname =
+        Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
+        |> Json.Json_config.mangled `field_name vc_configs
+      in
       let of_record_fields fields =
         let discriminator_fname = estring ~loc discriminator_fname in
-          let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
-          let args = List.mapi (fun i field -> member_of_field i field) fields in
-          [%expr `obj [%e elist ~loc (cstr :: args)]]
+        let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
+        let args = List.mapi (fun i field -> member_of_field i field) fields in
+        [%expr `obj [%e elist ~loc (cstr :: args)]]
       in
       match Json_config.get_variant_style vc_configs with
       | `flatten -> begin
@@ -712,21 +726,21 @@ let gen_json_decoder_result :
     else e
   in
   let record_bindings : record_field list -> (pattern * expression) list = fun fields ->
-    List.mapi (fun i { rf_name; rf_type; rf_configs; _; } ->
-      let json_field_name = Json_config.get_name_opt rf_configs |? rf_name in
+    List.mapi (fun i field ->
+      let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
       let json_field = estring ~loc json_field_name in
       let expr =
-        if Coretype.is_option rf_type then
+        if Coretype.is_option field.rf_type then
           [%expr
             List.assoc_opt [%e json_field] [%e param_e]
             |> Option.value ~default:`null
-            |> [%e decoder_of_coretype impl_ename rf_type] (`f [%e json_field] :: path)]
+            |> [%e decoder_of_coretype impl_ename field.rf_type] (`f [%e json_field] :: path)]
         else
           let error_message = sprintf "mandatory field '%s' does not exist" json_field_name in
           [%expr
             List.assoc_opt [%e json_field] [%e param_e]
             |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
-            >>= [%e decoder_of_coretype impl_ename rf_type] (`f [%e json_field] :: path)
+            >>= [%e decoder_of_coretype impl_ename field.rf_type] (`f [%e json_field] :: path)
           ]
         in
       pvari i, expr)
@@ -755,12 +769,18 @@ let gen_json_decoder_result :
     object_is_expected_error "record", object_is_expected_error "variant"
   in
   let variant_body : variant_constructor list -> (pattern * expression) list = fun cstrs ->
-    let discriminator_fname = Json_config.get_variant_discriminator td_configs in
+    let discriminator_fname =
+      Json_config.get_variant_discriminator td_configs
+      |> Json.Json_config.mangled `field_name td_configs
+    in
     let discriminator_fname_p = pstring ~loc discriminator_fname in
     cstrs
-    |&> (fun { vc_name; vc_param; vc_configs; _ } ->
-      let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
-      let arg_fname = Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs in
+    |&> (fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
+      let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
+      let arg_fname =
+        Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
+        |> Json.Json_config.mangled `field_name vc_configs
+      in
       let cstr_p tail = [%pat? `obj (([%p discriminator_fname_p], `str [%p pstring ~loc discriminator_value])::[%p tail])] in
       let construct name args =
         match Caml_config.get_variant_type td_configs with
@@ -858,7 +878,9 @@ let gen_json_decoder_result :
       let unexpected_discriminator_error_message_format =
         sprintf "given discriminator field value '%%s' is not one of [ %s ]"
           (cstrs
-            |&> (fun { vc_configs; vc_name; _} -> sprintf "'%s'" (Json_config.get_name_opt vc_configs |? vc_name))
+            |&> (fun ctor ->
+              Json_config.get_mangled_name_of_discriminator td_configs ctor
+              |> sprintf "'%s'")
             |> String.concat ", ")
         |> estring ~loc
       in
@@ -1111,23 +1133,6 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
     | None -> go ct.ct_desc
   in
 
-  let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc fields =
-    let field_to_t field =
-      let json_field_name =
-        Json_config.get_name_opt field.rf_configs |? field.rf_name
-      in
-      json_field_name,
-      convert_coretype ~self_name ?description:(docopt field.rf_doc) field.rf_type
-    in
-    let fields = fields |> List.map field_to_t in
-    Schema_object.record
-      ?schema
-      ~title:name
-      ?description:(docopt doc)
-      ?id
-      (fields @ additional_fields)
-  in
-
   fun { td_name = name; td_kind; td_doc = doc; td_configs } ->
     let self_name = name in
 
@@ -1139,13 +1144,30 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
       if openapi then None (* OpenAPI v3 does not support `id` *)
       else Some ("#" ^ name) in
 
+    let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc fields =
+      let field_to_t ({ rf_type; rf_doc; _ } as field) =
+        (Json_config.get_mangled_name_of_field td_configs field),
+        convert_coretype ~self_name ?description:(docopt rf_doc) rf_type
+      in
+      let fields = fields |> List.map field_to_t in
+      Schema_object.record
+        ?schema
+        ~title:name
+        ?description:(docopt doc)
+        ?id
+        (fields @ additional_fields)
+    in
+
     match td_kind with
     | Record_decl fields ->
       record_to_t ?schema ?id ~name ~self_name ~doc fields
     | Variant_decl ctors ->
-      let discriminator_fname = Json_config.get_variant_discriminator td_configs in
-      let ctor_to_t { vc_name; vc_param; vc_doc = doc; vc_configs } =
-        let discriminator_value = Json_config.get_name_opt vc_configs |? vc_name in
+      let discriminator_fname =
+        Json_config.get_variant_discriminator td_configs
+        |> Json.Json_config.mangled `field_name td_configs
+      in
+      let ctor_to_t ({ vc_name; vc_param; vc_doc = doc; vc_configs; _ } as ctor) =
+        let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
         let discriminator_field =
           let enum = [`str discriminator_value] in
           [discriminator_fname, Schema_object.string ~enum ()]
@@ -1156,7 +1178,11 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
             | `no_param | `tuple_like [] ->
               Schema_object.record ?description:(docopt doc) ~title:discriminator_value discriminator_field
             | `tuple_like (t :: ts) ->
-              let arg_name = Json_config.(get_name_of_variant_arg default_name_of_variant_arg vc_configs) in
+              let arg_name =
+                vc_configs
+                |> Json_config.(get_name_of_variant_arg default_name_of_variant_arg)
+                |> Json.Json_config.mangled `field_name vc_configs
+              in
               let arg_field =
                 match ts, Json_config.get_tuple_style vc_configs with
                 | [], _ -> [arg_name, convert_coretype ~self_name t]

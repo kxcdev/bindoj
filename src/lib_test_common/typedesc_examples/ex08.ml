@@ -48,7 +48,7 @@ let fwrt : (unit, unit) ts_fwrt_decl =
 let ts_ast : ts_ast option = Some [
     `type_alias_declaration {
         tsa_modifiers = [`export];
-        tsa_name = "named_json";
+        tsa_name = "NamedJson";
         tsa_type_parameters = [];
         tsa_type_desc =
           `type_literal [

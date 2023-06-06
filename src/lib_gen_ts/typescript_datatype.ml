@@ -167,6 +167,7 @@ and ts_modifier = [
 
 open Bindoj_runtime
 open Bindoj_typedesc.Type_desc
+open Bindoj_codec
 open Bindoj_gen_foreign.Foreign_datatype
 
 type ts_fwrt_constructor_kind_annot = ts_fwrt_constructor_kind_info option
@@ -222,14 +223,14 @@ let type_of_coretype :
   fun ?(definitive = false) ~self_type_name { ct_desc; ct_configs; _ } ->
   let rec go =
     let open Coretype in
+    let open Bindoj_codec.Json in
     function
     | Prim p -> type_of_prim p
     | Uninhabitable -> `type_reference "never"
-    | Ident s -> `type_reference s.id_name
+    | Ident s -> `type_reference (s.id_name |> Json_config.mangled `type_name ct_configs)
     | Option t -> `union [go t; `type_reference "null"; `type_reference "undefined"]
     | List t -> `array (go t)
     | Tuple ts ->
-      let open Bindoj_codec.Json in
       begin match Json_config.get_tuple_style ct_configs with
       | `arr -> `tuple (ts |> List.map go)
       | `obj `default ->
@@ -243,7 +244,7 @@ let type_of_coretype :
         `type_literal fields
       end
     | Map (k, v) -> `record (go (Coretype.desc_of_map_key k), go v)
-    | Self -> `type_reference self_type_name
+    | Self -> `type_reference (self_type_name |> Json_config.mangled `type_name ct_configs)
     | StringEnum cs -> `union (cs |> List.map (fun c -> `literal_type (`string_literal c)))
   in
   let definitive =
@@ -260,12 +261,19 @@ let type_of_coretype :
     ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
 
-let get_name_of_fwrt_desc_opt : ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string option =
-  fun desc ->
-  match desc.fd_kind with
-  | Fwrt_object { fo_configs; _ } -> Ts_config.get_name_opt fo_configs
-  | Fwrt_alias { fa_configs; _ } -> Ts_config.get_name_opt fa_configs
-  | Fwrt_constructor { fc_configs; _ } -> Ts_config.get_name_opt fc_configs
+let get_name_of_fwrt_desc : default:string -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string =
+  fun ~default desc ->
+    let get_mangled_name kind configs =
+      Json.Json_config.get_name_opt configs |? default
+      |> Json.Json_config.mangled kind configs
+    in
+    match desc.fd_kind with
+    | Fwrt_object { fo_configs; _ } ->
+      get_mangled_name `type_name fo_configs
+    | Fwrt_alias { fa_configs; _ } ->
+      get_mangled_name `type_name fa_configs
+    | Fwrt_constructor { fc_configs; _ } ->
+      get_mangled_name `discriminator_value fc_configs
 
 type ('ann_d, 'ann_f) ts_fwrt_decl = ('ann_d, 'ann_f, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
 type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list) ts_fwrt_decl
@@ -310,13 +318,14 @@ and ts_type_alias_decl_of_fwrt_decl :
   fun ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _ } = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
-  let desc =
+  let mangled_name, desc =
     match fd_kind with
     | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
       let members =
-        fo_fields |&> fun { ff_name; ff_type; ff_annot; _ } ->
+        fo_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
+          let field_name = Json.Json_config.mangled `field_name ff_configs ff_name in
           { tsps_modifiers = ff_annot;
-            tsps_name = ff_name;
+            tsps_name = field_name;
             tsps_type_desc = type_of_coretype ~self_type_name ff_type }
       in
       let discriminator_name = fo_configs |> Ts_config.get_variant_discriminator in
@@ -324,7 +333,10 @@ and ts_type_alias_decl_of_fwrt_decl :
         fo_children |&> fun child ->
           let { tsa_name; tsa_type_desc; _; } =
             ts_type_alias_decl_of_fwrt_decl ~self_type_name (child, env) in
-          let discriminator_value = FwrtTypeEnv.lookup child env |> get_name_of_fwrt_desc_opt |? tsa_name in
+          let discriminator_value =
+            FwrtTypeEnv.lookup child env
+            |> get_name_of_fwrt_desc ~default:tsa_name
+          in
           let kind_field =
             { tsps_modifiers = [];
               tsps_name = discriminator_name;
@@ -339,21 +351,27 @@ and ts_type_alias_decl_of_fwrt_decl :
         | _, [] -> `type_literal members
         | [], _ -> `union children
         | _ -> `intersection [`type_literal members; `union children] in
-      desc
-    | Fwrt_alias { fa_type; fa_annot=(); _ } -> type_of_coretype ~definitive:true ~self_type_name fa_type
+      Json.Json_config.mangled `type_name fo_configs name, desc
+    | Fwrt_alias { fa_type; fa_annot=(); fa_configs; _ } ->
+      Json.Json_config.mangled `type_name fa_configs name, type_of_coretype ~definitive:true ~self_type_name fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
       let inline_record_style =
         Ts_config.(get_reused_variant_inline_record_style_opt fc_configs |? default_reused_variant_inline_record_style)
       in
+      Json.Json_config.mangled `discriminator_value fc_configs name,
       match fc_annot, inline_record_style with
-      | Some (Tfcki_reused_variant_inline_record decl), `intersection_type ->
-        `type_reference decl.td_name
+      | Some (Tfcki_reused_variant_inline_record td), `intersection_type ->
+        `type_reference (Json.Json_config.get_mangled_name_of_type td)
       | _ ->
         let arg_name = Ts_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
         let members =
           let tmp =
             fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-              let json_field_name = Ts_config.get_name_opt ff_configs |? ff_name in
+              let json_field_name =
+                Ts_config.get_name_opt ff_configs
+                |? ff_name
+                |> Json.Json_config.mangled `field_name ff_configs
+              in
               { tsps_modifiers = ff_annot;
                 tsps_name = json_field_name;
                 tsps_type_desc = type_of_coretype ~self_type_name ff_type }
@@ -385,7 +403,7 @@ and ts_type_alias_decl_of_fwrt_decl :
         `type_literal members
   in
   { tsa_modifiers = fd_annot;
-    tsa_name = name;
+    tsa_name = mangled_name;
     tsa_type_parameters = [];
     tsa_type_desc = desc }
 
@@ -394,10 +412,12 @@ and ts_func_decl_of_fwrt_decl :
   fun ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _; } = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
+
   match fd_kind with
   | Fwrt_alias _ | Fwrt_constructor _ -> invalid_arg "this fwrt_decl cannot be a parent"
   | Fwrt_object { fo_children; fo_configs; _ } ->
-    let name = "analyze_" ^ fd_name in
+    let fd_name_mangled = Json.Json_config.mangled `type_name fo_configs fd_name in
+    let name = Json.Json_config.mangled `field_name fo_configs ("analyze_" ^ fd_name) in
     let type_param = "__bindoj_ret" in
     let param = "__bindoj_fns" in
     let var_v = "__bindoj_v" in
@@ -405,7 +425,10 @@ and ts_func_decl_of_fwrt_decl :
     let param_type =
       `type_literal (List.sort String.compare fo_children |&> fun child ->
         let decl = ts_type_alias_decl_of_fwrt_decl ~self_type_name (child, env) in
-        let discriminator_value = FwrtTypeEnv.lookup child env |> get_name_of_fwrt_desc_opt |? decl.tsa_name in
+        let discriminator_value =
+          FwrtTypeEnv.lookup child env
+          |> get_name_of_fwrt_desc ~default:decl.tsa_name
+        in
         let kind_field =
           { tsps_modifiers = [];
             tsps_name = discriminator_name;
@@ -426,14 +449,16 @@ and ts_func_decl_of_fwrt_decl :
     let var_x = "__bindoj_x" in
     let type_desc =
       `func_type
-        { tsft_parameters = [{ tsp_name = var_x; tsp_type_desc = `type_reference fd_name; }];
+        { tsft_parameters = [
+          { tsp_name = var_x;
+            tsp_type_desc = `type_reference fd_name_mangled; }];
           tsft_type_desc = `type_reference type_param; } in
     let body =
       (`return_statement
         (`arrow_function
             { tsaf_parameters =
                 [{ tsp_name = var_x;
-                  tsp_type_desc = `type_reference fd_name; }];
+                  tsp_type_desc = `type_reference fd_name_mangled; }];
               tsaf_body =
                 [fo_children |> List.sort String.compare |> List.rev |@>
                 (`throw_statement
@@ -442,12 +467,14 @@ and ts_func_decl_of_fwrt_decl :
                         tsne_arguments =
                           [`binary_expression
                               { tsbe_left =
-                                  `literal_expression (`string_literal ("panic @analyze_"^fd_name^" - unrecognized: "));
+                                  `literal_expression (`string_literal ("panic @"^name^" - unrecognized: "));
                                 tsbe_operator_token = "+";
                                 tsbe_right = `identifier var_x; }]; }),
                   fun (acc, child) ->
                     let { fd_name; _ } as child_desc = FwrtTypeEnv.lookup child env in
-                    let discriminator_value = child_desc |> get_name_of_fwrt_desc_opt |? fd_name in
+                    let discriminator_value =
+                      child_desc
+                      |> get_name_of_fwrt_desc ~default:fd_name in
                     `if_statement
                       ((`binary_expression
                           { tsbe_left =
@@ -511,6 +538,22 @@ module RopeUtil = struct
   let comma_separated_list xs = Rope.concat (rope ", ") xs
   let comma_newline_separated_list xs = Rope.concat (rope ",\n") xs
 end
+
+let valid_ascii_js_identifier s =
+  let at = String.get s in
+  let len = String.length s in
+  let rec loop n =
+    if n >= len then true
+    else match at n with
+      | '_' | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' ->
+          loop (succ n)
+      | _ -> false
+  in
+  if len = 0 then false
+  else match at 0 with
+    | '_' | 'a' .. 'z' | 'A' .. 'Z' ->
+        loop 1
+    | _ -> false
 
 let rec rope_of_ts_ast : ts_ast -> Rope.t = fun statements ->
   let open RopeUtil in
@@ -636,7 +679,12 @@ and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
             rope "readonly "
           else
             rope "" in
-        let name = rope tsps_name in
+        let name =
+          (if valid_ascii_js_identifier tsps_name then
+            tsps_name
+          else
+            sprintf "\"%s\"" tsps_name)
+          |> rope in
         let type_desc = rope_of_ts_type_desc tsps_type_desc in
         readonly ++ (name +@ " : ") ++ type_desc)
     |> comma_separated_list
@@ -715,7 +763,12 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
     rope_of_ts_expression_with_paren tsea_expression
     ++ between "[" "]" (rope_of_ts_expression tsea_argument)
   | `property_access_expression { tspa_expression; tspa_name; } ->
-    rope_of_ts_expression_with_paren tspa_expression +@ "." +@ tspa_name
+    if valid_ascii_js_identifier tspa_name then
+      rope_of_ts_expression_with_paren tspa_expression
+      +@ "." +@ tspa_name
+    else
+      rope_of_ts_expression_with_paren tspa_expression
+      ++ between "[\"" "\"]" (rope tspa_name)
   | `binary_expression { tsbe_left; tsbe_operator_token; tsbe_right; } ->
     rope_of_ts_expression_with_paren tsbe_left
     +@ " " +@ tsbe_operator_token +@ " " ++

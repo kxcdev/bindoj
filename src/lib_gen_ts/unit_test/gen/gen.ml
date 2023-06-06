@@ -52,7 +52,11 @@ let modules =
       |> List.group_by resolution_strategy
       |&?> (function | (`import_location loc, tds) -> Some (loc, tds) | _ -> None)
       |> List.iter (fun (loc, tds) ->
-        let tnames = tds |&> (fun td -> td.td_name) |> List.sort_uniq compare in
+        let tnames =
+          tds
+          |&> Bindoj_codec.Json.Json_config.get_mangled_name_of_type
+          |> List.sort_uniq compare
+        in
         sprintf "import { %s } from \"%s\";" (String.concat ", " tnames) loc
         |> print_endline
       );

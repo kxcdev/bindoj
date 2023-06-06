@@ -62,8 +62,8 @@ module Ts_ast = struct
 
 
   let case_analyzer_body :
-    string -> options -> literal list -> ts_ast =
-    fun name options cstrs ->
+    string -> string -> options -> literal list -> ts_ast =
+    fun name func_name options cstrs ->
     [ `return_statement
         (`arrow_function
            { tsaf_parameters =
@@ -78,7 +78,7 @@ module Ts_ast = struct
                            [ `binary_expression
                                { tsbe_left =
                                    `literal_expression
-                                     (`string_literal ("panic @analyze_" ^ name ^ " - unrecognized: "));
+                                     (`string_literal ("panic @" ^ func_name ^ " - unrecognized: "));
                                  tsbe_operator_token = "+";
                                  tsbe_right = `identifier options.var_x; } ]; }),
                   fun (statement, (_, desc)) ->
@@ -106,6 +106,23 @@ module Ts_ast = struct
                                  tsce_arguments = [ `identifier options.var_x ]; })),
                          statement)
                     | _ -> failwith "impossible case in test") ]; } ) ]
+
+  let case_analyzer :
+    string -> string -> options -> literal list -> ts_statement =
+    fun name func_name options cstrs ->
+    `function_declaration
+      { tsf_modifiers = [`export];
+        tsf_name = func_name;
+        tsf_type_parameters = [options.ret];
+        tsf_parameters = case_analyzer_parameters options cstrs;
+        tsf_type_desc =
+          `func_type
+            { tsft_parameters =
+                [ { tsp_name = options.var_x;
+                    tsp_type_desc = `type_reference name; } ];
+              tsft_type_desc = `type_reference options.ret; };
+        tsf_body =
+          case_analyzer_body name func_name options cstrs; }
 end
 
 module FwrtTypeEnv =
