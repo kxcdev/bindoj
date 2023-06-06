@@ -123,6 +123,8 @@ include module type of Config
 
 open Kxclib.Json
 
+val get_json_discriminator_value : 'a typed_type_decl -> 'a -> string
+
 val explain_encoded_json_shape : env:tdenv -> 't typed_type_decl -> json_shape_explanation
 
 val of_json' : env:tdenv -> 'a typed_type_decl -> jv -> 'a OfJsonResult.t

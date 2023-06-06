@@ -540,6 +540,9 @@ let json_decoder_name ?(codec=`default) td =
 let json_shape_explanation_name ?(codec=`default) td =
   name_with_codec ~codec td.td_name "json_shape_explanation"
 
+let gen_discriminator_value_accessor_name ?(codec=`default) td =
+  name_with_codec ~codec td.td_name "json_discriminator_value"
+
 let gen_json_encoder :
       ?self_contained:bool
       -> ?codec:Coretype.codec
@@ -988,11 +991,42 @@ let gen_json_shape_explanation :
     (pexp_constraint ~loc json_shape_expression
       [%type: Bindoj_runtime.json_shape_explanation])
 
+let gen_discriminator_value_accessor : ?codec:Coretype.codec -> type_decl -> value_binding =
+  fun ?(codec=`default) td ->
+    let loc = Location.none in
+    let self_name = gen_discriminator_value_accessor_name ~codec td in
+    let poly = (Caml_config.get_variant_type td.td_configs) = `polymorphic in
+    let body =
+      td.td_kind
+      |> begin function
+        | Variant_decl ctors ->
+          ctors
+          |&> (fun ({ vc_name; vc_param; _ } as ctor) ->
+            let arg = if vc_param = `no_param then None else Some(Pat.any ()) in
+            let pat =
+              if poly then Pat.variant vc_name arg
+              else Pat.construct (lidloc vc_name) arg
+            in
+            let discriminator_value =
+              Json.Json_config.get_mangled_name_of_discriminator td.td_configs ctor
+              |> estring ~loc
+            in
+            case ~lhs:pat ~rhs:discriminator_value ~guard:None)
+        | _ -> invalid_arg' "'%s' is not a variant decl" td.td_name
+      end
+      |> pexp_function ~loc
+    in
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      (pvar self_name)
+      (pexp_constraint ~loc body [%type: [%t typcons ~loc td.td_name] -> string])
+
 let gen_json_codec =
   let gen_json_shape_explanation' = gen_json_shape_explanation in
 
-  fun ?self_contained ?(gen_json_shape_explanation=true) ?json_shape_explanation_resolution ?codec td ->
+  fun ?self_contained ?(gen_json_shape_explanation=true) ?(discriminator_value_accessor=true) ?json_shape_explanation_resolution ?codec td ->
   let rec_flag = to_rec_flag td in
+  let add_item_when cond f xs = if cond then (f ()) :: xs else xs in
   let bindings =
     [ gen_json_encoder ?self_contained ?codec td;
       gen_json_decoder_result
@@ -1003,11 +1037,12 @@ let gen_json_codec =
         ?codec
         td;
       gen_json_decoder_option ?codec td; ]
-  in
-  let bindings =
-    if gen_json_shape_explanation then
-      gen_json_shape_explanation' ?json_shape_explanation_resolution ?codec td :: bindings
-    else bindings
+    |> add_item_when
+        gen_json_shape_explanation
+        (constant @@ gen_json_shape_explanation' ?json_shape_explanation_resolution ?codec td)
+    |> add_item_when
+        (discriminator_value_accessor && match td.td_kind with | Variant_decl _ -> true | _ -> false)
+        (fun () -> gen_discriminator_value_accessor ?codec td)
   in
   [ Str.value rec_flag bindings ]
 
@@ -1051,21 +1086,32 @@ let gen_json_shape_explanation_signature :
     Val.mk ~loc (strloc ~loc self_name)
       [%type: Bindoj_runtime.json_shape_explanation]
 
+let gen_discriminator_value_accessor_signature :
+  ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description =
+  fun ?(codec=`default) td ->
+    let loc = Location.none in
+    let self_name = gen_discriminator_value_accessor_name ~codec td in
+    Val.mk ~loc (strloc ~loc self_name)
+      [%type: [%t typcons ~loc td.td_name] -> string]
+
 let gen_json_codec_signature :
   ?gen_json_shape_explanation:bool
+  -> ?discriminator_value_accessor:bool
   -> ?codec:Coretype.codec
   -> type_decl
   -> Ppxlib.signature =
-  fun ?(gen_json_shape_explanation=true) ?codec td ->
+  fun ?(gen_json_shape_explanation=true) ?(discriminator_value_accessor=true) ?codec td ->
+    let add_item_when cond f xs = if cond then (f ()) :: xs else xs in
     let bindings =
       [ gen_json_encoder_signature ?codec td;
         gen_json_decoder_result_signature ?codec td;
         gen_json_decoder_option_signature ?codec td; ]
-    in
-    let bindings =
-      if gen_json_shape_explanation then
-        gen_json_shape_explanation_signature ?codec td :: bindings
-      else bindings
+      |> (add_item_when
+            gen_json_shape_explanation
+            (constant @@ gen_json_shape_explanation_signature ?codec td))
+      |> (add_item_when
+            (discriminator_value_accessor && match td.td_kind with | Variant_decl _ -> true | _ -> false)
+            (fun () -> gen_discriminator_value_accessor_signature ?codec td))
     in
     List.map Sig.value bindings
 

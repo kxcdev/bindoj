@@ -38,7 +38,12 @@ let mapping : (string * (generate_target * (type_decl * string))) list =
     sprintf "%s_gen.mli" s, (`signature, (m, p));
   ])
 
-let gen_structure_with_json_codec ?self_contained ?gen_json_shape_explanation ?json_shape_explanation_resolution ?codec ~gen_type_decl (decl, emp) =
+let gen_structure_with_json_codec
+  ?self_contained
+  ?gen_json_shape_explanation
+  ?discriminator_value_accessor
+  ?json_shape_explanation_resolution
+  ?codec ~gen_type_decl (decl, emp) =
   let open Bindoj_gen in
   let type_decl =
     if gen_type_decl then (
@@ -52,13 +57,17 @@ let gen_structure_with_json_codec ?self_contained ?gen_json_shape_explanation ?j
         Json_codec.gen_json_codec
           ?self_contained
           ?gen_json_shape_explanation
-          ?json_shape_explanation_resolution;
+          ?json_shape_explanation_resolution
+          ?discriminator_value_accessor;
       ]
       decl
   in
   Astlib.Pprintast.structure Format.std_formatter structure
 
-let gen_signature_with_json_codec ?gen_json_shape_explanation ?codec ~gen_type_decl (decl, _) =
+let gen_signature_with_json_codec
+  ?gen_json_shape_explanation
+  ?discriminator_value_accessor
+  ?codec ~gen_type_decl (decl, _) =
   let open Bindoj_gen in
   let structure =
     Caml_datatype.gen_signature
@@ -66,7 +75,8 @@ let gen_signature_with_json_codec ?gen_json_shape_explanation ?codec ~gen_type_d
       ?codec
       ~generators:[
         Json_codec.gen_json_codec_signature
-          ?gen_json_shape_explanation;
+          ?gen_json_shape_explanation
+          ?discriminator_value_accessor;
       ]
       decl
   in
@@ -78,7 +88,9 @@ let () =
   | [] ->
     failwith "usage: gen <filename> [-gen-type-decl]"
   | name :: _ ->
+    let gen_json_shape_explanation = true in
+    let discriminator_value_accessor = true in
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some (`structure, decl) -> gen_structure_with_json_codec ~self_contained:true ~gen_json_shape_explanation:true decl ~gen_type_decl
-    | Some (`signature, decl) -> gen_signature_with_json_codec ~gen_json_shape_explanation:true decl ~gen_type_decl
+    | Some (`structure, decl) -> gen_structure_with_json_codec ~self_contained:true ~gen_json_shape_explanation ~discriminator_value_accessor decl ~gen_type_decl
+    | Some (`signature, decl) -> gen_signature_with_json_codec ~gen_json_shape_explanation ~discriminator_value_accessor decl ~gen_type_decl

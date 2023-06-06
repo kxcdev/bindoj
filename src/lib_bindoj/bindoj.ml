@@ -111,18 +111,19 @@ module Versioned = struct
                       (mknoloc type_decl.td_name)) ]
                 |> Caml.Structure.open_utils);
             ]
-            |> may_append gen_json_codec (fun() ->
-                   [ Json_codec.gen_json_encoder type_decl
-                       ~codec:(`in_module module_name) |> binding;
-                     Json_codec.gen_json_shape_explanation type_decl
-                      ~codec:(`in_module module_name) |> binding;
-                     Json_codec.gen_json_decoder_result type_decl
-                       ~json_shape_explanation_style:(`reference)
-                       ~codec:(`in_module module_name) |> binding;
-                     Json_codec.gen_json_decoder_option type_decl
-                       ~codec:(`in_module module_name) |> binding;
-                     [%stri let jv_codec = to_json, of_json'];
-                 ])
+            |> may_append gen_json_codec Json_codec.(fun() ->
+                let codec = `in_module module_name in
+                let add_item x xs = x :: xs in
+                [ gen_json_shape_explanation type_decl ~codec |> binding;
+                  gen_json_encoder type_decl ~codec |> binding;
+                  gen_json_decoder_result type_decl
+                    ~json_shape_explanation_style:(`reference)
+                    ~codec |> binding;
+                  gen_json_decoder_option type_decl ~codec |> binding;
+                  [%stri let jv_codec = to_json, of_json']; ]
+                |> (match type_decl.td_kind with
+                  | Variant_decl _ -> add_item (gen_discriminator_value_accessor ~codec type_decl |> binding)
+                  | _ -> identity))
           in
           let modul =
             Mod.structure items

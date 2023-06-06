@@ -94,9 +94,12 @@ val gen_json_shape_explanation :
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.value_binding
 
+val gen_discriminator_value_accessor :  ?codec:Coretype.codec -> type_decl -> Ppxlib.value_binding
+
 val gen_json_codec :
   ?self_contained:bool
   -> ?gen_json_shape_explanation:bool
+  -> ?discriminator_value_accessor:bool
   -> ?json_shape_explanation_resolution:json_shape_explanation_resolution
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.structure
@@ -105,8 +108,10 @@ val gen_json_encoder_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.va
 val gen_json_decoder_result_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
 val gen_json_decoder_option_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
 val gen_json_shape_explanation_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
+val gen_discriminator_value_accessor_signature : ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
 val gen_json_codec_signature :
   ?gen_json_shape_explanation:bool
+  -> ?discriminator_value_accessor:bool
   -> ?codec:Coretype.codec
   -> type_decl
   -> Ppxlib.signature

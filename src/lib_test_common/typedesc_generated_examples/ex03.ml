@@ -27,6 +27,7 @@ type t = int_list =
 let decl = Bindoj_test_common_typedesc_examples.Ex03.decl
 let reflect = int_list_reflect
 
+let json_discriminator_value = int_list_json_discriminator_value
 let json_shape_explanation = int_list_json_shape_explanation
 let to_json = int_list_to_json
 let of_json' = int_list_of_json'

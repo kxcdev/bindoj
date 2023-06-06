@@ -29,6 +29,7 @@ type t = person =
 let decl = Bindoj_test_common_typedesc_examples.Ex02_reused.decl
 let reflect = person_reflect
 
+let json_discriminator_value = person_json_discriminator_value
 let json_shape_explanation = person_json_shape_explanation
 let to_json = person_to_json
 let of_json' = person_of_json'

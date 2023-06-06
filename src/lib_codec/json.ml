@@ -174,6 +174,20 @@ let lookup_primitive_codec ~(env: tdenv) ident_name : unsafe_primitive_codec opt
       )
   )
 
+let get_json_discriminator_value : 'a typed_type_decl -> 'a -> string =
+  fun ttd a ->
+    match Typed.decl ttd with
+    | { td_kind = Variant_decl ctors; td_configs; _ } ->
+      begin match Typed.to_refl ttd with
+      | lazy (Refl.Variant { classify; _ }) ->
+        let name = classify a |> fst in
+        ctors
+        |> List.find_opt (fun { vc_name; _ } -> vc_name = name)
+        |> Option.v' (fun () -> failwith' "constructor '%s' is not found" name)
+        |> Json_config.get_mangled_name_of_discriminator td_configs
+      | _ -> failwith "inconsistent type_decl and reflection result" end
+    | { td_name; _ } -> failwith' "'%s' is not a variant decl" td_name
+
 let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_shape_explanation =
   let rec process_td ttd : json_shape_explanation =
     let td = Typed.decl ttd in
