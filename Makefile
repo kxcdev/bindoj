@@ -8,7 +8,7 @@ info:
   $(info =======================================================================)
 
 setup:
-	opam install . --deps-only --with-test
+	opam install . --deps-only --with-test --with-doc
 	opam install -y dune
 
 	yarn --cwd with_js install

@@ -53,7 +53,7 @@ jobs:
         run: ./scripts/ci_print_env.sh
 
       - name: Install dependencies
-        run: opam install . --deps-only --with-test
+        run: opam install . --deps-only --with-test --with-doc
 
       - name: build & test
         run: ./scripts/ci_run.sh

@@ -25,7 +25,7 @@ depends: [
   "yojson" {>= "1.7"}
   "ppx_yojson_conv" {>= "0.15.0"}
   "zed" {>= "3.1.0"}
-  "odoc" {dev & >= "2.1.0"}
+  "odoc" {with-doc & >= "2.1.0"}
   "jsonm" {>= "1.0"}
   "js_of_ocaml" {with-test & >= "4.0.0" & < "5.1.0"}
   "js_of_ocaml-ppx" {with-test & >= "4.0.0"}
@@ -38,7 +38,6 @@ depends: [
   "lwt" {with-test}
   "uri" {>= "4.2.0"}
   "ocaml" {>= "4.12"}
-  "odoc" {with-doc}
 ]
 build: [
   ["dune" "subst"] {dev}

@@ -30,7 +30,7 @@
   (yojson (>= 1.7))
   (ppx_yojson_conv (>= 0.15.0))
   (zed (>= 3.1.0))
-  (odoc (and :dev (>= 2.1.0)))
+  (odoc (and :with-doc (>= 2.1.0)))
   (jsonm (>= 1.0))
   (js_of_ocaml (and :with-test (>= 4.0.0) (< 5.1.0)))
   (js_of_ocaml-ppx (and :with-test (>= 4.0.0)))
