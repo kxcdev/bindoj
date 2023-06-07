@@ -26,7 +26,11 @@ open Bindoj_codec
 module Json_value : sig
   include module type of Bindoj_std_runtime.Json_value
 
-  val type_name : string (** "json_value" *)
+  val type_name : string
+  (** ["json_value"] *)
+
+  val json_shape_explanation : json_shape_explanation
+  (** [`any_json_value] *)
 
   module Type_decl : sig
     val coretype : coretype
@@ -43,6 +47,8 @@ end = struct
 
   let primitive_descriptor : t user_primitive_descriptor =
     { external_format_codecs }
+
+  let json_shape_explanation = `any_json_value
 
   module Type_decl = struct
     let coretype : coretype =
@@ -82,7 +88,7 @@ end
 
 type json_value = Json_value.t
 
-let json_value_json_shape_explanation = `any_json_value
+let json_value_json_shape_explanation = Json_value.json_shape_explanation
 
 module Coretypes = struct
   let json = Json_value.Type_decl.coretype
