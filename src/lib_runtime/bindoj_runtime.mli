@@ -241,3 +241,8 @@ module OfJsonResult : sig
   include ResultOfS' with type err = Err.t
   module Ops_monad : MonadOpsS with type 'x t := 'x t
 end
+
+type 'a json_full_decoder =
+  ?path:Kxclib.Json.jvpath
+  -> Kxclib.Json.jv
+  -> 'a OfJsonResult.t

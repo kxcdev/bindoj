@@ -289,3 +289,8 @@ module OfJsonResult = struct
   include R0
   module Ops_monad = MonadOps(R0)
 end
+
+type 'a json_full_decoder =
+  ?path:Kxclib.Json.jvpath
+  -> Kxclib.Json.jv
+  -> 'a OfJsonResult.t
