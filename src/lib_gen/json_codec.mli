@@ -71,6 +71,7 @@ type json_shape_explanation_resolution =
   string (** td_name, i.e. type name *) -> [
     | `no_resolution (** resolve as [`unresolved] *)
     | `default (** resolve as [`named(type_name, type_name^"_json_shape_explanation")] *)
+    | `open_ of string (** resolve as [`named(type_name, m^"."^type_name^"_json_shape_explanation")] *)
     | `in_module of string (*** resolve as [`named(type_name, m^".json_shape_explanation")] *)
     ]
 

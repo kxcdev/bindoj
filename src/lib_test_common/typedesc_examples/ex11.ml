@@ -17,43 +17,31 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_runtime
-open Kxclib.Json
+open Bindoj_base.Type_desc
+open Bindoj_gen_ts.Typescript_datatype
 
-module Json_value : sig
-  type t = jv
-  val to_json : t -> jv
-  val of_json : jv -> t option
-  val of_json' : ?path:jvpath -> jv -> (t, _) result
-  val reflect : t Refl.t
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex11"
 
-  val json_codec : (t, t) External_format.codec
-  val external_format_codecs : t External_format.codecs
-end = struct
-  type t = Json.jv
-  let of_json x = Some x
-  let of_json' ?path x = Ok x [@@warning "-27"]
-  let to_json = identity
-  let rec reflect : t Refl.t = lazy (
-    Refl.Alias {
-        get = (fun x -> Expr.Refl (reflect, x));
-        mk = (function
-             | Refl (refl, x) when refl == (Obj.magic reflect)
-               -> Some (Obj.magic x)
-             | _ -> None);
-      })
+let cty_unit = Coretype.mk_prim `unit
 
-  let json_codec : (t, jv) External_format.codec =
-    { encode = to_json; decode = of_json }
+let decl : type_decl =
+  alias_decl "unit" cty_unit
 
-  let external_format_codecs : t External_format.codecs =
-    let module Map = External_format.LabelMap in
-    Map.empty
-    |> Map.add Wellknown.json_format' (
-           External_format.Codec
-             (Wellknown.json_format, json_codec))
-end
+let decl_with_docstr : type_decl =
+  alias_decl "unit" cty_unit
+    ~doc:(`docstr "alias of unit type")
 
-type json_value = Json_value.t
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "unit", Util.FwrtTypeEnv.(
+    init
+    |> bind_alias "unit" cty_unit
+  )
 
-let json_value_json_shape_explanation = `any_json_value
+let ts_ast : ts_ast option = Some [
+  `type_alias_declaration {
+    tsa_modifiers = [`export];
+    tsa_name = "Unit";
+    tsa_type_parameters = [];
+    tsa_type_desc = `literal_type (`numeric_literal 1.);
+  }
+]

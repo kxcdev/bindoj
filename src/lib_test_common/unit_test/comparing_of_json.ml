@@ -40,8 +40,10 @@ let () =
         if not result then
           let print_result label = function
             | Ok x -> eprintf "%s [%s]: Ok %a\n" S.name label S.pp x
-            | Error (msg, _path, _shape) ->
-              eprintf "%s [%s]: Error \"%s\"\n" S.name label msg
+            | Error (msg, _path, shape) ->
+              eprintf "%s [%s]: Error \"%s\" %a\n"
+                S.name label msg
+                Json_shape.pp_shape_explanation shape
           in
           print_result "interpreted" interpreted;
           print_result "compiled   " compiled;

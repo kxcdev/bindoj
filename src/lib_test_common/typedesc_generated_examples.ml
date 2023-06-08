@@ -34,7 +34,7 @@ module type T = sig
   val sample_values : t Sample_value.t list
   val json_shape_explanation : json_shape_explanation
   val to_json : t -> jv
-  val of_json' : jv -> t OfJsonResult.t
+  val of_json' : ?path:jvpath -> jv -> t OfJsonResult.t
   val env : tdenv
 end
 
@@ -54,4 +54,7 @@ let all : (string * (module T)) list = [
   "ex08", (module Ex08);
   "ex09", (module Ex09);
   "ex10", (module Ex10);
+  "ex11", (module Ex11);
+  "ex12", (module Ex12);
+  "ex13", (module Ex13);
 ]

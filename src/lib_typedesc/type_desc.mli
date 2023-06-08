@@ -101,6 +101,7 @@ module Coretype : sig
   and codec = [
     | `default
     | `in_module of string
+    | `open_ of string
  (* | `codec_val of string *)
   ]
 

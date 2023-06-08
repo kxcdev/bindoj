@@ -227,7 +227,11 @@ let type_of_coretype :
     function
     | Prim p -> type_of_prim p
     | Uninhabitable -> `type_reference "never"
-    | Ident s -> `type_reference (s.id_name |> Json_config.mangled `type_name ct_configs)
+    | Ident s ->
+      `type_reference
+        (ct_configs
+          |> Json_config.get_name_opt |? s.id_name
+          |> Json_config.mangled `type_name ct_configs)
     | Option t -> `union [go t; `type_reference "null"; `type_reference "undefined"]
     | List t -> `array (go t)
     | Tuple ts ->
@@ -244,7 +248,11 @@ let type_of_coretype :
         `type_literal fields
       end
     | Map (k, v) -> `record (go (Coretype.desc_of_map_key k), go v)
-    | Self -> `type_reference (self_type_name |> Json_config.mangled `type_name ct_configs)
+    | Self ->
+      `type_reference
+        (ct_configs
+          |> Json_config.get_name_opt |? self_type_name
+          |> Json_config.mangled `type_name ct_configs)
     | StringEnum cs -> `union (cs |> List.map (fun c -> `literal_type (`string_literal c)))
   in
   let definitive =
@@ -316,14 +324,19 @@ let rec ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast =
 and ts_type_alias_decl_of_fwrt_decl :
   self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
   fun ~self_type_name (name, env) ->
-  let { fd_name; fd_kind; fd_annot; _ } = FwrtTypeEnv.lookup name env in
+  let { fd_name; fd_kind; fd_annot; _ } as desc = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
-  let mangled_name, desc =
+  let mangled_name = get_name_of_fwrt_desc ~default:name desc in
+  let desc =
     match fd_kind with
     | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
       let members =
         fo_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-          let field_name = Json.Json_config.mangled `field_name ff_configs ff_name in
+          let field_name =
+            ff_configs
+            |> Json.Json_config.get_name_opt |? ff_name
+            |> Json.Json_config.mangled `field_name ff_configs
+          in
           { tsps_modifiers = ff_annot;
             tsps_name = field_name;
             tsps_type_desc = type_of_coretype ~self_type_name ff_type }
@@ -351,25 +364,23 @@ and ts_type_alias_decl_of_fwrt_decl :
         | _, [] -> `type_literal members
         | [], _ -> `union children
         | _ -> `intersection [`type_literal members; `union children] in
-      Json.Json_config.mangled `type_name fo_configs name, desc
-    | Fwrt_alias { fa_type; fa_annot=(); fa_configs; _ } ->
-      Json.Json_config.mangled `type_name fa_configs name, type_of_coretype ~definitive:true ~self_type_name fa_type
+      desc
+    | Fwrt_alias { fa_type; fa_annot=(); _ } ->
+      type_of_coretype ~definitive:true ~self_type_name fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
       let inline_record_style =
         Ts_config.(get_reused_variant_inline_record_style_opt fc_configs |? default_reused_variant_inline_record_style)
       in
-      Json.Json_config.mangled `discriminator_value fc_configs name,
       match fc_annot, inline_record_style with
       | Some (Tfcki_reused_variant_inline_record td), `intersection_type ->
         `type_reference (Json.Json_config.get_mangled_name_of_type td)
       | _ ->
-        let arg_name = Ts_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
+        let arg_name = Json.Json_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
         let members =
           let tmp =
             fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
               let json_field_name =
-                Ts_config.get_name_opt ff_configs
-                |? ff_name
+                Json.Json_config.get_name_opt ff_configs |? ff_name
                 |> Json.Json_config.mangled `field_name ff_configs
               in
               { tsps_modifiers = ff_annot;
@@ -416,6 +427,7 @@ and ts_func_decl_of_fwrt_decl :
   match fd_kind with
   | Fwrt_alias _ | Fwrt_constructor _ -> invalid_arg "this fwrt_decl cannot be a parent"
   | Fwrt_object { fo_children; fo_configs; _ } ->
+    let fd_name = Json.Json_config.get_name_opt fo_configs |? fd_name in
     let fd_name_mangled = Json.Json_config.mangled `type_name fo_configs fd_name in
     let name = Json.Json_config.mangled `field_name fo_configs ("analyze_" ^ fd_name) in
     let type_param = "__bindoj_ret" in

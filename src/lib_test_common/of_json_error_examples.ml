@@ -37,7 +37,7 @@ end
 module type SampleGenerated = sig
   include Sample
   val json_shape_explanation : json_shape_explanation
-  val of_json' : Json.jv -> t OfJsonResult.t
+  val of_json' : ?path:Json.jvpath -> Json.jv -> t OfJsonResult.t
   val pp : ppf -> t -> unit
 end
 
@@ -207,7 +207,7 @@ module SampleEx03 : SampleGenerated = struct
     (field_not_found "arg", [ `i 1; `f "arg"; `i 1; `f "arg" ]);
 
     "type mismatch", intCons_null intNil,
-    (type_mismatch "int""null" , [ `i 0; `f "arg" ]);
+    (type_mismatch "int" "null" , [ `i 0; `f "arg" ]);
 
     "type mismatch (nested 1)", intCons_null intNil |> intCons 1 ,
     (type_mismatch "int" "null", [ `i 0; `f "arg"; `i 1; `f "arg" ]);
@@ -451,6 +451,60 @@ module SampleEx10 : SampleGenerated = struct
                 `optional_field ("yOpt", `integral)]))))
 end
 
+module SampleEx11 : SampleGenerated = struct
+  include Ex11
+  let name = "SampleEx11"
+  let samples = [
+    "null", `null, ("expecting type 'unit' but the given is of type 'null'", []);
+  ]
+
+  let expected_json_shape_explanation =
+    `with_warning
+      ("not considering any config if exists",
+        (`named ("Unit", (`special ("unit", (`exactly `null))))))
+end
+
+module SampleEx12 : SampleGenerated = struct
+  include Ex12
+  let name = "SampleEx12"
+  let samples = [
+    "null", `null, ("expecting type 'string' but the given is of type 'null'", []);
+    "not one of", `str "case4", ("given string 'case4' is not one of [ 'case1', 'case2', 'case3' ]", []);
+  ]
+
+  let expected_json_shape_explanation =
+    `with_warning
+     ("not considering any config if exists",
+       (`named ("Cases", (`string_enum ["case1"; "case2"; "case3"]))))
+end
+
+module SampleEx13 : SampleGenerated = struct
+  include Ex13
+  let name = "SampleEx13"
+  let samples =
+    SampleEx01.samples
+    |&> (fun (name, jv, (msg, path)) ->
+        (name, `obj [ ("student1", jv) ], (msg, path @ [ `f "student1" ]))
+      )
+
+  let expected_json_shape_explanation =
+    let student_shape =
+      `named ("Student",
+        `object_of
+          [`mandatory_field ("admissionYear", `integral);
+          `mandatory_field ("name", `string)])
+    in
+    `with_warning
+     ("not considering any config if exists",
+       (`named
+          ("StudentPair",
+            (`object_of
+               [`mandatory_field
+                  ("student1", student_shape);
+               `mandatory_field
+                 ("student2", student_shape)]))))
+end
+
 let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =
   Td.decl.td_name
 
@@ -626,6 +680,9 @@ let all_generated : (module SampleGenerated) list = [
   (module SampleEx08);
   (module SampleEx09);
   (module SampleEx10);
+  (module SampleEx11);
+  (module SampleEx12);
+  (module SampleEx13);
 ]
 
 let all : (module Sample) list = [
@@ -640,6 +697,9 @@ let all : (module Sample) list = [
   (module SampleEx08);
   (module SampleEx09);
   (module SampleEx10);
+  (module SampleEx11);
+  (module SampleEx12);
+  (module SampleEx13);
   (module SampleIdentInt_Refl);
   (module SampleIdentInt_Coretypes);
   (module SampleIdentIntOption_Coretypes);

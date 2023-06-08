@@ -232,7 +232,10 @@ module OfJsonResult : sig
 
   module Err : sig
     type t = string * jvpath * json_shape_explanation
-    val to_string : t -> string option
+    val to_string : t -> string
+    val message : t -> string
+    val path : t -> jvpath
+    val shape : t -> json_shape_explanation
   end
 
   include ResultOfS' with type err = Err.t

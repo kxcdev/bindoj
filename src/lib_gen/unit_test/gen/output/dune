@@ -242,3 +242,54 @@
  (target ex10_docstr_gen.mli)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
  (mode (promote (until-clean))))
+
+(rule
+ (target ex11_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex11_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex11_docstr_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex11_docstr_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex12_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex12_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex12_docstr_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex12_docstr_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex13_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex13_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex13_docstr_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (target ex13_docstr_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target})))
+ (mode (promote (until-clean))))

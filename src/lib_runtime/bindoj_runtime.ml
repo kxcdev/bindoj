@@ -273,12 +273,18 @@ let string_of_json_field_shape_explanation = Json_shape.string_of_field_shape_ex
 module OfJsonResult = struct
   module Err = struct
     type t = string * jvpath * json_shape_explanation
-    let to_string (msg, _, _) = Some msg
+    let to_string (msg, path, _) =
+      match path with
+      | [] -> sprintf "%s at root" msg
+      | path -> sprintf "%s at path %s" msg ((path |> List.rev) |> Json.unparse_jvpath)
+    let message (msg, _, _) = msg
+    let path (_, path, _) = path
+    let shape (_, _, shape) = shape
   end
 
   module R0 = ResultOf'(struct
                   type nonrec err = Err.t
-                  let string_of_err = Err.to_string
+                  let string_of_err = Err.to_string &> Option.some
                 end)
   include R0
   module Ops_monad = MonadOps(R0)

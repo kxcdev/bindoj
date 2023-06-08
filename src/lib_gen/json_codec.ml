@@ -43,15 +43,18 @@ end
 
 let get_encoder_name type_name = function
   | `default -> type_name^"_to_json"
-  (* | `codec_val v -> v *)
+  | `open_ m -> sprintf "%s.%s_to_json" m type_name
   | `in_module m -> m^".to_json"
-let get_decoder_name type_name = function
-  | `default -> type_name^"_of_json"
   (* | `codec_val v -> v *)
+let get_decoder_name type_name = function
+  | `default -> type_name^"_of_json'"
+  | `open_ m -> sprintf "%s.%s_of_json'" m type_name
   | `in_module m -> m^".of_json'"
+  (* | `codec_val v -> v *)
 
 let get_json_shape_explanation_name type_name = function
   | `default -> type_name^"_json_shape_explanation"
+  | `open_ m -> sprintf "%s.%s_json_shape_explanation" m type_name
   | `in_module m -> m^".json_shape_explanation"
 
 type builtin_codec = {
@@ -214,7 +217,7 @@ let builtin_codecs = Builtin_codecs.all
 let builtin_codecs_map =
   builtin_codecs |> List.to_seq |> StringMap.of_seq
 
-let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case ~string_enum_case self_ename (ct: coretype) =
+let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case ~string_enum_case ~wrap_ident self_ename (ct: coretype) =
   let open Coretype in
   let loc = Location.none in
   match get_custom_codec ct.ct_configs with
@@ -226,7 +229,7 @@ let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case
     let rec go = function
       | Prim p -> evar_name (Coretype.string_of_prim p)
       | Uninhabitable -> evar_name "uninhabitable"
-      | Ident i -> evar_name ~codec:i.id_codec i.id_name
+      | Ident i -> evar_name ~codec:i.id_codec i.id_name |> wrap_ident
       | Option t -> [%expr [%e evar_name "option"] [%e go t]] (* option_of_json t_of_json *)
       | List t -> [%expr [%e evar_name "list"] [%e go t]] (* list_of_json t_of_json *)
       | Map (k, v) -> [%expr [%e evar_name "map"] [%e map_key_converter k] [%e go v]] (* map_of_json key_of_string t_of_json *)
@@ -309,10 +312,12 @@ let encoder_of_coretype =
     in
     Exp.function_ cases
   in
+  let wrap_ident = identity in
   codec_of_coretype
     ~get_custom_codec:Json_config.get_custom_encoder
     ~get_name:get_encoder_name
     ~tuple_case ~map_key_converter ~string_enum_case
+    ~wrap_ident
 
 let decoder_of_coretype =
   let open Coretype in
@@ -393,21 +398,35 @@ let decoder_of_coretype =
       cs |> List.map (fun c ->
         let pat = Pat.constant (Const.string c) in
         let expr = Exp.variant (Utils.escape_as_constructor_name c) None in
-        Exp.case pat [%expr Some [%e expr]]
+        Exp.case pat [%expr Ok [%e expr]]
       ) |> fun cases ->
+        let error_message =
+          sprintf "given string '%%s' is not one of [ %s ]"
+          (cs |&> (sprintf "'%s'") |> String.concat ", ")
+        in
         cases @ [
-          Exp.case (Pat.any ()) [%expr None]
+          Exp.case [%pat? s] [%expr Error (Printf.sprintf [%e estring ~loc error_message] s, path)]
         ]
     in
-    [%expr function
+    [%expr fun path -> function
       | `str s -> [%e Exp.function_ cases] s
-      | _ -> None
+      | jv ->
+        Error (
+          Printf.sprintf
+            "expecting type 'string' but the given is of type '%s'"
+            Kxclib.Json.(string_of_jv_kind (classify_jv jv)),
+          path)
     ]
+  in
+  let wrap_ident e =
+    [%expr (fun path x ->
+        [%e e] ~path x |> Result.map_error (fun (msg, path, _) -> (msg, path)))]
   in
   codec_of_coretype
     ~get_custom_codec:Json_config.get_custom_decoder
     ~get_name:get_decoder_name
     ~tuple_case ~map_key_converter ~string_enum_case
+    ~wrap_ident
 
 let gen_builtin_codecs ?attrs ~get_name ~get_codec (td: type_decl) =
   let loc = Location.none in
@@ -427,7 +446,48 @@ type json_shape_explanation_resolution =
   string -> [
     | `no_resolution
     | `default
+    | `open_ of string
     | `in_module of string ]
+
+let rec ejson_shape_explanation ~loc (shape: json_shape_explanation) =
+  match shape with
+  | `self -> [%expr `self]
+  | `named (name, shape) -> [%expr `named([%e estring ~loc name], [%e ejson_shape_explanation ~loc shape])]
+  | `special (name, shape) -> [%expr `special([%e estring ~loc name], [%e ejson_shape_explanation ~loc shape])]
+  | `with_warning (name, shape) -> [%expr `with_warning([%e estring ~loc name], [%e ejson_shape_explanation ~loc shape])]
+  | `exactly jv -> [%expr `exactly([%e ejv ~loc jv])]
+  | `any_json_value -> [%expr `any_json_value]
+  | `unresolved s -> [%expr `unresolved [%e estring ~loc s]]
+  | `anyone_of shapes -> [%expr `anyone_of [%e shapes |&> (ejson_shape_explanation ~loc) |> elist ~loc]]
+  | `string_enum shapes -> [%expr `string_enum [%e shapes |&> (estring ~loc) |> elist ~loc]]
+  | `nullable shape -> [%expr `nullable([%e ejson_shape_explanation ~loc shape])]
+  | `boolean -> [%expr `boolean]
+  | `numeric -> [%expr `numeric]
+  | `integral -> [%expr `integral]
+  | `proper_int53p -> [%expr `proper_int53p]
+  | `proper_float -> [%expr `proper_float]
+  | `string -> [%expr `string]
+  | `base64str -> [%expr `base64str]
+  | `array_of shape -> [%expr `array_of [%e ejson_shape_explanation ~loc shape]]
+  | `tuple_of shapes -> [%expr `tuple_of [%e shapes |&> (ejson_shape_explanation ~loc) |> elist ~loc]]
+  | `record_of shape -> [%expr `record_of [%e ejson_shape_explanation ~loc shape]]
+  | `object_of fields -> [%expr `object_of [%e fields |&> (efield_shape_explanation ~loc) |> elist ~loc]]
+and efield_shape_explanation ~loc (field: json_field_shape_explanation) =
+  match field with
+  | `mandatory_field (s, shape) -> [%expr `mandatory_field([%e estring ~loc s], [%e ejson_shape_explanation ~loc shape])]
+  | `optional_field (s, shape) -> [%expr `optional_field([%e estring ~loc s], [%e ejson_shape_explanation ~loc shape])]
+and ejv ~loc (jv: Kxclib.Json.jv) =
+  match jv with
+  | `null -> [%expr `null]
+  | `bool x -> [%expr `bool [%e ebool ~loc x]]
+  | `num x -> [%expr `num [%e pexp_constant ~loc (Pconst_float (Float.to_string x, None))]]
+  | `str x -> [%expr `str [%e estring ~loc x ]]
+  | `arr xs -> [%expr `arr [%e xs |&> (ejv ~loc) |> elist ~loc ]]
+  | `obj xs -> [%expr
+    `obj [%e xs
+      |&> (fun (s, jv) ->
+        [%expr ([%e estring ~loc s], [%e ejv ~loc jv])])
+      |> elist ~loc ]]
 
 let explain_encoded_json_shape :
   ?json_shape_explanation_resolution:json_shape_explanation_resolution
@@ -477,16 +537,16 @@ let explain_encoded_json_shape :
               process_branch discriminator_value discriminator_fname
                 (fields |&> process_field td_configs))
         |> elist ~loc ]]
-  and process_field td_configs field: expression =
+  and process_field td_configs ({ rf_type; _ } as field): expression =
     let optional, desc =
-      field.rf_type.ct_desc
+      rf_type.ct_desc
       |> (function Option desc -> true, desc | desc -> false, desc)
     in
     let json_field_name =
       Json_config.get_mangled_name_of_field td_configs field
       |> estring ~loc
     in
-    let inner = process_coretype desc in
+    let inner = process_coretype ~configs:rf_type.ct_configs desc in
     match optional with
     | true -> [%expr `optional_field ([%e json_field_name], [%e inner])]
     | false -> [%expr `mandatory_field ([%e json_field_name], [%e inner])]
@@ -497,8 +557,8 @@ let explain_encoded_json_shape :
           [%e estring ~loc discriminator_field_name],
           `exactly (`str [%e estring ~loc kind_name]))] in
     [%expr `object_of ([%e kind_field] :: [%e proper_fields |> elist ~loc])]
-  and process_coretype' (ct: Coretype.t) : expression = process_coretype ct.ct_desc
-  and process_coretype (desc: Coretype.desc) : expression = match desc with
+  and process_coretype' ({ ct_desc; ct_configs }: Coretype.t) : expression = process_coretype ~configs:ct_configs ct_desc
+  and process_coretype ?(configs: [`coretype] configs = Configs.empty) (desc: Coretype.desc) : expression = match desc with
     | Prim `unit -> [%expr `special ("unit", `exactly `null)]
     | Prim `bool -> [%expr `boolean]
     | Prim `int -> [%expr `integral]
@@ -509,13 +569,29 @@ let explain_encoded_json_shape :
     | Prim `byte -> [%expr `special ("byte", `string)]
     | Prim `bytes -> [%expr `base64str]
     | Uninhabitable -> [%expr `special ("uninhabitable", `exactly `null)]
-    | Ident { id_name=ident; _ } ->
-      begin match json_shape_explanation_resolution ident with
-      | `no_resolution -> [%expr `unresolved [%e estring ~loc ("alias: "^ident)]]
-      | ((`default | `in_module _ ) as resolution) ->
-        let json_shape_explanation_name = get_json_shape_explanation_name ident resolution in
-        [%expr `named ([%e estring ~loc ident], [%e evar json_shape_explanation_name])]
-      end
+    | Ident { id_name=ident; id_codec; _ } ->
+      let ident_json_name =
+        configs
+        |> Json.Json_config.get_name_opt |? ident
+        |> Json.Json_config.mangled `type_name configs
+      in
+      Json.Json_config.get_custom_shape_explanation configs
+      >? (fun shape -> `named (ident_json_name, shape) |> ejson_shape_explanation ~loc)
+      |?! (fun () ->
+        let trim eshape = [%expr
+          match [%e eshape] with
+          | `with_warning (_, (`named _ as s)) -> s
+          | `with_warning (_, s) | s -> `named ([%e estring ~loc ident_json_name], s)
+        ] in
+        begin match json_shape_explanation_resolution ident with
+        | `no_resolution -> [%expr `unresolved [%e estring ~loc ("alias: "^ident)]]
+        | `default ->
+          let json_shape_explanation_name = get_json_shape_explanation_name ident id_codec in
+          evar json_shape_explanation_name |> trim
+        | (`in_module _  | `open_ _) as resolution ->
+          let json_shape_explanation_name = get_json_shape_explanation_name ident resolution in
+          evar json_shape_explanation_name |> trim
+        end)
     | Option d -> [%expr `nullable [%e process_coretype d]]
     | Tuple ds -> [%expr `tuple_of [%e ds |&> process_coretype |> elist ~loc]]
     | List desc -> [%expr `array_of [%e process_coretype desc]]
@@ -526,9 +602,11 @@ let explain_encoded_json_shape :
   in
   [%expr `with_warning ("not considering any config if exists", [%e process_td td])]
 
-let name_with_codec ?(codec=`default) name suffix =
+let name_with_codec : ?codec:Coretype.codec -> string -> string -> string =
+  fun ?(codec=`default) name suffix ->
   match codec with
   | `default -> sprintf "%s_%s" name suffix
+  | `open_ m -> sprintf "%s.%s_%s" m name suffix
   | `in_module _ -> suffix
 
 let json_encoder_name ?(codec=`default) td =
@@ -911,7 +989,8 @@ let gen_json_decoder_result :
   let function_body =
     match kind with
     | Alias_decl cty ->
-      (wrap_self_contained (decoder_of_coretype impl_ename cty))
+      (wrap_self_contained
+         [%expr [%e (decoder_of_coretype impl_ename cty)] path])
     | Record_decl fields ->
       let bindings = record_bindings fields in
       let body = record_body fields in
@@ -936,28 +1015,23 @@ let gen_json_decoder_result :
     ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
     self_pname
     (pexp_constraint ~loc
-      [%expr fun x ->
+      [%expr fun ?(path = []) x ->
         let rec [%p impl_pname] = fun path -> [%e function_body] in
-        [%e impl_ename] [] x
+        [%e impl_ename] path x
         |> Result.map_error (fun (msg, path) ->
-          let msg =
-            match path with
-            | [] -> Printf.sprintf "%s at root" msg
-            | path -> Printf.sprintf "%s at path %s" msg (path |> List.rev |> Kxclib.Json.unparse_jvpath)
-          in
           (msg, path, [%e
             match json_shape_explanation_style with
             | `inline json_shape_explanation_resolution ->
               explain_encoded_json_shape ?json_shape_explanation_resolution td
             | `reference ->
               let self_json_shape_explanation_name = match codec with
-                | `default -> td_name ^ "_json_shape_explanation"
+                | `default | `open_ _ -> td_name ^ "_json_shape_explanation"
                 | `in_module _ -> "json_shape_explanation"
               in
               evar self_json_shape_explanation_name
           ]))
       ]
-      [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] Bindoj_runtime.OfJsonResult.t])
+      [%type: ?path:Kxclib.Json.jvpath -> Kxclib.Json.jv -> [%t typcons ~loc td_name] Bindoj_runtime.OfJsonResult.t])
 
 let gen_json_decoder_option :
     ?codec:Coretype.codec
@@ -1025,7 +1099,6 @@ let gen_json_codec =
   let gen_json_shape_explanation' = gen_json_shape_explanation in
 
   fun ?self_contained ?(gen_json_shape_explanation=true) ?(discriminator_value_accessor=true) ?json_shape_explanation_resolution ?codec td ->
-  let rec_flag = to_rec_flag td in
   let add_item_when cond f xs = if cond then (f ()) :: xs else xs in
   let bindings =
     [ gen_json_encoder ?self_contained ?codec td;
@@ -1037,14 +1110,18 @@ let gen_json_codec =
         ?codec
         td;
       gen_json_decoder_option ?codec td; ]
-    |> add_item_when
-        gen_json_shape_explanation
-        (constant @@ gen_json_shape_explanation' ?json_shape_explanation_resolution ?codec td)
-    |> add_item_when
-        (discriminator_value_accessor && match td.td_kind with | Variant_decl _ -> true | _ -> false)
-        (fun () -> gen_discriminator_value_accessor ?codec td)
   in
-  [ Str.value rec_flag bindings ]
+  [ Str.value Recursive bindings ]
+  |> add_item_when
+      gen_json_shape_explanation
+      (fun () ->
+        gen_json_shape_explanation' ?json_shape_explanation_resolution ?codec td
+        |> List.return |> Str.value Nonrecursive)
+  |> add_item_when
+      (discriminator_value_accessor && match td.td_kind with | Variant_decl _ -> true | _ -> false)
+      (fun () ->
+        (gen_discriminator_value_accessor ?codec td)
+        |> List.return |> Str.value Nonrecursive)
 
 let gen_json_encoder_signature :
   ?codec:Coretype.codec
@@ -1064,7 +1141,7 @@ let gen_json_decoder_result_signature :
     let loc = Location.none in
     let self_name = (json_decoder_name ~codec td) ^ "'" in
     Val.mk ~loc (strloc ~loc self_name)
-      [%type: Kxclib.Json.jv -> [%t typcons ~loc td.td_name] Bindoj_runtime.OfJsonResult.t]
+      [%type: ?path:Kxclib.Json.jvpath -> Kxclib.Json.jv -> [%t typcons ~loc td.td_name] Bindoj_runtime.OfJsonResult.t]
 
 let gen_json_decoder_option_signature :
   ?codec:Coretype.codec

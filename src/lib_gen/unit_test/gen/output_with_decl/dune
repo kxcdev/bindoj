@@ -130,3 +130,30 @@
  (target ex10_gen.mli)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
  (mode (promote (until-clean))))
+
+(rule
+ (target ex11_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+(rule
+ (target ex11_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex12_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+(rule
+ (target ex12_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex13_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+(rule
+ (target ex13_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))

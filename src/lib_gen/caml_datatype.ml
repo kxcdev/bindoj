@@ -125,7 +125,12 @@ and type_of_coretype : self_name:string -> coretype -> core_type =
   let rec go = function
     | Prim p -> type_of_prim p
     | Uninhabitable -> typcons "unit"
-    | Ident s -> typcons s.id_name
+    | Ident { id_name; id_codec; } ->
+      typcons
+        (match id_codec with
+        | `default -> id_name
+        | `open_ m -> sprintf "%s.%s" m id_name
+        | `in_module m -> m ^ ".t")
     | Option t -> typcons "option" ~args:[go t]
     | List t -> typcons "list" ~args:[go t]
     | Map (k, v) ->
@@ -147,6 +152,7 @@ let pvari ?(basename="x") i = pvar (vari ~basename i)
 let gen_reflect_name ?(codec=(`default : Coretype.codec)) td =
   match codec with
   | `default -> td.td_name ^ "_reflect"
+  | `open_ m -> sprintf "%s.%s_reflect" m td.td_name
   | `in_module _ -> "reflect"
 
 let rec gen_reflect ?(codec=(`default : Coretype.codec)) td : value_binding =
@@ -175,6 +181,7 @@ and get_refl (id: Coretype.ident) : expression =
   let name =
     match id.id_codec with
     | `default -> Longident.parse (id.id_name ^ "_reflect")
+    | `open_ m -> Longident.(Ldot (Lident m, id.id_name ^ "_reflect"))
     | `in_module m -> Longident.(Ldot (Lident m, "reflect"))
   in
   Exp.ident (locmk name)
@@ -470,7 +477,7 @@ let gen_structure :
         in
         let get_name suffix =
           match codec with
-          | `default -> td.td_name ^ "_" ^ suffix
+          | `default | `open_ _ -> td.td_name ^ "_" ^ suffix
           | `in_module _ -> suffix
         in
         let reflect =
@@ -525,7 +532,7 @@ let gen_signature :
         let decl_typ =[%type: Bindoj_typedesc.Type_desc.type_decl] in
         let get_name suffix =
           match codec with
-          | `default -> td.td_name ^ "_" ^ suffix
+          | `default | `open_ _ -> td.td_name ^ "_" ^ suffix
           | `in_module _ -> suffix
         in
         let mk (name : string) typ = Sig.value ~loc (Val.mk ~loc (strloc ~loc name) typ) in

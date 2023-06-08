@@ -43,7 +43,8 @@ let create_test_cases (module S : Sample) =
       let res_msg, res_path =
         Bindoj_codec.Json.of_json' ~env:S.env typed_decl jv
         |> function
-        | Error (msg, path, _) -> Some (msg), Some(path)
+        | Error err ->
+          OfJsonResult.Err.(Some (to_string err), Some(path err))
         | _ -> None, None
       in
       check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;

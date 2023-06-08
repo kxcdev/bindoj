@@ -125,6 +125,7 @@ module Coretype = struct
   and codec = [
     | `default
     | `in_module of string
+    | `open_ of string
  (* | `codec_val of string *)
   ] [@@deriving show,eq]
 

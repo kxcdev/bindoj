@@ -17,43 +17,47 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_runtime
-open Kxclib.Json
+include Bindoj_gen_test_gen_output.Ex13_gen
+open Bindoj_base
 
-module Json_value : sig
-  type t = jv
-  val to_json : t -> jv
-  val of_json : jv -> t option
-  val of_json' : ?path:jvpath -> jv -> (t, _) result
-  val reflect : t Refl.t
+type t = student_pair = { student1: Ex01.t; student2: Ex01.t } [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex13.decl
+let reflect = student_pair_reflect
 
-  val json_codec : (t, t) External_format.codec
-  val external_format_codecs : t External_format.codecs
-end = struct
-  type t = Json.jv
-  let of_json x = Some x
-  let of_json' ?path x = Ok x [@@warning "-27"]
-  let to_json = identity
-  let rec reflect : t Refl.t = lazy (
-    Refl.Alias {
-        get = (fun x -> Expr.Refl (reflect, x));
-        mk = (function
-             | Refl (refl, x) when refl == (Obj.magic reflect)
-               -> Some (Obj.magic x)
-             | _ -> None);
-      })
+let json_shape_explanation = student_pair_json_shape_explanation
+let to_json = student_pair_to_json
+let of_json' = student_pair_of_json'
+let env =
+  let open Bindoj_typedesc.Typed_type_desc in
+  { Type_decl_environment.empty with
+    alias_ident_typemap =
+      StringMap.singleton
+        "student"
+        (Boxed (Typed.mk Ex01.decl Ex01.reflect)) }
 
-  let json_codec : (t, jv) External_format.codec =
-    { encode = to_json; decode = of_json }
+let t : t Alcotest.testable = Alcotest.of_pp pp
 
-  let external_format_codecs : t External_format.codecs =
-    let module Map = External_format.LabelMap in
-    Map.empty
-    |> Map.add Wellknown.json_format' (
-           External_format.Codec
-             (Wellknown.json_format, json_codec))
-end
+let sample_value01 : t Sample_value.t =
+  let s : Ex01.t Sample_value.t = {
+    orig = {
+      admission_year = 1984;
+      name = "William Gibson";
+    };
+    jv = `obj [
+      ("admissionYear", `num 1984.);
+      ("name", `str "William Gibson")
+    ];
+  } in
+  { orig = {
+      student1 = s.orig;
+      student2 = s.orig
+    };
+    jv = `obj [
+      ("student1", s.jv);
+      ("student2", s.jv);
+    ];
+  }
 
-type json_value = Json_value.t
-
-let json_value_json_shape_explanation = `any_json_value
+let sample_values = [
+  sample_value01;
+]

@@ -17,43 +17,24 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_runtime
-open Kxclib.Json
+include Bindoj_gen_test_gen_output.Ex11_gen
+open Bindoj_base
 
-module Json_value : sig
-  type t = jv
-  val to_json : t -> jv
-  val of_json : jv -> t option
-  val of_json' : ?path:jvpath -> jv -> (t, _) result
-  val reflect : t Refl.t
+type t = unit [@@deriving show]
 
-  val json_codec : (t, t) External_format.codec
-  val external_format_codecs : t External_format.codecs
-end = struct
-  type t = Json.jv
-  let of_json x = Some x
-  let of_json' ?path x = Ok x [@@warning "-27"]
-  let to_json = identity
-  let rec reflect : t Refl.t = lazy (
-    Refl.Alias {
-        get = (fun x -> Expr.Refl (reflect, x));
-        mk = (function
-             | Refl (refl, x) when refl == (Obj.magic reflect)
-               -> Some (Obj.magic x)
-             | _ -> None);
-      })
+let decl = Bindoj_test_common_typedesc_examples.Ex11.decl
+let reflect = unit_reflect
 
-  let json_codec : (t, jv) External_format.codec =
-    { encode = to_json; decode = of_json }
+let json_shape_explanation = unit_json_shape_explanation
+let to_json = unit_to_json
+let of_json' = unit_of_json'
+let env = empty_tdenv
+let t : t Alcotest.testable = Alcotest.of_pp pp
 
-  let external_format_codecs : t External_format.codecs =
-    let module Map = External_format.LabelMap in
-    Map.empty
-    |> Map.add Wellknown.json_format' (
-           External_format.Codec
-             (Wellknown.json_format, json_codec))
-end
+let sample_value01 : t Sample_value.t = {
+  orig = (); jv = `num 1.
+}
 
-type json_value = Json_value.t
-
-let json_value_json_shape_explanation = `any_json_value
+let sample_values = [
+  sample_value01
+]

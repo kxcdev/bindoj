@@ -41,7 +41,8 @@ let create_test_cases (module S : SampleGenerated) =
       let res_msg, res_path =
         S.of_json' jv
         |> function
-        | Error (msg, path, _) -> Some (msg), Some(path)
+        | Error err ->
+          OfJsonResult.Err.(Some (to_string err), Some(path err))
         | _ -> None, None
       in
       check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;

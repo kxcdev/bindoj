@@ -256,14 +256,21 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
     | Prim `byte -> `special ("byte", `string)
     | Prim `bytes -> `base64str
     | Uninhabitable -> `special ("uninhabitable", `exactly `null)
-    | Ident { id_name = ident; id_codec = `default } ->
-      StringMap.find_opt ident env.alias_ident_typemap
-      >? (fun (Boxed ((module T) as ttd)) -> process_td (Obj.magic ttd))
-      |? `unresolved ("alias: "^ident)
-    | Ident { id_name = ident; id_codec = _ } ->
+    | Ident { id_name = ident; id_codec; _ } ->
+      let ident_json_name =
+        configs
+        |> Json_config.get_name_opt |? ident
+        |> Json_config.mangled `type_name configs
+      in
       Json_config.get_custom_shape_explanation configs
-      >? (fun s -> `named (ident, s))
-      |? `unresolved ("alias with special custom: "^ident)
+      >? (fun s -> `named (ident_json_name, s))
+      |?! (fun () ->
+        match id_codec with
+        | `default | `open_ _ ->
+          StringMap.find_opt ident env.alias_ident_typemap
+          >? (fun (Boxed ((module T) as ttd)) -> process_td (Obj.magic ttd))
+          |? `unresolved ("alias: "^ident)
+        | `in_module _ -> `unresolved ("alias with special custom: "^ident))
     | Option d -> `nullable (process_coretype d)
     | Tuple ds -> `tuple_of (ds |&> process_coretype)
     | List desc -> `array_of (process_coretype desc)
@@ -273,18 +280,6 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
     | _ -> .
   in
   `with_warning ("not considering any config if exists", process_td td)
-
-let rec coretype_desc_to_string (desc: Coretype.desc) =
-  match desc with
-  | Prim p -> Coretype.string_of_prim p
-  | Uninhabitable -> "*uninhabitable*"
-  | Ident i -> i.id_name
-  | Self -> "*self*"
-  | List t -> (coretype_desc_to_string t) ^ " list"
-  | Map(`string, t) -> sprintf "(string, %s) map" (coretype_desc_to_string t)
-  | Option t -> (coretype_desc_to_string t) ^ " option"
-  | StringEnum cases -> cases |> String.concat " | " |> sprintf "(%s)"
-  | Tuple ds -> ds |&> coretype_desc_to_string |> String.concat " * " |> sprintf "(%s)"
 
 open MonadOps(ResultOf(struct type err = string * jvpath end))
 
@@ -321,6 +316,12 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
   in
   let expr_of_json (path: jvpath) (ct: coretype) (jv: jv) : (Expr.t, string * jvpath) result =
     let rec go (path: jvpath) (d: Coretype.desc) (jv: jv) =
+      let type_mismatch_error expected_type jv path =
+        Result.error(
+          sprintf "expecting type '%s' but the given is of type '%s'"
+          expected_type (jv |> classify_jv |> string_of_jv_kind)
+          , path)
+      in
       match d, jv with
       | Prim `unit, (`bool _ | `num _ | `str _ | `arr [] | `obj []) ->
          Expr.Unit |> Result.ok
@@ -341,6 +342,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
         else Result.error (sprintf "number '%d' is not a valid byte value" x, path)
       | Prim `bytes, `str s ->
         try_result path (fun () -> Expr.Bytes (Kxclib.Base64.decode s) |> Result.ok)
+      | Prim p, jv -> type_mismatch_error (Coretype.string_of_prim p) jv path
       | Uninhabitable, _ -> Result.error (sprintf "unexpected value of *uninhabitable* type: %a" pp_unparse jv, path)
       | Ident i, _ -> begin match lookup_primitive_codec ~env i.id_name with
         | Some codec ->
@@ -359,6 +361,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
         >|= fun value -> Expr.Refl (Typed.to_refl a, value)
       | List t, `arr xs ->
         xs |> List.mapi (fun i -> go (`i i :: path) t) >>=* fun xs -> Expr.List xs |> Result.ok
+      | List _, jv -> type_mismatch_error "array" jv path
       | Tuple ts, _ ->
         try_result path (fun () ->
           match jv, Json_config.get_tuple_style ct.ct_configs with
@@ -385,15 +388,19 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       | Map (`string, t), `obj fields ->
         fields |> List.map (fun (name, x) -> go (`f name :: path) t x >|= (fun v -> name, v))
         >>=* fun fields -> Expr.Map fields |> Result.ok
+      | Map _, jv -> type_mismatch_error "object" jv path
       | Option _, `null -> Result.ok Expr.None
       | Option t, _ -> go path t jv >|= (fun x -> Expr.Some x)
-      | StringEnum cases, `str s when List.mem s cases -> Expr.StringEnum s |> Result.ok
-      | _, _ ->
-        let msg =
-          sprintf "expecting type '%s' but the given is of type '%s'"
-            (coretype_desc_to_string d) (jv |> classify_jv |> string_of_jv_kind)
-        in
-        Result.error (msg, path)
+      | StringEnum cases, `str s ->
+        if List.mem s cases then
+          Expr.StringEnum s |> Result.ok
+        else
+          let msg =
+            sprintf "given string '%s' is not one of [ %s ]" s
+            (cases |&> (sprintf "'%s'") |> String.concat ", ")
+          in
+          Result.error (msg, path)
+      | StringEnum _, jv -> type_mismatch_error "string" jv path
     in
     go path ct.ct_desc jv
   in
@@ -510,12 +517,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
 let of_json' : env:tdenv -> 'a typed_type_decl -> jv -> 'a OfJsonResult.t =
   fun ~env a jv ->
   of_json_impl ~env a jv
-  |> Result.map_error (fun (msg, path) ->
-    let msg =
-      if List.empty path then sprintf "%s at root" msg
-      else sprintf "%s at path %s" msg (path |> List.rev |> unparse_jvpath )
-    in
-    (msg, path, explain_encoded_json_shape ~env a))
+  |> Result.map_error (fun (msg, path) -> (msg, path, explain_encoded_json_shape ~env a))
 
 let of_json ~env a jv = of_json_impl ~env a jv |> Result.to_option
 
