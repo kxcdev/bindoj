@@ -100,13 +100,14 @@ module Config : sig
     val mangling_style : json_mangling_style -> ([< pos], [`json_mangling_style]) config
     val no_mangling : ([< pos], [`json_mangling_style]) config
     val default_mangling : ([< pos], [`json_mangling_style]) config
-    val get_mangling_style : [< pos] configs -> json_mangling_style
+    val get_mangling_style_opt : [< pos] configs -> json_mangling_style option
 
-    val mangled : [ `type_name | `field_name | `discriminator_value ] -> [< pos] configs -> string -> string
+    val mangled : [ `type_name | `field_name | `discriminator_value | `string_enum_case ] -> [< pos] configs -> string -> string
 
     val get_mangled_name_of_type : type_decl -> string
     val get_mangled_name_of_field : [`type_decl] configs -> record_field -> string
     val get_mangled_name_of_discriminator : [`type_decl] configs -> variant_constructor -> string
+    val get_mangled_name_of_string_enum_case : [`coretype] configs -> Coretype.string_enum_case -> string
 
     val custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
     val get_custom_encoder : [`coretype] configs -> string option

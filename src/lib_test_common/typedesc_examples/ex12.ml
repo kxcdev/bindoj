@@ -19,17 +19,38 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
 open Bindoj_gen_ts.Typescript_datatype
+open Bindoj_codec.Json
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex12"
 
-let cty_enum = Coretype.mk_string_enum [ "case1"; "case2"; "case3" ]
+let cty_enum = Coretype.(mk_string_enum [
+  string_enum_case "Case_at0";
+  string_enum_case "case_at1"
+    ~configs:[ Json_config.default_mangling ];
+  string_enum_case "Case_at2"
+    ~configs:[ Json_config.default_mangling ];
+  string_enum_case "Case_at3"
+    ~configs:[ Json_config.name "Case_third"; Json_config.default_mangling ];
+] ~configs:[ Json_config.no_mangling ])
 
 let decl : type_decl =
   alias_decl "cases" cty_enum
 
 let decl_with_docstr : type_decl =
-  alias_decl "cases" cty_enum
-    ~doc:(`docstr "alias of string cases")
+  alias_decl "cases" (
+    Coretype.(mk_string_enum [
+      string_enum_case "Case_at0" ~doc:(`docstr "zeroth case");
+      string_enum_case "case_at1"
+        ~configs:[ Json_config.default_mangling ]
+        ~doc:(`docstr "first case");
+      string_enum_case "Case_at2"
+        ~configs:[ Json_config.default_mangling ]
+        ~doc:(`docstr "second case");
+      string_enum_case "Case_at3"
+        ~configs:[ Json_config.name "Case_third"; Json_config.default_mangling ]
+        ~doc:(`docstr "third case");
+    ] ~configs:[ Json_config.no_mangling ])
+  ) ~doc:(`docstr "alias of string cases")
 
 let fwrt : (unit, unit) ts_fwrt_decl =
   "cases", Util.FwrtTypeEnv.(
@@ -44,9 +65,10 @@ let ts_ast : ts_ast option = Some [
     tsa_type_parameters = [];
     tsa_type_desc =
       `union [
-        `literal_type (`string_literal "case1");
-        `literal_type (`string_literal "case2");
-        `literal_type (`string_literal "case3");
+        `literal_type (`string_literal "Case_at0");
+        `literal_type (`string_literal "case-at1");
+        `literal_type (`string_literal "Case-at2");
+        `literal_type (`string_literal "Case-third");
       ];
   }
 ]

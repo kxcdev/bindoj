@@ -138,7 +138,11 @@ and type_of_coretype : self_name:string -> coretype -> core_type =
       typcons "list" ~args:[Typ.tuple [go k; go v]]
     | Tuple ts -> ts |> List.map go |> Typ.tuple
     | StringEnum cs ->
-      let cases = cs |> List.map (fun k -> Rf.tag (locmk (escape_as_constructor_name k)) true []) in
+      let cases = cs |&> (fun (k, _, doc) ->
+        Rf.tag
+          ~attrs:(doc_attribute doc)
+          (locmk (escape_as_constructor_name k)) true [])
+      in
       Typ.variant cases Closed None
     | Self -> typcons self_name
     in go ct_desc
@@ -223,7 +227,7 @@ and coretype_of_expr ~self_name (ct: coretype) =
       ]
     | StringEnum cs ->
       let cases =
-        cs |> List.map (fun c ->
+        cs |> List.map (fun (c, _, _) ->
           let pat = [%pat? Expr.StringEnum [%p Pat.constant (Const.string c)]] in
           let expr = Exp.variant (Utils.escape_as_constructor_name c) None in
           Exp.case pat [%expr Some [%e expr]]
@@ -259,7 +263,7 @@ and coretype_to_expr ~self_name (ct: coretype) =
       [%expr fun [%p pat] -> Expr.Tuple ([%e list])]
     | StringEnum cs ->
       let cases =
-        cs |> List.map (fun c ->
+        cs |> List.map (fun (c, _, _) ->
           let pat = Pat.variant (Utils.escape_as_constructor_name c) None in
           let expr = [%expr Expr.StringEnum ([%e Exp.constant (Const.string c)])] in
           Exp.case pat expr

@@ -253,7 +253,10 @@ let type_of_coretype :
         (ct_configs
           |> Json_config.get_name_opt |? self_type_name
           |> Json_config.mangled `type_name ct_configs)
-    | StringEnum cs -> `union (cs |> List.map (fun c -> `literal_type (`string_literal c)))
+    | StringEnum cs ->
+      `union (cs |&> (
+          Json_config.get_mangled_name_of_string_enum_case ct_configs
+          &> (fun c -> `literal_type (`string_literal c))))
   in
   let definitive =
     let classify = Coretype.(function

@@ -28,7 +28,7 @@ let print_typescript name (module Dir : T) =
     ~resolution_strategy:(Typed.unbox &> Typed.decl &> function
       | { td_name = "student"; _ } -> `import_location "../compile-tests/ex01_gen"
       | { td_name = "person"; td_configs; _ } ->
-        begin match Json_config.get_mangling_style td_configs with
+        begin match Json_config.(get_mangling_style_opt td_configs |? default_mangling_style) with
         | `default ->
           `import_location "../compile-tests/ex02_gen"
         | `no_mangling ->

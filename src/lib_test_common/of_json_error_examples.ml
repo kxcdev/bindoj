@@ -469,13 +469,13 @@ module SampleEx12 : SampleGenerated = struct
   let name = "SampleEx12"
   let samples = [
     "null", `null, ("expecting type 'string' but the given is of type 'null'", []);
-    "not one of", `str "case4", ("given string 'case4' is not one of [ 'case1', 'case2', 'case3' ]", []);
+    "not one of", `str "case-at4", ("given string 'case-at4' is not one of [ 'Case_at0', 'case-at1', 'Case-at2', 'Case-third' ]", []);
   ]
 
   let expected_json_shape_explanation =
     `with_warning
      ("not considering any config if exists",
-       (`named ("Cases", (`string_enum ["case1"; "case2"; "case3"]))))
+       (`named ("Cases", (`string_enum ["Case_at0"; "case-at1"; "Case-at2"; "Case-third"]))))
 end
 
 module SampleEx13 : SampleGenerated = struct

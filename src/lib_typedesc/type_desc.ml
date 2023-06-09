@@ -24,6 +24,7 @@ type pos = [
   | `record_field
   | `variant_constructor
   | `coretype
+  | `string_enum_case
 ]
 
 type ('pos, 'kind) config = .. constraint 'pos = [< pos]
@@ -104,6 +105,8 @@ module Coretype = struct
 (*  | `IntEnum of (string * int list ) *)
   ] [@@deriving show,eq] (* TODO #125: extend map_key *)
 
+  type string_enum_case = string * [`string_enum_case] configs * doc [@@deriving show,eq]
+
   type desc =
     | Prim of prim (** primitive types *)
     | Uninhabitable (** an uninhabitable type; [Kxclib.null] in ocaml *)
@@ -112,7 +115,7 @@ module Coretype = struct
     | Tuple of desc list (** invariant: list len >= 2; [t1*t2*..] in ocaml *)
     | List of desc (** [t list] in ocaml *)
     | Map of map_key * desc (** [(k*v) list] in ocaml *)
-    | StringEnum of string ignore_order_list (** 0-ary polyvariant in OCaml *)
+    | StringEnum of string_enum_case ignore_order_list (** 0-ary polyvariant in OCaml *)
 (*  | IntEnum of (string * int) ignore_order_list *) (* TODO #126: implement IntEnum *)
     | Self (** self type. used in a recursive definition *)
     [@@deriving show,eq]
@@ -143,6 +146,7 @@ module Coretype = struct
   let list t = List t
   let map k v = Map (k, v)
   let string_enum cases = StringEnum cases
+  let string_enum_case ?(configs = Configs.empty) ?(doc = `nodoc) name = name,configs,doc
   let uninhabitable = Uninhabitable
   let self = Self
 

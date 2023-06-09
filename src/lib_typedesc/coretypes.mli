@@ -87,8 +87,8 @@ end
 
 module Enum : sig
   type 't poly = 't constraint 't = [>]
-  val string_enum : ('tags poly * string) list -> 'tags t
-(** example: [string_enum [ `monday, "monday" ; `tuesday, "tuesday"; .. ]]
+  val string_enum : ('tags poly * Coretype.string_enum_case) list -> 'tags t
+(** example: [string_enum \[ `monday, Coretype.string_enum_case "monday" ; `tuesday, Coretype.string_enum_case "tuesday"; .. \]]
 
     caller must ensure that for each element of the argument,
     (1) the string matches the name of the polymorphic varaint constructor; and

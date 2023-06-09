@@ -103,7 +103,7 @@ end
 
 module Enum = struct
   type 't poly = 't constraint 't = [>]
-  let string_enum : ('tags poly * string) list -> 'tags t =
+  let string_enum : ('tags poly * Coretype.string_enum_case) list -> 'tags t =
     fun ts -> C (StringEnum (ts |&> snd), Configs.empty)
 end
 
@@ -222,7 +222,11 @@ let rec to_refl_coretype' :
     in
     (get, mk) |> return_alias
   | _, C (StringEnum tags, _) ->
-    let tags = tags |+&> Obj.magic % Kxclib.Obj.hash_variant |&> swap in
+    let tags =
+      tags
+      |&> (fun (name, _, _) -> name)
+      |+&> Obj.magic % Kxclib.Obj.hash_variant
+      |&> swap in
     let tags' = tags |> List.rev_map swap in
     let get x = Expr.StringEnum (List.assoc x tags) in
     let mk = function

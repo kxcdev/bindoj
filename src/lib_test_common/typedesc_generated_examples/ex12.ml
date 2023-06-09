@@ -20,7 +20,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 include Bindoj_gen_test_gen_output.Ex12_gen
 open Bindoj_base
 
-type t = [ `case1 | `case2 | `case3 ] [@@deriving show]
+type t = [ `Case_at0 | `case_at1 | `Case_at2 | `Case_at3 ] [@@deriving show]
 
 let decl = Bindoj_test_common_typedesc_examples.Ex12.decl
 let reflect = cases_reflect
@@ -31,19 +31,24 @@ let of_json' = cases_of_json'
 let env = empty_tdenv
 let t : t Alcotest.testable = Alcotest.of_pp pp
 
+let sample_value00 : t Sample_value.t = {
+  orig = `Case_at0; jv = `str "Case_at0"
+}
+
 let sample_value01 : t Sample_value.t = {
-  orig = `case1; jv = `str "case1"
+  orig = `case_at1; jv = `str "case-at1"
 }
 
 let sample_value02 : t Sample_value.t = {
-  orig = `case2; jv = `str "case2"
+  orig = `Case_at2; jv = `str "Case-at2"
 }
 
 let sample_value03 : t Sample_value.t = {
-  orig = `case3; jv = `str "case3"
+  orig = `Case_at3; jv = `str "Case-third"
 }
 
 let sample_values = [
+  sample_value00;
   sample_value01;
   sample_value02;
   sample_value03;

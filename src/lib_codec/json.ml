@@ -100,21 +100,25 @@ module Config = struct
     let mangling_style style = Config_json_mangling_style style
     let no_mangling = Config_json_mangling_style `no_mangling
     let default_mangling = Config_json_mangling_style `default
-    let get_mangling_style configs =
-      Configs.find_or_default ~default:default_mangling_style (function
+
+    let get_mangling_style_opt configs =
+      Configs.find (function
         | Config_json_mangling_style s -> Some s
         | _ -> None) configs
 
-    let mangled kind configs name =
+    let get_mangling_method =
       let open Bindoj_common.Mangling in
-      let casing = match kind with
-        | `type_name -> snake_to_upper_camel
-        | `field_name -> snake_to_lower_camel
-        | `discriminator_value -> cap_snake_to_kebab
-      in
-      match get_mangling_style configs with
-      | `default -> casing name
-      | `no_mangling -> name
+      function
+      | `type_name -> snake_to_upper_camel
+      | `field_name -> snake_to_lower_camel
+      | `discriminator_value -> cap_snake_to_kebab
+      | `string_enum_case -> snake_to_kebab
+
+    let mangled kind configs name =
+      get_mangling_style_opt configs
+      |> function
+      | Some `no_mangling -> name
+      | Some `default | None -> get_mangling_method kind name
 
     let get_mangled_name_of_type : type_decl -> string =
       fun { td_name; td_configs; _ } ->
@@ -130,6 +134,16 @@ module Config = struct
       fun _ { vc_name; vc_configs; _ } ->
         vc_configs |> get_name_opt |? vc_name
         |> mangled `discriminator_value vc_configs
+
+    let get_mangled_name_of_string_enum_case : [`coretype] configs -> Coretype.string_enum_case -> string =
+      fun ct_configs (name, configs, _) ->
+        let name = configs |> get_name_opt |? name in
+        get_mangling_style_opt configs
+        ||?! (fun () -> get_mangling_style_opt ct_configs)
+        |? default_mangling_style
+        |> function
+        | `no_mangling -> name
+        | `default -> get_mangling_method `string_enum_case name
 
     let custom_encoder encoder_name = Config_json_custom_encoder encoder_name
     let get_custom_encoder =
@@ -232,7 +246,7 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
       |> (function Option desc -> true, desc | desc -> false, desc)
     in
     let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
-    let inner = process_coretype ~configs:rf_type.ct_configs desc in
+    let inner = process_coretype rf_type.ct_configs desc in
     match optional with
     | true -> `optional_field (json_field_name, inner)
     | false -> `mandatory_field (json_field_name, inner)
@@ -244,8 +258,8 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
           `exactly (`str kind_name)) in
     `object_of (kind_field :: proper_fields)
   and process_coretype' ({ ct_desc; ct_configs }: Coretype.t) : json_shape_explanation =
-    process_coretype ~configs:ct_configs ct_desc
-  and process_coretype ?(configs: [`coretype] configs = Configs.empty) (desc: Coretype.desc) : json_shape_explanation = match desc with
+    process_coretype ct_configs ct_desc
+  and process_coretype (configs: [`coretype] configs) (desc: Coretype.desc) : json_shape_explanation = match desc with
     | Prim `unit -> `special ("unit", `exactly `null)
     | Prim `bool -> `boolean
     | Prim `int -> `integral
@@ -271,11 +285,11 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
           >? (fun (Boxed ((module T) as ttd)) -> process_td (Obj.magic ttd))
           |? `unresolved ("alias: "^ident)
         | `in_module _ -> `unresolved ("alias with special custom: "^ident))
-    | Option d -> `nullable (process_coretype d)
-    | Tuple ds -> `tuple_of (ds |&> process_coretype)
-    | List desc -> `array_of (process_coretype desc)
-    | Map (`string, d) -> `record_of (process_coretype d)
-    | StringEnum xs -> `string_enum xs
+    | Option d -> `nullable (process_coretype configs d)
+    | Tuple ds -> `tuple_of (ds |&> process_coretype configs)
+    | List desc -> `array_of (process_coretype configs desc)
+    | Map (`string, d) -> `record_of (process_coretype configs d)
+    | StringEnum xs -> `string_enum (xs |&> Json_config.get_mangled_name_of_string_enum_case configs)
     | Self -> `self
     | _ -> .
   in
@@ -392,14 +406,20 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       | Option _, `null -> Result.ok Expr.None
       | Option t, _ -> go path t jv >|= (fun x -> Expr.Some x)
       | StringEnum cases, `str s ->
-        if List.mem s cases then
-          Expr.StringEnum s |> Result.ok
-        else
-          let msg =
-            sprintf "given string '%s' is not one of [ %s ]" s
-            (cases |&> (sprintf "'%s'") |> String.concat ", ")
-          in
-          Result.error (msg, path)
+        let case_names =
+          cases |&> (fun ((name, _, _) as c) ->
+            Json_config.get_mangled_name_of_string_enum_case ct.ct_configs c, name)
+        in
+        case_names
+        |> List.assoc_opt s
+        |> begin function
+        | Some name -> Expr.StringEnum name |> Result.ok
+        | None ->
+          Result.error
+            (sprintf "given string '%s' is not one of [ %s ]" s
+              (case_names |&> (fst &> sprintf "'%s'") |> String.concat ", "),
+            path)
+        end
       | StringEnum _, jv -> type_mismatch_error "string" jv path
     in
     go path ct.ct_desc jv
@@ -561,7 +581,13 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
       | Map (`string, t), Expr.Map xs -> `obj (List.map (fun (k, v) -> k, go t v) xs)
       | Option t, Expr.Some x -> go t x
       | Option _, Expr.None -> `null
-      | StringEnum cases, Expr.StringEnum s when List.mem s cases -> `str s
+      | StringEnum cases, Expr.StringEnum s ->
+          cases
+          |> List.find_opt (fun (name, _, _) -> name = s)
+          |> begin function
+          | Some c -> `str (Json_config.get_mangled_name_of_string_enum_case ct.ct_configs c)
+          | None -> fail "string enum case not found for the given name"
+          end
       | _, _ -> fail "type mismatch"
     in
     go ct.ct_desc expr

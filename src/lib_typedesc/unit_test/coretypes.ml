@@ -215,17 +215,18 @@ module TestEnumDay : Testable = struct
   let label = "day_tag"
 
   let items =
-    [ `monday, "monday";
-      `tuesday, "tuesday";
-      `wednesday, "wednesday";
-      `thursday, "thursday";
-      `friday, "friday";
-      `saturday, "saturday";
-      `sunday, "sunday" ]
+    let open Type_desc.Coretype in
+    [ `monday, string_enum_case "monday";
+      `tuesday, string_enum_case "tuesday";
+      `wednesday, string_enum_case "wednesday";
+      `thursday, string_enum_case "thursday";
+      `friday, string_enum_case "friday";
+      `saturday, string_enum_case "saturday";
+      `sunday, string_enum_case "sunday" ]
 
   let coretype = Coretypes.Enum.string_enum items
   let testable = Alcotest.testable pp_tags ( = )
-  let to_string = Functionals.flip List.assoc items
+  let to_string = Functionals.flip List.assoc items &> (fun (a, _, _) -> a)
   let values = items |&> fst
 end
 
@@ -245,17 +246,18 @@ module TestEnumColor : Testable = struct
   let label = "color_tag"
 
   let items =
-    [ `red, "red";
-      `green, "green";
-      `blue, "blue";
-      `yellow, "yellow";
-      `black, "black";
-      `white, "white";
-      `gray, "gray" ]
+    let open Type_desc.Coretype in
+    [ `red, string_enum_case "red";
+      `green, string_enum_case "green";
+      `blue, string_enum_case "blue";
+      `yellow, string_enum_case "yellow";
+      `black, string_enum_case "black";
+      `white, string_enum_case "white";
+      `gray, string_enum_case "gray" ]
 
   let coretype = Coretypes.Enum.string_enum items
   let testable = Alcotest.testable pp_tags ( = )
-  let to_string = Functionals.flip List.assoc items
+  let to_string = Functionals.flip List.assoc items &> (fun (a, _, _) -> a)
   let values = items |&> fst
 end
 

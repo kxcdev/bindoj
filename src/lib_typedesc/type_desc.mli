@@ -24,6 +24,7 @@ type pos = [
   | `record_field
   | `variant_constructor
   | `coretype
+  | `string_enum_case
 ]
 
 type ('pos, 'kind) config = .. constraint 'pos = [< pos]
@@ -81,6 +82,8 @@ module Coretype : sig
 (*  | `IntEnum of (string * int list ) *)
   ] (* TODO #125: extend map_key *)
 
+  type string_enum_case = string * [`string_enum_case] configs * doc
+
   type desc =
     | Prim of prim (** primitive types *)
     | Uninhabitable (** an uninhabitable type; [Kxclib.null] in ocaml *)
@@ -89,7 +92,7 @@ module Coretype : sig
     | Tuple of desc list (** invariant: list len >= 2; [t1*t2*..] in ocaml *)
     | List of desc (** [t list] in ocaml *)
     | Map of map_key * desc (** [(k*v) list] in ocaml *)
-    | StringEnum of string list (** 0-ary polyvariant in OCaml *)
+    | StringEnum of string_enum_case list (** 0-ary polyvariant in OCaml *)
 (*  | IntEnum of (string * int) list *) (* TODO #126: implement IntEnum *)
     | Self (** self type. used in a recursive definition *)
 
@@ -114,7 +117,8 @@ module Coretype : sig
   val tuple : desc list -> desc
   val list : desc -> desc
   val map : map_key -> desc -> desc
-  val string_enum : string list -> desc
+  val string_enum : string_enum_case list -> desc
+  val string_enum_case : ?configs:[`string_enum_case] configs -> ?doc:doc -> string -> string_enum_case
   val self : desc
 
   type t = {
@@ -133,7 +137,7 @@ module Coretype : sig
   val mk_list : ?configs:[`coretype] configs -> desc -> t
   val mk_tuple : ?configs:[`coretype] configs -> desc list -> t
   val mk_map : ?configs:[`coretype] configs -> map_key -> desc -> t
-  val mk_string_enum : ?configs:[`coretype] configs -> string list -> t
+  val mk_string_enum : ?configs:[`coretype] configs -> string_enum_case list -> t
   val mk_uninhabitable : ?configs:[`coretype] configs -> unit -> t
   val mk_self : ?configs:[`coretype] configs -> unit -> t
 

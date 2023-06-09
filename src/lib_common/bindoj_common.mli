@@ -21,4 +21,5 @@ module Mangling : sig
   val snake_to_upper_camel : string -> string
   val snake_to_lower_camel : string -> string
   val cap_snake_to_kebab : string -> string
+  val snake_to_kebab : string -> string
 end

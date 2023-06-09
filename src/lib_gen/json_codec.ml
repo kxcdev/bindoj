@@ -218,7 +218,6 @@ let builtin_codecs_map =
   builtin_codecs |> List.to_seq |> StringMap.of_seq
 
 let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case ~string_enum_case ~wrap_ident self_ename (ct: coretype) =
-  let open Coretype in
   let loc = Location.none in
   match get_custom_codec ct.ct_configs with
   | Some coder -> evar coder
@@ -227,7 +226,7 @@ let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case
       get_name name codec |> evar
     in
     let rec go = function
-      | Prim p -> evar_name (Coretype.string_of_prim p)
+      | Coretype.Prim p -> evar_name (Coretype.string_of_prim p)
       | Uninhabitable -> evar_name "uninhabitable"
       | Ident i -> evar_name ~codec:i.id_codec i.id_name |> wrap_ident
       | Option t -> [%expr [%e evar_name "option"] [%e go t]] (* option_of_json t_of_json *)
@@ -302,22 +301,25 @@ let encoder_of_coretype =
     match k with
     | `string -> [%expr fun (k: string) -> k]
   in
-  let string_enum_case (cs: string list) =
+  let string_enum_case ct_configs (cs: Coretype.string_enum_case list) =
     let cases =
-      cs |> List.map (fun c ->
-        let pat = Pat.variant (Utils.escape_as_constructor_name c) None in
-        let expr = [%expr `str [%e Exp.constant (Const.string c)]] in
+      cs |> List.map (fun ((name, _, _) as c) ->
+        let json_name = Json.Json_config.get_mangled_name_of_string_enum_case ct_configs c in
+        let pat = Pat.variant (Utils.escape_as_constructor_name name) None in
+        let expr = [%expr `str [%e Exp.constant (Const.string json_name)]] in
         Exp.case pat expr
       )
     in
     Exp.function_ cases
   in
   let wrap_ident = identity in
-  codec_of_coretype
-    ~get_custom_codec:Json_config.get_custom_encoder
-    ~get_name:get_encoder_name
-    ~tuple_case ~map_key_converter ~string_enum_case
-    ~wrap_ident
+  fun e ct ->
+    codec_of_coretype
+      ~get_custom_codec:Json_config.get_custom_encoder
+      ~get_name:get_encoder_name
+      ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case ct.ct_configs)
+      ~wrap_ident
+      e ct
 
 let decoder_of_coretype =
   let open Coretype in
@@ -393,16 +395,18 @@ let decoder_of_coretype =
     match k with
     | `string -> [%expr fun (s: string) -> Some s]
   in
-  let string_enum_case (cs: string list) =
+  let string_enum_case ct_configs (cs: Coretype.string_enum_case list) =
     let cases =
-      cs |> List.map (fun c ->
-        let pat = Pat.constant (Const.string c) in
-        let expr = Exp.variant (Utils.escape_as_constructor_name c) None in
+      cs |> List.map (fun ((name, _, _) as c) ->
+        let json_name = Json.Json_config.get_mangled_name_of_string_enum_case ct_configs c in
+        let pat = Pat.constant (Const.string json_name) in
+        let expr = Exp.variant (Utils.escape_as_constructor_name name) None in
         Exp.case pat [%expr Ok [%e expr]]
       ) |> fun cases ->
         let error_message =
-          sprintf "given string '%%s' is not one of [ %s ]"
-          (cs |&> (sprintf "'%s'") |> String.concat ", ")
+          (cs |&> (Json.Json_config.get_mangled_name_of_string_enum_case ct_configs &> sprintf "'%s'")
+          |> String.concat ", ")
+          |> sprintf "given string '%%s' is not one of [ %s ]"
         in
         cases @ [
           Exp.case [%pat? s] [%expr Error (Printf.sprintf [%e estring ~loc error_message] s, path)]
@@ -422,11 +426,13 @@ let decoder_of_coretype =
     [%expr (fun path x ->
         [%e e] ~path x |> Result.map_error (fun (msg, path, _) -> (msg, path)))]
   in
+  fun e ct ->
   codec_of_coretype
     ~get_custom_codec:Json_config.get_custom_decoder
     ~get_name:get_decoder_name
-    ~tuple_case ~map_key_converter ~string_enum_case
+    ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case ct.ct_configs)
     ~wrap_ident
+    e ct
 
 let gen_builtin_codecs ?attrs ~get_name ~get_codec (td: type_decl) =
   let loc = Location.none in
@@ -503,7 +509,7 @@ let explain_encoded_json_shape :
     [%expr `named ([%e estring ~loc json_type_name], [%e process_kind td])]
   and process_kind { td_kind; td_configs; _ } : expression =
     match td_kind with
-    | Alias_decl ct -> [%expr [%e process_coretype ct.ct_desc ]]
+    | Alias_decl ct -> [%expr [%e process_coretype' td_configs ct ]]
     | Record_decl fields ->
        [%expr `object_of [%e fields |&> process_field td_configs |> elist ~loc]]
     | Variant_decl branches ->
@@ -523,7 +529,7 @@ let explain_encoded_json_shape :
                 Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
                 |> Json_config.mangled `field_name vc_configs
               in
-              let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' |> elist ~loc]] in
+              let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' td_configs |> elist ~loc]] in
               process_branch discriminator_value discriminator_fname [
                 [%expr `mandatory_field ([%e estring ~loc arg_fname], [%e arg_shape])]]
             | `inline_record fields ->
@@ -546,7 +552,7 @@ let explain_encoded_json_shape :
       Json_config.get_mangled_name_of_field td_configs field
       |> estring ~loc
     in
-    let inner = process_coretype ~configs:rf_type.ct_configs desc in
+    let inner = process_coretype td_configs rf_type.ct_configs desc in
     match optional with
     | true -> [%expr `optional_field ([%e json_field_name], [%e inner])]
     | false -> [%expr `mandatory_field ([%e json_field_name], [%e inner])]
@@ -557,8 +563,8 @@ let explain_encoded_json_shape :
           [%e estring ~loc discriminator_field_name],
           `exactly (`str [%e estring ~loc kind_name]))] in
     [%expr `object_of ([%e kind_field] :: [%e proper_fields |> elist ~loc])]
-  and process_coretype' ({ ct_desc; ct_configs }: Coretype.t) : expression = process_coretype ~configs:ct_configs ct_desc
-  and process_coretype ?(configs: [`coretype] configs = Configs.empty) (desc: Coretype.desc) : expression = match desc with
+  and process_coretype' td_configs ({ ct_desc; ct_configs }: Coretype.t) : expression = process_coretype td_configs ct_configs ct_desc
+  and process_coretype td_configs (configs: [`coretype] configs) (desc: Coretype.desc) : expression = match desc with
     | Prim `unit -> [%expr `special ("unit", `exactly `null)]
     | Prim `bool -> [%expr `boolean]
     | Prim `int -> [%expr `integral]
@@ -592,11 +598,16 @@ let explain_encoded_json_shape :
           let json_shape_explanation_name = get_json_shape_explanation_name ident resolution in
           evar json_shape_explanation_name |> trim
         end)
-    | Option d -> [%expr `nullable [%e process_coretype d]]
-    | Tuple ds -> [%expr `tuple_of [%e ds |&> process_coretype |> elist ~loc]]
-    | List desc -> [%expr `array_of [%e process_coretype desc]]
-    | Map (`string, d) -> [%expr `record_of [%e process_coretype d]]
-    | StringEnum xs -> [%expr `string_enum [%e xs |&> estring ~loc |> elist ~loc]]
+    | Option d -> [%expr `nullable [%e process_coretype td_configs configs d]]
+    | Tuple ds -> [%expr `tuple_of [%e ds |&> process_coretype td_configs configs |> elist ~loc]]
+    | List desc -> [%expr `array_of [%e process_coretype td_configs configs desc]]
+    | Map (`string, d) -> [%expr `record_of [%e process_coretype td_configs configs d]]
+    | StringEnum xs -> [%expr
+      `string_enum [%e
+        xs
+        |&> (Json.Json_config.get_mangled_name_of_string_enum_case configs &> estring ~loc)
+        |> elist ~loc
+      ]]
     | Self -> [%expr `self]
     | _ -> .
   in
@@ -1243,7 +1254,9 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
       | Map (`string, t) ->
         Schema_object.obj ?description ~additionalProperties:(`T (go t)) ()
       | StringEnum cases ->
-        let enum = cases |> List.map (fun case -> `str case) in
+        let enum = cases |> List.map (
+          Json_config.get_mangled_name_of_string_enum_case ct.ct_configs
+          &> (fun case -> `str case)) in
         Schema_object.string ~enum ()
       | Self ->
         if openapi then (* in OpenAPI, types live in #/components/schemas/ *)

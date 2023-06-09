@@ -35,4 +35,8 @@ module Mangling = struct
     String.split_on_char '_' cap_snake_str
     |> List.map String.lowercase_ascii
     |> String.concat "-"
+
+  let snake_to_kebab snake_str =
+    String.split_on_char '_' snake_str
+    |> String.concat "-"
 end
