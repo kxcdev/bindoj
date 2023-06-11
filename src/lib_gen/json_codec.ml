@@ -1152,7 +1152,7 @@ let gen_json_decoder_result_signature :
     let loc = Location.none in
     let self_name = (json_decoder_name ~codec td) ^ "'" in
     Val.mk ~loc (strloc ~loc self_name)
-      [%type: ?path:Kxclib.Json.jvpath -> Kxclib.Json.jv -> [%t typcons ~loc td.td_name] Bindoj_runtime.OfJsonResult.t]
+      [%type: [%t typcons ~loc td.td_name] Bindoj_runtime.json_full_decoder]
 
 let gen_json_decoder_option_signature :
   ?codec:Coretype.codec

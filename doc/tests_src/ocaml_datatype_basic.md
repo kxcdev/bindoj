@@ -178,15 +178,21 @@ module Datatype :
       ?type_decl:[ `expr of Ppxlib.expression | `path of string ] ->
       type_decl -> Ppxlib.structure
     val gen_reflect_signature :
+      ?refl_type_abbr:string ->
       ?codec:Coretype.codec -> type_decl -> Ppxlib.value_description
     val gen_signature :
       ?type_name:string ->
       ?refl:bool ->
       ?attrs:Ppxlib.attribute list ->
       ?codec:Coretype.codec ->
-      ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.signature)
+      ?generators:(?codec:Coretype.codec ->
+                   type_decl -> Bindoj.Versioned.V0.Caml.signature)
                   list ->
-      ?type_decl:bool -> type_decl -> Ppxlib.signature
+      ?type_decl:bool ->
+      ?refl_type_abbr:string ->
+      ?type_decl_type_abbr:string ->
+      ?typed_type_decl_type_abbr:string ->
+      type_decl -> Bindoj.Versioned.V0.Caml.signature
   end
 # #show_module Bindoj.Caml;;
 module Caml = Bindoj.Versioned.V0.Caml
@@ -196,12 +202,15 @@ module Caml :
     module Astlib = Astlib
     module Pprintast = Astlib.Pprintast
     module CommonTypes : sig ... end
+    type signature_item = CommonTypes.signature_item
+    type signature = CommonTypes.signature
     type structure_item = CommonTypes.structure_item
     type structure = structure_item list
     type value_binding = CommonTypes.value_binding
     type type_declaration = CommonTypes.type_declaration
     type core_type = CommonTypes.core_type
     module Structure : sig ... end
+    module Signature : sig ... end
   end
 ```
 

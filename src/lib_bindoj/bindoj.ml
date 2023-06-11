@@ -33,8 +33,12 @@ module Versioned = struct
       module Pprintast = Astlib.Pprintast
 
       module CommonTypes = struct
+        type signature_item = Ppxlib.signature_item
+        type signature = Ppxlib.signature
+
         type structure_item = Ppxlib.structure_item
         type structure = structure_item list
+
         type value_binding = Ppxlib.value_binding
         type type_declaration = Ppxlib.type_declaration
         type core_type = Ppxlib.core_type
@@ -77,6 +81,13 @@ module Versioned = struct
           open_utils % List.flatten
 
         let pp_caml : Format.formatter -> t -> unit = Pprintast.structure
+      end
+
+      module Signature = struct
+        type elt = signature_item
+        type t = signature
+
+        let pp_caml : Format.formatter -> t -> unit = Pprintast.signature
       end
 
     end

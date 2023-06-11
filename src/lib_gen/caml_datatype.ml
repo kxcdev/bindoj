@@ -505,14 +505,19 @@ let gen_structure :
     @ generators @ type_decl
 
 let gen_reflect_signature :
-  ?codec:Coretype.codec
+  ?refl_type_abbr:string
+  -> ?codec:Coretype.codec
   -> type_decl
   -> value_description =
-  fun ?(codec=`default) td ->
+  fun ?refl_type_abbr ?(codec=`default) td ->
     let loc = Location.none in
     let self_name = gen_reflect_name ~codec td in
-    Val.mk ~loc (strloc ~loc self_name)
-      [%type: [%t typcons ~loc td.td_name] Bindoj_runtime.Refl.t]
+    let typ = typcons ~loc td.td_name in
+    let refl_typ = match refl_type_abbr with
+      | None -> [%type: [%t typ] Bindoj_runtime.Refl.t]
+      | Some abbr -> typcons ~loc abbr ~args:[typ]
+    in
+    Val.mk ~loc (strloc ~loc self_name) refl_typ
 
 let gen_signature :
   ?type_name:string
@@ -521,19 +526,35 @@ let gen_signature :
   -> ?codec:Coretype.codec
   -> ?generators:(?codec:Coretype.codec -> type_decl -> signature) list
   -> ?type_decl:bool
+  -> ?refl_type_abbr:string
+  -> ?type_decl_type_abbr:string
+  -> ?typed_type_decl_type_abbr:string
   -> type_decl -> signature =
-  fun ?type_name ?(refl=true) ?attrs ?(codec=`default) ?(generators=[]) ?(type_decl = false) td ->
+  fun ?type_name
+      ?(refl=true)
+      ?attrs ?(codec=`default)
+      ?(generators=[])
+      ?(type_decl = false)
+      ?refl_type_abbr ?type_decl_type_abbr ?typed_type_decl_type_abbr
+      td ->
     let loc = Location.none in
     let rec_flag = to_rec_flag td in
     let decl =
       Sig.type_ rec_flag [type_declaration_of_type_decl ?type_name ?attrs td]
     in
-    let reflect = gen_reflect_signature ~codec td in
+    let reflect = gen_reflect_signature ?refl_type_abbr ~codec td in
     let generators =
       generators |> List.concat_map (fun gen -> gen ?codec:(Some codec) td) in
     let type_decl =
       if type_decl then
-        let decl_typ =[%type: Bindoj_typedesc.Type_desc.type_decl] in
+        let decl_typ = match type_decl_type_abbr with
+          | None -> [%type: Bindoj_typedesc.Type_desc.type_decl]
+          | Some abbr -> typcons ~loc abbr
+        in
+    let mk_typed_type_decl_type typ =
+      match typed_type_decl_type_abbr with
+      | None -> [%type: ([%t decl_typ], [%t typ]) Bindoj_runtime.generic_typed_type_decl]
+      | Some abbr -> typcons ~loc ~args:[typ] abbr in
         let get_name suffix =
           match codec with
           | `default | `open_ _ -> td.td_name ^ "_" ^ suffix
@@ -542,8 +563,8 @@ let gen_signature :
         let mk (name : string) typ = Sig.value ~loc (Val.mk ~loc (strloc ~loc name) typ) in
         [ mk (get_name "decl") decl_typ ]
         |> mayappend refl
-             (mk (get_name "typed_decl")
-                [%type: ([%t decl_typ], [%t typcons ~loc td.td_name]) Bindoj_runtime.generic_typed_type_decl])
+             (mk (get_name "typed_decl") (mk_typed_type_decl_type (typcons ~loc td.td_name))
+                (* [%type: ([%t decl_typ], [%t typcons ~loc td.td_name]) Bindoj_runtime.generic_typed_type_decl] *))
       else []
     in
     ([decl]

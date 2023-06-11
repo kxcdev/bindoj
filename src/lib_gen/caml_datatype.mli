@@ -53,7 +53,8 @@ val gen_structure :
   -> type_decl -> Ppxlib.structure
 
 val gen_reflect_signature :
-  ?codec:Coretype.codec
+  ?refl_type_abbr:string
+  -> ?codec:Coretype.codec
   -> type_decl
   -> Ppxlib.value_description
 
@@ -77,4 +78,7 @@ val gen_signature :
   -> ?codec:Coretype.codec
   -> ?generators:(?codec:Coretype.codec -> type_decl -> Ppxlib.signature) list
   -> ?type_decl:bool
+  -> ?refl_type_abbr:string
+  -> ?type_decl_type_abbr:string
+  -> ?typed_type_decl_type_abbr:string
   -> type_decl -> Ppxlib.signature
