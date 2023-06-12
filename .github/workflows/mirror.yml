@@ -7,7 +7,7 @@ on:
 
 jobs:
   mirror:
-    if: github.repository == 'kxcteam/bindoj'
+    if: github.repository == 'kxcinc/bindoj'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

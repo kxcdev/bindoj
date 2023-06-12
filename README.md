@@ -35,7 +35,7 @@ use one of the following options:
   ```
 * Use `opam pin`.
   ```bash
-  $ opam pin add kxclib git@github.com:kxcteam/kxclib-ocaml.git
+  $ opam pin add kxclib git@github.com:kxcinc/kxclib-ocaml.git
   $ opam pin add bindoj git@github.com:kxcdev/bindoj.git
   ```
 
@@ -108,10 +108,10 @@ Tool | version
       - Run `$ npm install -g yarn`.
 2. Clone this repository:
     ```bash
-    $ git clone --recursive git@github.com:kxcteam/bindoj.git
+    $ git clone --recursive git@github.com:kxcinc/bindoj.git
 
     # or
-    $ git clone git@github.com:kxcteam/bindoj.git
+    $ git clone git@github.com:kxcinc/bindoj.git
     $ git submodule init
     $ git submodule update
     ```

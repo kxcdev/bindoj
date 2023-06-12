@@ -21,7 +21,7 @@ jobs:
 
     if: |
       github.event.review.state == 'approved' &&
-      github.repository == 'kxcteam/bindoj'
+      github.repository == 'kxcinc/bindoj'
     runs-on: ${{ matrix.os }}
 
     steps:

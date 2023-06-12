@@ -16,7 +16,7 @@ jobs:
           # - lts/gallium # v16 Active LTS
           # - 17
 
-    if: github.repository == 'kxcteam/bindoj'
+    if: github.repository == 'kxcinc/bindoj'
     runs-on: ${{ matrix.os }}
 
     steps:
