@@ -126,10 +126,10 @@ let ts_ast : ts_ast option =
           tsps_name = "department";
           tsps_type_desc = `type_reference "string"; } ] in
   let person = [
-    "withId", with_id;
-    "teacher", teacher;
-    "student", student;
-    "anonymous", anonymous;
+    "With_id", with_id;
+    "Teacher", teacher;
+    "Student", student;
+    "Anonymous", anonymous;
   ] in
   let options : Util.Ts_ast.options =
     { discriminator;

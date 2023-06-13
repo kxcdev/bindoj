@@ -75,7 +75,7 @@ let ts_ast : ts_ast option =
         { tsps_modifiers = [];
           tsps_name = "_1";
           tsps_type_desc = `type_reference "IntList" } ] in
-  let cstrs = ["intnil", int_nil; "intcons", int_cons] in
+  let cstrs = ["IntNil", int_nil; "IntCons", int_cons] in
   let options : Util.Ts_ast.options =
     { discriminator;
       var_v = "__bindoj_v";

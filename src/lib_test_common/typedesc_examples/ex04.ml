@@ -79,7 +79,7 @@ let ts_ast : ts_ast option =
         { tsps_modifiers = [];
           tsps_name = arg_fname;
           tsps_type_desc = `tuple [`type_reference "number"; `type_reference "number"]; } ] in
-  let foos = ["foo0", foo0; "foo1", foo1; "foo2", foo2] in
+  let foos = ["Foo0", foo0; "Foo1", foo1; "Foo2", foo2] in
   let options : Util.Ts_ast.options =
     { discriminator;
       var_v = "__bindoj_v";

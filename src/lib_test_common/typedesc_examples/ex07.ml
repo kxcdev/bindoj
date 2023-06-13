@@ -113,8 +113,8 @@ let ts_ast : ts_ast option =
           tsps_name = "y'";
           tsps_type_desc = `type_reference "number"; }; ] in
   let customized_union = [
-    "case1'", case1;
-    "case2'", case2;
+    "Case1'", case1;
+    "Case2'", case2;
   ] in
   let options : Util.Ts_ast.options =
     { discriminator;
