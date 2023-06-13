@@ -106,44 +106,40 @@ module Config = struct
         | Config_json_mangling_style s -> Some s
         | _ -> None) configs
 
-    let get_mangling_method =
-      let open Bindoj_common.Mangling in
-      function
-      | `type_name -> snake_to_upper_camel
-      | `field_name -> snake_to_lower_camel
-      | `discriminator_value -> cap_snake_to_kebab
-      | `string_enum_case -> snake_to_kebab
+    let mangled kind mangling_style name =
+      match mangling_style with
+      | `no_mangling -> name
+      | `default ->
+        let open Bindoj_common.Mangling in
+        name |> (match kind with
+        | `type_name -> snake_to_upper_camel
+        | `field_name -> snake_to_lower_camel
+        | `discriminator_value -> cap_snake_to_kebab
+        | `string_enum_case -> snake_to_kebab)
 
-    let mangled kind configs name =
-      get_mangling_style_opt configs
-      |> function
-      | Some `no_mangling -> name
-      | Some `default | None -> get_mangling_method kind name
-
-    let get_mangled_name_of_type : type_decl -> string =
-      fun { td_name; td_configs; _ } ->
+    let get_mangled_name_of_type : ?inherited:json_mangling_style -> type_decl -> string * json_mangling_style =
+      fun ?(inherited=default_mangling_style) { td_name; td_configs; _ } ->
+        let style = get_mangling_style_opt td_configs |? inherited in
         td_configs |> get_name_opt |? td_name
-        |> mangled `type_name td_configs
+        |> mangled `type_name style, style
 
-    let get_mangled_name_of_field : [`type_decl] configs -> record_field -> string =
-      fun _ { rf_name; rf_configs; _ } ->
+    let get_mangled_name_of_field : ?inherited:json_mangling_style -> record_field -> string * json_mangling_style =
+      fun ?(inherited=default_mangling_style) { rf_name; rf_configs; _ } ->
+        let style = get_mangling_style_opt rf_configs |? inherited in
         rf_configs |> get_name_opt |? rf_name
-        |> mangled `field_name rf_configs
+        |> mangled `field_name style, style
 
-    let get_mangled_name_of_discriminator : [`type_decl] configs -> variant_constructor -> string =
-      fun _ { vc_name; vc_configs; _ } ->
+    let get_mangled_name_of_discriminator : ?inherited:json_mangling_style -> variant_constructor -> string * json_mangling_style =
+      fun ?(inherited=default_mangling_style) { vc_name; vc_configs; _ } ->
+        let style = get_mangling_style_opt vc_configs |? inherited in
         vc_configs |> get_name_opt |? vc_name
-        |> mangled `discriminator_value vc_configs
+        |> mangled `discriminator_value style, style
 
-    let get_mangled_name_of_string_enum_case : [`coretype] configs -> Coretype.string_enum_case -> string =
-      fun ct_configs (name, configs, _) ->
-        let name = configs |> get_name_opt |? name in
-        get_mangling_style_opt configs
-        ||?! (fun () -> get_mangling_style_opt ct_configs)
-        |? default_mangling_style
-        |> function
-        | `no_mangling -> name
-        | `default -> get_mangling_method `string_enum_case name
+    let get_mangled_name_of_string_enum_case : ?inherited:json_mangling_style -> Coretype.string_enum_case -> string =
+      fun ?(inherited=default_mangling_style) (name, configs, _) ->
+        let style = get_mangling_style_opt configs |? inherited in
+        configs |> get_name_opt |? name
+        |> mangled `string_enum_case style
 
     let custom_encoder encoder_name = Config_json_custom_encoder encoder_name
     let get_custom_encoder =
@@ -194,59 +190,69 @@ let get_json_discriminator_value : 'a typed_type_decl -> 'a -> string =
     | { td_kind = Variant_decl ctors; td_configs; _ } ->
       begin match Typed.to_refl ttd with
       | lazy (Refl.Variant { classify; _ }) ->
+        let mangling_style =
+          Json_config.get_mangling_style_opt td_configs
+          |? Json_config.default_mangling_style
+        in
         let name = classify a |> fst in
         ctors
         |> List.find_opt (fun { vc_name; _ } -> vc_name = name)
         |> Option.v' (fun () -> failwith' "constructor '%s' is not found" name)
-        |> Json_config.get_mangled_name_of_discriminator td_configs
+        |> Json_config.get_mangled_name_of_discriminator ~inherited:mangling_style
+        |> fst
       | _ -> failwith "inconsistent type_decl and reflection result" end
     | { td_name; _ } -> failwith' "'%s' is not a variant decl" td_name
 
 let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_shape_explanation =
   let rec process_td ttd : json_shape_explanation =
     let td = Typed.decl ttd in
-    let json_type_name = Json_config.get_mangled_name_of_type td in
-    `named (json_type_name, process_kind td)
-  and process_kind { td_kind; td_configs; _} : json_shape_explanation =
+    let (json_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type td in
+    `named (json_type_name, process_kind base_mangling_style td)
+  and process_kind base_mangling_style { td_kind; td_configs; _} : json_shape_explanation =
     match td_kind with
-    | Alias_decl ct -> process_coretype' ct
+    | Alias_decl ct -> process_coretype' base_mangling_style ct
     | Record_decl fields ->
-       `object_of (fields |&> process_field td_configs)
+       `object_of (fields |&> process_field base_mangling_style)
     | Variant_decl branches ->
        `anyone_of (branches |&> (fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
             let discriminator_fname =
               Json_config.get_variant_discriminator td_configs
-              |> Json_config.mangled `field_name td_configs
+              |> Json_config.mangled `field_name base_mangling_style
             in
-            let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
+            let (discriminator_value, base_mangling_style) =
+              Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
+            in
             match vc_param with
             | `no_param ->
               process_branch discriminator_value discriminator_fname []
             | `tuple_like cts ->
               let arg_fname =
                 Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
-                |> Json_config.mangled `field_name vc_configs
+                |> Json_config.mangled `field_name base_mangling_style
               in
-              let arg_shape = `tuple_of (cts |&> process_coretype') in
+              let arg_shape = `tuple_of (cts |&> process_coretype' base_mangling_style) in
               process_branch discriminator_value discriminator_fname [
                 `mandatory_field (arg_fname, arg_shape)]
             | `inline_record fields ->
               process_branch discriminator_value discriminator_fname
-                (fields |&> process_field td_configs)
-            | `reused_inline_record decl ->
-              let fields = decl.td_kind |> function
+                (fields |&> process_field base_mangling_style)
+            | `reused_inline_record { td_kind; td_configs; _ } ->
+              let base_mangling_style =
+                Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+              in
+              let fields = td_kind |> function
                 | Record_decl fields -> fields
                 | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." vc_name
               in
               process_branch discriminator_value discriminator_fname
-                (fields |&> process_field td_configs)))
-  and process_field td_configs ({ rf_type; _ } as field): json_field_shape_explanation =
+                (fields |&> process_field base_mangling_style)))
+  and process_field base_mangling_style ({ rf_type; _ } as field): json_field_shape_explanation =
     let optional, desc =
       rf_type.ct_desc
       |> (function Option desc -> true, desc | desc -> false, desc)
     in
-    let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
-    let inner = process_coretype rf_type.ct_configs desc in
+    let (json_field_name, base_mangling_style) = Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field in
+    let inner = process_coretype base_mangling_style rf_type.ct_configs desc in
     match optional with
     | true -> `optional_field (json_field_name, inner)
     | false -> `mandatory_field (json_field_name, inner)
@@ -257,41 +263,44 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
           discriminator_field_name,
           `exactly (`str kind_name)) in
     `object_of (kind_field :: proper_fields)
-  and process_coretype' ({ ct_desc; ct_configs }: Coretype.t) : json_shape_explanation =
-    process_coretype ct_configs ct_desc
-  and process_coretype (configs: [`coretype] configs) (desc: Coretype.desc) : json_shape_explanation = match desc with
-    | Prim `unit -> `special ("unit", `exactly `null)
-    | Prim `bool -> `boolean
-    | Prim `int -> `integral
-    | Prim `int53p -> `proper_int53p
-    | Prim `float -> `proper_float
-    | Prim `string -> `string
-    | Prim `uchar -> `special ("uchar", `string)
-    | Prim `byte -> `special ("byte", `string)
-    | Prim `bytes -> `base64str
-    | Uninhabitable -> `special ("uninhabitable", `exactly `null)
-    | Ident { id_name = ident; id_codec; _ } ->
-      let ident_json_name =
-        configs
-        |> Json_config.get_name_opt |? ident
-        |> Json_config.mangled `type_name configs
-      in
-      Json_config.get_custom_shape_explanation configs
-      >? (fun s -> `named (ident_json_name, s))
-      |?! (fun () ->
-        match id_codec with
-        | `default | `open_ _ ->
-          StringMap.find_opt ident env.alias_ident_typemap
-          >? (fun (Boxed ((module T) as ttd)) -> process_td (Obj.magic ttd))
-          |? `unresolved ("alias: "^ident)
-        | `in_module _ -> `unresolved ("alias with special custom: "^ident))
-    | Option d -> `nullable (process_coretype configs d)
-    | Tuple ds -> `tuple_of (ds |&> process_coretype configs)
-    | List desc -> `array_of (process_coretype configs desc)
-    | Map (`string, d) -> `record_of (process_coretype configs d)
-    | StringEnum xs -> `string_enum (xs |&> Json_config.get_mangled_name_of_string_enum_case configs)
-    | Self -> `self
-    | _ -> .
+  and process_coretype' base_mangling_style ({ ct_desc; ct_configs }: Coretype.t) : json_shape_explanation =
+    process_coretype base_mangling_style ct_configs ct_desc
+  and process_coretype base_mangling_style (configs: [`coretype] configs) desc : json_shape_explanation =
+    let base_mangling_style = Json_config.get_mangling_style_opt configs |? base_mangling_style in
+    let rec go: Coretype.desc -> _ = function
+      | Prim `unit -> `special ("unit", `exactly `null)
+      | Prim `bool -> `boolean
+      | Prim `int -> `integral
+      | Prim `int53p -> `proper_int53p
+      | Prim `float -> `proper_float
+      | Prim `string -> `string
+      | Prim `uchar -> `special ("uchar", `string)
+      | Prim `byte -> `special ("byte", `string)
+      | Prim `bytes -> `base64str
+      | Uninhabitable -> `special ("uninhabitable", `exactly `null)
+      | Ident { id_name = ident; id_codec; _ } ->
+        let ident_json_name =
+          configs
+          |> Json_config.get_name_opt |? ident
+          |> Json_config.mangled `type_name base_mangling_style
+        in
+        Json_config.get_custom_shape_explanation configs
+        >? (fun s -> `named (ident_json_name, s))
+        |?! (fun () ->
+          match id_codec with
+          | `default | `open_ _ ->
+            StringMap.find_opt ident env.alias_ident_typemap
+            >? (fun (Boxed ((module T) as ttd)) -> process_td (Obj.magic ttd))
+            |? `unresolved ("alias: "^ident)
+          | `in_module _ -> `unresolved ("alias with special custom: "^ident))
+      | Option d -> `nullable (go d)
+      | Tuple ds -> `tuple_of (ds |&> go)
+      | List desc -> `array_of (go desc)
+      | Map (`string, d) -> `record_of (go d)
+      | StringEnum xs -> `string_enum (xs |&> Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style)
+      | Self -> `self
+      | _ -> .
+    in go desc
   in
   `with_warning ("not considering any config if exists", process_td td)
 
@@ -328,7 +337,8 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
     in
     map2i 0 f l1 l2
   in
-  let expr_of_json (path: jvpath) (ct: coretype) (jv: jv) : (Expr.t, string * jvpath) result =
+  let expr_of_json base_mangling_style (path: jvpath) (ct: coretype) (jv: jv) : (Expr.t, string * jvpath) result =
+    let base_mangling_style = Json_config.get_mangling_style_opt ct.ct_configs |? base_mangling_style in
     let rec go (path: jvpath) (d: Coretype.desc) (jv: jv) =
       let type_mismatch_error expected_type jv path =
         Result.error(
@@ -408,7 +418,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       | StringEnum cases, `str s ->
         let case_names =
           cases |&> (fun ((name, _, _) as c) ->
-            Json_config.get_mangled_name_of_string_enum_case ct.ct_configs c, name)
+            Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style c, name)
         in
         case_names
         |> List.assoc_opt s
@@ -424,24 +434,24 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
     in
     go path ct.ct_desc jv
   in
-  let record_fields_of_json (path: jvpath) (fields: record_field list) (jv: jv) : (Expr.t StringMap.t, string * jvpath) result =
+  let record_fields_of_json base_mangling_style (path: jvpath) (fields: record_field list) (jv: jv) : (Expr.t StringMap.t, string * jvpath) result =
     match jv with
     | `obj obj ->
       let obj = StringMap.of_list obj in
       fields |> List.map (fun ({ rf_name; rf_type; _} as field) ->
-        let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
+        let (json_field_name, base_mangling_style) = Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field in
         match obj |> StringMap.find_opt json_field_name with
         | None when Coretype.is_option rf_type -> Result.ok (rf_name, Expr.None)
-        | Some jv -> expr_of_json (`f json_field_name :: path) rf_type jv >>= fun expr -> Result.ok (rf_name, expr)
+        | Some jv -> expr_of_json base_mangling_style (`f json_field_name :: path) rf_type jv >>= fun expr -> Result.ok (rf_name, expr)
         | None -> Result.error (sprintf "mandatory field '%s' does not exist" json_field_name, path)
       ) |> sequence_list >|= StringMap.of_list
     | _ -> Result.error (sprintf "an object is expected for a record value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
   in
   let fail () = invalid_arg "inconsistent type_decl and reflection result" in
-  let constructor_of_json (path: jvpath) (ctors: variant_constructor list) (ref_ctors: 'a Refl.constructor StringMap.t) (jv: jv) : ('a, string * jvpath) result =
+  let constructor_of_json base_mangling_style (path: jvpath) (ctors: variant_constructor list) (ref_ctors: 'a Refl.constructor StringMap.t) (jv: jv) : ('a, string * jvpath) result =
     let discriminator_fname =
       Json_config.get_variant_discriminator td_configs
-      |> Json_config.mangled `field_name td_configs
+      |> Json_config.mangled `field_name base_mangling_style
     in
     match jv with
     | `obj obj ->
@@ -450,23 +460,28 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       | Some (`str discriminator_value) ->
         ctors
         |> List.find_opt (fun ctor ->
-          Json_config.get_mangled_name_of_discriminator td_configs ctor
+          Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
+          |> fst
           |> (=) discriminator_value)
         |> opt_to_result
           ( sprintf "given discriminator field value '%s' is not one of [ %s ]"
               discriminator_value
               (ctors
                 |&> (fun ctor ->
-                  Json_config.get_mangled_name_of_discriminator td_configs ctor
+                  Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
+                  |> fst
                   |> sprintf "'%s'")
                 |> String.concat ", "),
             `f discriminator_fname :: path)
         >>= (fun ctor ->
+          let base_mangling_style =
+            Json_config.get_mangling_style_opt ctor.vc_configs |? base_mangling_style
+          in
           let ref_ctor = ref_ctors |> StringMap.find_opt ctor.vc_name |> Option.v' fail in
           let arg_fname =
             ctor.vc_configs
             |> Json_config.(get_name_of_variant_arg default_name_of_variant_arg)
-            |> Json_config.mangled `field_name ctor.vc_configs
+            |> Json_config.mangled `field_name base_mangling_style
           in
           match Json_config.get_variant_style ctor.vc_configs with
           | `flatten ->
@@ -478,7 +493,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
               in
               begin match Json_config.get_tuple_style ctor.vc_configs, ts with
               | `obj `default, _ :: _ :: _ ->
-                parse_obj_style_tuple path expr_of_json ts obj
+                parse_obj_style_tuple path (expr_of_json base_mangling_style) ts obj
                 >>= (mk_result path)
               | _, [] -> mk_result path []
               | _, _ ->
@@ -488,11 +503,11 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
                 >>= (fun arg ->
                   let path = `f arg_fname :: path in
                   match ts, arg with
-                  | [t], _ -> expr_of_json path t arg >>= fun expr -> mk_result path [expr]
+                  | [t], _ -> expr_of_json base_mangling_style path t arg >>= fun expr -> mk_result path [expr]
                   | ts, `arr xs ->
                     try_result path
                       (fun () ->
-                        map2i (fun i -> expr_of_json (`i i :: path)) ts xs |> function
+                        map2i (fun i -> expr_of_json base_mangling_style (`i i :: path)) ts xs |> function
                         | Some es -> es >>=* mk_result path
                         | None ->
                           let ts_len = List.length ts in
@@ -506,14 +521,17 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
                 )
               end
             | `inline_record fields, InlineRecord { mk; _ } ->
-              record_fields_of_json path fields jv
+              record_fields_of_json base_mangling_style path fields jv
               >>= (mk &> opt_to_result (sprintf "panic - failed to make inline record for variant_constructor '%s'" discriminator_value, path))
-            | `reused_inline_record decl, ReusedInlineRecord { mk; _ } ->
-              let fields = decl.td_kind |> function
+            | `reused_inline_record { td_kind; td_configs; _ }, ReusedInlineRecord { mk; _ } ->
+              let base_mangling_style =
+                Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+              in
+              let fields = td_kind |> function
                 | Record_decl fields -> fields
                 | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." ctor.vc_name
               in
-              record_fields_of_json path fields jv
+              record_fields_of_json base_mangling_style path fields jv
               >>= (mk &> opt_to_result (sprintf "panic - failed to make reused inline record for variant_constructor '%s'" discriminator_value, path))
             | _ -> fail ()
             end
@@ -523,15 +541,16 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       end
     | _ -> Result.error (sprintf "an object is expected for a variant value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
   in
+  let base_mangling_style = Json_config.(get_mangling_style_opt td_configs |? default_mangling_style) in
   match td_kind, Typed.reflect a with
   | Alias_decl ct, Alias { mk; _ } ->
-    expr_of_json path ct jv
+    expr_of_json base_mangling_style path ct jv
     >>= (mk &> opt_to_result (sprintf "panic - failed to make alias value for type '%s'" td_name, path))
   | Record_decl fields, Record { mk; _ } ->
-    record_fields_of_json path fields jv
+    record_fields_of_json base_mangling_style path fields jv
     >>= (mk &> opt_to_result (sprintf "panic - failed to make record value for type '%s'" td_name, path))
   | Variant_decl ctors, Variant { constructors; _ } ->
-    constructor_of_json path ctors constructors jv
+    constructor_of_json base_mangling_style path ctors constructors jv
   | _, _ -> fail ()
 
 let of_json' : env:tdenv -> 'a typed_type_decl -> jv -> 'a OfJsonResult.t =
@@ -545,7 +564,10 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
   let fail msg = invalid_arg' "inconsistent type_decl and reflection result (%s)" msg in
   let { td_configs; td_kind; _ } = Typed.decl a in
 
-  let expr_to_json (ct: coretype) (expr: Expr.t) : jv =
+  let expr_to_json base_mangling_style (ct: coretype) (expr: Expr.t) : jv =
+    let base_mangling_style =
+      Json_config.get_mangling_style_opt ct.ct_configs |? base_mangling_style
+    in
     let rec go (d: Coretype.desc) (e: Expr.t) =
       match d, e with
       | Prim `unit,   Expr.Unit -> `num 1.
@@ -585,71 +607,75 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
           cases
           |> List.find_opt (fun (name, _, _) -> name = s)
           |> begin function
-          | Some c -> `str (Json_config.get_mangled_name_of_string_enum_case ct.ct_configs c)
+          | Some c -> `str (Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style c)
           | None -> fail "string enum case not found for the given name"
           end
       | _, _ -> fail "type mismatch"
     in
     go ct.ct_desc expr
   in
-  let record_to_json_fields (fields: record_field list) (expr: Expr.t StringMap.t) =
+  let record_to_json_fields base_mangling_style (fields: record_field list) (expr: Expr.t StringMap.t) =
     fields |> List.map (fun field ->
       match StringMap.find_opt field.rf_name expr with
       | None -> fail (sprintf "missing field '%s'" field.rf_name)
       | Some value ->
-        let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
-        json_field_name, expr_to_json field.rf_type value
+        let (json_field_name, base_mangling_style) = Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field in
+        json_field_name, expr_to_json base_mangling_style field.rf_type value
     )
   in
-  let variant_to_json (ctor: variant_constructor) (expr: 'a Refl.constructor) =
+  let variant_to_json base_mangling_style (ctor: variant_constructor) (expr: 'a Refl.constructor) =
     let discriminator_fname =
       Json_config.get_variant_discriminator td_configs
-      |> Json_config.mangled `field_name td_configs
+      |> Json_config.mangled `field_name base_mangling_style
     in
-    let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
+    let (discriminator_value, base_mangling_style) = Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor in
     let discriminator_field = [discriminator_fname, `str discriminator_value] in
     let arg_fname =
       ctor.vc_configs
       |> Json_config.(get_name_of_variant_arg default_name_of_variant_arg)
-      |> Json_config.mangled `field_name ctor.vc_configs
+      |> Json_config.mangled `field_name base_mangling_style
     in
     match Json_config.get_variant_style ctor.vc_configs with
     | `flatten ->
       begin match ctor.vc_param, expr with
       | `no_param, NoParam _ -> `obj discriminator_field
       | `inline_record fields, InlineRecord { get; _ } ->
-        let fields = record_to_json_fields fields (get value) in
+        let fields = record_to_json_fields base_mangling_style fields (get value) in
         `obj (discriminator_field @ fields)
-      | `reused_inline_record decl, ReusedInlineRecord { get; _ } ->
-        let fields = decl.td_kind |> function
+      | `reused_inline_record { td_kind; td_configs; _ }, ReusedInlineRecord { get; _ } ->
+        let base_mangling_style =
+          Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+        in
+        let fields = td_kind |> function
           | Record_decl fields -> fields
           | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
         in
-        let fields = record_to_json_fields fields (get value) in
+        let fields = record_to_json_fields base_mangling_style fields (get value) in
         `obj (discriminator_field @ fields)
       | `tuple_like ts, TupleLike { get; _ } ->
         begin match ts, get value, Json_config.get_tuple_style ctor.vc_configs with
         | [], [], _ -> `obj discriminator_field
         | [t], [e], _ ->
-          let value = expr_to_json t e in
+          let value = expr_to_json base_mangling_style t e in
           `obj (discriminator_field @ [arg_fname, value])
         | ts, es, `arr ->
-          let value = `arr (List.map2 expr_to_json ts es) in
+          let value = `arr (List.map2 (expr_to_json base_mangling_style) ts es) in
           `obj (discriminator_field @ [arg_fname, value])
         | ts, es, `obj `default ->
-          let fields = List.combine ts es |> List.mapi (fun i (t, x) -> tuple_index_to_field_name i, expr_to_json t x) in
+          let fields = List.combine ts es |> List.mapi (fun i (t, x) -> tuple_index_to_field_name i, expr_to_json base_mangling_style t x) in
           `obj (discriminator_field @ fields)
         end
       | _, _ -> fail "param style mismatch"
       end
   in
+  let base_mangling_style = Json_config.(get_mangling_style_opt td_configs |? default_mangling_style) in
   match td_kind, Typed.reflect a with
-  | Alias_decl ct, Alias { get; _ } -> expr_to_json ct (get value)
-  | Record_decl fields, Record { get; _ } -> `obj (record_to_json_fields fields (get value))
+  | Alias_decl ct, Alias { get; _ } -> expr_to_json base_mangling_style ct (get value)
+  | Record_decl fields, Record { get; _ } -> `obj (record_to_json_fields base_mangling_style fields (get value))
   | Variant_decl ctors, Variant { classify; _ } ->
     let name, ref_ctor = classify value in
     begin match ctors |> List.find_opt (fun { vc_name; _ } -> vc_name = name) with
-    | Some ctor -> variant_to_json ctor ref_ctor
+    | Some ctor -> variant_to_json base_mangling_style ctor ref_ctor
     | None -> fail (sprintf "missing constructor '%s'" name)
     end
   | _, _ -> fail "kind mismatch"

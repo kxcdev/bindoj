@@ -15,6 +15,15 @@
  (mode (promote (until-clean))))
 
 (rule
+ (target ex01_inherited_mangling_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+(rule
+ (target ex01_inherited_mangling_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+
+(rule
  (target ex02_gen.ml)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
  (mode (promote (until-clean))))
@@ -38,6 +47,15 @@
  (mode (promote (until-clean))))
 (rule
  (target ex02_no_mangling_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex02_inherited_mangling_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+(rule
+ (target ex02_inherited_mangling_gen.mli)
  (action (with-stdout-to %{target} (run %{exe:../gen.exe} %{target} -gen-type-decl)))
  (mode (promote (until-clean))))
 

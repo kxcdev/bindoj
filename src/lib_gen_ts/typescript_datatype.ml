@@ -218,20 +218,25 @@ let type_of_prim : Coretype.prim -> ts_type_desc = function
 
 let type_of_coretype :
       ?definitive:bool
-      -> self_type_name:string
+      -> self_mangled_type_name:string
+      -> Json.json_mangling_style
       -> coretype -> ts_type_desc =
-  fun ?(definitive = false) ~self_type_name { ct_desc; ct_configs; _ } ->
+  fun ?(definitive = false) ~self_mangled_type_name base_mangling_style { ct_desc; ct_configs; _ } ->
+  let base_mangling_style =
+    Json.Json_config.get_mangling_style_opt ct_configs
+    |? base_mangling_style
+  in
   let rec go =
     let open Coretype in
     let open Bindoj_codec.Json in
     function
     | Prim p -> type_of_prim p
     | Uninhabitable -> `type_reference "never"
-    | Ident s ->
+    | Ident { id_name; _ } ->
       `type_reference
         (ct_configs
-          |> Json_config.get_name_opt |? s.id_name
-          |> Json_config.mangled `type_name ct_configs)
+          |> Json_config.get_name_opt |? id_name
+          |> Json_config.mangled `type_name base_mangling_style)
     | Option t -> `union [go t; `type_reference "null"; `type_reference "undefined"]
     | List t -> `array (go t)
     | Tuple ts ->
@@ -251,11 +256,12 @@ let type_of_coretype :
     | Self ->
       `type_reference
         (ct_configs
-          |> Json_config.get_name_opt |? self_type_name
-          |> Json_config.mangled `type_name ct_configs)
+          |> Json_config.get_name_opt
+          >? Json_config.mangled `type_name base_mangling_style
+          |? self_mangled_type_name)
     | StringEnum cs ->
       `union (cs |&> (
-          Json_config.get_mangled_name_of_string_enum_case ct_configs
+          Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style
           &> (fun c -> `literal_type (`string_literal c))))
   in
   let definitive =
@@ -272,19 +278,17 @@ let type_of_coretype :
     ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
 
-let get_name_of_fwrt_desc : default:string -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string =
-  fun ~default desc ->
-    let get_mangled_name kind configs =
-      Json.Json_config.get_name_opt configs |? default
-      |> Json.Json_config.mangled kind configs
-    in
+let get_name_of_fwrt_desc : default:string -> Json.json_mangling_style -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string * Json.json_mangling_style =
+  fun ~default base_mangling_style desc ->
+    let get_mangled_name kind configs = Json.Json_config.(
+      let style = get_mangling_style_opt configs |? base_mangling_style in
+      get_name_opt configs |? default
+      |> mangled kind style, style
+    ) in
     match desc.fd_kind with
-    | Fwrt_object { fo_configs; _ } ->
-      get_mangled_name `type_name fo_configs
-    | Fwrt_alias { fa_configs; _ } ->
-      get_mangled_name `type_name fa_configs
-    | Fwrt_constructor { fc_configs; _ } ->
-      get_mangled_name `discriminator_value fc_configs
+    | Fwrt_object { fo_configs; _ } -> get_mangled_name `type_name fo_configs
+    | Fwrt_alias { fa_configs; _ } -> get_mangled_name `type_name fa_configs
+    | Fwrt_constructor { fc_configs; _ } -> get_mangled_name `discriminator_value fc_configs
 
 type ('ann_d, 'ann_f) ts_fwrt_decl = ('ann_d, 'ann_f, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
 type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list) ts_fwrt_decl
@@ -317,41 +321,48 @@ let ts_fwrt_decl_of_type_decl :
 let rec ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast =
   fun fwrt_decl ->
   let self_type_name = fst fwrt_decl in
+  let type_alias_decl =
+    `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl)
+  in
   match FwrtTypeEnv.lookup (fst fwrt_decl) (snd fwrt_decl) with
   | { fd_kind = Fwrt_object { fo_children = _ :: _; _ }; _ } ->
-    [ `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl);
+    [ type_alias_decl;
       `function_declaration (ts_func_decl_of_fwrt_decl ~self_type_name fwrt_decl) ]
   | _ ->
-    [ `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl) ]
+    [ type_alias_decl ]
 
-and ts_type_alias_decl_of_fwrt_decl :
-  self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
-  fun ~self_type_name (name, env) ->
+and ts_type_alias_decl_of_fwrt_decl' :
+  base_mangling_style:Json.json_mangling_style -> self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
+  fun ~base_mangling_style ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _ } as desc = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
-  let mangled_name = get_name_of_fwrt_desc ~default:name desc in
+  let (mangled_name, base_mangling_style) = get_name_of_fwrt_desc ~default:name base_mangling_style desc in
+  let self_mangled_type_name =
+    Json.Json_config.mangled `type_name base_mangling_style self_type_name
+  in
   let desc =
     match fd_kind with
     | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
       let members =
         fo_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-          let field_name =
+          let base_mangling_style = Json.Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
+          let field_name = Json.Json_config.(
             ff_configs
-            |> Json.Json_config.get_name_opt |? ff_name
-            |> Json.Json_config.mangled `field_name ff_configs
-          in
+            |> get_name_opt |? ff_name
+            |> mangled `field_name base_mangling_style
+          ) in
           { tsps_modifiers = ff_annot;
             tsps_name = field_name;
-            tsps_type_desc = type_of_coretype ~self_type_name ff_type }
+            tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style ff_type }
       in
       let discriminator_name = fo_configs |> Ts_config.get_variant_discriminator in
       let children =
         fo_children |&> fun child ->
           let { tsa_name; tsa_type_desc; _; } =
-            ts_type_alias_decl_of_fwrt_decl ~self_type_name (child, env) in
-          let discriminator_value =
+            ts_type_alias_decl_of_fwrt_decl' ~self_type_name ~base_mangling_style (child, env) in
+          let (discriminator_value, _) =
             FwrtTypeEnv.lookup child env
-            |> get_name_of_fwrt_desc ~default:tsa_name
+            |> get_name_of_fwrt_desc ~default:tsa_name base_mangling_style
           in
           let kind_field =
             { tsps_modifiers = [];
@@ -369,26 +380,33 @@ and ts_type_alias_decl_of_fwrt_decl :
         | _ -> `intersection [`type_literal members; `union children] in
       desc
     | Fwrt_alias { fa_type; fa_annot=(); _ } ->
-      type_of_coretype ~definitive:true ~self_type_name fa_type
+      type_of_coretype ~definitive:true ~self_mangled_type_name base_mangling_style fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
       let inline_record_style =
         Ts_config.(get_reused_variant_inline_record_style_opt fc_configs |? default_reused_variant_inline_record_style)
       in
       match fc_annot, inline_record_style with
       | Some (Tfcki_reused_variant_inline_record td), `intersection_type ->
-        `type_reference (Json.Json_config.get_mangled_name_of_type td)
+        `type_reference (Json.Json_config.get_mangled_name_of_type td |> fst)
       | _ ->
+        let base_mangling_style =
+          match fc_annot with
+          | Some (Tfcki_reused_variant_inline_record { td_configs; _ }) ->
+            Json.Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+          | None -> base_mangling_style
+        in
         let arg_name = Json.Json_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
         let members =
           let tmp =
             fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-              let json_field_name =
-                Json.Json_config.get_name_opt ff_configs |? ff_name
-                |> Json.Json_config.mangled `field_name ff_configs
-              in
+              let base_mangling_style = Json.Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
+              let json_field_name = Json.Json_config.(
+                get_name_opt ff_configs |? ff_name
+                |> mangled `field_name base_mangling_style
+              ) in
               { tsps_modifiers = ff_annot;
                 tsps_name = json_field_name;
-                tsps_type_desc = type_of_coretype ~self_type_name ff_type }
+                tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style ff_type }
           in
           let open Bindoj_codec.Json in
           match fc_args, Json_config.get_tuple_style fc_configs with
@@ -396,10 +414,10 @@ and ts_type_alias_decl_of_fwrt_decl :
           | [arg], _ ->
             { tsps_modifiers = [];
               tsps_name = arg_name;
-              tsps_type_desc = type_of_coretype ~self_type_name arg } :: tmp
+              tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style arg } :: tmp
           | args, `arr ->
             let desc =
-              `tuple (args |> List.map (type_of_coretype ~self_type_name))
+              `tuple (args |> List.map (type_of_coretype ~self_mangled_type_name base_mangling_style))
             in
             { tsps_modifiers = [];
               tsps_name = arg_name;
@@ -409,7 +427,7 @@ and ts_type_alias_decl_of_fwrt_decl :
               args |> List.mapi (fun i t -> {
                 tsps_modifiers = [];
                 tsps_name = tuple_index_to_field_name i;
-                tsps_type_desc = type_of_coretype ~self_type_name t
+                tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style t
               })
             in
             tmp @ fields
@@ -430,19 +448,22 @@ and ts_func_decl_of_fwrt_decl :
   match fd_kind with
   | Fwrt_alias _ | Fwrt_constructor _ -> invalid_arg "this fwrt_decl cannot be a parent"
   | Fwrt_object { fo_children; fo_configs; _ } ->
+    let base_mangling_style =
+      Json.Json_config.(get_mangling_style_opt fo_configs |? default_mangling_style)
+    in
     let fd_name = Json.Json_config.get_name_opt fo_configs |? fd_name in
-    let fd_name_mangled = Json.Json_config.mangled `type_name fo_configs fd_name in
-    let name = Json.Json_config.mangled `field_name fo_configs ("analyze_" ^ fd_name) in
+    let fd_name_mangled = Json.Json_config.mangled `type_name base_mangling_style fd_name in
+    let name = Json.Json_config.mangled `field_name base_mangling_style ("analyze_" ^ fd_name) in
     let type_param = "__bindoj_ret" in
     let param = "__bindoj_fns" in
     let var_v = "__bindoj_v" in
     let discriminator_name = Ts_config.get_variant_discriminator fo_configs in
     let param_type =
       `type_literal (List.sort String.compare fo_children |&> fun child ->
-        let decl = ts_type_alias_decl_of_fwrt_decl ~self_type_name (child, env) in
-        let discriminator_value =
+        let decl = ts_type_alias_decl_of_fwrt_decl' ~base_mangling_style ~self_type_name (child, env) in
+        let (discriminator_value, _) =
           FwrtTypeEnv.lookup child env
-          |> get_name_of_fwrt_desc ~default:decl.tsa_name
+          |> get_name_of_fwrt_desc ~default:decl.tsa_name base_mangling_style
         in
         let kind_field =
           { tsps_modifiers = [];
@@ -487,9 +508,9 @@ and ts_func_decl_of_fwrt_decl :
                                 tsbe_right = `identifier var_x; }]; }),
                   fun (acc, child) ->
                     let { fd_name; _ } as child_desc = FwrtTypeEnv.lookup child env in
-                    let discriminator_value =
+                    let (discriminator_value, _) =
                       child_desc
-                      |> get_name_of_fwrt_desc ~default:fd_name in
+                      |> get_name_of_fwrt_desc ~default:fd_name base_mangling_style in
                     `if_statement
                       ((`binary_expression
                           { tsbe_left =
@@ -516,6 +537,12 @@ and ts_func_decl_of_fwrt_decl :
       tsf_type_desc = type_desc;
       tsf_body = [body]; }
 
+and ts_type_alias_decl_of_fwrt_decl : self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
+  fun ~self_type_name fwrt_decl ->
+  ts_type_alias_decl_of_fwrt_decl'
+    ~base_mangling_style:Json.Json_config.default_mangling_style
+    ~self_type_name
+    fwrt_decl
 
 module Rope = struct
   [@ocaml.warning "-32"]

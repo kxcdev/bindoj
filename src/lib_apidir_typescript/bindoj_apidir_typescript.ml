@@ -71,7 +71,7 @@ let gen_raw :
     |&> (fun (loc, tds) ->
       let tnames =
         tds
-        |&> (fun (Ttd.Boxed (module T)) -> Json.Json_config.get_mangled_name_of_type T.decl)
+        |&> (fun (Ttd.Boxed (module T)) -> Json.Json_config.get_mangled_name_of_type T.decl |> fst)
         |> List.sort_uniq compare
       in
       sprintf "import { %s } from \"%s\";"
@@ -89,8 +89,8 @@ let gen_raw :
         | _ -> None)
   in
   let make_ts_type_desc (Ttd.Boxed (module T) as typ): ts_type_desc =
-    let { td_name; td_configs; _ } = T.decl in
-    let json_name = Json.Json_config.get_name_opt td_configs |? td_name in
+    let { td_name; _ } as td = T.decl in
+    let (json_name, _) = Json.Json_config.get_mangled_name_of_type td in
     match resolution_strategy typ with
     | `inline_type_definition ->
       let () = if is_recursive T.decl then
@@ -100,7 +100,7 @@ let gen_raw :
       |> ts_fwrt_decl_of_type_decl ~export:false ~readonly:false
       |> ts_type_alias_decl_of_fwrt_decl ~self_type_name:json_name
       |> fun t -> t.tsa_type_desc
-    | _ -> `type_reference (json_name |> Json.Json_config.mangled `type_name td_configs)
+    | _ -> `type_reference json_name
   in
   let typescript_resptypes (Invp invp) : ts_type_desc =
     let branches = resptypes invp |&> make_ts_type_desc in

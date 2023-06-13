@@ -301,10 +301,10 @@ let encoder_of_coretype =
     match k with
     | `string -> [%expr fun (k: string) -> k]
   in
-  let string_enum_case ct_configs (cs: Coretype.string_enum_case list) =
+  let string_enum_case base_mangling_style (cs: Coretype.string_enum_case list) =
     let cases =
       cs |> List.map (fun ((name, _, _) as c) ->
-        let json_name = Json.Json_config.get_mangled_name_of_string_enum_case ct_configs c in
+        let json_name = Json.Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style c in
         let pat = Pat.variant (Utils.escape_as_constructor_name name) None in
         let expr = [%expr `str [%e Exp.constant (Const.string json_name)]] in
         Exp.case pat expr
@@ -313,11 +313,15 @@ let encoder_of_coretype =
     Exp.function_ cases
   in
   let wrap_ident = identity in
-  fun e ct ->
+  fun base_mangling_style e ct ->
+    let base_mangling_style =
+      Json.Json_config.get_mangling_style_opt ct.ct_configs
+      |? base_mangling_style
+    in
     codec_of_coretype
       ~get_custom_codec:Json_config.get_custom_encoder
       ~get_name:get_encoder_name
-      ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case ct.ct_configs)
+      ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case base_mangling_style)
       ~wrap_ident
       e ct
 
@@ -395,16 +399,16 @@ let decoder_of_coretype =
     match k with
     | `string -> [%expr fun (s: string) -> Some s]
   in
-  let string_enum_case ct_configs (cs: Coretype.string_enum_case list) =
+  let string_enum_case base_mangling_style (cs: Coretype.string_enum_case list) =
     let cases =
       cs |> List.map (fun ((name, _, _) as c) ->
-        let json_name = Json.Json_config.get_mangled_name_of_string_enum_case ct_configs c in
+        let json_name = Json.Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style c in
         let pat = Pat.constant (Const.string json_name) in
         let expr = Exp.variant (Utils.escape_as_constructor_name name) None in
         Exp.case pat [%expr Ok [%e expr]]
       ) |> fun cases ->
         let error_message =
-          (cs |&> (Json.Json_config.get_mangled_name_of_string_enum_case ct_configs &> sprintf "'%s'")
+          (cs |&> (Json.Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style &> sprintf "'%s'")
           |> String.concat ", ")
           |> sprintf "given string '%%s' is not one of [ %s ]"
         in
@@ -426,11 +430,15 @@ let decoder_of_coretype =
     [%expr (fun path x ->
         [%e e] ~path x |> Result.map_error (fun (msg, path, _) -> (msg, path)))]
   in
-  fun e ct ->
+  fun base_mangling_style e ct ->
+  let base_mangling_style =
+    Json.Json_config.get_mangling_style_opt ct.ct_configs
+    |? base_mangling_style
+  in
   codec_of_coretype
     ~get_custom_codec:Json_config.get_custom_decoder
     ~get_name:get_decoder_name
-    ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case ct.ct_configs)
+    ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case base_mangling_style)
     ~wrap_ident
     e ct
 
@@ -505,54 +513,59 @@ let explain_encoded_json_shape :
     json_shape_explanation_resolution |? (constant `default)
   in
   let rec process_td td : expression =
-    let json_type_name = Json_config.get_mangled_name_of_type td in
-    [%expr `named ([%e estring ~loc json_type_name], [%e process_kind td])]
-  and process_kind { td_kind; td_configs; _ } : expression =
+    let (json_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type td in
+    [%expr `named ([%e estring ~loc json_type_name], [%e process_kind base_mangling_style td])]
+  and process_kind base_mangling_style { td_kind; td_configs; _ } : expression =
     match td_kind with
-    | Alias_decl ct -> [%expr [%e process_coretype' td_configs ct ]]
+    | Alias_decl ct -> [%expr [%e process_coretype' base_mangling_style ct ]]
     | Record_decl fields ->
-       [%expr `object_of [%e fields |&> process_field td_configs |> elist ~loc]]
+       [%expr `object_of [%e fields |&> process_field base_mangling_style |> elist ~loc]]
     | Variant_decl branches ->
+      let discriminator_fname =
+        Json_config.get_variant_discriminator td_configs
+        |> Json_config.mangled `field_name base_mangling_style
+      in
       [%expr `anyone_of [%e
         branches |&> (fun ctor ->
             let { vc_name; vc_param; vc_configs; _ } = ctor in
-            let discriminator_fname =
-              Json_config.get_variant_discriminator td_configs
-              |> Json_config.mangled `field_name td_configs
+            let (discriminator_value, base_mangling_style) =
+              Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
             in
-            let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
             match vc_param with
             | `no_param ->
               process_branch discriminator_value discriminator_fname []
             | `tuple_like cts ->
               let arg_fname =
                 Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
-                |> Json_config.mangled `field_name vc_configs
+                |> Json_config.mangled `field_name base_mangling_style
               in
-              let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' td_configs |> elist ~loc]] in
+              let arg_shape = [%expr `tuple_of [%e cts |&> process_coretype' base_mangling_style |> elist ~loc]] in
               process_branch discriminator_value discriminator_fname [
                 [%expr `mandatory_field ([%e estring ~loc arg_fname], [%e arg_shape])]]
             | `inline_record fields ->
               process_branch discriminator_value discriminator_fname
-                (fields |&> process_field td_configs)
-            | `reused_inline_record decl ->
-              let fields = decl.td_kind |> function
+                (fields |&> process_field base_mangling_style)
+            | `reused_inline_record { td_kind; td_configs; _ } ->
+              let base_mangling_style =
+                Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+              in
+              let fields =td_kind |> function
                 | Record_decl fields -> fields
                 | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." vc_name
               in
               process_branch discriminator_value discriminator_fname
-                (fields |&> process_field td_configs))
+                (fields |&> process_field base_mangling_style))
         |> elist ~loc ]]
-  and process_field td_configs ({ rf_type; _ } as field): expression =
+  and process_field base_mangling_style ({ rf_type; _ } as field): expression =
     let optional, desc =
       rf_type.ct_desc
       |> (function Option desc -> true, desc | desc -> false, desc)
     in
-    let json_field_name =
-      Json_config.get_mangled_name_of_field td_configs field
-      |> estring ~loc
+    let (json_field_name, base_mangling_style) =
+      Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field
+      /< estring ~loc
     in
-    let inner = process_coretype td_configs rf_type.ct_configs desc in
+    let inner = process_coretype base_mangling_style rf_type.ct_configs desc in
     match optional with
     | true -> [%expr `optional_field ([%e json_field_name], [%e inner])]
     | false -> [%expr `mandatory_field ([%e json_field_name], [%e inner])]
@@ -563,8 +576,10 @@ let explain_encoded_json_shape :
           [%e estring ~loc discriminator_field_name],
           `exactly (`str [%e estring ~loc kind_name]))] in
     [%expr `object_of ([%e kind_field] :: [%e proper_fields |> elist ~loc])]
-  and process_coretype' td_configs ({ ct_desc; ct_configs }: Coretype.t) : expression = process_coretype td_configs ct_configs ct_desc
-  and process_coretype td_configs (configs: [`coretype] configs) (desc: Coretype.desc) : expression = match desc with
+  and process_coretype' base_mangling_style ({ ct_desc; ct_configs }: Coretype.t) : expression = process_coretype base_mangling_style ct_configs ct_desc
+  and process_coretype base_mangling_style (configs: [`coretype] configs) desc : expression =
+    let base_mangling_style = Json_config.get_mangling_style_opt configs |? base_mangling_style in
+    let rec go : Coretype.desc -> _ = function
     | Prim `unit -> [%expr `special ("unit", `exactly `null)]
     | Prim `bool -> [%expr `boolean]
     | Prim `int -> [%expr `integral]
@@ -578,10 +593,10 @@ let explain_encoded_json_shape :
     | Ident { id_name=ident; id_codec; _ } ->
       let ident_json_name =
         configs
-        |> Json.Json_config.get_name_opt |? ident
-        |> Json.Json_config.mangled `type_name configs
+        |> Json_config.get_name_opt |? ident
+        |> Json_config.mangled `type_name base_mangling_style
       in
-      Json.Json_config.get_custom_shape_explanation configs
+      Json_config.get_custom_shape_explanation configs
       >? (fun shape -> `named (ident_json_name, shape) |> ejson_shape_explanation ~loc)
       |?! (fun () ->
         let trim eshape = [%expr
@@ -598,18 +613,19 @@ let explain_encoded_json_shape :
           let json_shape_explanation_name = get_json_shape_explanation_name ident resolution in
           evar json_shape_explanation_name |> trim
         end)
-    | Option d -> [%expr `nullable [%e process_coretype td_configs configs d]]
-    | Tuple ds -> [%expr `tuple_of [%e ds |&> process_coretype td_configs configs |> elist ~loc]]
-    | List desc -> [%expr `array_of [%e process_coretype td_configs configs desc]]
-    | Map (`string, d) -> [%expr `record_of [%e process_coretype td_configs configs d]]
+    | Option d -> [%expr `nullable [%e go d]]
+    | Tuple ds -> [%expr `tuple_of [%e ds |&> go |> elist ~loc]]
+    | List desc -> [%expr `array_of [%e go desc]]
+    | Map (`string, d) -> [%expr `record_of [%e go d]]
     | StringEnum xs -> [%expr
       `string_enum [%e
         xs
-        |&> (Json.Json_config.get_mangled_name_of_string_enum_case configs &> estring ~loc)
+        |&> (Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style &> estring ~loc)
         |> elist ~loc
       ]]
     | Self -> [%expr `self]
     | _ -> .
+    in go desc
   in
   [%expr `with_warning ("not considering any config if exists", [%e process_td td])]
 
@@ -662,14 +678,14 @@ let gen_json_encoder :
          fields)
       Closed
   in
-  let member_of_field : int -> record_field -> expression =
-    fun i field ->
-    let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
+  let member_of_field : json_mangling_style -> int -> record_field -> expression =
+    fun base_mangling_style i field ->
+    let (json_field_name, base_mangling_style) = Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field in
     [%expr ([%e estring ~loc json_field_name],
-            [%e encoder_of_coretype self_ename field.rf_type] [%e evari i])]
+            [%e encoder_of_coretype base_mangling_style self_ename field.rf_type] [%e evari i])]
   in
-  let record_body : record_field list -> expression = fun fields ->
-    let members = List.mapi member_of_field fields in
+  let record_body : json_mangling_style -> record_field list -> expression = fun base_mangling_style fields ->
+    let members = List.mapi (member_of_field base_mangling_style) fields in
     [%expr `obj [%e elist ~loc members]]
   in
   let variant_params : variant_constructor list -> pattern list = fun constrs ->
@@ -703,21 +719,23 @@ let gen_json_encoder :
         in
         of_record_fields ~label:"reused inline record" fields
   in
-  let variant_body : variant_constructor list -> expression list = fun cnstrs ->
+  let variant_body : json_mangling_style -> variant_constructor list -> expression list = fun base_mangling_style cnstrs ->
+    let discriminator_fname =
+      Json_config.get_variant_discriminator td_configs
+      |> Json.Json_config.mangled `field_name base_mangling_style
+    in
     cnstrs |&> fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
-      let discriminator_fname =
-        Json_config.get_variant_discriminator td_configs
-        |> Json.Json_config.mangled `field_name td_configs
+      let (discriminator_value, base_mangling_style) =
+        Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
       in
-      let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
       let arg_fname =
         Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
-        |> Json.Json_config.mangled `field_name vc_configs
+        |> Json.Json_config.mangled `field_name base_mangling_style
       in
-      let of_record_fields fields =
+      let of_record_fields base_mangling_style fields =
         let discriminator_fname = estring ~loc discriminator_fname in
         let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
-        let args = List.mapi (fun i field -> member_of_field i field) fields in
+        let args = List.mapi (member_of_field base_mangling_style) fields in
         [%expr `obj [%e elist ~loc (cstr :: args)]]
       in
       match Json_config.get_variant_style vc_configs with
@@ -732,7 +750,7 @@ let gen_json_encoder :
           let cstr = [%expr ([%e discriminator_fname], `str [%e estring ~loc discriminator_value])] in
           let args =
             List.mapi (fun i typ ->
-                [%expr [%e encoder_of_coretype self_ename typ] [%e evari i]])
+                [%expr [%e encoder_of_coretype base_mangling_style self_ename typ] [%e evari i]])
               args in
           begin match args, Json_config.get_tuple_style vc_configs with
           | [], _ -> [%expr `obj [[%e cstr]]]
@@ -746,14 +764,20 @@ let gen_json_encoder :
             in
             [%expr `obj ([%e cstr] :: [%e elist ~loc fields])]
           end
-        | `inline_record fields -> of_record_fields fields
-        | `reused_inline_record decl ->
-          let fields = decl.td_kind |> function
+        | `inline_record fields -> of_record_fields base_mangling_style fields
+        | `reused_inline_record { td_kind; td_configs; _ } ->
+          let base_mangling_style =
+            Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+          in
+          let fields = td_kind |> function
             | Record_decl fields -> fields
             | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
           in
-          of_record_fields fields
+          of_record_fields base_mangling_style fields
       end
+  in
+  let base_mangling_style =
+    Json.Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
   in
   match kind with
   | Alias_decl cty ->
@@ -761,11 +785,11 @@ let gen_json_encoder :
       ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
       self_pname
       (pexp_constraint ~loc
-         (wrap_self_contained (encoder_of_coretype self_ename cty))
+         (wrap_self_contained (encoder_of_coretype base_mangling_style self_ename cty))
          [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
   | Record_decl fields ->
     let params = record_params fields in
-    let body = record_body fields in
+    let body = record_body base_mangling_style fields in
     Vb.mk
       ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
       self_pname
@@ -774,7 +798,7 @@ let gen_json_encoder :
         [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
   | Variant_decl ctors ->
     let params = variant_params ctors in
-    let body = variant_body ctors in
+    let body = variant_body base_mangling_style ctors in
     let cases =
       List.map2
         (fun p b -> case ~lhs:p ~rhs:b ~guard:None)
@@ -817,22 +841,23 @@ let gen_json_decoder_result :
            es e
     else e
   in
-  let record_bindings : record_field list -> (pattern * expression) list = fun fields ->
+  let record_bindings : json_mangling_style -> record_field list -> (pattern * expression) list =
+    fun base_mangling_style fields ->
     List.mapi (fun i field ->
-      let json_field_name = Json_config.get_mangled_name_of_field td_configs field in
+      let (json_field_name, base_mangling_style) = Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field in
       let json_field = estring ~loc json_field_name in
       let expr =
         if Coretype.is_option field.rf_type then
           [%expr
             List.assoc_opt [%e json_field] [%e param_e]
             |> Option.value ~default:`null
-            |> [%e decoder_of_coretype impl_ename field.rf_type] (`f [%e json_field] :: path)]
+            |> [%e decoder_of_coretype base_mangling_style impl_ename field.rf_type] (`f [%e json_field] :: path)]
         else
           let error_message = sprintf "mandatory field '%s' does not exist" json_field_name in
           [%expr
             List.assoc_opt [%e json_field] [%e param_e]
             |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
-            >>= [%e decoder_of_coretype impl_ename field.rf_type] (`f [%e json_field] :: path)
+            >>= [%e decoder_of_coretype base_mangling_style impl_ename field.rf_type] (`f [%e json_field] :: path)
           ]
         in
       pvari i, expr)
@@ -860,18 +885,21 @@ let gen_json_decoder_result :
     in
     object_is_expected_error "record", object_is_expected_error "variant"
   in
-  let variant_body : variant_constructor list -> (pattern * expression) list = fun cstrs ->
+  let variant_body : json_mangling_style -> variant_constructor list -> (pattern * expression) list =
+    fun base_mangling_style cstrs ->
     let discriminator_fname =
       Json_config.get_variant_discriminator td_configs
-      |> Json.Json_config.mangled `field_name td_configs
+      |> Json.Json_config.mangled `field_name base_mangling_style
     in
     let discriminator_fname_p = pstring ~loc discriminator_fname in
     cstrs
     |&> (fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
-      let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
+      let (discriminator_value, base_mangling_style) =
+        Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
+      in
       let arg_fname =
         Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
-        |> Json.Json_config.mangled `field_name vc_configs
+        |> Json.Json_config.mangled `field_name base_mangling_style
       in
       let cstr_p tail = [%pat? `obj (([%p discriminator_fname_p], `str [%p pstring ~loc discriminator_value])::[%p tail])] in
       let construct name args =
@@ -881,11 +909,11 @@ let gen_json_decoder_result :
       in
       match Json_config.get_variant_style vc_configs with
       | `flatten ->
-        let of_record_fields ~label fields =
+        let of_record_fields ~label base_mangling_style fields =
           match fields with
           | [] -> construct vc_name None
           | _ ->
-            let bindings = record_bindings fields in
+            let bindings = record_bindings base_mangling_style fields in
             let body =
               match Caml_config.get_variant_type td_configs with
               | `regular -> record_body fields
@@ -912,7 +940,7 @@ let gen_json_decoder_result :
                     pvari i, [%expr
                       List.assoc_opt [%e label_name_e] [%e param_e]
                       |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
-                      >>= ([%e decoder_of_coretype impl_ename arg] (`f [%e label_name_e] :: path))
+                      >>= ([%e decoder_of_coretype base_mangling_style impl_ename arg] (`f [%e label_name_e] :: path))
                     ])
                 in
                 cstr_p param_p, [%expr [%e bind_results bindings body]]
@@ -923,13 +951,13 @@ let gen_json_decoder_result :
                   | [t] ->
                     [ [%pat? Some arg],
                       bind_results
-                        [ pvari 0, [%expr [%e decoder_of_coretype impl_ename t] [%e path_arg] arg]]
+                        [ pvari 0, [%expr [%e decoder_of_coretype base_mangling_style impl_ename t] [%e path_arg] arg]]
                         body; ]
                   | ts ->
                     [ [%pat? Some (`arr [%p plist ~loc (List.mapi (fun i _ -> pvari i) ts)])],
                       bind_results
                         (List.mapi (fun i arg -> pvari i, [%expr
-                            [%e decoder_of_coretype impl_ename arg]
+                            [%e decoder_of_coretype base_mangling_style impl_ename arg]
                               (`i [%e eint ~loc i] :: [%e path_arg])
                               [%e evari i]]) ts)
                         body;
@@ -957,21 +985,25 @@ let gen_json_decoder_result :
                 ]
             end
           | `inline_record fields ->
-            cstr_p param_p, of_record_fields ~label:"inline record" fields
-          | `reused_inline_record decl ->
+            cstr_p param_p, of_record_fields ~label:"inline record" base_mangling_style fields
+          | `reused_inline_record { td_kind; td_configs; _ } ->
+            let base_mangling_style =
+              Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+            in
             let fields =
-              decl.td_kind |> function
+              td_kind |> function
               | Record_decl fields -> fields
               | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
             in
-            cstr_p param_p, of_record_fields ~label:"reused inline record" fields
+            cstr_p param_p, of_record_fields ~label:"reused inline record" base_mangling_style fields
         end)
     |> fun cases ->
       let unexpected_discriminator_error_message_format =
         sprintf "given discriminator field value '%%s' is not one of [ %s ]"
           (cstrs
             |&> (fun ctor ->
-              Json_config.get_mangled_name_of_discriminator td_configs ctor
+              Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
+              |> fst
               |> sprintf "'%s'")
             |> String.concat ", ")
         |> estring ~loc
@@ -997,13 +1029,16 @@ let gen_json_decoder_result :
         [%pat? jv], object_is_expected_error_variant [%expr jv];
       ]
   in
+  let base_mangling_style =
+    Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+  in
   let function_body =
     match kind with
     | Alias_decl cty ->
       (wrap_self_contained
-         [%expr [%e (decoder_of_coretype impl_ename cty)] path])
+         [%expr [%e (decoder_of_coretype base_mangling_style impl_ename cty)] path])
     | Record_decl fields ->
-      let bindings = record_bindings fields in
+      let bindings = record_bindings base_mangling_style fields in
       let body = record_body fields in
       bind_results bindings [%expr Ok [%e body]]
       |> fun body -> [%expr function
@@ -1017,7 +1052,7 @@ let gen_json_decoder_result :
         __bindoj_orig
         |> Kxclib.Jv.pump_field [%e estring ~loc discriminator_fname]
         |> [%e
-          variant_body ctors
+          variant_body base_mangling_style ctors
           |&> (fun (pat, body) -> case ~lhs:pat ~rhs:body ~guard:None)
           |> pexp_function ~loc
           |> wrap_self_contained ]]
@@ -1085,6 +1120,9 @@ let gen_discriminator_value_accessor : ?codec:Coretype.codec -> type_decl -> val
       td.td_kind
       |> begin function
         | Variant_decl ctors ->
+          let base_mangling_style =
+            Json_config.(get_mangling_style_opt td.td_configs |? default_mangling_style)
+          in
           ctors
           |&> (fun ({ vc_name; vc_param; _ } as ctor) ->
             let arg = if vc_param = `no_param then None else Some(Pat.any ()) in
@@ -1093,8 +1131,8 @@ let gen_discriminator_value_accessor : ?codec:Coretype.codec -> type_decl -> val
               else Pat.construct (lidloc vc_name) arg
             in
             let discriminator_value =
-              Json.Json_config.get_mangled_name_of_discriminator td.td_configs ctor
-              |> estring ~loc
+              Json.Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
+              |> fst |> estring ~loc
             in
             case ~lhs:pat ~rhs:discriminator_value ~guard:None)
         | _ -> invalid_arg' "'%s' is not a variant decl" td.td_name
@@ -1214,7 +1252,10 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
 
   let docopt = function `docstr s -> Some s | `nodoc -> None in
 
-  let convert_coretype ~self_name ?description (ct: coretype) =
+  let convert_coretype ~self_name base_mangling_style ?description (ct: coretype) =
+    let base_mangling_style =
+      Json_config.get_mangling_style_opt ct.ct_configs |? base_mangling_style
+    in
     let tuple_style = Json_config.get_tuple_style ct.ct_configs in
     let rec go =
       let open Coretype in
@@ -1255,7 +1296,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         Schema_object.obj ?description ~additionalProperties:(`T (go t)) ()
       | StringEnum cases ->
         let enum = cases |> List.map (
-          Json_config.get_mangled_name_of_string_enum_case ct.ct_configs
+          Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style
           &> (fun case -> `str case)) in
         Schema_object.string ~enum ()
       | Self ->
@@ -1280,10 +1321,12 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
       if openapi then None (* OpenAPI v3 does not support `id` *)
       else Some ("#" ^ name) in
 
-    let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc fields =
+    let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc base_mangling_style fields =
       let field_to_t ({ rf_type; rf_doc; _ } as field) =
-        (Json_config.get_mangled_name_of_field td_configs field),
-        convert_coretype ~self_name ?description:(docopt rf_doc) rf_type
+        let field_name, base_mangling_style =
+          Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field
+        in
+        field_name, convert_coretype ~self_name ?description:(docopt rf_doc) base_mangling_style rf_type
       in
       let fields = fields |> List.map field_to_t in
       Schema_object.record
@@ -1294,16 +1337,21 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         (fields @ additional_fields)
     in
 
+    let base_mangling_style =
+      Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+    in
     match td_kind with
     | Record_decl fields ->
-      record_to_t ?schema ?id ~name ~self_name ~doc fields
+      record_to_t ?schema ?id ~name ~self_name ~doc base_mangling_style fields
     | Variant_decl ctors ->
       let discriminator_fname =
         Json_config.get_variant_discriminator td_configs
-        |> Json.Json_config.mangled `field_name td_configs
+        |> Json.Json_config.mangled `field_name base_mangling_style
       in
       let ctor_to_t ({ vc_name; vc_param; vc_doc = doc; vc_configs; _ } as ctor) =
-        let discriminator_value = Json_config.get_mangled_name_of_discriminator td_configs ctor in
+        let (discriminator_value, base_mangling_style) =
+          Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
+        in
         let discriminator_field =
           let enum = [`str discriminator_value] in
           [discriminator_fname, Schema_object.string ~enum ()]
@@ -1317,33 +1365,41 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
               let arg_name =
                 vc_configs
                 |> Json_config.(get_name_of_variant_arg default_name_of_variant_arg)
-                |> Json.Json_config.mangled `field_name vc_configs
+                |> Json.Json_config.mangled `field_name base_mangling_style
               in
               let arg_field =
                 match ts, Json_config.get_tuple_style vc_configs with
-                | [], _ -> [arg_name, convert_coretype ~self_name t]
+                | [], _ -> [arg_name, convert_coretype ~self_name base_mangling_style t]
                 | _, `arr ->
                   if openapi then
                     raise (Incompatible_with_openapi_v3 (
                       sprintf "OpenAPI v3 does not support tuple validation (in type '%s')" self_name))
                   else
-                    let ts = t :: ts |> List.map (convert_coretype ~self_name) in
+                    let ts = t :: ts |> List.map (convert_coretype ~self_name base_mangling_style) in
                     [arg_name, Schema_object.tuple ts]
                 | _, `obj `default ->
                   t :: ts |> List.mapi (fun i t ->
-                    tuple_index_to_field_name i, convert_coretype ~self_name t
+                    tuple_index_to_field_name i, convert_coretype ~self_name base_mangling_style t
                   )
               in
               let fields = discriminator_field @ arg_field in
               Schema_object.record ?description:(docopt doc) ~title:discriminator_value fields
             | `inline_record fields ->
-              record_to_t ~additional_fields:discriminator_field ~name:discriminator_value ~self_name ~doc fields
-            | `reused_inline_record decl ->
-              let fields = decl.td_kind |> function
+              record_to_t
+                ~additional_fields:discriminator_field
+                ~name:discriminator_value
+                ~self_name
+                ~doc
+                base_mangling_style fields
+            | `reused_inline_record { td_kind; td_configs; _ } ->
+              let base_mangling_style =
+                Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+              in
+              let fields = td_kind |> function
                 | Record_decl fields -> fields
                 | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
               in
-              record_to_t ~additional_fields:discriminator_field ~name:discriminator_value ~self_name ~doc fields
+              record_to_t ~additional_fields:discriminator_field ~name:discriminator_value ~self_name ~doc base_mangling_style fields
 
           end
       in
@@ -1354,6 +1410,6 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         ?id
         (ctors |> List.map ctor_to_t)
     | Alias_decl cty ->
-      convert_coretype ~self_name ?description:(docopt doc) cty
+      convert_coretype ~self_name ?description:(docopt doc) base_mangling_style cty
 
 let gen_openapi_schema : type_decl -> Schema_object.t = gen_json_schema ~openapi:true

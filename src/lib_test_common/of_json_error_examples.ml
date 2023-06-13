@@ -78,6 +78,40 @@ module SampleEx01 : SampleGenerated = struct
                 `mandatory_field ("name", `string)]))))
 end
 
+module SampleEx01_inherited_mangling : SampleGenerated = struct
+  include Ex01_inherited_mangling
+  let name = "SampleEx01_inherited_mangling"
+  let samples = [
+    "not obj", `null, (record_not_obj "null", []);
+
+    "missing field", `obj [ ("admission_year", `num 1984.) ]
+    , (field_not_found "name", []);
+
+    "type mismatch", `obj [ ("admission_year", `null); ("name", `str "William Gibson") ]
+    , (type_mismatch "int" "null", [ `f "admission_year" ]);
+
+    "not integer", `obj [ ("admission_year", `num 1984.5); ("name", `str "William Gibson") ]
+    , (not_integer 1984.5, [ `f "admission_year" ]);
+
+    "student: missing field", ctor_record "student" [ ("admission_year", `num 1984.); ("name", `str "William Gibson")],
+    (field_not_found "caseValue", [ ]);
+
+    "not one of", ctor_record "student" [ ("admission_year", `num 1984.); ("name", `str "William Gibson"); ("caseValue", `str "Case_at0")],
+    ("given string 'Case_at0' is not one of [ 'Case-at0', 'case_at1' ]", [ `f "caseValue" ]);
+  ]
+
+  let expected_json_shape_explanation =
+    `with_warning
+     ("not considering any config if exists",
+       (`named
+          ("student",
+            (`object_of
+               [`mandatory_field ("admission_year", `integral);
+               `mandatory_field ("name", `string);
+               `mandatory_field
+                 ("caseValue", (`string_enum ["Case-at0"; "case_at1"]))]))))
+end
+
 module SampleEx02 : SampleGenerated = struct
   include Ex02
   let name = "SampleEx02"
@@ -176,6 +210,65 @@ module SampleEx02_no_mangling : SampleGenerated = struct
                 `object_of
                   [`mandatory_field ("kind", (`exactly (`str "Teacher")));
                   `mandatory_field ("faculty_id", `integral);
+                  `mandatory_field ("name", `string);
+                  `mandatory_field ("department", `string)]]))))
+end
+
+module SampleEx02_inherited_mangling : SampleGenerated = struct
+  include Ex02_inherited_mangling
+  let name = "SampleEx02_inherited_mangling"
+  let samples = [
+    "missing discriminator", `obj [ ],
+    (discriminator_not_found "kind", []);
+
+    "discriminator not string", `obj [ ("kind", `null)],
+    (discriminator_not_string "null", [ `f "kind" ]);
+
+    "invalid constructor", ctor0 "FooBar",
+    ("given discriminator field value 'FooBar' is not one of [ 'Anonymous', 'With_id', 'student', 'Teacher' ]", [ `f "kind" ]);
+
+    "With_id: missing field", ctor0 "With_id",
+    (field_not_found "arg", []);
+
+    "With_id: not integer", ctor_record "With_id" [ ("arg", `num 1.2) ],
+    (not_integer 1.2, [ `f "arg" ]);
+
+    "student: inline record", ctor0 "student",
+    (field_not_found "student_id", []);
+
+    "student: missing field", ctor_record "student" [ ("student_id", `num 2.)],
+    (field_not_found "name", [ ]);
+
+    "student: missing field", ctor_record "student" [ ("student_id", `num 2.); ("name", `str "foobar")],
+    (field_not_found "caseValue", [ ]);
+
+    "student: not one of", ctor_record "student" [ ("student_id", `num 2.); ("name", `str "foobar"); ("caseValue", `str "Case-at0")],
+    ("given string 'Case-at0' is not one of [ 'Case_at0', 'case-at1' ]", [ `f "caseValue" ]);
+
+    "Teacher: missing field", ctor_record "Teacher" [ ("faculty_id", `num 2001.) ],
+    (field_not_found "facultyId", []);
+  ]
+
+  let expected_json_shape_explanation =
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+            ("person",
+              (`anyone_of
+                [`object_of
+                    [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "With_id")));
+                  `mandatory_field ("arg", (`tuple_of [`integral]))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "student")));
+                  `mandatory_field ("student_id", `integral);
+                  `mandatory_field ("name", `string);
+                  `mandatory_field
+                    ("caseValue", (`string_enum ["Case_at0"; "case-at1"]))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "Teacher")));
+                  `mandatory_field ("facultyId", `integral);
                   `mandatory_field ("name", `string);
                   `mandatory_field ("department", `string)]]))))
 end
@@ -670,8 +763,10 @@ end
 
 let all_generated : (module SampleGenerated) list = [
   (module SampleEx01);
+  (module SampleEx01_inherited_mangling);
   (module SampleEx02);
   (module SampleEx02_no_mangling);
+  (module SampleEx02_inherited_mangling);
   (module SampleEx03);
   (module SampleEx04);
   (module SampleEx05);
@@ -687,8 +782,10 @@ let all_generated : (module SampleGenerated) list = [
 
 let all : (module Sample) list = [
   (module SampleEx01);
+  (module SampleEx01_inherited_mangling);
   (module SampleEx02);
   (module SampleEx02_no_mangling);
+  (module SampleEx02_inherited_mangling);
   (module SampleEx03);
   (module SampleEx04);
   (module SampleEx05);

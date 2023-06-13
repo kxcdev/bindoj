@@ -17,38 +17,45 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base.Type_desc
-open Bindoj_gen_ts.Typescript_datatype
+include Bindoj_gen_test_gen_output.Ex01_inherited_mangling_gen
+open Bindoj_base
 
-(** each example module should have this module type *)
-module type T = sig
-  val decl: type_decl
-  val example_module_path: string
+type t = student = { admission_year: int; name: string; case_value: [ `Case_at0 | `case_at1 ] } [@@deriving show]
+let decl = Bindoj_test_common_typedesc_examples.Ex01_inherited_mangling.decl
+let reflect = student_reflect
 
-  val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) ts_fwrt_decl
-  val ts_ast: ts_ast option
-end
+let json_shape_explanation = student_json_shape_explanation
+let to_json = student_to_json
+let of_json' = student_of_json'
+let env = empty_tdenv
+let t : t Alcotest.testable = Alcotest.of_pp pp
 
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex01_inherited_mangling", (module Ex01_inherited_mangling);
-  "ex02", (module Ex02);
-  "ex02_reused", (module Ex02_reused);
-  "ex02_no_mangling", (module Ex02_no_mangling);
-  "ex02_inherited_mangling", (module Ex02_inherited_mangling);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-  "ex09", (module Ex09);
-  "ex10", (module Ex10);
-  "ex11", (module Ex11);
-  "ex12", (module Ex12);
-  "ex13", (module Ex13);
+let sample_value01 : t Sample_value.t = {
+  orig = {
+    admission_year = 1984;
+    name = "William Gibson";
+    case_value = `Case_at0
+  };
+  jv = `obj [
+    ("admission_year", `num 1984.);
+    ("name", `str "William Gibson");
+    ("caseValue", `str "Case-at0");
+  ];
+}
+
+let sample_value02 : t Sample_value.t = {
+  orig = {
+    admission_year = 2001;
+    name = "Arthur C. Clark";
+    case_value = `case_at1
+  };
+  jv = `obj [
+    ("admission_year", `num 2001.);
+    ("name", `str "Arthur C. Clark");
+    ("caseValue", `str "case_at1");
+  ];
+}
+
+let sample_values = [
+  sample_value01;
 ]
