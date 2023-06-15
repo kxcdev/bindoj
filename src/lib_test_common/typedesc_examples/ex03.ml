@@ -82,3 +82,15 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd cstrs); };
       Util.Ts_ast.case_analyzer "IntList" "analyzeIntList" options cstrs; ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option =
+  Util.Schema_object.variant "IntList"
+    Schema_object.[
+      "intnil", [];
+      "intcons", [
+        "arg", tuple [ integer(); ref "#IntList"; ]
+      ];
+    ]
+  |> Option.some

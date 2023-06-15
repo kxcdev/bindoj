@@ -58,7 +58,10 @@ and openapi_components_object_of_type_decl_collection :
     (alias_ident_typemap
      |> StringMap.to_list |&> fun (_, boxed) -> (Typed.decl % Typed.unbox) boxed) in
   let decl_schemas =
-    decls |> List.map (fun td -> td.td_name, Either.left (openapi_schema_object_of_type_decl td)) in
+    decls |> List.map (fun td ->
+      fst (Json_config.get_mangled_name_of_type td),
+      Either.left (openapi_schema_object_of_type_decl td))
+    in
   let references =
     alias_ident_typemap
     |> StringMap.to_list
@@ -66,8 +69,9 @@ and openapi_components_object_of_type_decl_collection :
       let decl = (Typed.decl % Typed.unbox) boxed in
       if name = decl.td_name then None
       else
-        let ref = OpenApi.Reference_object.mk (sprintf "#/components/schemas/%s" decl.td_name) in
-        Some (name, Either.right ref)) in
+        let json_name = fst (Json_config.get_mangled_name_of_type decl) in
+        let ref = OpenApi.Reference_object.mk (sprintf "#/components/schemas/%s" json_name) in
+        Some (json_name, Either.right ref)) in
   let schemas =
     decl_schemas @ references
     |> List.sort_uniq (fun (n1, _) (n2, _) -> compare n1 n2) in
@@ -222,16 +226,19 @@ and openapi_schema_object_of_type_decl : type_decl -> OpenApi.Schema_object.t = 
 
 and openapi_schema_or_reference_of_type_decl : registry_info -> type_decl -> (OpenApi.Schema_object.t, OpenApi.Reference_object.t) either =
   fun (_, tdcoll) td ->
-    let tdi =
-      tdcoll.type_declarations |> List.find_opt (fun tdi ->
-        let (Boxed ttd) = tdi.tdi_decl in
-        let td' = Typed.decl ttd in
-        td.td_name = td'.td_name
-      )
-    in
-    match tdi with
-    | Some tdi -> OpenApi.Reference_object.mk (sprintf "#/components/schemas/%s" tdi.tdi_name) |> Either.right
-    | None -> openapi_schema_object_of_type_decl td |> Either.left
+    tdcoll.type_declarations |> List.exists (fun tdi ->
+      let (Boxed ttd) = tdi.tdi_decl in
+      let td' = Typed.decl ttd in
+      td.td_name = td'.td_name
+    )
+    |> function
+    | true ->
+      Json_config.get_mangled_name_of_type td
+      |> fst
+      |> sprintf "#/components/schemas/%s"
+      |> OpenApi.Reference_object.mk
+      |> Either.right
+    | false -> openapi_schema_object_of_type_decl td |> Either.left
 
 module Internals = struct
   let openapi_components_object_of_type_decl_collection =

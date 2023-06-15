@@ -1252,7 +1252,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
 
   let docopt = function `docstr s -> Some s | `nodoc -> None in
 
-  let convert_coretype ~self_name base_mangling_style ?description (ct: coretype) =
+  let convert_coretype ~self_name ~self_mangled_type_name base_mangling_style ?description (ct: coretype) =
     let base_mangling_style =
       Json_config.get_mangling_style_opt ct.ct_configs |? base_mangling_style
     in
@@ -1270,11 +1270,16 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
       | Prim `byte -> Schema_object.integer ~minimum:0 ~maximum:255 ?description ()
       | Prim `bytes -> Schema_object.string ~format:`byte ~pattern:base64_regex ?description ()
       | Uninhabitable -> Schema_object.null ?description ()
-      | Ident id ->
+      | Ident { id_name; _ } ->
+        let name =
+          ct.ct_configs
+          |> Json_config.get_name_opt |? id_name
+          |> Json_config.mangled `type_name base_mangling_style
+        in
         if openapi then (* in OpenAPI, types live in #/components/schemas/ *)
-          Schema_object.ref ("#/components/schemas/" ^ id.id_name)
+          Schema_object.ref ("#/components/schemas/" ^ name)
         else
-          Schema_object.ref ("#" ^ id.id_name)
+          Schema_object.ref ("#" ^ name)
       | Option t ->
         Schema_object.option (go t)
       | Tuple ts ->
@@ -1300,49 +1305,54 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
           &> (fun case -> `str case)) in
         Schema_object.string ~enum ()
       | Self ->
+        let name =
+          ct.ct_configs
+          |> Json_config.get_name_opt
+          >? Json_config.mangled `type_name base_mangling_style
+          |? self_mangled_type_name
+        in
         if openapi then (* in OpenAPI, types live in #/components/schemas/ *)
-          Schema_object.ref ("#/components/schemas/" ^ self_name)
+          Schema_object.ref ("#/components/schemas/" ^ name)
         else
-          Schema_object.ref ("#" ^ self_name)
+          Schema_object.ref ("#" ^ name)
     in
     match ct.ct_configs |> Configs.find_foreign_type_expr json_schema with
     | Some schema -> schema
     | None -> go ct.ct_desc
   in
 
-  fun { td_name = name; td_kind; td_doc = doc; td_configs } ->
+  let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~self_mangled_type_name ~doc base_mangling_style fields =
+    let field_to_t ({ rf_type; rf_doc; _ } as field) =
+      let field_name, base_mangling_style =
+        Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field
+      in
+      field_name, convert_coretype ~self_name ~self_mangled_type_name ?description:(docopt rf_doc) base_mangling_style rf_type
+    in
+    let fields = fields |> List.map field_to_t in
+    Schema_object.record
+      ?schema
+      ~title:name
+      ?description:(docopt doc)
+      ?id
+      (fields @ additional_fields)
+  in
+
+  fun ({ td_name = name; td_kind; td_doc = doc; td_configs } as td) ->
     let self_name = name in
 
     let schema =
       if openapi then None (* OpenAPI v3 does not support `$schema` *)
       else Some Schema_object.schema in
 
+    let (self_mangled_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type td in
+
     let id =
       if openapi then None (* OpenAPI v3 does not support `id` *)
-      else Some ("#" ^ name) in
+      else Some ("#" ^ self_mangled_type_name) in
 
-    let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~doc base_mangling_style fields =
-      let field_to_t ({ rf_type; rf_doc; _ } as field) =
-        let field_name, base_mangling_style =
-          Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field
-        in
-        field_name, convert_coretype ~self_name ?description:(docopt rf_doc) base_mangling_style rf_type
-      in
-      let fields = fields |> List.map field_to_t in
-      Schema_object.record
-        ?schema
-        ~title:name
-        ?description:(docopt doc)
-        ?id
-        (fields @ additional_fields)
-    in
-
-    let base_mangling_style =
-      Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
-    in
     match td_kind with
     | Record_decl fields ->
-      record_to_t ?schema ?id ~name ~self_name ~doc base_mangling_style fields
+      record_to_t ?schema ?id ~name:self_mangled_type_name ~self_name ~self_mangled_type_name ~doc base_mangling_style fields
     | Variant_decl ctors ->
       let discriminator_fname =
         Json_config.get_variant_discriminator td_configs
@@ -1369,26 +1379,27 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
               in
               let arg_field =
                 match ts, Json_config.get_tuple_style vc_configs with
-                | [], _ -> [arg_name, convert_coretype ~self_name base_mangling_style t]
+                | [], _ -> [arg_name, convert_coretype ~self_name ~self_mangled_type_name base_mangling_style t]
                 | _, `arr ->
                   if openapi then
                     raise (Incompatible_with_openapi_v3 (
                       sprintf "OpenAPI v3 does not support tuple validation (in type '%s')" self_name))
                   else
-                    let ts = t :: ts |> List.map (convert_coretype ~self_name base_mangling_style) in
+                    let ts = t :: ts |> List.map (convert_coretype ~self_name ~self_mangled_type_name base_mangling_style) in
                     [arg_name, Schema_object.tuple ts]
                 | _, `obj `default ->
                   t :: ts |> List.mapi (fun i t ->
-                    tuple_index_to_field_name i, convert_coretype ~self_name base_mangling_style t
+                    tuple_index_to_field_name i, convert_coretype ~self_name ~self_mangled_type_name base_mangling_style t
                   )
               in
-              let fields = discriminator_field @ arg_field in
+              let fields = arg_field @ discriminator_field in
               Schema_object.record ?description:(docopt doc) ~title:discriminator_value fields
             | `inline_record fields ->
               record_to_t
                 ~additional_fields:discriminator_field
                 ~name:discriminator_value
                 ~self_name
+                ~self_mangled_type_name
                 ~doc
                 base_mangling_style fields
             | `reused_inline_record { td_kind; td_configs; _ } ->
@@ -1399,17 +1410,29 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
                 | Record_decl fields -> fields
                 | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
               in
-              record_to_t ~additional_fields:discriminator_field ~name:discriminator_value ~self_name ~doc base_mangling_style fields
+              record_to_t
+                ~additional_fields:discriminator_field
+                ~name:discriminator_value
+                ~self_name
+                ~self_mangled_type_name
+                ~doc
+                base_mangling_style
+                fields
 
           end
       in
       Schema_object.oneOf
         ?schema
-        ~title:name
+        ~title:self_mangled_type_name
         ?description:(docopt doc)
         ?id
         (ctors |> List.map ctor_to_t)
     | Alias_decl cty ->
-      convert_coretype ~self_name ?description:(docopt doc) base_mangling_style cty
+      convert_coretype
+        ~self_name
+        ~self_mangled_type_name
+        ?description:(docopt doc)
+        base_mangling_style
+        cty
 
 let gen_openapi_schema : type_decl -> Schema_object.t = gen_json_schema ~openapi:true

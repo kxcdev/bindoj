@@ -139,3 +139,13 @@ module FwrtTypeEnv =
     let default_annot_kc = None
     let default_annot_d_f = constant ()
   end)
+
+module Schema_object = struct
+  open Bindoj_openapi.V3.Schema_object
+  let variant ?(discriminator_fname = "kind") name ctors =
+    ctors
+    |&> (fun (title, fields) ->
+      fields @ [ discriminator_fname, string () ~enum:[`str title] ]
+      |> record ~title)
+    |> oneOf ~schema ~title:name ~id:("#"^name)
+end

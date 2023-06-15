@@ -45,3 +45,9 @@ let ts_ast : ts_ast option = Some [
     tsa_type_desc = `literal_type (`numeric_literal 1.);
   }
 ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option =
+  Schema_object.integer () ~minimum:1 ~maximum:1
+  |> Option.some

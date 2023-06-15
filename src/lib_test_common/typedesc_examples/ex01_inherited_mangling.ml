@@ -86,3 +86,17 @@ let ts_ast : ts_ast option =
                     `literal_type (`string_literal "case_at1");
                   ]; };
               ]; } ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option =
+  Some Schema_object.(
+    record ~schema
+      ~title:"student"
+      ~id:"#student"
+      [ "admission_year", integer ();
+        "name", string ();
+        "caseValue", string () ~enum:[
+          `str "Case-at0"; `str "case_at1"
+        ] ]
+  )

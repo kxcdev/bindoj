@@ -53,3 +53,7 @@ let ts_ast : ts_ast option = Some [
                 tsps_type_desc = `type_reference "number"; };
             ];};
   ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option = None

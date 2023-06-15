@@ -129,3 +129,7 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd customized_union); };
       Util.Ts_ast.case_analyzer "CustomizedUnion" "analyzeCustomizedUnion" options customized_union; ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option = None

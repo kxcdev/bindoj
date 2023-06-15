@@ -68,3 +68,7 @@ let ts_ast : ts_ast option =
         tsa_type_desc = lit
       };
   ] |> some
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option = None

@@ -17,40 +17,31 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base.Type_desc
-open Bindoj_gen_ts.Typescript_datatype
-open Bindoj_openapi.V3
+open Alcotest
+open Bindoj_test_common
+open Bindoj_gen
+open Bindoj_openapi
 
-(** each example module should have this module type *)
-module type T = sig
-  val decl: type_decl
-  val example_module_path: string
-
-  val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) ts_fwrt_decl
-  val ts_ast: ts_ast option
-  val schema_object: Schema_object.t option
+module Testables : sig
+  val schema_object : V3.Schema_object.t testable
+end = struct
+  let schema_object = testable V3.Schema_object.pp (=)
 end
 
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex01_inherited_mangling", (module Ex01_inherited_mangling);
-  "ex02", (module Ex02);
-  "ex02_reused", (module Ex02_reused);
-  "ex02_no_mangling", (module Ex02_no_mangling);
-  "ex02_inherited_mangling", (module Ex02_inherited_mangling);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-  "ex09", (module Ex09);
-  "ex10", (module Ex10);
-  "ex11", (module Ex11);
-  "ex12", (module Ex12);
-  "ex13", (module Ex13);
-]
+let create_test_cases (module Ex : Typedesc_examples.T) =
+  match Ex.schema_object with
+  | Some expected ->
+    [ test_case "json schema" `Quick (fun () ->
+        let actual = Json_codec.gen_json_schema Ex.decl in
+        check' Testables.schema_object
+          ~msg:"the generated schema is expected"
+          ~expected
+          ~actual
+      )]
+  | None ->
+    [ test_case "(skipped)" `Quick ignore ]
+
+let () =
+  Typedesc_examples.all
+  |&> ((?>) create_test_cases)
+  |> Alcotest.run "lib_gen.json_schema"

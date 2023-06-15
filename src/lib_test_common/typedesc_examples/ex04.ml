@@ -93,3 +93,7 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd foos); };
       Util.Ts_ast.case_analyzer "Foo" "analyzeFoo" options foos ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option = None

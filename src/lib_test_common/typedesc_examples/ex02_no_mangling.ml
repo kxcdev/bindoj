@@ -154,3 +154,21 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd person); };
       Util.Ts_ast.case_analyzer "person" "analyze_person" options person; ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option =
+  Util.Schema_object.variant "person"
+    Schema_object.[
+      "Anonymous", [];
+      "With_id", [ "arg", integer () ];
+      "Student", [
+        "student_id", integer ();
+        "name", string ();
+      ];
+      "Teacher", [
+        "faculty_id", integer ();
+        "name", string ();
+        "department", string ();
+      ]; ]
+  |> Option.some

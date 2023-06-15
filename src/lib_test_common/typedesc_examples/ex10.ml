@@ -45,3 +45,7 @@ let fwrt : (unit, unit) ts_fwrt_decl =
     )
 
 let ts_ast : ts_ast option = None
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option = None

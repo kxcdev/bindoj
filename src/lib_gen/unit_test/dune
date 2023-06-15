@@ -6,6 +6,13 @@
  (preprocess (pps ppx_deriving.show)))
 
 (test
+ (name json_schema)
+ (modules json_schema)
+ (libraries alcotest bindoj_test_common bindoj_gen)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show)))
+
+(test
  (name of_json_error)
  (modules of_json_error)
  (libraries

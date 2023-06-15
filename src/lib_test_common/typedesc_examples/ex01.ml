@@ -59,3 +59,14 @@ let ts_ast : ts_ast option =
                 { tsps_modifiers = [];
                   tsps_name = "name";
                   tsps_type_desc = `type_reference "string"; }; ]; } ]
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option =
+  Some Schema_object.(
+    record ~schema
+      ~title:"Student"
+      ~id:"#Student"
+      [ "admissionYear", integer ();
+        "name", string () ]
+  )
