@@ -55,7 +55,7 @@ let modules =
         |> List.map (fun (loc, tds) ->
           let tnames =
             tds
-            |&> (Bindoj_codec.Json.Json_config.get_mangled_name_of_type &> fst)
+            |&> (Ts_config.get_mangled_name_of_type &> fst)
             |> List.sort_uniq compare
           in
           sprintf "import { %s } from \"%s\";" (String.concat ", " tnames) loc

@@ -1,7 +1,7 @@
 (library
  (name bindoj_gen)
  (public_name bindoj.gen)
- (libraries kxclib bindoj_base bindoj_codec bindoj_openapi ppx_deriving.show)
+ (libraries bindoj_gen_config kxclib bindoj_base bindoj_codec bindoj_openapi ppx_deriving.show)
  (preprocess
   (pps ppxlib.metaquot))
  (private_modules utils)

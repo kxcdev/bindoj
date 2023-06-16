@@ -26,6 +26,7 @@ module Json_value : sig
   val of_json : jv -> t option
   val of_json' : ?path:jvpath -> jv -> (t, _) result
   val reflect : t Refl.t
+  val json_shape_explanation : json_shape_explanation
 
   val json_codec : (t, t) External_format.codec
   val external_format_codecs : t External_format.codecs
@@ -43,6 +44,8 @@ end = struct
              | _ -> None);
       })
 
+  let json_shape_explanation = `any_json_value
+
   let json_codec : (t, jv) External_format.codec =
     { encode = to_json; decode = of_json }
 
@@ -56,4 +59,4 @@ end
 
 type json_value = Json_value.t
 
-let json_value_json_shape_explanation = `any_json_value
+let json_value_json_shape_explanation = Json_value.json_shape_explanation

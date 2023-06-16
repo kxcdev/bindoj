@@ -1,0 +1,6 @@
+(library
+ (name bindoj_gen_ts_config)
+ (public_name bindoj.gen_ts.config)
+ (libraries bindoj_base bindoj_codec_config kxclib)
+ (preprocess (pps ppx_deriving.std))
+ (flags (:standard -open Kxclib)))

@@ -1,5 +1,5 @@
 (library
  (name bindoj_codec)
  (public_name bindoj.codec)
- (libraries kxclib bindoj_common bindoj_base bindoj_runtime ppx_deriving.show)
+ (libraries bindoj_codec_config kxclib bindoj_common bindoj_base bindoj_runtime)
  (flags (:standard -open Kxclib)))

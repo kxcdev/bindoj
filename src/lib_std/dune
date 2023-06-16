@@ -1,5 +1,5 @@
 (library
  (name bindoj_std)
  (public_name bindoj.std)
- (libraries kxclib bindoj_base bindoj_gen_ts bindoj_std_runtime bindoj_codec)
+ (libraries kxclib bindoj_base bindoj_std_runtime bindoj_gen_config bindoj_gen_ts_config)
  (flags (:standard -open Kxclib)))

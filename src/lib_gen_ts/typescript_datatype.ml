@@ -17,157 +17,10 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-type 't ignore_order_list = 't list [@@deriving show]
-let equal_ignore_order_list equal_t xs ys =
-  List.equal equal_t (List.sort compare xs) (List.sort compare ys)
+include Bindoj_gen_ts_config
+open Bindoj_gen.Json_codec
 
-type ts_ast = ts_statement list [@@deriving show, eq]
-
-and ts_statement = [
-  | `type_alias_declaration of ts_type_alias_decl
-  | `function_declaration of ts_func_decl
-  | `value_declaration of ts_value_decl
-  | `module_declaration of ts_mod_decl
-  | `return_statement of ts_expression
-  | `if_statement of ts_expression * ts_statement * ts_statement
-  | `throw_statement of ts_expression
-  | `block of ts_ast
-]
-
-and ts_type_alias_decl = {
-  tsa_modifiers : ts_modifier ignore_order_list;
-  tsa_name : string;
-  tsa_type_parameters : string list;
-  tsa_type_desc : ts_type_desc;
-}
-
-and ts_func_decl = {
-  tsf_modifiers : ts_modifier ignore_order_list;
-  tsf_name : string;
-  tsf_type_parameters : string list;
-  tsf_parameters : ts_parameter list;
-  tsf_type_desc : ts_type_desc;
-  tsf_body : ts_ast;
-}
-
-and ts_value_decl = {
-  tsv_modifiers : [ `export ] ignore_order_list;
-  tsv_kind : [ `const | `let_ ];
-  tsv_name : string;
-  tsv_type_desc : ts_type_desc option;
-  tsv_value : ts_expression;
-}
-
-and ts_mod_decl = {
-  tsm_modifiers : [ `export ] list;
-  tsm_name : string;
-  tsm_body : ts_ast;
-}
-
-and ts_type_desc = [
-  | `special of [
-    | `void | `undefined | `null
-    | `any | `unknown | `never
-    ]
-  | `type_reference of string (* includes primitive types except special *)
-  | `type_construct of string*ts_type_desc list
-  | `type_literal of ts_property_signature ignore_order_list
-  | `literal_type of ts_literal_type
-  | `tuple of ts_type_desc list
-  | `union of ts_type_desc ignore_order_list
-  | `intersection of ts_type_desc ignore_order_list
-  | `array of ts_type_desc
-  | `func_type of ts_func_type_desc
-  | `record of ts_type_desc * ts_type_desc (* https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type *)
-  | `type_assertion of ts_type_desc * ts_type_desc
-  | `typeof of ts_expression (* TypeScript has artificial(?) limitation on the sort of
-                                expressions allowed, but do not care here *)
-  | `keyof of ts_type_desc
-]
-
-and ts_property_signature = {
-  tsps_modifiers : [ `readonly ] ignore_order_list;
-  tsps_name : string;
-  tsps_type_desc : ts_type_desc;
-}
-
-and ts_literal_type = [
-  | `numeric_literal of float
-  | `string_literal of string
-  | `template_literal of string
-]
-
-and ts_parameter = {
-  tsp_name : string;
-  tsp_type_desc : ts_type_desc;
-}
-
-and ts_func_type_desc = {
-  tsft_parameters : ts_parameter list;
-  tsft_type_desc : ts_type_desc;
-}
-
-and ts_expression = [
-  | `identifier of string
-  | `literal_expression of ts_literal_expression
-  | `call_expression of ts_call_expression
-  | `element_access_expression of ts_element_access_expression
-  | `property_access_expression of ts_property_access_expression
-  | `binary_expression of ts_binary_expression
-  | `arrow_function of ts_arrow_function
-  | `new_expression of ts_new_expression
-  | `await_expression of ts_expression
-  | `casted_expression of ts_expression * ts_type_desc
-  | `const_assertion of ts_expression
-]
-
-and ts_literal_expression = [
-  | `numeric_literal of float
-  | `string_literal of string
-  | `template_literal of string
-  | `object_literal of (string*ts_expression) ignore_order_list
-]
-
-and ts_call_expression = {
-  tsce_expression : ts_expression;
-  tsce_arguments : ts_expression list;
-}
-
-and ts_element_access_expression = {
-  tsea_expression : ts_expression;
-  tsea_argument : ts_expression;
-}
-
-and ts_property_access_expression = {
-  tspa_expression : ts_expression;
-  tspa_name : string;
-}
-
-and ts_binary_expression = {
-  tsbe_left : ts_expression;
-  tsbe_operator_token : string;
-  tsbe_right : ts_expression;
-}
-
-and ts_arrow_function = {
-  tsaf_parameters : ts_parameter list;
-  tsaf_body : ts_ast;
-}
-
-and ts_new_expression = {
-  tsne_expression : ts_expression;
-  tsne_arguments : ts_expression list;
-}
-
-and ts_modifier = [
-  | `export
-  | `async
-  | `readonly
-]
-
-open Bindoj_runtime
 open Bindoj_typedesc.Type_desc
-open Bindoj_codec
 open Bindoj_gen_foreign.Foreign_datatype
 
 type ts_fwrt_constructor_kind_annot = ts_fwrt_constructor_kind_info option
@@ -180,35 +33,6 @@ and ts_fwrt_constructor_kind_info =
 let string_of_ts_fwrt_constructor_kind_annot = show_ts_fwrt_constructor_kind_annot
 let string_of_ts_fwrt_constructor_kind_info = show_ts_fwrt_constructor_kind_info
 
-type typescript
-type ('tag, 'datatype_expr) foreign_language +=
-   | Foreign_language_TypeScript :
-       (typescript, ts_type_desc) foreign_language
-let typescript = Foreign_language_TypeScript
-
-module Ts_config = struct
-  include Bindoj_gen.Json_codec.Json_config
-
-  type reused_variant_inline_record_style = [ `inline_fields | `intersection_type ]
-
-  type ('pos, 'kind) config +=
-    | Config_ts_reused_variant_inline_record_style : reused_variant_inline_record_style -> ('pos, reused_variant_inline_record_style) config
-
-  let default_reused_variant_inline_record_style = `intersection_type
-
-  let reused_variant_inline_record_style style =
-    Config_ts_reused_variant_inline_record_style style
-
-  let get_reused_variant_inline_record_style_opt configs =
-    Configs.find (function
-      | Config_ts_reused_variant_inline_record_style style -> Some style
-      | _ -> None
-    ) configs
-
-  let typescript_type expr =
-    Configs.Config_foreign_type_expression (typescript, expr)
-end
-
 let type_of_prim : Coretype.prim -> ts_type_desc = function
   | `unit -> `literal_type (`numeric_literal 1.)
   | `bool -> `type_reference "boolean"
@@ -219,16 +43,15 @@ let type_of_prim : Coretype.prim -> ts_type_desc = function
 let type_of_coretype :
       ?definitive:bool
       -> self_mangled_type_name:string
-      -> Json.json_mangling_style
+      -> Json_config.json_mangling_style
       -> coretype -> ts_type_desc =
   fun ?(definitive = false) ~self_mangled_type_name base_mangling_style { ct_desc; ct_configs; _ } ->
   let base_mangling_style =
-    Json.Json_config.get_mangling_style_opt ct_configs
+    Json_config.get_mangling_style_opt ct_configs
     |? base_mangling_style
   in
   let rec go =
     let open Coretype in
-    let open Bindoj_codec.Json in
     function
     | Prim p -> type_of_prim p
     | Uninhabitable -> `type_reference "never"
@@ -246,7 +69,7 @@ let type_of_coretype :
         let fields =
           ts |> List.mapi (fun i t -> {
             tsps_modifiers = [];
-            tsps_name = tuple_index_to_field_name i;
+            tsps_name = Json_config.tuple_index_to_field_name i;
             tsps_type_desc = go t
           })
         in
@@ -278,9 +101,9 @@ let type_of_coretype :
     ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
 
-let get_name_of_fwrt_desc : default:string -> Json.json_mangling_style -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string * Json.json_mangling_style =
+let get_name_of_fwrt_desc : default:string -> Json_config.json_mangling_style -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string * Json_config.json_mangling_style =
   fun ~default base_mangling_style desc ->
-    let get_mangled_name kind configs = Json.Json_config.(
+    let get_mangled_name kind configs = Json_config.(
       let style = get_mangling_style_opt configs |? base_mangling_style in
       get_name_opt configs |? default
       |> mangled kind style, style
@@ -332,21 +155,21 @@ let rec ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast =
     [ type_alias_decl ]
 
 and ts_type_alias_decl_of_fwrt_decl' :
-  base_mangling_style:Json.json_mangling_style -> self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
+  base_mangling_style:Json_config.json_mangling_style -> self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
   fun ~base_mangling_style ~self_type_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _ } as desc = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
   let (mangled_name, base_mangling_style) = get_name_of_fwrt_desc ~default:name base_mangling_style desc in
   let self_mangled_type_name =
-    Json.Json_config.mangled `type_name base_mangling_style self_type_name
+    Json_config.mangled `type_name base_mangling_style self_type_name
   in
   let desc =
     match fd_kind with
     | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
       let members =
         fo_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-          let base_mangling_style = Json.Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
-          let field_name = Json.Json_config.(
+          let base_mangling_style = Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
+          let field_name = Json_config.(
             ff_configs
             |> get_name_opt |? ff_name
             |> mangled `field_name base_mangling_style
@@ -387,20 +210,20 @@ and ts_type_alias_decl_of_fwrt_decl' :
       in
       match fc_annot, inline_record_style with
       | Some (Tfcki_reused_variant_inline_record td), `intersection_type ->
-        `type_reference (Json.Json_config.get_mangled_name_of_type td |> fst)
+        `type_reference (Json_config.get_mangled_name_of_type td |> fst)
       | _ ->
         let base_mangling_style =
           match fc_annot with
           | Some (Tfcki_reused_variant_inline_record { td_configs; _ }) ->
-            Json.Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+            Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
           | None -> base_mangling_style
         in
-        let arg_name = Json.Json_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
+        let arg_name = Json_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
         let members =
           let tmp =
             fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-              let base_mangling_style = Json.Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
-              let json_field_name = Json.Json_config.(
+              let base_mangling_style = Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
+              let json_field_name = Json_config.(
                 get_name_opt ff_configs |? ff_name
                 |> mangled `field_name base_mangling_style
               ) in
@@ -408,7 +231,6 @@ and ts_type_alias_decl_of_fwrt_decl' :
                 tsps_name = json_field_name;
                 tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style ff_type }
           in
-          let open Bindoj_codec.Json in
           match fc_args, Json_config.get_tuple_style fc_configs with
           | [], _ -> tmp
           | [arg], _ ->
@@ -426,7 +248,7 @@ and ts_type_alias_decl_of_fwrt_decl' :
             let fields =
               args |> List.mapi (fun i t -> {
                 tsps_modifiers = [];
-                tsps_name = tuple_index_to_field_name i;
+                tsps_name = Json_config.tuple_index_to_field_name i;
                 tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style t
               })
             in
@@ -449,11 +271,11 @@ and ts_func_decl_of_fwrt_decl :
   | Fwrt_alias _ | Fwrt_constructor _ -> invalid_arg "this fwrt_decl cannot be a parent"
   | Fwrt_object { fo_children; fo_configs; _ } ->
     let base_mangling_style =
-      Json.Json_config.(get_mangling_style_opt fo_configs |? default_mangling_style)
+      Json_config.(get_mangling_style_opt fo_configs |? default_mangling_style)
     in
-    let fd_name = Json.Json_config.get_name_opt fo_configs |? fd_name in
-    let fd_name_mangled = Json.Json_config.mangled `type_name base_mangling_style fd_name in
-    let name = Json.Json_config.mangled `field_name base_mangling_style ("analyze_" ^ fd_name) in
+    let fd_name = Json_config.get_name_opt fo_configs |? fd_name in
+    let fd_name_mangled = Json_config.mangled `type_name base_mangling_style fd_name in
+    let name = Json_config.mangled `field_name base_mangling_style ("analyze_" ^ fd_name) in
     let type_param = "__bindoj_ret" in
     let param = "__bindoj_fns" in
     let var_v = "__bindoj_v" in
@@ -540,7 +362,7 @@ and ts_func_decl_of_fwrt_decl :
 and ts_type_alias_decl_of_fwrt_decl : self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
   fun ~self_type_name fwrt_decl ->
   ts_type_alias_decl_of_fwrt_decl'
-    ~base_mangling_style:Json.Json_config.default_mangling_style
+    ~base_mangling_style:Json_config.default_mangling_style
     ~self_type_name
     fwrt_decl
 

@@ -17,17 +17,18 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base
+open Bindoj_typedesc.Type_desc
 open Bindoj_runtime
-open Typed_type_desc
-open Kxclib.Json
 
-module Json_config = Bindoj_codec_config.Json_config
+type json_schema
+type ('tag, 'datatype_expr) foreign_language +=
+   | Foreign_language_JSON_Schema :
+       (json_schema, Bindoj_openapi.V3.Schema_object.t) foreign_language
+val json_schema :
+  (json_schema, Bindoj_openapi.V3.Schema_object.t) foreign_language
 
-val get_json_discriminator_value : 'a typed_type_decl -> 'a -> string
+include module type of Bindoj_codec.Json.Json_config
 
-val explain_encoded_json_shape : env:tdenv -> 't typed_type_decl -> json_shape_explanation
-
-val of_json' : env:tdenv -> 'a typed_type_decl -> jv -> 'a OfJsonResult.t
-val of_json : env:tdenv -> 'a typed_type_decl -> jv -> 'a option
-val to_json : env:tdenv -> 'a typed_type_decl -> 'a -> jv
+val custom_json_schema :
+  Bindoj_openapi.V3.Schema_object.t
+  -> ([`coretype], [`foreign_type_expression]) config

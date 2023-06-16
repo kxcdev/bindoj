@@ -1,0 +1,5 @@
+(library
+ (name bindoj_codec_config)
+ (public_name bindoj.codec.config)
+ (libraries kxclib bindoj_base bindoj_common)
+ (flags (:standard -open Kxclib)))

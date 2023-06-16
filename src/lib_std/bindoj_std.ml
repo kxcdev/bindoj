@@ -21,7 +21,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_base
 open Bindoj_base.Typed_type_desc
 open Bindoj_runtime
-open Bindoj_codec
+open Bindoj_gen_config
 
 module Json_value : sig
   include module type of Bindoj_std_runtime.Json_value
@@ -52,20 +52,20 @@ end = struct
 
   module Type_decl = struct
     let coretype : coretype =
-      let open Bindoj_gen_ts.Typescript_datatype in
+      let open Bindoj_gen_ts_config in
       Coretype.mk_ident
         ~configs:Configs.[
           Ts_config.typescript_type (`type_reference "any");
-          Ts_config.custom_json_schema (
+          Json_config.custom_json_schema (
             Bindoj_openapi.V3.Schema_object.any ()
           );
-          Json.Json_config.custom_shape_explanation Bindoj_std_runtime.json_value_json_shape_explanation;
-          Json.Json_config.no_mangling;
+          Json_config.custom_shape_explanation Bindoj_std_runtime.json_value_json_shape_explanation;
+          Json_config.no_mangling;
         ]
         ~codec:(`in_module "Bindoj_std_runtime.Json_value")
         type_name
     let untyped : type_decl = alias_decl ~configs:[
-      Json.Json_config.no_mangling;
+      Json_config.no_mangling;
     ] type_name coretype
     let typed : t Typed_type_desc.typed_type_decl =
       Typed_type_desc.Typed.mk untyped reflect
