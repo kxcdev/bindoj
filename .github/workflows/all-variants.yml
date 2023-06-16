@@ -3,6 +3,12 @@ name: Matrix Check
 on:
   pull_request_review:
     types: [submitted]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: branch|tag|SHA to checkout
+        default: 'main'
+        required: true
 
 jobs:
   matrix-check:
