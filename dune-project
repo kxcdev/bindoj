@@ -28,7 +28,7 @@
   (ppxlib (>= 0.26))
   (ppx_deriving (>= 5.2.1))
   (yojson (>= 1.7))
-  (ppx_yojson_conv (>= 0.15.0))
+  (ppx_yojson_conv (and (>= v0.15.0) (< v0.16.0)))
   (zed (>= 3.1.0))
   (odoc (and :with-doc (>= 2.1.0)))
   (jsonm (>= 1.0))
