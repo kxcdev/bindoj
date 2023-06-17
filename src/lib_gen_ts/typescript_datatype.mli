@@ -44,7 +44,7 @@ type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list) ts_fwrt_decl
 
 val ts_fwrt_decl_of_type_decl : export:bool -> readonly:bool -> type_decl -> fwrt_decl_of_ts
 val ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast
-val ts_type_alias_decl_of_fwrt_decl : self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl
+val ts_type_alias_decl_of_fwrt_decl : ?self_json_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl
 
 module Rope : sig
   type t

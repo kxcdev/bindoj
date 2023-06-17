@@ -98,7 +98,7 @@ let gen_raw :
       in
       T.decl
       |> ts_fwrt_decl_of_type_decl ~export:false ~readonly:false
-      |> ts_type_alias_decl_of_fwrt_decl ~self_type_name:json_name
+      |> ts_type_alias_decl_of_fwrt_decl
       |> fun t -> t.tsa_type_desc
     | _ -> `type_reference json_name
   in

@@ -42,10 +42,10 @@ let type_of_prim : Coretype.prim -> ts_type_desc = function
 
 let type_of_coretype :
       ?definitive:bool
-      -> self_mangled_type_name:string
+      -> self_json_name:string
       -> Json_config.json_mangling_style
       -> coretype -> ts_type_desc =
-  fun ?(definitive = false) ~self_mangled_type_name base_mangling_style { ct_desc; ct_configs; _ } ->
+  fun ?(definitive = false) ~self_json_name base_mangling_style { ct_desc; ct_configs; _ } ->
   let base_mangling_style =
     Json_config.get_mangling_style_opt ct_configs
     |? base_mangling_style
@@ -81,7 +81,7 @@ let type_of_coretype :
         (ct_configs
           |> Json_config.get_name_opt
           >? Json_config.mangled `type_name base_mangling_style
-          |? self_mangled_type_name)
+          |? self_json_name)
     | StringEnum cs ->
       `union (cs |&> (
           Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style
@@ -143,26 +143,23 @@ let ts_fwrt_decl_of_type_decl :
 
 let rec ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast =
   fun fwrt_decl ->
-  let self_type_name = fst fwrt_decl in
   let type_alias_decl =
-    `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl)
+    `type_alias_declaration (ts_type_alias_decl_of_fwrt_decl fwrt_decl)
   in
   match FwrtTypeEnv.lookup (fst fwrt_decl) (snd fwrt_decl) with
   | { fd_kind = Fwrt_object { fo_children = _ :: _; _ }; _ } ->
     [ type_alias_decl;
-      `function_declaration (ts_func_decl_of_fwrt_decl ~self_type_name fwrt_decl) ]
+      `function_declaration (ts_func_decl_of_fwrt_decl fwrt_decl) ]
   | _ ->
     [ type_alias_decl ]
 
 and ts_type_alias_decl_of_fwrt_decl' :
-  base_mangling_style:Json_config.json_mangling_style -> self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
-  fun ~base_mangling_style ~self_type_name (name, env) ->
+  base_mangling_style:Json_config.json_mangling_style -> ?self_json_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
+  fun ~base_mangling_style ?self_json_name (name, env) ->
   let { fd_name; fd_kind; fd_annot; _ } as desc = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
   let (mangled_name, base_mangling_style) = get_name_of_fwrt_desc ~default:name base_mangling_style desc in
-  let self_mangled_type_name =
-    Json_config.mangled `type_name base_mangling_style self_type_name
-  in
+  let self_json_name = self_json_name |? mangled_name in
   let desc =
     match fd_kind with
     | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
@@ -176,13 +173,13 @@ and ts_type_alias_decl_of_fwrt_decl' :
           ) in
           { tsps_modifiers = ff_annot;
             tsps_name = field_name;
-            tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style ff_type }
+            tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style ff_type }
       in
       let discriminator_name = fo_configs |> Ts_config.get_variant_discriminator in
       let children =
         fo_children |&> fun child ->
           let { tsa_name; tsa_type_desc; _; } =
-            ts_type_alias_decl_of_fwrt_decl' ~self_type_name ~base_mangling_style (child, env) in
+            ts_type_alias_decl_of_fwrt_decl' ~self_json_name ~base_mangling_style (child, env) in
           let (discriminator_value, _) =
             FwrtTypeEnv.lookup child env
             |> get_name_of_fwrt_desc ~default:tsa_name base_mangling_style
@@ -203,7 +200,7 @@ and ts_type_alias_decl_of_fwrt_decl' :
         | _ -> `intersection [`type_literal members; `union children] in
       desc
     | Fwrt_alias { fa_type; fa_annot=(); _ } ->
-      type_of_coretype ~definitive:true ~self_mangled_type_name base_mangling_style fa_type
+      type_of_coretype ~definitive:true ~self_json_name base_mangling_style fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
       let inline_record_style =
         Ts_config.(get_reused_variant_inline_record_style_opt fc_configs |? default_reused_variant_inline_record_style)
@@ -229,17 +226,17 @@ and ts_type_alias_decl_of_fwrt_decl' :
               ) in
               { tsps_modifiers = ff_annot;
                 tsps_name = json_field_name;
-                tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style ff_type }
+                tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style ff_type }
           in
           match fc_args, Json_config.get_tuple_style fc_configs with
           | [], _ -> tmp
           | [arg], _ ->
             { tsps_modifiers = [];
               tsps_name = arg_name;
-              tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style arg } :: tmp
+              tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style arg } :: tmp
           | args, `arr ->
             let desc =
-              `tuple (args |> List.map (type_of_coretype ~self_mangled_type_name base_mangling_style))
+              `tuple (args |> List.map (type_of_coretype ~self_json_name base_mangling_style))
             in
             { tsps_modifiers = [];
               tsps_name = arg_name;
@@ -249,7 +246,7 @@ and ts_type_alias_decl_of_fwrt_decl' :
               args |> List.mapi (fun i t -> {
                 tsps_modifiers = [];
                 tsps_name = Json_config.tuple_index_to_field_name i;
-                tsps_type_desc = type_of_coretype ~self_mangled_type_name base_mangling_style t
+                tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style t
               })
             in
             tmp @ fields
@@ -261,9 +258,8 @@ and ts_type_alias_decl_of_fwrt_decl' :
     tsa_type_parameters = [];
     tsa_type_desc = desc }
 
-and ts_func_decl_of_fwrt_decl :
-  self_type_name:string -> fwrt_decl_of_ts -> ts_func_decl =
-  fun ~self_type_name (name, env) ->
+and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
+  fun (name, env) ->
   let { fd_name; fd_kind; fd_annot; _; } = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
 
@@ -274,7 +270,7 @@ and ts_func_decl_of_fwrt_decl :
       Json_config.(get_mangling_style_opt fo_configs |? default_mangling_style)
     in
     let fd_name = Json_config.get_name_opt fo_configs |? fd_name in
-    let fd_name_mangled = Json_config.mangled `type_name base_mangling_style fd_name in
+    let self_json_name = Json_config.mangled `type_name base_mangling_style fd_name in
     let name = Json_config.mangled `field_name base_mangling_style ("analyze_" ^ fd_name) in
     let type_param = "__bindoj_ret" in
     let param = "__bindoj_fns" in
@@ -282,7 +278,7 @@ and ts_func_decl_of_fwrt_decl :
     let discriminator_name = Ts_config.get_variant_discriminator fo_configs in
     let param_type =
       `type_literal (List.sort String.compare fo_children |&> fun child ->
-        let decl = ts_type_alias_decl_of_fwrt_decl' ~base_mangling_style ~self_type_name (child, env) in
+        let decl = ts_type_alias_decl_of_fwrt_decl' ~self_json_name ~base_mangling_style (child, env) in
         let (discriminator_value, _) =
           FwrtTypeEnv.lookup child env
           |> get_name_of_fwrt_desc ~default:decl.tsa_name base_mangling_style
@@ -309,14 +305,14 @@ and ts_func_decl_of_fwrt_decl :
       `func_type
         { tsft_parameters = [
           { tsp_name = var_x;
-            tsp_type_desc = `type_reference fd_name_mangled; }];
+            tsp_type_desc = `type_reference self_json_name; }];
           tsft_type_desc = `type_reference type_param; } in
     let body =
       (`return_statement
         (`arrow_function
             { tsaf_parameters =
                 [{ tsp_name = var_x;
-                  tsp_type_desc = `type_reference fd_name_mangled; }];
+                  tsp_type_desc = `type_reference self_json_name; }];
               tsaf_body =
                 [fo_children |> List.sort String.compare |> List.rev |@>
                 (`throw_statement
@@ -359,11 +355,11 @@ and ts_func_decl_of_fwrt_decl :
       tsf_type_desc = type_desc;
       tsf_body = [body]; }
 
-and ts_type_alias_decl_of_fwrt_decl : self_type_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
-  fun ~self_type_name fwrt_decl ->
+and ts_type_alias_decl_of_fwrt_decl : ?self_json_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
+  fun ?self_json_name fwrt_decl ->
   ts_type_alias_decl_of_fwrt_decl'
     ~base_mangling_style:Json_config.default_mangling_style
-    ~self_type_name
+    ?self_json_name
     fwrt_decl
 
 module Rope = struct
@@ -676,8 +672,7 @@ let gen_ts_type : ?export:bool -> type_decl -> string =
     type_decl
     |> ts_fwrt_decl_of_type_decl ~export ~readonly:false
   in
-  let self_type_name = fst fwrt_decl in
-  let ts_type_alias_decl = ts_type_alias_decl_of_fwrt_decl ~self_type_name fwrt_decl in
+  let ts_type_alias_decl = ts_type_alias_decl_of_fwrt_decl fwrt_decl in
   let rope = rope_of_ts_type_alias_decl ts_type_alias_decl in
   Rope.to_string rope
 
@@ -687,8 +682,7 @@ let gen_ts_case_analyzer : ?export:bool -> ?name:string -> type_decl -> string =
     type_decl
     |> ts_fwrt_decl_of_type_decl ~export ~readonly:false
   in
-  let self_type_name = fst fwrt_decl in
-  let ts_func_decl = ts_func_decl_of_fwrt_decl ~self_type_name fwrt_decl in
+  let ts_func_decl = ts_func_decl_of_fwrt_decl fwrt_decl in
   let ts_func_decl =
     match name with
     | None -> ts_func_decl

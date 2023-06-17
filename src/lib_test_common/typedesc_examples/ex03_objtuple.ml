@@ -19,12 +19,15 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
 open Bindoj_gen_ts.Typescript_datatype
+open Bindoj_codec.Json
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex03_objtuple"
 
-let configs : [`variant_constructor] configs =
-  let open Bindoj_codec.Json in
-  [Json_config.tuple_style (`obj `default)]
+let json_name = "int_list_objtuple"
+let mangled_json_name = "IntListObjtuple"
+let configs : [`type_decl] configs = Json_config.[ name json_name ]
+
+let vc_configs : [`variant_constructor] configs = Json_config.[ tuple_style (`obj `default) ]
 
 let decl : type_decl =
   variant_decl "int_list" [
@@ -32,8 +35,8 @@ let decl : type_decl =
     variant_constructor "IntCons" (`tuple_like [
       Coretype.mk_prim `int;
       Coretype.mk_self ();
-    ]) ~configs;
-  ]
+    ]) ~configs:vc_configs;
+  ] ~configs
 
 let decl_with_docstr : type_decl =
   variant_decl "int_list" [
@@ -43,18 +46,18 @@ let decl_with_docstr : type_decl =
     variant_constructor "IntCons" (`tuple_like [
       Coretype.mk_prim `int;
       Coretype.mk_self ();
-    ]) ~configs
+    ]) ~configs:vc_configs
        ~doc:(`docstr "cons for int_list");
 
-  ] ~doc:(`docstr "int list")
+  ] ~configs ~doc:(`docstr "int list")
 
 let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "int_list" in
   "int_list", Util.FwrtTypeEnv.(
     init
-    |> bind_object "int_list" []
+    |> bind_object "int_list" []  ~configs
     |> bind_constructor ~parent "IntNil"
-    |> bind_constructor ~parent "IntCons" ~configs ~args:[Coretype.mk_prim `int; Coretype.mk_self ()]
+    |> bind_constructor ~parent "IntCons" ~configs:vc_configs ~args:[Coretype.mk_prim `int; Coretype.mk_self ()]
   )
 
 let ts_ast : ts_ast option =
@@ -74,7 +77,7 @@ let ts_ast : ts_ast option =
           tsps_type_desc = `type_reference "number" };
         { tsps_modifiers = [];
           tsps_name = "_1";
-          tsps_type_desc = `type_reference "IntList" } ] in
+          tsps_type_desc = `type_reference mangled_json_name } ] in
   let cstrs = ["IntNil", int_nil; "IntCons", int_cons] in
   let options : Util.Ts_ast.options =
     { discriminator;
@@ -85,20 +88,20 @@ let ts_ast : ts_ast option =
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "IntList";
+          tsa_name = mangled_json_name;
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd cstrs); };
-      Util.Ts_ast.case_analyzer "IntList" "analyzeIntList" options cstrs; ]
+      Util.Ts_ast.case_analyzer mangled_json_name ("analyze"^mangled_json_name) options cstrs; ]
 
 open Bindoj_openapi.V3
 
 let schema_object : Schema_object.t option =
-  Util.Schema_object.variant "IntList"
+  Util.Schema_object.variant mangled_json_name
     Schema_object.[
       "intnil", [];
       "intcons", [
         "_0", integer ();
-        "_1", ref "#IntList"
+        "_1", ref ("#"^mangled_json_name)
       ];
     ]
   |> Option.some
