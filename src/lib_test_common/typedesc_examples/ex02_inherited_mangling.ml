@@ -58,6 +58,9 @@ let teacher_decl_with_docstr : type_decl =
       ~doc:(`docstr "dapartment field in Teacher constructor");
   ] ~doc:(`docstr "definition of teacher type")
 
+let json_name = "person_inherited_mangling"
+let configs : [`type_decl] configs = Json_config.[ no_mangling; name json_name ]
+
 let decl : type_decl =
   variant_decl "person" [
     variant_constructor "Anonymous" `no_param;
@@ -75,7 +78,7 @@ let decl : type_decl =
         Json_config.no_mangling;
         Ts_config.reused_variant_inline_record_style `inline_fields;
       ]
-  ] ~configs:[ Json_config.no_mangling ]
+  ] ~configs
 
 let decl_with_docstr : type_decl =
   variant_decl "person" [
@@ -102,14 +105,14 @@ let decl_with_docstr : type_decl =
         Ts_config.reused_variant_inline_record_style `inline_fields;
       ]
 
-  ] ~configs:[ Json_config.no_mangling ]
+  ] ~configs
     ~doc:(`docstr "definition of person type")
 
 let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "person" in
   "person", Util.FwrtTypeEnv.(
     init
-    |> bind_object "person" [] ~configs:[ Json_config.no_mangling ]
+    |> bind_object "person" [] ~configs
     |> bind_constructor ~parent "Anonymous"
     |> bind_constructor ~parent "With_id" ~args:[cty_int]
     |> bind_constructor ~parent "Student" ~fields:[
@@ -194,15 +197,15 @@ let ts_ast : ts_ast option =
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "person";
+          tsa_name = json_name;
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd person); };
-      Util.Ts_ast.case_analyzer "person" "analyze_person" options person; ]
+      Util.Ts_ast.case_analyzer json_name ("analyze_"^json_name) options person; ]
 
 open Bindoj_openapi.V3
 
 let schema_object : Schema_object.t option =
-  Util.Schema_object.variant "person"
+  Util.Schema_object.variant json_name
     Schema_object.[
       "Anonymous", [];
       "With_id", [ "arg", integer () ];

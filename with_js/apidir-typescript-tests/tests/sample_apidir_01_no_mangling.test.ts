@@ -1,6 +1,6 @@
 import { MockServer, createMockClient } from "./lib";
 import { Sample_apidir_01_no_manglingInvpInfo as invpInfo, Sample_apidir_01_no_manglingClientIntf as clientIntf } from "../sample_apidir_01_no_mangling";
-import { person } from "../../compile-tests/ex02_no_mangling_gen";
+import { person_no_mangling } from "../../compile-tests/ex02_no_mangling_gen";
 
 const b = require("../sample_apidir_01_no_mangling_server.js").bindoj_jsoo_bridge;
 
@@ -17,7 +17,7 @@ describe("apidir-typescript-tests-sample01-no-mangling", () => {
   });
 
   test("get-student-from-person", async () => {
-    const person: person = { kind: "Student", student_id: 1997, name: "Bruce Sterling" };
+    const person: person_no_mangling = { kind: "Student", student_id: 1997, name: "Bruce Sterling" };
     const { body: student, status_code } = await mockClient["get-student-from-person"](person);
 
     expect(status_code).toBe(200);

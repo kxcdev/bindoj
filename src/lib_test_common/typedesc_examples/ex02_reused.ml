@@ -19,6 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
 open Bindoj_gen_ts.Typescript_datatype
+open Bindoj_codec.Json
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex02_reused"
 
@@ -44,6 +45,10 @@ let teacher_decl_with_docstr : type_decl =
       ~doc:(`docstr "dapartment field in Teacher constructor");
   ] ~doc:(`docstr "definition of teacher type")
 
+let json_name = "person_reused"
+let json_name_mangled = "PersonReused"
+let configs : [`type_decl] configs = Json_config.[ name json_name ]
+
 let decl : type_decl =
   variant_decl "person" [
     variant_constructor "Anonymous" `no_param;
@@ -54,7 +59,7 @@ let decl : type_decl =
     ]);
     variant_constructor "Teacher" (`reused_inline_record teacher_decl)
       ~configs: [ Ts_config.reused_variant_inline_record_style `intersection_type ]
-  ]
+  ] ~configs
 
 let decl_with_docstr : type_decl =
   variant_decl "person" [
@@ -75,13 +80,13 @@ let decl_with_docstr : type_decl =
       ~doc:(`docstr "Teacher constructor")
       ~configs: [ Ts_config.reused_variant_inline_record_style `intersection_type ]
 
-  ] ~doc:(`docstr "definition of person type")
+  ] ~configs ~doc:(`docstr "definition of person type")
 
 let fwrt : (unit, unit) ts_fwrt_decl =
   let parent = "person" in
   "person", Util.FwrtTypeEnv.(
     init
-    |> bind_object "person" []
+    |> bind_object "person" [] ~configs
     |> bind_constructor ~parent "Anonymous"
     |> bind_constructor ~parent "With_id" ~args:[cty_int]
     |> bind_constructor ~parent "Student" ~fields:[
@@ -146,15 +151,15 @@ let ts_ast : ts_ast option =
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "Person";
+          tsa_name = json_name_mangled;
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd person); };
-      Util.Ts_ast.case_analyzer "Person" "analyzePerson" options person; ]
+      Util.Ts_ast.case_analyzer json_name_mangled ("analyze"^json_name_mangled) options person; ]
 
 open Bindoj_openapi.V3
 
 let schema_object : Schema_object.t option =
-  Util.Schema_object.variant "Person"
+  Util.Schema_object.variant json_name_mangled
     Schema_object.[
       "anonymous", [];
       "with-id", [ "arg", integer () ];

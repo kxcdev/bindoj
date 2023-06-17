@@ -36,7 +36,7 @@ let print_typescript name (module Dir : T) =
         end
       | { td_name = "int_list"; _ } -> `import_location "../compile-tests/ex03_objtuple_gen"
       | { td_name = "foo"; _ } -> `import_location "../compile-tests/ex04_gen"
-      | { td_name = "complex_types"; _ } -> `import_location "../compile-tests/ex05_gen"
+      | { td_name = "complex_types"; _ } -> `import_location "../compile-tests/ex05_notuple_gen"
       | { td_name = "various_prim_types"; _ } -> `import_location "../compile-tests/ex06_gen"
       | { td_name = "customized_union"; _ } -> `import_location "../compile-tests/ex07_gen"
       | { td_name = "named_json"; _ } -> `import_location "../compile-tests/ex08_gen"

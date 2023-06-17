@@ -104,7 +104,7 @@ module SampleEx01_inherited_mangling : SampleGenerated = struct
     `with_warning
      ("not considering any config if exists",
        (`named
-          ("student",
+          ("student_inherited_mangling",
             (`object_of
                [`mandatory_field ("admission_year", `integral);
                `mandatory_field ("name", `string);
@@ -196,7 +196,7 @@ module SampleEx02_no_mangling : SampleGenerated = struct
     `with_warning
       ("not considering any config if exists",
         (`named
-          ("person",
+          ("person_no_mangling",
             (`anyone_of
                 [`object_of
                   [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
@@ -253,7 +253,7 @@ module SampleEx02_inherited_mangling : SampleGenerated = struct
     `with_warning
       ("not considering any config if exists",
         (`named
-            ("person",
+            ("person_inherited_mangling",
               (`anyone_of
                 [`object_of
                     [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];

@@ -32,12 +32,16 @@ let notNone (_: 'a Alcotest.testable) : 'a option Alcotest.testable =
       | Some _ -> Format.pp_print_string ppf "Some _")
     (fun x y -> match x, y with | (Some _, Some _) -> true | _ -> false)
 
+
+let all_schema = all |&> (fun (name, _) ->
+  name, Js.require (sprintf "../compile-tests/%s_schema.json" name))
+
 let create_test_cases name (module Ex : T) filter =
   let open Alcotest in
 
   (* let gen  = Js.require (sprintf "../compile-tests/%s_gen" name) in *)
   let json = Js.require (sprintf "../compile-tests/%s_examples.json" name) in
-  let schema = Js.require (sprintf "../compile-tests/%s_schema.json" name) in
+  let schema = all_schema |> List.assoc name in
 
   let test_decode_json of_json () =
     let json_samples =
@@ -60,6 +64,21 @@ let create_test_cases name (module Ex : T) filter =
     let open Bindoj_withjs_import.Jsonschema in
 
     let validator = Validator.create () in
+    let () =
+      let get_id_opt o = Ojs.(get_prop_ascii o "id" |> option_of_js string_of_js) in
+      all_schema
+      |&?> (fun (_, sc) ->
+        match get_id_opt schema, get_id_opt sc with
+        | Some schema_id, Some id when schema_id = id -> None
+        | _, None -> None
+        | _, Some id -> Some ("/" ^ id, sc)
+      )
+      |> Array.of_list
+      |> Ojs.obj
+      |> Validator.AnonymousInterface2.t_of_js
+      |> Validator.set_schemas validator
+    in
+    eprintf "%s" (Validator.get_schemas validator |> Js.Json.stringify);
 
     let setOption = F.option () |> Ts.Intersection.get_1 in
     setOption (
@@ -75,7 +94,8 @@ let create_test_cases name (module Ex : T) filter =
       let instance =
         (* clone because faker pollutes the schema object *)
         let schema = Js.clone schema in
-        F.generate ~schema ()
+        let refs = all_schema |> List.map (snd &> Js.clone) |> Ts.Union.inject_1 in
+        F.generate ~schema ~refs ()
       in
       let result =
         (* validate because faker sometimes generates an invalid example *)
@@ -129,7 +149,6 @@ let create_test_cases name (module Ex : T) filter =
 
 let () =
   all
-  |> List.filter (fun (name, _) -> name <> "ex13") (* TODO: fix jsoo-itegration-tests with refs #317  *)
   |> List.map (fun (name, m) ->
     create_test_cases name m
       (function | _ -> true))

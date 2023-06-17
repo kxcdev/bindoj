@@ -32,6 +32,9 @@ let cty_enum = Coretype.(mk_string_enum [
     ~configs:[ Json_config.no_mangling ];
 ])
 
+let json_name = "student_inherited_mangling"
+let configs : [`type_decl] configs = Json_config.[ no_mangling; name json_name ]
+
 let decl : type_decl =
   record_decl "student" [
     record_field "admission_year" cty_int;
@@ -39,7 +42,7 @@ let decl : type_decl =
       ~configs:[ Json_config.default_mangling ];
     record_field "case_value" cty_enum
       ~configs:[ Json_config.default_mangling ];
-  ]  ~configs:[ Json_config.no_mangling ]
+  ]  ~configs
 
 let decl_with_docstr : type_decl =
   record_decl "student" [
@@ -50,7 +53,7 @@ let decl_with_docstr : type_decl =
     record_field "case_value" cty_enum
       ~configs:[ Json_config.default_mangling ]
       ~doc:( `docstr "case_value field");
-  ] ~configs:[ Json_config.no_mangling ]
+  ] ~configs
   ~doc:(`docstr "definition of student type")
 
 let fwrt : (unit, unit) ts_fwrt_decl =
@@ -62,14 +65,14 @@ let fwrt : (unit, unit) ts_fwrt_decl =
           ~configs:[ Json_config.default_mangling ];
         field "case_value" cty_enum
           ~configs:[ Json_config.default_mangling ]; ]
-      ~configs:[ Json_config.no_mangling ]
+      ~configs
   )
 
 let ts_ast : ts_ast option =
   Some
     [ `type_alias_declaration
         { tsa_modifiers = [`export];
-          tsa_name = "student";
+          tsa_name = json_name;
           tsa_type_parameters = [];
           tsa_type_desc =
             `type_literal
@@ -92,8 +95,8 @@ open Bindoj_openapi.V3
 let schema_object : Schema_object.t option =
   Some Schema_object.(
     record ~schema
-      ~title:"student"
-      ~id:"#student"
+      ~title:json_name
+      ~id:("#"^json_name)
       [ "admission_year", integer ();
         "name", string ();
         "caseValue", string () ~enum:[
