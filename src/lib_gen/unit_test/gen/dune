@@ -9,3 +9,9 @@
  (modules gen)
  (libraries bindoj_gen_test_common)
  (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name gen_embed_full_impl)
+ (modules gen_embed_full_impl)
+ (libraries bindoj_gen_test_common)
+ (flags (:standard -open Kxclib -w "-32-33")))

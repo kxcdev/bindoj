@@ -799,23 +799,17 @@ let gen_json_encoder :
         (wrap_self_contained (pexp_function ~loc cases))
         [%type: [%t typcons ~loc td_name] -> Kxclib.Json.jv])
 
-let gen_json_decoder_result :
+let gen_json_decoder_impl :
       ?self_contained:bool
-      -> ?json_shape_explanation_style:[
-        | `inline of json_shape_explanation_resolution option
-        | `reference ]
-      -> ?codec:Coretype.codec
       -> type_decl
-      -> value_binding =
-  fun ?(self_contained=false) ?(json_shape_explanation_style = `inline None) ?(codec=`default) td ->
-  let { td_name; td_kind=kind; td_configs; _ } = td in
-  let loc = Location.none in
-  let impl_name = "of_json_impl" in
-  let impl_pname = pvar impl_name in
-  let impl_ename = evar impl_name in
-  let self_name = (json_decoder_name ~codec td) ^ "'" in
-  let self_pname = pvar self_name in
-  let vari i = "x"^string_of_int i in
+      -> expression =
+  fun ?(self_contained=false) td ->
+    let { td_kind=kind; td_configs; _ } = td in
+    let loc = Location.none in
+    let impl_name = "of_json_impl" in
+    let impl_pname = pvar impl_name in
+    let impl_ename = evar impl_name in
+    let vari i = "x"^string_of_int i in
   let evari i = evar ~loc (vari i) in
   let pvari i = pvar ~loc (vari i) in
   let param_e = evar ~loc "param" in
@@ -1045,43 +1039,77 @@ let gen_json_decoder_result :
           |> pexp_function ~loc
           |> wrap_self_contained ]]
   in
+  [%expr
+      let rec [%p impl_pname] = fun path -> [%e function_body] in
+      [%e impl_ename]]
+
+let gen_json_decoder_result :
+      ?self_contained:bool
+      -> ?json_shape_explanation_style:[
+        | `inline of json_shape_explanation_resolution option
+        | `reference ]
+      -> ?codec:Coretype.codec
+      -> type_decl
+      -> value_binding =
+  fun ?(self_contained=false) ?(json_shape_explanation_style = `inline None) ?(codec=`default) td ->
+  let { td_name; _ } = td in
+  let loc = Location.none in
+  let self_name = (json_decoder_name ~codec td) ^ "'" in
+  let self_pname = pvar self_name in
+
+  let body =
+    [%expr fun ?(path=[]) x ->
+      [%e gen_json_decoder_impl ~self_contained td] path x
+      |> Result.map_error (fun (msg, path) ->
+        (msg, path, [%e
+          match json_shape_explanation_style with
+          | `inline json_shape_explanation_resolution ->
+            explain_encoded_json_shape ?json_shape_explanation_resolution td
+          | `reference ->
+            let json_shape_name = "json_shape_explanation" in
+            evar (match codec with
+              | `default -> sprintf "%s_%s" td_name json_shape_name
+              | `open_ m -> sprintf "%s.%s_%s" m td_name json_shape_name
+              | `in_module _ -> json_shape_name)
+        ]))]
+  in
   Vb.mk
     ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
     self_pname
-    (pexp_constraint ~loc
-      [%expr fun ?(path = []) x ->
-        let rec [%p impl_pname] = fun path -> [%e function_body] in
-        [%e impl_ename] path x
-        |> Result.map_error (fun (msg, path) ->
-          (msg, path, [%e
-            match json_shape_explanation_style with
-            | `inline json_shape_explanation_resolution ->
-              explain_encoded_json_shape ?json_shape_explanation_resolution td
-            | `reference ->
-              let self_json_shape_explanation_name = match codec with
-                | `default | `open_ _ -> td_name ^ "_json_shape_explanation"
-                | `in_module _ -> "json_shape_explanation"
-              in
-              evar self_json_shape_explanation_name
-          ]))
-      ]
-      [%type: ?path:Kxclib.Json.jvpath -> Kxclib.Json.jv -> [%t typcons ~loc td_name] Bindoj_runtime.OfJsonResult.t])
+    (pexp_constraint ~loc body
+      [%type: [%t typcons ~loc td_name] Bindoj_runtime.json_full_decoder])
 
 let gen_json_decoder_option :
-    ?codec:Coretype.codec
+    ?implementation_style: [
+      | `refer_existing_result_variant_json_decoder
+      | `embed_full_implementation of [
+        | `self_contained
+        | `non_self_contained
+      ]
+    ]
+      -> ?codec:Coretype.codec
       -> type_decl
       -> value_binding =
-  fun ?(codec=`default) td ->
+  fun ?(implementation_style=`embed_full_implementation `non_self_contained) ?(codec=`default) td ->
   let { td_name; _ } = td in
   let loc = Location.none in
   let self_name = json_decoder_name ~codec td in
   let self_pname = pvar self_name in
-  let decoder_result_name = evar (self_name ^ "'") in
+  let body =
+    match implementation_style with
+    | `refer_existing_result_variant_json_decoder ->
+      [%expr fun x -> [%e evar (self_name ^ "'")] x |> Result.to_option]
+    | `embed_full_implementation self_contained ->
+      [%expr fun x -> [%e
+        gen_json_decoder_impl td
+          ~self_contained:(self_contained = `self_contained)
+        ] [] x |> Result.to_option
+      ]
+  in
   Vb.mk
     ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
     self_pname
-    (pexp_constraint ~loc
-      [%expr fun x -> [%e decoder_result_name] x |> Result.to_option ]
+    (pexp_constraint ~loc body
       [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
 
 let gen_json_shape_explanation :
@@ -1146,7 +1174,9 @@ let gen_json_codec =
             else `inline json_shape_explanation_resolution )
         ?codec
         td;
-      gen_json_decoder_option ?codec td; ]
+      gen_json_decoder_option
+        ~implementation_style:`refer_existing_result_variant_json_decoder
+        ?codec td; ]
   in
   [ Str.value Recursive bindings ]
   |> add_item_when

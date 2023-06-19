@@ -73,7 +73,16 @@ val gen_json_decoder_result :
   -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.value_binding
 val gen_json_decoder_option :
-  ?codec:Coretype.codec
+  ?implementation_style: [
+    | `refer_existing_result_variant_json_decoder
+      (** generate a reference to an already defined JSON decoder that returns a result type *)
+    | `embed_full_implementation of [
+      | `self_contained
+      | `non_self_contained
+    ] (** embed a full JSON decoder implementation.
+          see also [?self_contained:bool] on {!gen_json_encoder} *)
+  ]
+  -> ?codec:Coretype.codec
   -> type_decl -> Ppxlib.value_binding
 
 val gen_json_shape_explanation :
