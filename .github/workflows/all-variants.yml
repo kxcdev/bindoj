@@ -9,6 +9,9 @@ on:
         description: branch|tag|SHA to checkout
         default: 'main'
         required: true
+  push:
+    branches:
+      - main
 
 jobs:
   matrix-check:
@@ -20,14 +23,16 @@ jobs:
         ocaml-version:
           - 4.13.x
           - 4.14.x
+          - 5.0.x
         node-version:
           - lts/fermium # v14 Maintenance LTS
           - lts/gallium # v16 Active LTS
           - 17
 
     if: |
-      github.event.review.state == 'approved' &&
-      github.repository == 'kxcinc/bindoj'
+      ( github.event.review.state == 'approved' &&
+        github.repository == 'kxcinc/bindoj'
+      ) || github.event_name != 'pull_request_review'
     runs-on: ${{ matrix.os }}
 
     steps:
