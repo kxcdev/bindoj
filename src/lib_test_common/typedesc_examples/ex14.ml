@@ -19,39 +19,52 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
 open Bindoj_gen_ts.Typescript_datatype
+open Bindoj_gen_config
+
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex14"
+
+let cty_typle = Coretype.mk_tuple [
+  Coretype.prim `float;
+  Coretype.prim `string;
+] ~configs: [
+  Json_config.tuple_style (`obj `default)
+]
+
+let decl : type_decl =
+  alias_decl "objtuple" cty_typle
+
+let decl_with_docstr : type_decl =
+  alias_decl "objtuple" cty_typle
+    ~doc:(`docstr "alias of objtuple type")
+
+let fwrt : (unit, unit) ts_fwrt_decl =
+  "objtuple", Util.FwrtTypeEnv.(
+    init
+    |> bind_alias "objtuple" cty_typle
+  )
+
+let ts_ast : ts_ast option = Some [
+  `type_alias_declaration {
+    tsa_modifiers = [`export];
+    tsa_name = "Objtuple";
+    tsa_type_parameters = [];
+    tsa_type_desc =
+      `type_literal [
+        { tsps_modifiers = [];
+          tsps_name = "_0";
+          tsps_type_desc = `type_reference "number" };
+        { tsps_modifiers = [];
+          tsps_name = "_1";
+          tsps_type_desc =
+          `type_reference "string" }; ]
+  }
+]
+
 open Bindoj_openapi.V3
 
-(** each example module should have this module type *)
-module type T = sig
-  val decl: type_decl
-  val example_module_path: string
-
-  val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) ts_fwrt_decl
-  val ts_ast: ts_ast option
-  val schema_object: Schema_object.t option
-end
-
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex01_inherited_mangling", (module Ex01_inherited_mangling);
-  "ex02", (module Ex02);
-  "ex02_reused", (module Ex02_reused);
-  "ex02_no_mangling", (module Ex02_no_mangling);
-  "ex02_inherited_mangling", (module Ex02_inherited_mangling);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-  "ex09", (module Ex09);
-  "ex10", (module Ex10);
-  "ex11", (module Ex11);
-  "ex12", (module Ex12);
-  "ex13", (module Ex13);
-  "ex14", (module Ex14);
-]
+let schema_object : Schema_object.t option =
+  Schema_object.(record [
+    "_0", number ();
+    "_1", string ();
+  ])
+  |> Option.some

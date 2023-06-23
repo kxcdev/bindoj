@@ -598,6 +598,31 @@ module SampleEx13 : SampleGenerated = struct
                  ("student2", student_shape)]))))
 end
 
+module SampleEx14 : SampleGenerated = struct
+  include Ex14
+  let name = "SampleEx14"
+  let samples = [
+    "null", `null, ("an object is expected for a tuple value, but the given is of type 'null'", []);
+
+    "missing field _0", `obj [],
+    (field_not_found "_0", []);
+
+    "missing field _1", `obj [ "_0", `num 12.3 ],
+    (field_not_found "_1", []);
+
+    "type mismatch _0", `obj [ ("_0", `null); ("_1", `str "test") ],
+    (type_mismatch "float" "null", [ `f "_0" ]);
+
+    "type mismatch _1", `obj [ ("_0", `num 12.3); ("_1", `bool false) ],
+    (type_mismatch "string" "bool", [ `f "_1" ]);
+  ]
+
+  let expected_json_shape_explanation =
+    `with_warning
+     ("not considering any config if exists",
+       (`named ("Objtuple", (`tuple_of [`proper_float; `string]))))
+end
+
 let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =
   Td.decl.td_name
 
@@ -778,6 +803,7 @@ let all_generated : (module SampleGenerated) list = [
   (module SampleEx11);
   (module SampleEx12);
   (module SampleEx13);
+  (module SampleEx14);
 ]
 
 let all : (module Sample) list = [
@@ -797,6 +823,7 @@ let all : (module Sample) list = [
   (module SampleEx11);
   (module SampleEx12);
   (module SampleEx13);
+  (module SampleEx14);
   (module SampleIdentInt_Refl);
   (module SampleIdentInt_Coretypes);
   (module SampleIdentIntOption_Coretypes);

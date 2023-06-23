@@ -59,4 +59,5 @@ let all : (string * (module T)) list = [
   "ex11", (module Ex11);
   "ex12", (module Ex12);
   "ex13", (module Ex13);
+  "ex14", (module Ex14);
 ]

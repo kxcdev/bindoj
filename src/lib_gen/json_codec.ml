@@ -324,10 +324,10 @@ let decoder_of_coretype =
       | [] -> acc
       | x :: xs -> mk_list [%pat? [%p x] :: [%p acc]] xs
     in
-    let ret =
+    let ret to_path =
       let bindings =
         ts |> List.mapi (fun i t ->
-            [%pat? [%p pvari i]], [%expr [%e go t] (`i [%e eint ~loc i] :: path) [%e evari i]]
+            [%pat? [%p pvari i]], [%expr [%e go t] ([%e to_path i] :: path) [%e evari i]]
           )
       in
       let ret =
@@ -345,7 +345,7 @@ let decoder_of_coretype =
         sprintf "expecting a tuple of length %d, but the given has a length of %%d" (List.length ts)
       in
       [%expr fun path -> function
-        | (`arr [%p args] : Kxclib.Json.jv) -> [%e ret]
+        | (`arr [%p args] : Kxclib.Json.jv) -> [%e ret (fun i -> [%expr `i [%e eint ~loc i]])]
         | `arr xs ->
           Error (
             Printf.sprintf
@@ -360,22 +360,24 @@ let decoder_of_coretype =
             path)
       ]
     | `obj `default ->
-      let body =
-        ts
-        |> List.mapi (fun i _ -> i)
-        |> List.foldr (fun i ret ->
-          let label_name = tuple_index_to_field_name i in
-          let label = estring ~loc label_name in
-          let error_message = sprintf "mandatory field '%s' does not exist" label_name in
-          [%expr
-            Bindoj_runtime.StringMap.find_opt [%e label] fields
-            |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
-            >>= fun [%p pvari i] -> [%e ret]]) ret
-      in
       [%expr fun path -> function
         | (`obj fields : Kxclib.Json.jv) ->
           let fields = Bindoj_runtime.StringMap.of_list fields in
-          [%e body]
+          [%e
+            ts
+            |> List.mapi (fun i _ ->
+              let label_name = tuple_index_to_field_name i in
+              let label = estring ~loc label_name in
+              let error_message = sprintf "mandatory field '%s' does not exist" label_name in
+              pvari i, [%expr
+                Bindoj_runtime.StringMap.find_opt [%e label] fields
+                |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
+              ])
+            |> Fn.flip bind_results (ret (fun i ->
+              let label_name = tuple_index_to_field_name i in
+              let label = estring ~loc label_name in
+              [%expr `f [%e label]]))
+          ]
         | jv ->
           Error (
             Printf.sprintf
