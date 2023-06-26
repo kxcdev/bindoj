@@ -65,13 +65,13 @@ let create_test_cases name (module Ex : T) filter =
 
     let validator = Validator.create () in
     let () =
-      let get_id_opt o = Ojs.(get_prop_ascii o "id" |> option_of_js string_of_js) in
+      let get_id o = Ojs.(get_prop_ascii o "id" |> string_of_js) in
+      let schema_id = get_id schema in
       all_schema
       |&?> (fun (_, sc) ->
-        match get_id_opt schema, get_id_opt sc with
-        | Some schema_id, Some id when schema_id = id -> None
-        | _, None -> None
-        | _, Some id -> Some ("/" ^ id, sc)
+        let id = get_id sc in
+        if schema_id = id then None
+        else Some ("/" ^ id, sc)
       )
       |> Array.of_list
       |> Ojs.obj

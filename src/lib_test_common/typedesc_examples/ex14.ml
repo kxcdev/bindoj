@@ -63,8 +63,11 @@ let ts_ast : ts_ast option = Some [
 open Bindoj_openapi.V3
 
 let schema_object : Schema_object.t option =
-  Schema_object.(record [
-    "_0", number ();
-    "_1", string ();
-  ])
+  Schema_object.(record ~schema
+    ~title:"Objtuple"
+    ~id:"#Objtuple"
+    [
+      "_0", number ();
+      "_1", string ();
+    ])
   |> Option.some

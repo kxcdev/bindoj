@@ -1272,24 +1272,26 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
 
   let docopt = function `docstr s -> Some s | `nodoc -> None in
 
-  let convert_coretype ~self_name ~self_mangled_type_name base_mangling_style ?description (ct: coretype) =
+  let convert_coretype ?alias_decl_props ~self_name ~self_mangled_type_name base_mangling_style ?description (ct: coretype) =
+
     let base_mangling_style =
       Json_config.get_mangling_style_opt ct.ct_configs |? base_mangling_style
     in
     let tuple_style = Json_config.get_tuple_style ct.ct_configs in
-    let rec go =
+    let rec go ?alias_decl_props =
+      let schema, id, title = alias_decl_props |? (None, None, None) in
       let open Coretype in
       function
-      | Prim `unit -> Schema_object.integer ~minimum:1 ~maximum:1 ?description ()
-      | Prim `bool -> Schema_object.boolean ?description ()
+      | Prim `unit -> Schema_object.integer ?schema ?id ?title ~minimum:1 ~maximum:1 ?description ()
+      | Prim `bool -> Schema_object.boolean ?schema ?id ?title ?description ()
       | Prim `int -> Schema_object.integer ?description ()
-      | Prim `int53p -> Schema_object.integer ?description ()
-      | Prim `float -> Schema_object.number ?description ()
-      | Prim `string -> Schema_object.string ?description ()
-      | Prim `uchar -> Schema_object.string ~minLength:1 ~maxLength:1 ?description ()
-      | Prim `byte -> Schema_object.integer ~minimum:0 ~maximum:255 ?description ()
-      | Prim `bytes -> Schema_object.string ~format:`byte ~pattern:base64_regex ?description ()
-      | Uninhabitable -> Schema_object.null ?description ()
+      | Prim `int53p -> Schema_object.integer ?schema ?id ?title ?description ()
+      | Prim `float -> Schema_object.number ?schema ?id ?title ?description ()
+      | Prim `string -> Schema_object.string ?schema ?id ?title ?description ()
+      | Prim `uchar -> Schema_object.string ?schema ?id ?title ~minLength:1 ~maxLength:1 ?description ()
+      | Prim `byte -> Schema_object.integer ?schema ?id ?title ~minimum:0 ~maximum:255 ?description ()
+      | Prim `bytes -> Schema_object.string ?schema ?id ?title ~format:`byte ~pattern:base64_regex ?description ()
+      | Uninhabitable -> Schema_object.null ?schema ?id ?title ?description ()
       | Ident { id_name; _ } ->
         let name =
           ct.ct_configs
@@ -1301,7 +1303,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         else
           Schema_object.ref ("#" ^ name)
       | Option t ->
-        Schema_object.option (go t)
+        Schema_object.option (go ?alias_decl_props t)
       | Tuple ts ->
         begin match tuple_style with
         | `arr ->
@@ -1309,21 +1311,21 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
             raise (Incompatible_with_openapi_v3 (
               sprintf "OpenAPI v3 does not support tuple validation (in type '%s')" self_name))
           else
-            Schema_object.tuple ?description (ts |> List.map go)
+            Schema_object.tuple ?schema ?id ?title ?description (ts |> List.map go)
         | `obj `default ->
-          Schema_object.record ?description (ts |> List.mapi (fun i x ->
+          Schema_object.record ?schema ?id ?title ?description (ts |> List.mapi (fun i x ->
             tuple_index_to_field_name i, go x
           ))
         end
       | List t ->
-        Schema_object.array ?description ~items:(`T (go t)) ()
+        Schema_object.array ?schema ?id ?title ?description ~items:(`T (go t)) ()
       | Map (`string, t) ->
-        Schema_object.obj ?description ~additionalProperties:(`T (go t)) ()
+        Schema_object.obj ?schema ?id ?title ?description ~additionalProperties:(`T (go t)) ()
       | StringEnum cases ->
         let enum = cases |> List.map (
           Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style
           &> (fun case -> `str case)) in
-        Schema_object.string ~enum ()
+        Schema_object.string ?schema ?id ?title ~enum ()
       | Self ->
         let name =
           ct.ct_configs
@@ -1338,7 +1340,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
     in
     match ct.ct_configs |> Configs.find_foreign_type_expr Json_config.json_schema with
     | Some schema -> schema
-    | None -> go ct.ct_desc
+    | None -> go ?alias_decl_props ct.ct_desc
   in
 
   let record_to_t ?schema ?id ?(additional_fields = []) ~name ~self_name ~self_mangled_type_name ~doc base_mangling_style fields =
@@ -1449,6 +1451,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         (ctors |> List.map ctor_to_t)
     | Alias_decl cty ->
       convert_coretype
+        ~alias_decl_props:(schema, id, Some self_mangled_type_name)
         ~self_name
         ~self_mangled_type_name
         ?description:(docopt doc)
