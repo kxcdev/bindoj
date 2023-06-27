@@ -11,10 +11,7 @@ jobs:
         os:
           - ubuntu-latest
         node-version:
-          - lts/fermium # v14 Maintenance LTS
-          ## we only test all versions at the [all-variants] flow
-          # - lts/gallium # v16 Active LTS
-          # - 17
+          - lts/hydrogen # v18 Active LTS
 
     if: github.repository == 'kxcinc/bindoj'
     runs-on: ${{ matrix.os }}

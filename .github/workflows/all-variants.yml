@@ -25,9 +25,9 @@ jobs:
           - 4.14.x
           - 5.0.x
         node-version:
-          - lts/fermium # v14 Maintenance LTS
           - lts/gallium # v16 Active LTS
-          - 17
+          - lts/hydrogen # v18 Active LTS
+          - 20
 
     if: |
       ( github.event.review.state == 'approved' &&
