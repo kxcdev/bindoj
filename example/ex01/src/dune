@@ -1,0 +1,29 @@
+(library
+  (name bindoj_example_ex01_typedesc)
+  (modules typedesc)
+  (libraries
+    bindoj_base
+    bindoj_gen_config
+    bindoj_gen_ts_config)
+  (flags (:standard -open Kxclib)))
+
+(library
+  (name bindoj_example_ex01_typedesc_generated)
+  (modules typedesc_generated)
+  (libraries
+    bindoj_example_shared_typedesc_generated
+    bindoj_example_ex01_typedesc
+    bindoj_example_ex01_generated
+  )
+  (preprocess (pps ppx_deriving.show ppx_deriving.eq))
+  (flags (:standard -open Kxclib)))
+
+(library
+  (name bindoj_example_ex01_apidir)
+  (modules apidir)
+  (libraries
+    kxclib bindoj_base bindoj_apidir_shared
+    bindoj_example_shared_apidir
+    bindoj_example_ex01_typedesc_generated
+  )
+  (flags (:standard -open Kxclib -w "-32-33")))

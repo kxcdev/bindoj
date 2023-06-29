@@ -17,10 +17,11 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_gen_ts_test_common
+open Bindoj_gen_ts
+open Bindoj_test_common.Typedesc_generated_examples
 
 let mapping =
-  modules |> List.map (fun (s, m) -> sprintf "%s_gen.ts" s, m)
+  all |> List.map (fun (s, m) -> sprintf "%s_gen.ts" s, m)
 
 let () =
   match Array.to_list Sys.argv |> List.tl with
@@ -29,4 +30,11 @@ let () =
   | [name] ->
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some gen -> gen () |> print_endline
+    | Some (module G : T) ->
+      Generator.generate
+        ~resolution_strategy:(function
+          | { td_name = "teacher"; _ } -> `import_location "./reused_types/teacher"
+          | _ -> `no_resolution)
+        ~env:G.env
+        ~formatter:Format.std_formatter
+        [ G.decl ]

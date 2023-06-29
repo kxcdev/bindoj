@@ -1,17 +1,11 @@
-(library
-  (name bindoj_gen_test_common)
-  (modules bindoj_gen_test_common)
-  (libraries bindoj_test_common_typedesc_examples bindoj_gen bindoj_runtime)
-  (flags (:standard -open Kxclib -w "-32-33")))
-
 (executable
  (name gen)
  (modules gen)
- (libraries bindoj_gen_test_common)
+ (libraries bindoj_test_common_typedesc_examples bindoj_gen bindoj_runtime)
  (flags (:standard -open Kxclib -w "-32-33")))
 
 (executable
  (name gen_embed_full_impl)
  (modules gen_embed_full_impl)
- (libraries bindoj_gen_test_common)
+ (libraries bindoj_test_common_typedesc_examples bindoj_gen bindoj_runtime)
  (flags (:standard -open Kxclib -w "-32-33")))

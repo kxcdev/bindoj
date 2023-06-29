@@ -42,4 +42,6 @@
   (ppx_inline_test :with-test)
   (lwt :with-test)
   (uri (>= 4.2.0))
-  (ocaml (>= 4.12))))
+  (ocamlformat (and :with-test (>= 0.25.1)))
+  (ocaml (>= 4.12))
+  (cohttp-lwt-unix :with-test)))

@@ -47,5 +47,6 @@ _opam/
 
 # project specific
 doc/dist/*.md
+doc/example/*.html
 doc/app/public/html
 .vercel

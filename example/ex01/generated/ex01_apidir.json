@@ -1,0 +1,168 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "ex01", "version": "0.0.1" },
+  "paths": {
+    "/student/any-one": {
+      "summary": "get-any-student",
+      "get": {
+        "summary": "get-any-student",
+        "responses": {
+          "default": {
+            "description": "a student record (could be anyone) in the database",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Student" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/student/from-person": {
+      "summary": "get-student-from-person",
+      "post": {
+        "summary": "get-student-from-person",
+        "requestBody": {
+          "description": "a person record identifying a student",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Person" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "the student record corresponding to the supplied person",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Student" },
+                "examples": {}
+              }
+            }
+          },
+          "4XX": {
+            "description": "The reson why the Product ID is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MyInt": {
+        "description": "definition of my_int type",
+        "type": "integer"
+      },
+      "MyTuple": {
+        "title": "MyTuple",
+        "description": "definition of my_tuple type",
+        "type": "object",
+        "properties": {
+          "_0": {
+            "description": "definition of my_tuple type",
+            "type": "number"
+          },
+          "_1": {
+            "description": "definition of my_tuple type",
+            "type": "string"
+          }
+        },
+        "required": ["_0", "_1"],
+        "additionalProperties": false
+      },
+      "Person": {
+        "title": "Person",
+        "description": "definition of person type",
+        "oneOf": [
+          {
+            "title": "anonymous",
+            "description": "Anonymous constructor",
+            "type": "object",
+            "properties": {
+              "kind": { "enum": ["anonymous"], "type": "string" }
+            },
+            "required": ["kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "with-id",
+            "description": "With_id constructor",
+            "type": "object",
+            "properties": {
+              "arg": { "type": "integer" },
+              "kind": { "enum": ["with-id"], "type": "string" }
+            },
+            "required": ["arg", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "student",
+            "description": "Student constructor",
+            "type": "object",
+            "properties": {
+              "studentId": {
+                "description": "student_id field in Student constructor",
+                "type": "integer"
+              },
+              "name": {
+                "description": "name field in Student constructor",
+                "type": "string"
+              },
+              "kind": { "enum": ["student"], "type": "string" }
+            },
+            "required": ["studentId", "name", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "teacher",
+            "description": "Teacher constructor",
+            "type": "object",
+            "properties": {
+              "facultyId": {
+                "description": "faculty_id field in Teacher constructor",
+                "type": "integer"
+              },
+              "name": {
+                "description": "name field in Teacher constructor",
+                "type": "string"
+              },
+              "department": {
+                "description": "dapartment field in Teacher constructor",
+                "type": "string"
+              },
+              "kind": { "enum": ["teacher"], "type": "string" }
+            },
+            "required": ["facultyId", "name", "department", "kind"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "String": { "title": "String", "type": "string" },
+      "Student": {
+        "title": "Student",
+        "description": "definition of student type",
+        "type": "object",
+        "properties": {
+          "admissionYear": {
+            "description": "addmission_year field",
+            "type": "integer"
+          },
+          "name": { "description": "name field", "type": "string" }
+        },
+        "required": ["admissionYear", "name"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

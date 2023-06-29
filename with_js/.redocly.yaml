@@ -1,7 +1,8 @@
 # https://redocly.com/docs/cli/configuration/#lint-object
-lint:
+styleguide:
   extends:
     - recommended
   rules:
     operation-summary: warn
     no-empty-servers: warn
+    security-defined: warn

@@ -1,11 +1,5 @@
-(library
- (name bindoj_gen_ts_test_common)
- (modules bindoj_gen_ts_test_common)
- (libraries bindoj_test_common bindoj_gen_ts bindoj_base)
- (flags (:standard -open Kxclib -w "-32-33")))
-
 (executable
  (name gen)
  (modules gen)
- (libraries bindoj_gen_ts_test_common)
+ (libraries bindoj_test_common bindoj_gen_ts bindoj_base)
  (flags (:standard -open Kxclib -w "-32-33")))

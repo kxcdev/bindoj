@@ -1,0 +1,42 @@
+(executable
+  (name gen_caml)
+  (modules gen_caml)
+  (libraries
+    kxclib bindoj_gen
+    bindoj_example_ex02_typedesc)
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+  (name gen_ts)
+  (modules gen_ts)
+  (libraries
+    kxclib bindoj_gen_ts
+    bindoj_example_ex02_typedesc_generated)
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+  (name gen_schema)
+  (modules gen_schema)
+  (libraries
+    kxclib bindoj_gen
+    bindoj_example_ex02_typedesc)
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name gen_apidir)
+ (modules gen_apidir)
+ (libraries
+   kxclib
+   bindoj_openapi
+   bindoj_apidir_generative
+   bindoj_example_ex02_apidir)
+ (flags (:standard -open Kxclib)))
+
+(executable
+  (name gen_ts_apidir)
+  (modules gen_ts_apidir)
+  (libraries
+    kxclib bindoj_apidir_shared bindoj_apidir_typescript
+    bindoj_example_ex02_typedesc
+    bindoj_example_ex02_apidir)
+  (flags (:standard -open Kxclib -w "-32-33")))

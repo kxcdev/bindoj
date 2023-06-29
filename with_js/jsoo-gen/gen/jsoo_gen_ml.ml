@@ -17,8 +17,8 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_gen_test_common
 open Bindoj_test_common_jsoo_utils
+open Bindoj_gen
 open Prr
 
 let modules, mapping =
@@ -38,7 +38,7 @@ let () =
         let gen_type_decl = Jv.to_bool gen_type_decl in
         match List.assoc_opt name mapping with
         | None -> failwith (sprintf "unknown example %s" name)
-        | Some decl ->
+        | Some (decl, example_module_path) ->
           let gen_json_shape_explanation = true in
           let discriminator_value_accessor = true in
           let write_to_string (writer : formatter:ppf -> unit) =
@@ -48,17 +48,21 @@ let () =
           in
           object%js
             val structure_js =
-              gen_structure_with_json_codec
-                  ~self_contained:true
-                  ~gen_json_shape_explanation
-                  ~discriminator_value_accessor
-                  ~gen_type_decl
-                  decl
-              |> write_to_string
-              |> jstr
+              let type_decl =
+                if gen_type_decl then
+                  `path (example_module_path^".decl") |> some
+                else none
+              in
+              Generator.gen_structure_with_json_codec
+                ~self_contained:true
+                ~gen_json_shape_explanation
+                ~discriminator_value_accessor
+                ?type_decl
+                decl
+              |> write_to_string |> jstr
 
             val signature_js =
-              gen_signature_with_json_codec
+              Generator.gen_signature_with_json_codec
                 ~gen_json_shape_explanation
                 ~discriminator_value_accessor
                 ~gen_type_decl

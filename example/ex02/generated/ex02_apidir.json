@@ -1,0 +1,503 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "ex01", "version": "0.0.1" },
+  "paths": {
+    "/products/get": {
+      "summary": "get-products",
+      "post": {
+        "summary": "get-products",
+        "requestBody": {
+          "description": "query to filter products",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductQuery" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "Products matching the given query in the database",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductList" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/orders/get": {
+      "summary": "get-orders",
+      "post": {
+        "summary": "get-orders",
+        "requestBody": {
+          "description": "query to filter orders",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderQuery" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "Orders matching the given query in the database",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderList" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/product/get": {
+      "summary": "get-product",
+      "post": {
+        "summary": "get-product",
+        "requestBody": {
+          "description": "Product ID",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductId" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "Product of the ID",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Product" },
+                "examples": {}
+              }
+            }
+          },
+          "4XX": {
+            "description": "The reson why the Product ID is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/order/get": {
+      "summary": "get-order",
+      "post": {
+        "summary": "get-order",
+        "requestBody": {
+          "description": "Rrder ID",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderId" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "order of the ID",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" },
+                "examples": {}
+              }
+            }
+          },
+          "4XX": {
+            "description": "The reson why the Product ID is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/product/register": {
+      "summary": "register-product",
+      "post": {
+        "summary": "register-product",
+        "requestBody": {
+          "description": "product details to be registered to the database",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductDetails" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "Product ID added to the database",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductId" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/order/register": {
+      "summary": "register-order",
+      "post": {
+        "summary": "register-order",
+        "requestBody": {
+          "description": "order details to be registered to the database",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderDetails" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "ID of the order",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderId" },
+                "examples": {}
+              }
+            }
+          },
+          "4XX": {
+            "description": "The reson why the Product ID is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/product/details/update": {
+      "summary": "update-product-details",
+      "post": {
+        "summary": "update-product-details",
+        "requestBody": {
+          "description": "product details to be updated",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductDetailsWithId"
+              },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "ID of the order",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderId" },
+                "examples": {}
+              }
+            }
+          },
+          "4XX": {
+            "description": "The reson why the Product ID is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/order/status/update": {
+      "summary": "update-order-status",
+      "post": {
+        "summary": "update-order-status",
+        "requestBody": {
+          "description": "order status to be updated",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderStatusWithId" },
+              "examples": {}
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "ID of the order",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderId" },
+                "examples": {}
+              }
+            }
+          },
+          "4XX": {
+            "description": "The reson why the Product ID is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {}
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Order": {
+        "title": "Order",
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/OrderId" },
+          "totalPrice": { "type": "integer" },
+          "details": { "$ref": "#/components/schemas/OrderDetails" },
+          "status": { "$ref": "#/components/schemas/OrderStatus" }
+        },
+        "required": ["id", "totalPrice", "details", "status"],
+        "additionalProperties": false
+      },
+      "OrderDetails": {
+        "title": "OrderDetails",
+        "type": "object",
+        "properties": {
+          "products": {
+            "description": "ID and it's count of ordered products",
+            "type": "array",
+            "items": {
+              "description": "ID and it's count of ordered products",
+              "type": "object",
+              "properties": {
+                "_0": { "$ref": "#/components/schemas/ProductId" },
+                "_1": {
+                  "description": "ID and it's count of ordered products",
+                  "type": "integer"
+                }
+              },
+              "required": ["_0", "_1"],
+              "additionalProperties": false
+            }
+          },
+          "paymentMethod": { "$ref": "#/components/schemas/PaymentMethod" }
+        },
+        "required": ["products", "paymentMethod"],
+        "additionalProperties": false
+      },
+      "OrderId": { "type": "integer" },
+      "OrderList": {
+        "title": "OrderList",
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/Order" }
+      },
+      "OrderQuery": {
+        "title": "OrderQuery",
+        "description": "Query to search orders",
+        "type": "object",
+        "properties": {
+          "products": {
+            "description": "List of product IDs in the order",
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "description": "List of product IDs in the order",
+              "type": "integer"
+            }
+          },
+          "status": {
+            "description": "Optional order status constraint",
+            "nullable": true,
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OrderStatus" }
+          },
+          "minimumPrice": {
+            "description": "Optional minimum total price constraint for the order",
+            "nullable": true,
+            "type": "integer"
+          },
+          "maximumPrice": {
+            "description": "Optional maximum total price constraint for the order",
+            "nullable": true,
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Number limit of data to be acquired.",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrderStatus": {
+        "title": "OrderStatus",
+        "enum": ["Unpaid", "Paid", "Shipped", "Delivered", "Canceled"],
+        "type": "string"
+      },
+      "PaymentMethod": {
+        "title": "PaymentMethod",
+        "description": "Payment method of an order",
+        "oneOf": [
+          {
+            "title": "credit-card",
+            "description": "Payment by credit card",
+            "type": "object",
+            "properties": {
+              "cardNumber": {
+                "description": "Card number",
+                "type": "string"
+              },
+              "holderName": {
+                "description": "Card holder name",
+                "type": "string"
+              },
+              "expirationDate": {
+                "description": "Expiration date",
+                "type": "object",
+                "properties": {
+                  "_0": {
+                    "description": "Expiration date",
+                    "type": "integer"
+                  },
+                  "_1": {
+                    "description": "Expiration date",
+                    "type": "integer"
+                  }
+                },
+                "required": ["_0", "_1"],
+                "additionalProperties": false
+              },
+              "cvv": { "description": "Card CVV", "type": "string" },
+              "kind": { "enum": ["credit-card"], "type": "string" }
+            },
+            "required": ["cardNumber", "holderName", "expirationDate", "cvv", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "bank-transfer",
+            "description": "Payment by bank transer",
+            "type": "object",
+            "properties": {
+              "accountNumber": {
+                "description": "Account number",
+                "type": "string"
+              },
+              "bankName": { "description": "Bank name", "type": "string" },
+              "holderName": {
+                "description": "Account holder name",
+                "type": "string"
+              },
+              "kind": { "enum": ["bank-transfer"], "type": "string" }
+            },
+            "required": ["accountNumber", "bankName", "holderName", "kind"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Product": {
+        "title": "Product",
+        "description": "Product",
+        "type": "object",
+        "properties": {
+          "id": { "$ref": "#/components/schemas/ProductId" },
+          "details": { "$ref": "#/components/schemas/ProductDetails" }
+        },
+        "required": ["id", "details"],
+        "additionalProperties": false
+      },
+      "ProductDetails": {
+        "title": "ProductDetails",
+        "description": "Product details",
+        "type": "object",
+        "properties": {
+          "name": { "description": "Product name", "type": "string" },
+          "description": {
+            "description": "Product description",
+            "type": "string"
+          },
+          "price": { "description": "Product price", "type": "integer" },
+          "count": {
+            "description": "Count of the product",
+            "type": "integer"
+          }
+        },
+        "required": ["name", "description", "price", "count"],
+        "additionalProperties": false
+      },
+      "ProductDetailsWithId": {
+        "title": "ProductDetailsWithId",
+        "type": "object",
+        "properties": {
+          "_0": { "$ref": "#/components/schemas/ProductId" },
+          "_1": { "$ref": "#/components/schemas/ProductDetails" }
+        },
+        "required": ["_0", "_1"],
+        "additionalProperties": false
+      },
+      "ProductId": { "type": "integer" },
+      "ProductList": {
+        "title": "ProductList",
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/Product" }
+      },
+      "ProductQuery": {
+        "title": "ProductQuery",
+        "description": "Query to search products",
+        "type": "object",
+        "properties": {
+          "searchQuery": {
+            "description": "Optional search string to match product names or descriptions",
+            "nullable": true,
+            "type": "string"
+          },
+          "minimumPrice": {
+            "description": "Optional minimum price constraint for a product",
+            "nullable": true,
+            "type": "integer"
+          },
+          "maximumPrice": {
+            "description": "Optional maximum price constraint for a product",
+            "nullable": true,
+            "type": "integer"
+          },
+          "limit": {
+            "description": "Number limit of data to be acquired.",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "String": { "title": "String", "type": "string" }
+    }
+  }
+}

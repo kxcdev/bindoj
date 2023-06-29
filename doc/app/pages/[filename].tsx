@@ -10,8 +10,10 @@ import "prismjs/plugins/line-numbers/prism-line-numbers.css";
 
 type Props = InferGetStaticPropsType<typeof getStaticProps>;
 
+const docsDirectory = "../dist";
+
 export const getStaticPaths = async () => {
-  const docs = getAllDocs();
+  const docs = getAllDocs(docsDirectory, ".md");
   return {
     paths: docs.map((doc) => {
       return {
@@ -25,7 +27,7 @@ export const getStaticPaths = async () => {
 };
 
 export const getStaticProps = async ({ params }: any) => {
-  const doc = getDocByFileName(params.filename);
+  const doc = getDocByFileName(docsDirectory, params.filename);
   const content = await markdownToHtml(doc.content);
   return {
     props: {

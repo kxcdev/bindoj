@@ -6,7 +6,7 @@ import { getAllDocs } from "./api/fetch";
 type Props = InferGetStaticPropsType<typeof getStaticProps>;
 
 export const getStaticProps = async () => {
-  const allDocs = getAllDocs();
+  const allDocs = getAllDocs("../dist", ".md");
   return {
     props: { allDocs },
   };
@@ -25,17 +25,20 @@ const Home: NextPage<Props> = ({ allDocs }) => {
         <h1 className={styles.title}>Docs</h1>
         <div className={styles.grid}>
           {allDocs.map((doc) => (
-              <a href={doc.filename} className={styles.card} key={doc.filename}>
-                <h2>{doc.filename}</h2>
-              </a>
-            ))}
+            <a href={doc.filename} className={styles.card} key={doc.filename}>
+              <h2>{doc.filename}</h2>
+            </a>
+          ))}
           <a href="html/index.html" className={styles.card}>
             <h2>dune build @doc</h2>
+          </a>
+          <a href="example" className={styles.card}>
+            <h2>Example</h2>
           </a>
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 export default Home

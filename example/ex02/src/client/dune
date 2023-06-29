@@ -1,0 +1,10 @@
+(executable
+  (name client)
+  (libraries
+    kxclib bindoj_base lwt
+    bindoj_example_shared_mock_database
+    bindoj_example_shared_client
+    bindoj_example_ex02_typedesc_generated
+    bindoj_example_ex02_apidir
+  )
+  (flags (:standard -open Kxclib -w "-32-33")))

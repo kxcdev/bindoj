@@ -1,0 +1,165 @@
+{
+  "ProductId": { "type": "integer" },
+  "ProductDetails": {
+    "title": "ProductDetails",
+    "description": "Product details",
+    "type": "object",
+    "properties": {
+      "name": { "description": "Product name", "type": "string" },
+      "description": { "description": "Product description", "type": "string" },
+      "price": { "description": "Product price", "type": "integer" },
+      "count": { "description": "Count of the product", "type": "integer" }
+    },
+    "required": ["name", "description", "price", "count"],
+    "additionalProperties": false
+  },
+  "Product": {
+    "title": "Product",
+    "description": "Product",
+    "type": "object",
+    "properties": {
+      "id": { "$ref": "#/components/schemas/ProductId" },
+      "details": { "$ref": "#/components/schemas/ProductDetails" }
+    },
+    "required": ["id", "details"],
+    "additionalProperties": false
+  },
+  "OrderId": { "type": "integer" },
+  "PaymentMethod": {
+    "title": "PaymentMethod",
+    "description": "Payment method of an order",
+    "oneOf": [
+      {
+        "title": "credit-card",
+        "description": "Payment by credit card",
+        "type": "object",
+        "properties": {
+          "cardNumber": { "description": "Card number", "type": "string" },
+          "holderName": { "description": "Card holder name", "type": "string" },
+          "expirationDate": {
+            "description": "Expiration date",
+            "type": "object",
+            "properties": {
+              "_0": { "description": "Expiration date", "type": "integer" },
+              "_1": { "description": "Expiration date", "type": "integer" }
+            },
+            "required": ["_0", "_1"],
+            "additionalProperties": false
+          },
+          "cvv": { "description": "Card CVV", "type": "string" },
+          "kind": { "enum": ["credit-card"], "type": "string" }
+        },
+        "required": ["cardNumber", "holderName", "expirationDate", "cvv", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "bank-transfer",
+        "description": "Payment by bank transer",
+        "type": "object",
+        "properties": {
+          "accountNumber": { "description": "Account number", "type": "string" },
+          "bankName": { "description": "Bank name", "type": "string" },
+          "holderName": { "description": "Account holder name", "type": "string" },
+          "kind": { "enum": ["bank-transfer"], "type": "string" }
+        },
+        "required": ["accountNumber", "bankName", "holderName", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "OrderDetails": {
+    "title": "OrderDetails",
+    "type": "object",
+    "properties": {
+      "products": {
+        "description": "ID and it's count of ordered products",
+        "type": "array",
+        "items": {
+          "description": "ID and it's count of ordered products",
+          "type": "object",
+          "properties": {
+            "_0": { "$ref": "#/components/schemas/ProductId" },
+            "_1": { "description": "ID and it's count of ordered products", "type": "integer" }
+          },
+          "required": ["_0", "_1"],
+          "additionalProperties": false
+        }
+      },
+      "paymentMethod": { "$ref": "#/components/schemas/PaymentMethod" }
+    },
+    "required": ["products", "paymentMethod"],
+    "additionalProperties": false
+  },
+  "OrderStatus": {
+    "title": "OrderStatus",
+    "enum": ["Unpaid", "Paid", "Shipped", "Delivered", "Canceled"],
+    "type": "string"
+  },
+  "Order": {
+    "title": "Order",
+    "type": "object",
+    "properties": {
+      "id": { "$ref": "#/components/schemas/OrderId" },
+      "totalPrice": { "type": "integer" },
+      "details": { "$ref": "#/components/schemas/OrderDetails" },
+      "status": { "$ref": "#/components/schemas/OrderStatus" }
+    },
+    "required": ["id", "totalPrice", "details", "status"],
+    "additionalProperties": false
+  },
+  "ProductQuery": {
+    "title": "ProductQuery",
+    "description": "Query to search products",
+    "type": "object",
+    "properties": {
+      "searchQuery": {
+        "description": "Optional search string to match product names or descriptions",
+        "nullable": true,
+        "type": "string"
+      },
+      "minimumPrice": {
+        "description": "Optional minimum price constraint for a product",
+        "nullable": true,
+        "type": "integer"
+      },
+      "maximumPrice": {
+        "description": "Optional maximum price constraint for a product",
+        "nullable": true,
+        "type": "integer"
+      },
+      "limit": { "description": "Number limit of data to be acquired.", "nullable": true, "type": "integer" }
+    },
+    "additionalProperties": false
+  },
+  "OrderQuery": {
+    "title": "OrderQuery",
+    "description": "Query to search orders",
+    "type": "object",
+    "properties": {
+      "products": {
+        "description": "List of product IDs in the order",
+        "nullable": true,
+        "type": "array",
+        "items": { "description": "List of product IDs in the order", "type": "integer" }
+      },
+      "status": {
+        "description": "Optional order status constraint",
+        "nullable": true,
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/OrderStatus" }
+      },
+      "minimumPrice": {
+        "description": "Optional minimum total price constraint for the order",
+        "nullable": true,
+        "type": "integer"
+      },
+      "maximumPrice": {
+        "description": "Optional maximum total price constraint for the order",
+        "nullable": true,
+        "type": "integer"
+      },
+      "limit": { "description": "Number limit of data to be acquired.", "nullable": true, "type": "integer" }
+    },
+    "additionalProperties": false
+  }
+}

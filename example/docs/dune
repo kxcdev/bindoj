@@ -1,0 +1,17 @@
+(rule
+  (target ex01.html)
+  (deps
+    ../ex01/generated/ex01_apidir.json
+    ../../with_js/node_modules)
+  (action
+    (with-accepted-exit-codes 0
+      (run %{bin:npx} --prefix ../../with_js redocly build-docs ../ex01/generated/ex01_apidir.json --output %{target}))))
+
+(rule
+  (target ex02.html)
+  (deps
+    ../ex02/generated/ex02_apidir.json
+    ../../with_js/node_modules)
+  (action
+    (with-accepted-exit-codes 0
+      (run %{bin:npx} --prefix ../../with_js redocly build-docs ../ex02/generated/ex02_apidir.json --output %{target}))))

@@ -19,47 +19,14 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base
 open Bindoj_base.Type_desc
+open Bindoj_gen_ts
 
-let gen_structure_with_json_codec
-  ?self_contained
-  ?gen_json_shape_explanation
-  ?discriminator_value_accessor
-  ?json_shape_explanation_resolution
-  ?codec ~gen_type_decl ~formatter (decl, emp) =
-  let open Bindoj_gen in
-  let type_decl =
-    if gen_type_decl then (
-      `path (emp^".decl") |> some
-    ) else none in
-  let structure =
-    Caml_datatype.gen_structure
-      ?type_decl
-      ?codec
-      ~generators:[
-        Json_codec.gen_json_codec
-          ?self_contained
-          ?gen_json_shape_explanation
-          ?json_shape_explanation_resolution
-          ?discriminator_value_accessor;
-      ]
-      decl
-  in
-  Astlib.Pprintast.structure formatter structure
+let resolution_strategy _ = `no_resolution
 
-let gen_signature_with_json_codec
-  ?gen_json_shape_explanation
-  ?discriminator_value_accessor
-  ?codec ~gen_type_decl ~formatter (decl, _) =
-  let open Bindoj_gen in
-  let structure =
-    Caml_datatype.gen_signature
-      ~type_decl:gen_type_decl
-      ?codec
-      ~generators:[
-        Json_codec.gen_json_codec_signature
-          ?gen_json_shape_explanation
-          ?discriminator_value_accessor;
-      ]
-      decl
-  in
-  Astlib.Pprintast.signature formatter structure
+let () =
+  let module Ex = Bindoj_example_ex02_typedesc_generated.Typedesc_generated in
+  Generator.generate
+    ~resolution_strategy
+    ~env:Ex.env
+    ~formatter:Format.std_formatter
+    (Ex.decls |&> snd);

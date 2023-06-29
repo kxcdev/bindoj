@@ -19,7 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base
 open Bindoj_base.Type_desc
-open Bindoj_gen_test_common
+open Bindoj_gen
 
 type generate_target = [
   | `structure
@@ -111,8 +111,8 @@ let () =
         ~gen_type_decl
         ~formatter
         decl
-    | Some (`signature, decl) ->
-      gen_signature_with_json_codec
+    | Some (`signature, (decl, _)) ->
+      Generator.gen_signature_with_json_codec
         ~gen_json_shape_explanation
         ~discriminator_value_accessor
         ~gen_type_decl

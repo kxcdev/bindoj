@@ -41,6 +41,9 @@ doc:
 	rm -rf doc/app/public/html
 	cp -r _build/default/_doc/_html doc/app/public/html
 
+	rm -rf doc/example
+	cp -r _build/default/example/docs doc/example
+
 clean:
 	dune clean
 	yarn --cwd with_js clean || echo "yarn clean failed... you probably does not have a complete setup yet"

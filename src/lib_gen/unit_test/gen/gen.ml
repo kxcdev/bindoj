@@ -19,7 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base
 open Bindoj_base.Type_desc
-open Bindoj_gen_test_common
+open Bindoj_gen
 
 type generate_target = [
   | `structure
@@ -47,16 +47,21 @@ let () =
     let formatter = Format.std_formatter in
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some (`structure, decl) ->
-      gen_structure_with_json_codec
+    | Some (`structure, (decl, example_module_path)) ->
+      let type_decl =
+        if gen_type_decl then
+          `path (example_module_path^".decl") |> some
+        else none
+      in
+      Generator.gen_structure_with_json_codec
         ~self_contained:true
         ~gen_json_shape_explanation
         ~discriminator_value_accessor
-        ~gen_type_decl
+        ?type_decl
         ~formatter
         decl
-    | Some (`signature, decl) ->
-      gen_signature_with_json_codec
+    | Some (`signature, (decl, _)) ->
+      Generator.gen_signature_with_json_codec
         ~gen_json_shape_explanation
         ~discriminator_value_accessor
         ~gen_type_decl

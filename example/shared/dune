@@ -1,0 +1,45 @@
+(library
+  (name bindoj_example_shared_typedesc_generated)
+  (modules typedesc_generated)
+  (libraries
+    kxclib bindoj_base
+  )
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(library
+  (name bindoj_example_shared_apidir)
+  (modules apidir)
+  (libraries
+    kxclib bindoj_base bindoj_apidir_shared
+  )
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(library
+  (name bindoj_example_shared_server)
+  (modules server)
+  (libraries
+    kxclib
+    lwt cohttp-lwt-unix
+    bindoj_base bindoj_apidir_shared bindoj_apidir_runtime
+    bindoj_example_shared_apidir
+  )
+  (optional)
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(library
+  (name bindoj_example_shared_mock_database)
+  (modules mock_database)
+  (libraries kxclib lwt str)
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(library
+  (name bindoj_example_shared_client)
+  (modules client)
+  (libraries
+    kxclib
+    lwt cohttp-lwt-unix
+    bindoj_base bindoj_apidir_shared bindoj_apidir_runtime
+    bindoj_example_shared_apidir
+  )
+  (optional)
+  (flags (:standard -open Kxclib -w "-32-33")))

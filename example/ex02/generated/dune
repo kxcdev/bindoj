@@ -1,0 +1,58 @@
+(library
+  (name bindoj_example_ex02_generated)
+  (libraries kxclib bindoj_runtime bindoj_std_runtime)
+  (flags (:standard -open Bindoj_std_runtime)))
+
+(rule
+  (target ex02.ml)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{dep:../gen/gen_caml.exe} ml)
+        (run %{bin:ocamlformat} --name %{target} -))))
+  (mode (promote)))
+
+(rule
+  (target ex02.mli)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{dep:../gen/gen_caml.exe} mli)
+        (run %{bin:ocamlformat} --name %{target} -))))
+  (mode (promote)))
+
+(rule
+  (target ex02_schema.json)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{exe:../gen/gen_schema.exe})
+        (run %{bin:npx} --prefix ../../../with_js prettier --stdin-filepath %{target}))))
+  (mode (promote)))
+
+(rule
+  (target ex02_apidir.json)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{exe:../gen/gen_apidir.exe})
+        (run %{bin:npx} --prefix ../../../with_js prettier --stdin-filepath %{target}))))
+  (mode (promote)))
+
+(rule
+  (target ex02.ts)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{exe:../gen/gen_ts.exe})
+        (run %{bin:npx} --prefix ../../../with_js prettier --stdin-filepath %{target}))))
+  (mode (promote)))
+
+(rule
+  (target ex02_apidir.ts)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{exe:../gen/gen_ts_apidir.exe})
+        (run %{bin:npx} --prefix ../../../with_js prettier --stdin-filepath %{target}))))
+  (mode (promote)))

@@ -4,8 +4,10 @@
  (modes js)
  (libraries
   js_of_ocaml
-  bindoj_gen_test_common
-  bindoj_test_common_jsoo_utils)
+  bindoj_gen bindoj_runtime
+  bindoj_test_common_typedesc_examples
+  bindoj_test_common_jsoo_utils
+  )
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib -w "-32-33")))
 
@@ -15,7 +17,8 @@
  (modes js)
  (libraries
   js_of_ocaml
-  bindoj_gen_ts_test_common
+  bindoj_gen_ts bindoj_base
+  bindoj_test_common
   bindoj_test_common_jsoo_utils)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib -w "-32-33")))

@@ -49,6 +49,8 @@ jobs:
       - name: check OCaml version and workspace info
         run: ./scripts/ci_print_env.sh
 
+      - run: sudo ./scripts/ci_setup_ubuntu.sh
+
       - name: Install dependencies
         run: opam install . --deps-only --with-test --with-doc
 

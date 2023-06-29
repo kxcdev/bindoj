@@ -17,18 +17,29 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_gen_ts_test_common
+open Bindoj_gen_ts
 open Bindoj_test_common_jsoo_utils
+open Bindoj_test_common.Typedesc_generated_examples
 open Prr
+
 
 let () =
   Js_of_ocaml.Js.export "jsoo_gen_ts" (object%js
     val generator_js = object%js
-      val module_names_js = modules |> Jv.(of_list (fst &> of_string)) |> cast
+      val module_names_js = all |> Jv.(of_list (fst &> of_string)) |> cast
       method generate_js name =
         let name = ostr name in
-        match List.assoc_opt name modules with
+        match List.assoc_opt name all with
         | None -> failwith (sprintf "unknown example %s" name)
-        | Some gen -> gen () ^ "\n" |> jstr
+        | Some (module G : T) ->
+          ignore (Format.flush_str_formatter());
+          Generator.generate
+            ~resolution_strategy:(function
+              | { td_name = "teacher"; _ } -> `import_location "./reused_types/teacher"
+              | _ -> `no_resolution)
+            ~env:G.env
+            ~formatter:Format.str_formatter
+            [ G.decl ];
+          Format.flush_str_formatter() |> jstr
     end
   end)
