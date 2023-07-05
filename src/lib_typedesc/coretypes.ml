@@ -107,30 +107,27 @@ module Enum = struct
     fun ts -> C (StringEnum (ts |&> snd), Configs.empty)
 end
 
-let refl_alias_mk : Expr.t -> 'x Refl.t -> 'x option =
-  fun v refl ->
-  match v, Lazy.force refl with
-  | Expr.Refl (_, x), _ -> some (Obj.magic x)
-  | e, (Refl.Alias { mk; _ }) -> mk e
-  | _ -> none
-
 let rec to_refl_coretype' :
     'x. (* assert polymorphism *)
     ?env:tdenv
     -> ?self:'x Refl.t
     -> ?name:string
     -> 'x t
-    -> 'x Refl.t =
+    -> [`Alias | `Self ] * 'x Refl.t =
   fun ?(env = Type_decl_environment.empty)
       ?self ?name ct ->
   let module Helpers = struct
       type 't res = ('t -> Expr.t) * (Expr.t -> 't option)
-      let return_alias : 'a res -> 'b Refl.t = fun conv ->
+      let return_alias : 'a res -> [`Alias | `Self] * 'b Refl.t = fun conv ->
         let (get, mk) : 'b res = Obj.magic conv in
-        Reflects.reflect_of_alias get mk
-      let as_alias : 'a Refl.t -> 'a res = fun refl ->
-        match Lazy.force refl with
-        | Alias { get; mk; } -> get, mk
+        `Alias, Reflects.reflect_of_alias get mk
+      let to_get_mk : [`Alias | `Self] * 'a Refl.t -> 'a res = fun refl ->
+        match refl with
+        | `Alias, lazy (Alias { get; mk; }) -> get, mk
+        | `Self, refl ->
+          (fun v -> Expr.Refl (refl, v)), (function
+            | Expr.Refl (_, v) -> Some (Obj.magic v)
+            | _ -> None)
         | _ -> failwith' "panic @%s" __LOC__
     end in
   let open Helpers in
@@ -161,10 +158,10 @@ let rec to_refl_coretype' :
         failwith' "Bindoj.Coretypes.to_refl: cannot find type named %S in provided tdenv%s"
           id_name name_debug_msg_for
   | _, (C (Option desc, _) : 'y t) ->
-    let o, t = to_refl_coretype' ~env (C (desc, Configs.empty)) |> as_alias in
+    let o, t = to_refl_coretype' ~env (C (desc, Configs.empty)) |> to_get_mk in
     (Expr.(of_option o, to_option t) : 'y option res) |> return_alias
   | _, (C (List desc, _) : 'y t) ->
-    let o, t = to_refl_coretype' ~env (C (desc, Configs.empty)) |> as_alias in
+    let o, t = to_refl_coretype' ~env (C (desc, Configs.empty)) |> to_get_mk in
     (Expr.(of_list o, to_list t) : 'y list res) |> return_alias
   | _, C (Tuple ds, _) ->
     let refls =
@@ -180,9 +177,8 @@ let rec to_refl_coretype' :
       );
       let r = Obj.repr tup in
       let es =
-        iota len |+&> Obj.field r |&> (fun (i, v) ->
-          let refl : _ Refl.t = (refls.(i)) in
-          Expr.Refl (refl, Obj.obj v)
+        iota len |&> (fun i ->
+          (to_get_mk refls.(i) |> fst) (Obj.obj (Obj.field r i))
         ) in
       Expr.Tuple es in
     let mk : Expr.t -> _ option = function
@@ -194,7 +190,7 @@ let rec to_refl_coretype' :
         let r = Obj.new_block tuple_tag len in
         let open MonadOps(Option) in
         iota len |+&> Array.get vs |&> (fun (i, e) ->
-          refl_alias_mk e refls.(i)
+          (to_get_mk refls.(i) |> snd) e
         ) |> sequence_list
         >? (fun vs ->
           vs |> List.iteri (fun i v ->
@@ -207,15 +203,15 @@ let rec to_refl_coretype' :
     in
     (get, mk) |> return_alias
   | _, C (Map (`string, desc0), _) ->
-    let refl0 : 'e Refl.t =
+    let refl0: _ * 'e Refl.t =
       to_refl_coretype' ~env ?name:(subname "elem") (C (desc0, Configs.empty)) in
     let get : (string*'e) list -> Expr.t =
-      fun fs -> Expr.Map (fs |&> fun (k, (v : 'e)) -> k, Expr.Refl (refl0, v)) in
+      fun fs -> Expr.Map (fs |&> fun (k, (v : 'e)) -> k, (to_get_mk refl0 |> fst) v) in
     let mk : Expr.t -> (string*'e) list option = function
       | Expr.Refl (_, x) -> some (Obj.magic x)
       | Map fs ->
         let open MonadOps(Option) in
-        fs |&> (fun (k, e) -> refl_alias_mk e refl0 >? (fun v -> k, v))
+        fs |&> (fun (k, e) -> (to_get_mk refl0 |> snd) e >? (fun v -> k, v))
         |> sequence_list
       | _ ->
         invalid_arg' "Refl.Alias.mk: expecting an Expr.Map%s" name_debug_msg_for
@@ -239,8 +235,8 @@ let rec to_refl_coretype' :
     (get, mk) |> return_alias
   | None, (C (Self, _)) ->
     failwith' "Bindoj.Coretypes.to_refl: unsound recursive coretype%s" name_debug_msg_for
-  | Some refl, (C (Self, _)) -> refl
-  ) |> Obj.magic
+  | Some refl, (C (Self, _)) -> (`Self, refl)
+  ) /> Obj.magic
 
 and to_refl_type_decl : 'x. 'x typed_type_decl -> 'x Refl.t =
   fun (type x) ((module Td) : x typed_type_decl) -> Td.reflect
@@ -251,7 +247,7 @@ and ident_to_typed_type_decl_opt (env: tdenv) (id_name: string): 'x typed_type_d
   >? (fun (Boxed td) -> (Obj.magic td : 'x typed_type_decl))
 
 let to_refl : ?env:Typed_type_desc.tdenv -> ?self:'x Refl.t -> 'x t -> 'x Refl.t =
-  fun ?env ?self ct -> to_refl_coretype' ?env ?self ct
+  fun ?env ?self ct -> to_refl_coretype' ?env ?self ct |> snd
 
 let of_typed_type_decl :
     ?codec:Coretype.codec ->

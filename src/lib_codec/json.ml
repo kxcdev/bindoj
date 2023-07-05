@@ -457,13 +457,11 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
       | Self, Expr.Refl (_, x) -> to_json ~env a (Obj.magic x)
       | List t, Expr.List xs -> `arr (List.map (go t) xs)
       | Tuple ts, Expr.Tuple xs ->
-        begin try
+        begin
           match Json_config.get_tuple_style ct.ct_configs with
           | `arr -> `arr (List.map2 go ts xs)
           | `obj `default ->
             `obj (List.combine ts xs |> List.mapi (fun i (t, x) -> Json_config.tuple_index_to_field_name i, go t x))
-        with
-          Invalid_argument _msg -> fail "tuple length mismatch"
         end
       | Map (`string, t), Expr.Map xs -> `obj (List.map (fun (k, v) -> k, go t v) xs)
       | Option t, Expr.Some x -> go t x
