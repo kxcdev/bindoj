@@ -56,10 +56,8 @@ open struct
   module R = MakeRegistry()
   module T = Types
 
-  let error_response_case () =
-    make_response_case ~status:(`status_range `_4XX)
-      ~name:"error_message"
-      ~doc:"The reson why the Product ID is unavailable."
+  let error_response_case ?(name = "error_message") status doc =
+    make_response_case ~name ~status ~doc
       ~pack:Packed.error ~unpack:Packed.unpack_error
       T.string
 end
@@ -97,7 +95,8 @@ let get_product =
       ~doc:"Product of the ID"
       ~pack:Packed.ok ~unpack:Packed.unpack_ok
       T.product;
-    error_response_case ();
+    error_response_case (`status_code 400)
+      "The readon why the Product ID is unavailable.";
   ]
 
 let get_order =
@@ -111,7 +110,8 @@ let get_order =
       ~doc:"order of the ID"
       ~pack:Packed.ok ~unpack:Packed.unpack_ok
       T.order;
-    error_response_case ();
+    error_response_case (`status_code 400)
+      "The readon why the Order ID is unavailable.";
   ]
 
 let register_product =
@@ -119,7 +119,7 @@ let register_product =
     ~urlpath:"/product/register"
     ~req_type:T.product_details
     ~req_name:"product_details"
-    ~req_doc:"product details to be registered to the database"
+    ~req_doc:"Product details to be registered to the database"
     ~resp_type:T.product_id
     ~resp_name:"product_id"
     ~resp_doc:"Product ID added to the database"
@@ -135,7 +135,14 @@ let register_order =
         ~doc:"ID of the order"
         ~pack:Packed.ok ~unpack:Packed.unpack_ok
         T.order_id;
-      error_response_case ();
+      error_response_case
+        ~name:"id_not_found"
+        (`status_code 400)
+        "The readon why the product ID is unavailable.";
+      error_response_case
+        ~name:"inventory_shortage"
+        (`status_code 403)
+        "The readon why the order is unavailable.";
     ]
 
 let update_product_details =
@@ -149,7 +156,8 @@ let update_product_details =
         ~doc:"ID of the order"
         ~pack:Packed.ok ~unpack:Packed.unpack_ok
         T.order_id;
-      error_response_case ();
+      error_response_case (`status_code 400)
+        "The readon why the status details are unavailable.";
     ]
 
 let update_order_status =
@@ -163,12 +171,179 @@ let update_order_status =
         ~doc:"ID of the order"
         ~pack:Packed.ok ~unpack:Packed.unpack_ok
         T.order_id;
-      error_response_case ();
+      error_response_case (`status_code 400)
+        "The readon why the order details are unavailable.";
     ]
+
+let () = begin
+  let open Types in
+  let sample_product_00 =
+    { id = 0;
+        details = {
+          name = "Pride and Prejudice";
+          description = "A classic romance novel, describing the love story between Elizabeth Bennet and Fitzwilliam Darcy.";
+          price = 800;
+          count = 15 } }
+  in
+  let sample_product_01 =
+    { id = 1;
+        details = {
+          name = "Moby Dick";
+          description = "The story of captain Ahab's relentless pursuit of the white whale, Moby Dick.";
+          price = 1200; count = 10 } }
+  in
+  let sample_product_02 =
+    { id = 2;
+        details = {
+          name = "Dracula";
+          description = "A Gothic horror novel, telling the story of the vampire Count Dracula.";
+          price = 1000; count = 25 } }
+  in
+  let sample_order_00 =
+    { id = 0; status = `Delivered; total_price = 2000;
+      details = {
+        products = [ 0, 1; 1, 1 ];
+        payment_method = Credit_card {
+          card_number = "1111222233334444";
+          holder_name = "John Smith";
+          expiration_date = (2026, 5);
+          cvv = "123" } }; }
+  in
+  let sample_order_01 =
+    { id = 1; status = `Paid; total_price = 2000;
+      details = {
+        products = [ 2, 2 ];
+        payment_method = Credit_card {
+          card_number = "2222333344445555";
+          holder_name = "Jane Smith";
+          expiration_date = (2025, 11);
+          cvv = "234" } }; }
+  in
+  let sample_order_02 =
+    { id = 2; status = `Canceled; total_price = 800;
+      details = {
+        products = [ 0, 1 ];
+        payment_method = Credit_card {
+          card_number = "3333444455556666";
+          holder_name = "Robert Johnson";
+          expiration_date = (2027, 6);
+          cvv = "345" } }; }
+  in
+  let product_query_default =
+    { searchQuery = None;
+       minimum_price = None;
+       maximum_price = None;
+       limit = None }
+  in
+  let order_query_default =
+    { products = None;
+      status = None;
+      minimum_price = None;
+      maximum_price = None;
+      limit = None }
+  in
+  get_products
+  |> R.register_usage_samples [
+    ( product_query_default,
+      [ sample_product_00; sample_product_01; sample_product_02 ],
+      `default ), `docstr "Sample to get all products";
+    ( { product_query_default with
+        searchQuery = Some "novel" },
+      [ sample_product_00; sample_product_02 ],
+      `default ), `docstr "Sample with search query";
+    ( { product_query_default with
+        minimum_price = Some 1000 },
+      [ sample_product_01; sample_product_02 ],
+      `default ), `docstr "Sample with minimum price";
+  ];
+
+  get_orders
+  |> R.register_usage_samples [
+    ( order_query_default,
+      [ sample_order_00; sample_order_01; sample_order_02],
+      `default ), `docstr "sample to get all orders";
+    ( { order_query_default with
+        products = Some [ 0 ] },
+      [ sample_order_00; sample_order_02 ],
+      `default ), `docstr "Sample with products";
+    ( { order_query_default with
+        status = Some [ `Delivered ] },
+      [ sample_order_00 ],
+      `default ), `docstr "Sample with status";
+    ( { order_query_default with
+        minimum_price = Some 1500 },
+      [ sample_order_00; sample_order_01 ],
+      `default ), `docstr "Sample with minimum total price";
+  ];
+
+  get_product
+  |> R.register_usage_samples [
+    (0, Packed.ok sample_product_00, `status_code 200), `docstr "Succeeded with ID=0";
+    (1, Packed.ok sample_product_01, `status_code 200), `docstr "Succeeded with ID=1";
+    (10, Packed.error "Product of the given ID is not found", `status_code 400), `docstr "ID not found";
+  ];
+
+  get_order
+  |> R.register_usage_samples [
+    (0, Packed.ok sample_order_00, `status_code 200), `docstr "Succeeded with ID=0";
+    (1, Packed.ok sample_order_00, `status_code 200), `docstr "Succeeded with ID=1";
+    (10, Packed.error "Order of the given ID is not found", `status_code 400), `docstr "ID not found";
+  ];
+
+  register_product
+  |> R.register_usage_samples [
+    ( { name = "Frankenstein";
+        description = "A tale of young scientist Victor Frankenstein and his creation of a grotesque monster.";
+        price = 950; count = 7 },
+      3, `default), `nodoc
+  ];
+
+  register_order
+  |> R.register_usage_samples [
+    ( { products = [ 0, 1; 1, 1 ];
+        payment_method = Credit_card {
+          card_number = "3333444455556666";
+          holder_name = "Robert Johnson";
+          expiration_date = (2027, 6);
+          cvv = "345" } },
+      Packed.ok 3, `status_code 200), `docstr "Registered successfully";
+    ( { products = [ 9, 1 ];
+        payment_method = Bank_transfer {
+          account_number = "123456789";
+          bank_name = "Bank of Example";
+          holder_name = "Alice Brown" } },
+      Packed.error "Product of the given ID is not found", `status_code 400), `docstr "Product not found";
+    ( { products = [ 0, 100 ];
+        payment_method = Bank_transfer {
+          account_number = "234567890";
+          bank_name = "Example Savings";
+          holder_name = "Emma Davis" } },
+      Packed.error "inventory shortage", `status_code 403), `docstr "Inventory shortage";
+    ];
+
+  update_product_details
+  |> R.register_usage_samples [
+    ( (0, { name = "Pride and Prejudice";
+            description = "new desc";
+            price = 800; count = 15 }),
+      Packed.ok 0, `status_code 200), `docstr "Updated successfully";
+    ( (8, { name = "The Adventures of Sherlock Holmes";
+            description = "A collection of short stories featuring the brilliant detective Sherlock Holmes and his loyal friend, Dr. Watson.";
+            price = 1300; count = 12 }),
+      Packed.error "Product of the given ID is not found.", `status_code 400), `docstr "ID not found";
+  ];
+
+  update_order_status
+  |> R.register_usage_samples [
+    ((1, `Shipped), Packed.ok 1, `status_code 200), `docstr "Updated successfully";
+    ((1, `Unpaid), Packed.error "Invalid order status", `status_code 400), `docstr "Invalid order status";
+    ((10, `Canceled), Packed.error "Order of the given ID is not found", `status_code 400), `docstr "ID not found";
+  ];
+end
 
 include R.Public
 
-module type Database = sig
+module type Repository = sig
   module Io : Monadic
 
   val with_read_lock_products : (unit -> 'a Io.t) -> 'a Io.t
@@ -187,28 +362,28 @@ module type Database = sig
 end
 
 module Builder = functor
-  (D: Database)
-  (M: ServerBuilder with module Io = D.Io) -> struct
+  (R: Repository)
+  (M: ServerBuilder with module Io = R.Io) -> struct
   let build_handler () =
     let open MonadOps(M.Io) in
 
     M.register_post_handler get_products (fun req ->
-      D.with_read_lock_products begin fun () ->
-        D.select_products (`query req)
+      R.with_read_lock_products begin fun () ->
+        R.select_products (`query req)
         >|= fun resp -> (200, resp)
       end
     );
 
     M.register_post_handler get_orders (fun req ->
-      D.with_read_lock_orders begin fun () ->
-        D.select_orders (`query req)
+      R.with_read_lock_orders begin fun () ->
+        R.select_orders (`query req)
         >|= fun resp -> (200, resp)
       end
     );
 
     M.register_post_handler get_product (fun req ->
-      D.with_read_lock_products begin fun () ->
-        D.select_products (`id [ req ])
+      R.with_read_lock_products begin fun () ->
+        R.select_products (`id [ req ])
         >|= function
         | h :: _ -> (200, Packed.ok h)
         | [] -> (400, Packed.error "Product of the given ID is not found.")
@@ -216,8 +391,8 @@ module Builder = functor
     );
 
     M.register_post_handler get_order (fun req ->
-      D.with_read_lock_orders begin fun () ->
-        D.select_orders (`id req)
+      R.with_read_lock_orders begin fun () ->
+        R.select_orders (`id req)
         >|= function
         | h :: _ -> (200, Packed.ok h)
         | [] -> (400, Packed.error "Order of the given ID is not found.")
@@ -225,8 +400,8 @@ module Builder = functor
     );
 
     M.register_post_handler register_product (fun req ->
-      D.with_write_lock_products begin fun () ->
-        D.insert_product ~details:req
+      R.with_write_lock_products begin fun () ->
+        R.insert_product ~details:req
         >|= fun resp -> (200, resp)
       end
     );
@@ -238,20 +413,20 @@ module Builder = functor
         |&> ((?>) (List.foldl (fun s (_, x) -> s + x) 0))
       in
       let ordered_ids = ordered_products |&> fst in
-      D.with_read_lock_orders begin fun () ->
-      D.with_read_lock_products begin fun () ->
-        D.select_products (`id ordered_ids)
+      R.with_read_lock_orders begin fun () ->
+      R.with_read_lock_products begin fun () ->
+        R.select_products (`id ordered_ids)
         >>= fun products ->
           let products = products |&> fun p -> (p.id, p) in
           let rec loop total_price = function
           | [] ->
-            D.insert_order ~details:req ~total_price ~status:`Unpaid
+            R.insert_order ~details:req ~total_price ~status:`Unpaid
             >|= fun resp -> (200, Packed.ok resp)
           | (product_id, count) :: tl ->
             match List.assoc_opt product_id products with
             | None -> return (400, Packed.error "Product of the given ID is not found.")
             | Some product ->
-              D.select_orders (`query {
+              R.select_orders (`query {
                 products = Some [ product_id ]; status = Some [ `Unpaid; `Paid ];
                 minimum_price = None; maximum_price = None; limit = None })
               >>= fun orders ->
@@ -271,8 +446,8 @@ module Builder = functor
     );
 
     M.register_post_handler update_product_details (fun (req_id, req_details) ->
-      D.with_write_lock_products begin fun () ->
-        D.update_product req_id (fun p -> Ok { p with details = req_details } |> return)
+      R.with_write_lock_products begin fun () ->
+        R.update_product req_id (fun p -> Ok { p with details = req_details } |> return)
         >|= function
         | Ok () -> (200, Packed.ok req_id)
         | Error `Not_found -> (400, Packed.error "Product of the given ID is not found.")
@@ -281,18 +456,18 @@ module Builder = functor
     );
 
     M.register_post_handler update_order_status (fun (req_id, req_status) ->
-      D.with_write_lock_orders begin fun () ->
-        D.update_order req_id (fun order ->
+      R.with_write_lock_orders begin fun () ->
+        R.update_order req_id (fun order ->
           match order.status, req_status with
           | `Unpaid, `Paid
           | `Shipped, `Delivered
           | (`Unpaid | `Paid), `Canceled ->
             Ok { order with status = req_status } |> return
           | `Paid, `Shipped ->
-            D.with_write_lock_products begin fun () ->
+            R.with_write_lock_products begin fun () ->
               order.details.products
               |&> (fun (product_id, count) ->
-                D.update_product product_id (fun p ->
+                R.update_product product_id (fun p ->
                   let count = p.details.count - count in
                   Ok { p with details = { p.details with count }}
                   |> return

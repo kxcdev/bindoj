@@ -33,9 +33,7 @@ let raise_exn = function
   | Error (e, _) -> raise e
 
 let main =
-  Lwt_io.print "\n"
-  >>= fun () ->
-    Client.perform_json_get Apidir.get_any_student
+  Client.perform_json_get Apidir.get_any_student
   >|= raise_exn
   >>= fun (student: student) ->
     let s = sprintf "%a" Student.pp student in

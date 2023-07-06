@@ -19,6 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_example_shared_server.Server
 open Bindoj_example_ex02_apidir
+open MonadOps(Lwt)
 
 let port = 8082
 
@@ -26,13 +27,15 @@ let server =
   let module S = Make_cohttp_server(Apidir) in
   let module B = Apidir.Builder(Mock_database)(S.Bridge) in
   B.build_handler();
-  S.make_server()
-  |> Cohttp_lwt_unix.Server.create ~mode:(`TCP (`Port port))
 
-open MonadOps(Lwt)
+  Conduit_lwt_unix.init ~src:"127.0.0.1" () (* Bind only to localhost *)
+  >>= fun ctx ->
+    let ctx = Cohttp_lwt_unix.Client.custom_ctx ~ctx () in
+    S.make_server()
+    |> Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port port))
 
 let main =
-  Lwt_io.printf "\nServer started at port %d.\n" port
+  Lwt_io.printf "Server started at port %d.\n" port
   >>= fun () -> Lwt_io.(flush stdout)
   >>= fun () -> server
 

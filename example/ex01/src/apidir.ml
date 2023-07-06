@@ -37,12 +37,12 @@ open struct
   module R = MakeRegistry()
   module T = Types
 
-  let error_response_case () =
-    make_response_case ~status:(`status_range `_4XX)
-      ~name:"error_message"
-      ~doc:"The reson why the Product ID is unavailable."
-      ~pack:Packed.error ~unpack:Packed.unpack_error
-      T.string
+  let student_from_person = function
+    | T.Student { student_id; name; } ->
+      (200, Packed.ok { T.admission_year = student_id; name; })
+    | Anonymous -> (422, Packed.error "anonymous, not student")
+    | With_id _ -> (422, Packed.error "with_id, not student")
+    | Teacher _ -> (422, Packed.error "teacher, not student")
 end
 
 let () = R.add_type_decl_environment_wrapper (Tdenv.add_env Types.env)
@@ -66,36 +66,48 @@ let get_student_from_person =
         ~doc:"the student record corresponding to the supplied person"
         ~pack:Packed.ok ~unpack:Packed.unpack_ok
         T.student;
-      error_response_case ();
+      make_response_case ~status:(`status_code 422)
+        ~name:"error_message"
+        ~doc:"The reson why the person is unavailable."
+        ~pack:Packed.error ~unpack:Packed.unpack_error
+        T.string;
     ]
+
+let () = begin
+  get_any_student
+  |> R.register_response_sample { T.admission_year = 1984; name = "William Gibson" };
+
+  get_student_from_person
+  |> R.register_usage_samples
+    ([ T.Anonymous;
+       With_id 1619;
+       Student { student_id = 451; name = "Ray Bradbury" };
+       Teacher { faculty_id = 2001; name = "Arthur C. Clark"; department = "Space" }
+    ] |&> (fun p ->
+      let (code, res) = student_from_person p in
+      (p, res, `status_code code), `nodoc))
+end
 
 include R.Public
 
-module type Database = sig
+module type Repository = sig
   module Io : Monadic
   val sample_student : Types.student Io.t
 end
 
 module Builder = functor
-  (D: Database)
-  (M: ServerBuilder with module Io = D.Io) -> struct
+  (R: Repository)
+  (M: ServerBuilder with module Io = R.Io) -> struct
   let build_handler () =
     let open MonadOps(M.Io) in
 
     M.register_get_handler get_any_student (fun () ->
-      D.sample_student
+      R.sample_student
       >|= (fun s -> (200, s))
     );
 
-    M.register_post_handler get_student_from_person (fun person ->
-      match person with
-      | T.Student { student_id; name; } ->
-        let student : T.student = { admission_year = student_id; name; } in
-        return (200, Packed.ok student)
-      | Anonymous -> return (422, Packed.error "anonymous, not student")
-      | With_id _ -> return (422, Packed.error "with_id, not student")
-      | Teacher _ -> return (422, Packed.error "teacher, not student")
-    );
+    M.register_post_handler get_student_from_person
+      (student_from_person &> return);
 
     ()
 end

@@ -12,7 +12,14 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Student" },
-                "examples": {}
+                "examples": {
+                  "example_0": {
+                    "value": {
+                      "admissionYear": 1984,
+                      "name": "William Gibson"
+                    }
+                  }
+                }
               }
             }
           }
@@ -29,7 +36,25 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/Person" },
-              "examples": {}
+              "examples": {
+                "example_0": { "value": { "kind": "anonymous" } },
+                "example_1": { "value": { "kind": "with-id", "arg": 1619 } },
+                "example_2": {
+                  "value": {
+                    "kind": "student",
+                    "studentId": 451,
+                    "name": "Ray Bradbury"
+                  }
+                },
+                "example_3": {
+                  "value": {
+                    "kind": "teacher",
+                    "facultyId": 2001,
+                    "name": "Arthur C. Clark",
+                    "department": "Space"
+                  }
+                }
+              }
             }
           },
           "required": false
@@ -40,16 +65,24 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Student" },
-                "examples": {}
+                "examples": {
+                  "example_0": {
+                    "value": { "admissionYear": 451, "name": "Ray Bradbury" }
+                  }
+                }
               }
             }
           },
-          "4XX": {
-            "description": "The reson why the Product ID is unavailable.",
+          "422": {
+            "description": "The reson why the person is unavailable.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/String" },
-                "examples": {}
+                "examples": {
+                  "example_0": { "value": "anonymous, not student" },
+                  "example_1": { "value": "with_id, not student" },
+                  "example_2": { "value": "teacher, not student" }
+                }
               }
             }
           }

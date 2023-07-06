@@ -33,13 +33,11 @@ let raise_exn = function
   | Error (e, _) -> raise e
 
 let main =
-  Lwt_io.print "\n"
-  >>= fun () ->
-    Client.perform_json_post Apidir.get_products
-      { searchQuery = Some "novel";
-        minimum_price = None;
-        maximum_price = None;
-        limit = None }
+  Client.perform_json_post Apidir.get_products
+    { searchQuery = Some "novel";
+      minimum_price = None;
+      maximum_price = None;
+      limit = None }
   >|= raise_exn
   >>= fun products ->
     let s = sprintf "%a" (List.pp Product.pp) products in

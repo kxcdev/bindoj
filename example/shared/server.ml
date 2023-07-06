@@ -64,10 +64,11 @@ module Make_cohttp_server (Dir: Apidirectory) = struct
         ])
       in
       begin
-        match Request.meth req with
-        | `GET ->
-          handle_request ~path ~meth:`GET
-        | `POST ->
+        match Request.meth req, path with
+        | `GET, "/_health" -> Io.return (200, `str "i am not a tea pot")
+        | `GET, _ ->
+           handle_request ~path ~meth:`GET
+        | `POST, _ ->
           Cohttp_lwt.Body.to_string body
           >|= (Yojson.Safe.from_string &> Json.of_yojson)
           >>= (fun body -> handle_request ~path ~meth:(`POST body))

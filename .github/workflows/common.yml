@@ -56,6 +56,12 @@ jobs:
 
       - name: build & test
         run: ./scripts/ci_run.sh
+
+      - name: check diff
+        run: |
+          git add example/*/generated/
+          git diff --cached --exit-code
+
       - run: |
           opam exec -- make doc
 

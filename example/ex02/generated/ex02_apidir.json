@@ -11,7 +11,32 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/ProductQuery" },
-              "examples": {}
+              "examples": {
+                "Sample to get all products": {
+                  "value": {
+                    "searchQuery": null,
+                    "minimumPrice": null,
+                    "maximumPrice": null,
+                    "limit": null
+                  }
+                },
+                "Sample with search query": {
+                  "value": {
+                    "searchQuery": "novel",
+                    "minimumPrice": null,
+                    "maximumPrice": null,
+                    "limit": null
+                  }
+                },
+                "Sample with minimum price": {
+                  "value": {
+                    "searchQuery": null,
+                    "minimumPrice": 1000,
+                    "maximumPrice": null,
+                    "limit": null
+                  }
+                }
+              }
             }
           },
           "required": false
@@ -22,7 +47,83 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ProductList" },
-                "examples": {}
+                "examples": {
+                  "Sample to get all products": {
+                    "value": [
+                      {
+                        "id": 0,
+                        "details": {
+                          "name": "Pride and Prejudice",
+                          "description": "A classic romance novel, describing the love story between Elizabeth Bennet and Fitzwilliam Darcy.",
+                          "price": 800,
+                          "count": 15
+                        }
+                      },
+                      {
+                        "id": 1,
+                        "details": {
+                          "name": "Moby Dick",
+                          "description": "The story of captain Ahab's relentless pursuit of the white whale, Moby Dick.",
+                          "price": 1200,
+                          "count": 10
+                        }
+                      },
+                      {
+                        "id": 2,
+                        "details": {
+                          "name": "Dracula",
+                          "description": "A Gothic horror novel, telling the story of the vampire Count Dracula.",
+                          "price": 1000,
+                          "count": 25
+                        }
+                      }
+                    ]
+                  },
+                  "Sample with search query": {
+                    "value": [
+                      {
+                        "id": 0,
+                        "details": {
+                          "name": "Pride and Prejudice",
+                          "description": "A classic romance novel, describing the love story between Elizabeth Bennet and Fitzwilliam Darcy.",
+                          "price": 800,
+                          "count": 15
+                        }
+                      },
+                      {
+                        "id": 2,
+                        "details": {
+                          "name": "Dracula",
+                          "description": "A Gothic horror novel, telling the story of the vampire Count Dracula.",
+                          "price": 1000,
+                          "count": 25
+                        }
+                      }
+                    ]
+                  },
+                  "Sample with minimum price": {
+                    "value": [
+                      {
+                        "id": 1,
+                        "details": {
+                          "name": "Moby Dick",
+                          "description": "The story of captain Ahab's relentless pursuit of the white whale, Moby Dick.",
+                          "price": 1200,
+                          "count": 10
+                        }
+                      },
+                      {
+                        "id": 2,
+                        "details": {
+                          "name": "Dracula",
+                          "description": "A Gothic horror novel, telling the story of the vampire Count Dracula.",
+                          "price": 1000,
+                          "count": 25
+                        }
+                      }
+                    ]
+                  }
+                }
               }
             }
           }
@@ -39,7 +140,44 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/OrderQuery" },
-              "examples": {}
+              "examples": {
+                "sample to get all orders": {
+                  "value": {
+                    "products": null,
+                    "status": null,
+                    "minimumPrice": null,
+                    "maximumPrice": null,
+                    "limit": null
+                  }
+                },
+                "Sample with products": {
+                  "value": {
+                    "products": [0],
+                    "status": null,
+                    "minimumPrice": null,
+                    "maximumPrice": null,
+                    "limit": null
+                  }
+                },
+                "Sample with status": {
+                  "value": {
+                    "products": null,
+                    "status": ["Delivered"],
+                    "minimumPrice": null,
+                    "maximumPrice": null,
+                    "limit": null
+                  }
+                },
+                "Sample with minimum total price": {
+                  "value": {
+                    "products": null,
+                    "status": null,
+                    "minimumPrice": 1500,
+                    "maximumPrice": null,
+                    "limit": null
+                  }
+                }
+              }
             }
           },
           "required": false
@@ -50,7 +188,156 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/OrderList" },
-                "examples": {}
+                "examples": {
+                  "sample to get all orders": {
+                    "value": [
+                      {
+                        "id": 0,
+                        "totalPrice": 2000,
+                        "details": {
+                          "products": [
+                            { "_0": 0, "_1": 1 },
+                            { "_0": 1, "_1": 1 }
+                          ],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "1111222233334444",
+                            "holderName": "John Smith",
+                            "expirationDate": { "_0": 2026, "_1": 5 },
+                            "cvv": "123"
+                          }
+                        },
+                        "status": "Delivered"
+                      },
+                      {
+                        "id": 1,
+                        "totalPrice": 2000,
+                        "details": {
+                          "products": [{ "_0": 2, "_1": 2 }],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "2222333344445555",
+                            "holderName": "Jane Smith",
+                            "expirationDate": { "_0": 2025, "_1": 11 },
+                            "cvv": "234"
+                          }
+                        },
+                        "status": "Paid"
+                      },
+                      {
+                        "id": 2,
+                        "totalPrice": 800,
+                        "details": {
+                          "products": [{ "_0": 0, "_1": 1 }],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "3333444455556666",
+                            "holderName": "Robert Johnson",
+                            "expirationDate": { "_0": 2027, "_1": 6 },
+                            "cvv": "345"
+                          }
+                        },
+                        "status": "Canceled"
+                      }
+                    ]
+                  },
+                  "Sample with products": {
+                    "value": [
+                      {
+                        "id": 0,
+                        "totalPrice": 2000,
+                        "details": {
+                          "products": [
+                            { "_0": 0, "_1": 1 },
+                            { "_0": 1, "_1": 1 }
+                          ],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "1111222233334444",
+                            "holderName": "John Smith",
+                            "expirationDate": { "_0": 2026, "_1": 5 },
+                            "cvv": "123"
+                          }
+                        },
+                        "status": "Delivered"
+                      },
+                      {
+                        "id": 2,
+                        "totalPrice": 800,
+                        "details": {
+                          "products": [{ "_0": 0, "_1": 1 }],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "3333444455556666",
+                            "holderName": "Robert Johnson",
+                            "expirationDate": { "_0": 2027, "_1": 6 },
+                            "cvv": "345"
+                          }
+                        },
+                        "status": "Canceled"
+                      }
+                    ]
+                  },
+                  "Sample with status": {
+                    "value": [
+                      {
+                        "id": 0,
+                        "totalPrice": 2000,
+                        "details": {
+                          "products": [
+                            { "_0": 0, "_1": 1 },
+                            { "_0": 1, "_1": 1 }
+                          ],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "1111222233334444",
+                            "holderName": "John Smith",
+                            "expirationDate": { "_0": 2026, "_1": 5 },
+                            "cvv": "123"
+                          }
+                        },
+                        "status": "Delivered"
+                      }
+                    ]
+                  },
+                  "Sample with minimum total price": {
+                    "value": [
+                      {
+                        "id": 0,
+                        "totalPrice": 2000,
+                        "details": {
+                          "products": [
+                            { "_0": 0, "_1": 1 },
+                            { "_0": 1, "_1": 1 }
+                          ],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "1111222233334444",
+                            "holderName": "John Smith",
+                            "expirationDate": { "_0": 2026, "_1": 5 },
+                            "cvv": "123"
+                          }
+                        },
+                        "status": "Delivered"
+                      },
+                      {
+                        "id": 1,
+                        "totalPrice": 2000,
+                        "details": {
+                          "products": [{ "_0": 2, "_1": 2 }],
+                          "paymentMethod": {
+                            "kind": "credit-card",
+                            "cardNumber": "2222333344445555",
+                            "holderName": "Jane Smith",
+                            "expirationDate": { "_0": 2025, "_1": 11 },
+                            "cvv": "234"
+                          }
+                        },
+                        "status": "Paid"
+                      }
+                    ]
+                  }
+                }
               }
             }
           }
@@ -67,7 +354,11 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/ProductId" },
-              "examples": {}
+              "examples": {
+                "Succeeded with ID=0": { "value": 0 },
+                "Succeeded with ID=1": { "value": 1 },
+                "ID not found": { "value": 10 }
+              }
             }
           },
           "required": false
@@ -78,16 +369,43 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Product" },
-                "examples": {}
+                "examples": {
+                  "Succeeded with ID=0": {
+                    "value": {
+                      "id": 0,
+                      "details": {
+                        "name": "Pride and Prejudice",
+                        "description": "A classic romance novel, describing the love story between Elizabeth Bennet and Fitzwilliam Darcy.",
+                        "price": 800,
+                        "count": 15
+                      }
+                    }
+                  },
+                  "Succeeded with ID=1": {
+                    "value": {
+                      "id": 1,
+                      "details": {
+                        "name": "Moby Dick",
+                        "description": "The story of captain Ahab's relentless pursuit of the white whale, Moby Dick.",
+                        "price": 1200,
+                        "count": 10
+                      }
+                    }
+                  }
+                }
               }
             }
           },
-          "4XX": {
-            "description": "The reson why the Product ID is unavailable.",
+          "400": {
+            "description": "The readon why the Product ID is unavailable.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/String" },
-                "examples": {}
+                "examples": {
+                  "ID not found": {
+                    "value": "Product of the given ID is not found"
+                  }
+                }
               }
             }
           }
@@ -104,7 +422,11 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/OrderId" },
-              "examples": {}
+              "examples": {
+                "Succeeded with ID=0": { "value": 0 },
+                "Succeeded with ID=1": { "value": 1 },
+                "ID not found": { "value": 10 }
+              }
             }
           },
           "required": false
@@ -115,16 +437,61 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Order" },
-                "examples": {}
+                "examples": {
+                  "Succeeded with ID=0": {
+                    "value": {
+                      "id": 0,
+                      "totalPrice": 2000,
+                      "details": {
+                        "products": [
+                          { "_0": 0, "_1": 1 },
+                          { "_0": 1, "_1": 1 }
+                        ],
+                        "paymentMethod": {
+                          "kind": "credit-card",
+                          "cardNumber": "1111222233334444",
+                          "holderName": "John Smith",
+                          "expirationDate": { "_0": 2026, "_1": 5 },
+                          "cvv": "123"
+                        }
+                      },
+                      "status": "Delivered"
+                    }
+                  },
+                  "Succeeded with ID=1": {
+                    "value": {
+                      "id": 0,
+                      "totalPrice": 2000,
+                      "details": {
+                        "products": [
+                          { "_0": 0, "_1": 1 },
+                          { "_0": 1, "_1": 1 }
+                        ],
+                        "paymentMethod": {
+                          "kind": "credit-card",
+                          "cardNumber": "1111222233334444",
+                          "holderName": "John Smith",
+                          "expirationDate": { "_0": 2026, "_1": 5 },
+                          "cvv": "123"
+                        }
+                      },
+                      "status": "Delivered"
+                    }
+                  }
+                }
               }
             }
           },
-          "4XX": {
-            "description": "The reson why the Product ID is unavailable.",
+          "400": {
+            "description": "The readon why the Order ID is unavailable.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/String" },
-                "examples": {}
+                "examples": {
+                  "ID not found": {
+                    "value": "Order of the given ID is not found"
+                  }
+                }
               }
             }
           }
@@ -137,11 +504,20 @@
       "post": {
         "summary": "register-product",
         "requestBody": {
-          "description": "product details to be registered to the database",
+          "description": "Product details to be registered to the database",
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/ProductDetails" },
-              "examples": {}
+              "examples": {
+                "example_0": {
+                  "value": {
+                    "name": "Frankenstein",
+                    "description": "A tale of young scientist Victor Frankenstein and his creation of a grotesque monster.",
+                    "price": 950,
+                    "count": 7
+                  }
+                }
+              }
             }
           },
           "required": false
@@ -152,7 +528,7 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ProductId" },
-                "examples": {}
+                "examples": { "example_0": { "value": 3 } }
               }
             }
           }
@@ -169,7 +545,45 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/OrderDetails" },
-              "examples": {}
+              "examples": {
+                "Registered successfully": {
+                  "value": {
+                    "products": [
+                      { "_0": 0, "_1": 1 },
+                      { "_0": 1, "_1": 1 }
+                    ],
+                    "paymentMethod": {
+                      "kind": "credit-card",
+                      "cardNumber": "3333444455556666",
+                      "holderName": "Robert Johnson",
+                      "expirationDate": { "_0": 2027, "_1": 6 },
+                      "cvv": "345"
+                    }
+                  }
+                },
+                "Product not found": {
+                  "value": {
+                    "products": [{ "_0": 9, "_1": 1 }],
+                    "paymentMethod": {
+                      "kind": "bank-transfer",
+                      "accountNumber": "123456789",
+                      "bankName": "Bank of Example",
+                      "holderName": "Alice Brown"
+                    }
+                  }
+                },
+                "Inventory shortage": {
+                  "value": {
+                    "products": [{ "_0": 0, "_1": 100 }],
+                    "paymentMethod": {
+                      "kind": "bank-transfer",
+                      "accountNumber": "234567890",
+                      "bankName": "Example Savings",
+                      "holderName": "Emma Davis"
+                    }
+                  }
+                }
+              }
             }
           },
           "required": false
@@ -180,16 +594,31 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/OrderId" },
-                "examples": {}
+                "examples": { "Registered successfully": { "value": 3 } }
               }
             }
           },
-          "4XX": {
-            "description": "The reson why the Product ID is unavailable.",
+          "400": {
+            "description": "The readon why the product ID is unavailable.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/String" },
-                "examples": {}
+                "examples": {
+                  "Product not found": {
+                    "value": "Product of the given ID is not found"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The readon why the order is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {
+                  "Inventory shortage": { "value": "inventory shortage" }
+                }
               }
             }
           }
@@ -208,7 +637,30 @@
               "schema": {
                 "$ref": "#/components/schemas/ProductDetailsWithId"
               },
-              "examples": {}
+              "examples": {
+                "Updated successfully": {
+                  "value": {
+                    "_0": 0,
+                    "_1": {
+                      "name": "Pride and Prejudice",
+                      "description": "new desc",
+                      "price": 800,
+                      "count": 15
+                    }
+                  }
+                },
+                "ID not found": {
+                  "value": {
+                    "_0": 8,
+                    "_1": {
+                      "name": "The Adventures of Sherlock Holmes",
+                      "description": "A collection of short stories featuring the brilliant detective Sherlock Holmes and his loyal friend, Dr. Watson.",
+                      "price": 1300,
+                      "count": 12
+                    }
+                  }
+                }
+              }
             }
           },
           "required": false
@@ -219,16 +671,20 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/OrderId" },
-                "examples": {}
+                "examples": { "Updated successfully": { "value": 0 } }
               }
             }
           },
-          "4XX": {
-            "description": "The reson why the Product ID is unavailable.",
+          "400": {
+            "description": "The readon why the status details are unavailable.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/String" },
-                "examples": {}
+                "examples": {
+                  "ID not found": {
+                    "value": "Product of the given ID is not found."
+                  }
+                }
               }
             }
           }
@@ -245,7 +701,15 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/OrderStatusWithId" },
-              "examples": {}
+              "examples": {
+                "Updated successfully": {
+                  "value": { "_0": 1, "_1": "Shipped" }
+                },
+                "Invalid order status": {
+                  "value": { "_0": 1, "_1": "Unpaid" }
+                },
+                "ID not found": { "value": { "_0": 10, "_1": "Canceled" } }
+              }
             }
           },
           "required": false
@@ -256,16 +720,21 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/OrderId" },
-                "examples": {}
+                "examples": { "Updated successfully": { "value": 1 } }
               }
             }
           },
-          "4XX": {
-            "description": "The reson why the Product ID is unavailable.",
+          "400": {
+            "description": "The readon why the order details are unavailable.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/String" },
-                "examples": {}
+                "examples": {
+                  "Invalid order status": { "value": "Invalid order status" },
+                  "ID not found": {
+                    "value": "Order of the given ID is not found"
+                  }
+                }
               }
             }
           }

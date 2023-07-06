@@ -1,5 +1,7 @@
 # example02
 
+An example of type declarations for real application.
+
 ## Run Server
 
 ```sh

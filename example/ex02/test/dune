@@ -1,0 +1,6 @@
+(cram
+  (deps
+    ../src/server/server.exe
+    ../src/client/client.exe
+    wait_server_up.sh))
+(copy_files ../../../scripts/wait_server_up.sh)

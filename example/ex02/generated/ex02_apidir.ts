@@ -42,7 +42,7 @@ export const Ex02InvpInfo = {
     method: "POST",
     urlpath: "/order/register",
     req_type: undefined as unknown as OrderDetails,
-    resp_type: undefined as unknown as OrderId | string,
+    resp_type: undefined as unknown as OrderId | string | string,
   },
   "update-product-details": {
     name: "update-product-details",
