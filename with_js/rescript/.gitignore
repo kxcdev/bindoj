@@ -1,4 +1,0 @@
-lib/
-generated/*.ml
-generated/*.mli
-generated/*.bs.js
