@@ -34,12 +34,14 @@ test: audit
 
 doc:
 	dune build @doc
+	dune build @doc --root=vendors/kxclib
 
 	mkdir -p doc/dist
 	cp doc/tests_src/*.md doc/dist/
 
 	rm -rf doc/app/public/html
 	cp -r _build/default/_doc/_html doc/app/public/html
+	cp -r vendors/kxclib/_build/default/_doc/_html/kxclib doc/app/public/html/kxclib
 
 	rm -rf doc/example
 	cp -r _build/default/example/docs doc/example
