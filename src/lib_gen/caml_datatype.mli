@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+(** This module provides functionalities to generate OCaml types. *)
 open Bindoj_base.Type_desc
 
 val type_declaration_of_type_decl :
@@ -24,11 +25,13 @@ val type_declaration_of_type_decl :
   -> ?attrs:Ppxlib.attribute list
   -> type_decl
   -> Ppxlib.type_declaration
+(** Generates a type declaration. *)
 
 val gen_reflect :
   ?codec:Coretype.codec
   -> type_decl
   -> Ppxlib.value_binding
+(** Generates a reflection. *)
 
 (**
   generate the whole structure containing the results of [type_declaration_of_type_decl] and [gen_reflect].
@@ -57,6 +60,7 @@ val gen_reflect_signature :
   -> ?codec:Coretype.codec
   -> type_decl
   -> Ppxlib.value_description
+(** Generaets a signatuoe of reflection *)
 
 (**
   generate the whole signature containing the results of [type_declaration_of_type_decl] and [gen_reflect_signature].

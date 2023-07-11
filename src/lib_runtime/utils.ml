@@ -25,6 +25,8 @@ module StringMap = struct
 end
 
 module Doc = struct
+
+  (** This type represents a document. *)
   type t = [
     | `docstr of string
     | `nodoc
@@ -37,8 +39,10 @@ module Doc = struct
     | Some doc -> `docstr doc
 end
 
+(** This type represents a document. *)
 type doc = Doc.t [@@deriving show, eq]
 
+(** This type represents a value of type ['x] with a document. *)
 type 'x with_doc = 'x Doc.u
 
 let string_of_doc : doc -> string = show_doc

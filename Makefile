@@ -1,4 +1,4 @@
-.PHONY: default info setup build test doc clean audit promote-audit promote-test promote
+.PHONY: default info setup build test doc doc-serve clean audit promote-audit promote-test promote
 
 default: info build
 
@@ -45,6 +45,9 @@ doc:
 
 	rm -rf doc/example
 	cp -r _build/default/example/docs doc/example
+
+doc-serve: doc
+	cd doc/app && yarn dev
 
 clean:
 	dune clean

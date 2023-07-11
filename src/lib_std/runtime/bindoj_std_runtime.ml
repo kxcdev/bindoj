@@ -17,10 +17,13 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+(** Standard library for Bindoj runtime. *)
 open Bindoj_runtime
 open Kxclib.Json
 
 module Json_value : sig
+  (** This module provides functionalities to represents and hanble a json value. *)
+
   type t = jv
   val to_json : t -> jv
   val of_json : jv -> t option

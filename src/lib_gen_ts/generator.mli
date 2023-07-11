@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+(** This module provides functions to generate TypeScript code. *)
 open Bindoj_typedesc.Typed_type_desc
 open Bindoj_typedesc.Type_desc
 
@@ -30,17 +31,20 @@ val generate_import :
   -> formatter:ppf
   -> type_decl list
   -> unit
+(** Writes import statements for [`reused_inline_record] of the given type declarations. *)
 
 val generate_env :
   env:tdenv
   -> formatter:ppf
   -> type_decl list
   -> unit
+(** Writes infile type definitions for [env.alias_ident_typemap] of the given tdenv. *)
 
 val generate_decl :
   formatter:ppf
   -> type_decl
   -> unit
+(** Writes type definition of the given type declaration. *)
 
 val generate :
   resolution_strategy:(type_decl -> resolution_strategy)
@@ -48,3 +52,4 @@ val generate :
   -> formatter:ppf
   -> type_decl list
   -> unit
+(** Writes the whole results of {!generate_import}, {!generate_env}, {!generate_decl}. *)

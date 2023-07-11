@@ -18,8 +18,25 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 module Mangling : sig
+  (** This module provides functions that transform the format of a given string. *)
+
   val snake_to_upper_camel : string -> string
+  (** Takes a string in {b snake_case} format and transforms it into {b UpperCamelCase}.
+      @param string the snake case string to convert.
+      @return the transformed string in {b UpperCamelCase} format. *)
+
   val snake_to_lower_camel : string -> string
+  (** Takes a string in {b snake_case} format and transforms it into {b lowerCamelCase}.
+      @param string the snake case string to convert.
+      @return the transformed string in {b lowerCamelCase} format. *)
+
   val cap_snake_to_kebab : string -> string
+  (** Takes a string in {b Capitalized_b snake_case} format and transforms it into {b kebab-case}.
+      @param string the capitalized snake case string to convert.
+      @return the transformed string in {b kebab-case} format. *)
+
   val snake_to_kebab : string -> string
+  (** Takes a string in {b snake_case} format and transforms it into {b kebab-case}.
+      @param string the snake case string to convert.
+      @return the transformed string in {b kebab-case} format. *)
 end

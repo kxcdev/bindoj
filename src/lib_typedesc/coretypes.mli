@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+(** This module provide modules, types and values to construct {!Typed_type_desc.typed_type_decl} of coretypes. *)
 open Bindoj_runtime
 
 open Type_desc
@@ -26,10 +27,16 @@ type 'x t
 val with_config : [`coretype] configs -> 'x t -> 'x t
 
 val to_refl : ?env:Typed_type_desc.tdenv -> ?self:'x Refl.t -> 'x t -> 'x Refl.t
+(** Converts the given {!t} into its corresponding reflection. *)
+
 val to_coretype : 'x t -> coretype
+(** Converts the given {!t} into coretype. *)
 
 val of_typed_type_decl : ?codec:Coretype.codec -> 'x Typed_type_desc.typed_type_decl -> 'x t
+(** Constructs a new {!t} from the given typed type declaration. *)
+
 val of_ : ?codec:Coretype.codec -> 'x Typed_type_desc.typed_type_decl -> 'x t
+(* This function acts same as {!of_typed_type_decl}. *)
 
 val to_typed_type_decl :
   ?env:Typed_type_desc.tdenv
@@ -38,8 +45,11 @@ val to_typed_type_decl :
   -> string
   -> 'x t
   -> 'x Typed_type_desc.typed_type_decl
+(** Transforms the given {!t} to its corresponding typed type declaration. *)
 
 module Prims : sig
+  (** This module provides bindings of primitive types. *)
+
   val unit : unit t
   val bool : bool t
   val int : int t
@@ -53,7 +63,7 @@ end
 
 val ident : ?codec:Coretype.codec -> string  -> 'any t
 (** it is the caller's responsibility to ensure that [id] resolves to a type_decl of
-    type with OCaml repr of type ['any] whenever [ident id] is used *)
+    type with OCaml repr of type ['any] whenever [ident id] is used. *)
 
 val ident' : ?codec:Coretype.codec -> 'x Typed_type_desc.typed_type_decl -> 'x t
 
@@ -62,12 +72,14 @@ val uninhabitable : Kxclib.null t
 val option : 'v t -> 'v option t
 
 module Tuple : sig
+  (** This module provides functionalities to create a new {!t} of tuple. *)
+
   val tuple_unsafe : 'tup_t -> 'tup t
-  (** the first argument must be of type ['v1 t * 'v2 t * .. * 'vk t]
+  (** The first argument must be of type ['v1 t * 'v2 t * .. * 'vk t]
       and the return type shall be casted/restricted to [('v1 * 'v2 * .. * 'vk) t]
       it is the caller's responsibility to ensure the type matches.
 
-      the [tupN] functions are provided for N=2..9 and is recommended over this function *)
+      the [tupN] functions are provided for N=2..9 and is recommended over this function. *)
 
   val tup2 : ('v1 t * 'v2 t) -> ('v1 * 'v2) t
   val tup3 : ('v1 t * 'v2 t * 'v3 t) -> ('v1 * 'v2 * 'v3) t
@@ -82,11 +94,16 @@ end
 val list : 'v t -> 'v list t
 
 module Map : sig
+  (** This module provides functionalities to create a new {!t} of map. *)
+
   val string_map : 'v t -> (string * 'v) list t
 end
 
 module Enum : sig
+  (** This module provides functionalities to create {!t} of enum. *)
+
   type 't poly = 't constraint 't = [>]
+
   val string_enum : ('tags poly * Coretype.string_enum_case) list -> 'tags t
 (** example: [string_enum \[ `monday, Coretype.string_enum_case "monday" ; `tuesday, Coretype.string_enum_case "tuesday"; .. \]]
 

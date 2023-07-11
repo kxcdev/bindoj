@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+(** This module provides functions for interconversion between JSON values and OCaml values. *)
 open Bindoj_base
 open Bindoj_runtime
 open Typed_type_desc
@@ -27,7 +28,26 @@ module Json_config = Bindoj_codec_config.Json_config
 val get_json_discriminator_value : 'a typed_type_decl -> 'a -> string
 
 val explain_encoded_json_shape : env:tdenv -> 't typed_type_decl -> json_shape_explanation
+(** Creates a json shape explanation of the give typed type declaration. *)
 
 val of_json' : env:tdenv -> 'a typed_type_decl -> jv -> 'a OfJsonResult.t
+(** Converts the provided JSON value to the corresponding OCaml value, if possible.
+    @param env Environment where the type declarations are added.
+    @param typed_type_decl A typed type declaration that specifies how to convert the value.
+    @param jv JSON value to be converted.
+    @return The converted OCaml value encapsulated in an OfJsonResult type. *)
+
 val of_json : env:tdenv -> 'a typed_type_decl -> jv -> 'a option
+(** Converts the provided JSON value to the corresponding OCaml value.
+    This function acts same as {!of_json'}.
+    @param env Environment where the type declarations are added.
+    @param typed_type_decl A typed type declaration that specifies how to convert the value.
+    @param jv JSON value to be converted.
+    @return The converted OCaml value if possible, else [None]. *)
+
 val to_json : env:tdenv -> 'a typed_type_decl -> 'a -> jv
+(** Converts an OCaml value to a JSON value.
+    @param env Environment where the type declarations are added.
+    @param typed_type_decl A typed type declaration that specifies how to convert the value.
+    @param 'a OCaml value to be converted.
+    @return The converted JSON value. *)

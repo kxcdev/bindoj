@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+(** This module provides functionalities to configure the JSON shape. *)
 open Bindoj_base
 open Bindoj_runtime
 open Typed_type_desc

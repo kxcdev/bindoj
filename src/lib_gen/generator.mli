@@ -17,6 +17,7 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+(** This module provides functions to generate OCaml code. *)
 open Bindoj_typedesc.Type_desc
 
 val gen_structure_with_json_codec :
@@ -29,6 +30,19 @@ val gen_structure_with_json_codec :
   -> formatter:ppf
   -> type_decl
   -> unit
+(** Writes the OCaml code of the structures of {!Caml_datatype.gen_structure} and {!Json_codec.gen_json_codec}.
+    @param ?self_contained If [true], generates builtin encoders/decoders in encoder/decoder functions.
+    @param ?gen_json_shape_explanation If present, [val <type_name>_json_shape_explanation] is also generated.
+    @param ?discriminator_value_accessor
+    If [true] and the given [type_decl] is [Variant_decl], [val <type_name>_json_discriminator_value] is also generated.
+    @param ?json_shape_explanation_resolution How ident is resolved when generating [json_shape_explanation].
+    @param ?codec
+    If [codec] is [`default], [type t] and [val <type_name>_<value_name>] are generated.
+    If [codec] is [`in_module _], [type <type_name>] and [val <value_name>] are generated.
+    @param ?type_decl the expression of / the path to the [type_decl] value.
+    If present, [val <type_name>_decl] and [val <type_name>_typed_decl] are also generated.
+    @param formatter Formatter in which the results are written.
+    @param type_decl type declaration to be generated. *)
 
 val gen_signature_with_json_codec :
   ?gen_json_shape_explanation:bool
@@ -38,3 +52,13 @@ val gen_signature_with_json_codec :
   -> formatter:ppf
   -> type_decl
   -> unit
+(** Writes the OCaml code of the signatures of {!Caml_datatype.gen_signature} and {!Json_codec.gen_json_codec_signature}.
+    @param ?gen_json_shape_explanation If present, [val <type_name>_json_shape_explanation] is also generated.
+    @param ?discriminator_value_accessor
+    If [true] and the given [type_decl] is [Variant_decl], [val <type_name>_json_discriminator_value] is also generated.
+    @param ?codec
+    If [codec] is [`default], [type t] and [val <type_name>_<value_name>] are generated.
+    If [codec] is [`in_module _], [type <type_name>] and [val <value_name>] are generated.
+    @param ?gen_type_decl If [true], [val <type_name>_decl] and [val <type_name>_typed_decl] are also generated.
+    @param formatter Formatter in which the results are written.
+    @param type_decl type declaration to be generated. *)

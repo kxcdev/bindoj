@@ -17,13 +17,15 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-
+(** Standard library for using Bindoj. *)
 open Bindoj_base
 open Bindoj_base.Typed_type_desc
 open Bindoj_runtime
 open Bindoj_gen_config
 
 module Json_value : sig
+  (** This module provides functionalities to represents and hanble a json value. *)
+
   include module type of Bindoj_std_runtime.Json_value
 
   val type_name : string
