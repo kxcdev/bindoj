@@ -255,7 +255,7 @@ type variant_constructor = {
     | `no_param
     | `tuple_like of coretype list (** invariant: at least one *)
     | `inline_record of record_field list (** invariant: at least one *)
-    | `reused_inline_record of type_decl (** must be Variant_decl kinded *)
+    | `reused_inline_record of type_decl (** must be Record_decl kinded *)
   ];
   vc_configs: [`variant_constructor] configs; (** Configurations associated with the variant constructor *)
   vc_doc: doc; (** Documentation of the variant constructor *)
