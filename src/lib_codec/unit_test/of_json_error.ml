@@ -49,16 +49,20 @@ let create_test_cases (module S : Sample) =
       in
       check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
       check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path;
-    ))) @ [
-      test_case "json_shape_explanation" `Quick(fun () ->
-        let actual_json_shape_explanation =
-          Bindoj_codec.Json.explain_encoded_json_shape ~env:S.env typed_decl
-        in
-        check' Testables.json_shape_explanation
-          ~msg:"json_shape_explanation"
-          ~expected:S.expected_json_shape_explanation
-          ~actual:actual_json_shape_explanation
-      )]
+    )) |> fun tests ->
+      tests @ begin match S.expected_json_shape_explanation with
+      | None -> [ test_case "json_shape_explanation(skipped)" `Quick ignore]
+      | Some expected -> [
+          test_case "json_shape_explanation" `Quick(fun () ->
+            let actual_json_shape_explanation =
+              Bindoj_codec.Json.explain_encoded_json_shape ~env:S.env typed_decl
+            in
+            check' Testables.json_shape_explanation
+              ~msg:"json_shape_explanation"
+              ~expected
+              ~actual:actual_json_shape_explanation
+          )]
+      end)
 
 let () =
   all

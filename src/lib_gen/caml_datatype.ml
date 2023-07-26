@@ -73,8 +73,8 @@ and type_manifest_of_type_decl_kind : self_name:string -> type_decl -> core_type
             true
             (match ts with
             | [] -> failwith "impossible"
-            | [arg] -> [type_of_coretype ~self_name arg]
-            | args -> [Typ.tuple (args |&> type_of_coretype ~self_name)])
+            | [arg] -> [type_of_coretype ~self_name @@ nested_type_to_coretype arg.va_type]
+            | args -> [Typ.tuple (args |&> fun { va_type; _ } -> type_of_coretype ~self_name @@ nested_type_to_coretype va_type)])
         | `inline_record _ ->
           failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" ctor.vc_name
         | `reused_inline_record _ ->
@@ -87,7 +87,7 @@ and label_declarations_of_record_fields ~self_name fields =
     Type.field
       ~attrs:(doc_attribute field.rf_doc)
       (locmk field.rf_name)
-      (type_of_coretype ~self_name field.rf_type)
+      (type_of_coretype ~self_name @@ nested_type_to_coretype field.rf_type)
 
 and constructor_declarations_of_variant_constructors ~self_name ctors =
   ctors |&> fun ctor ->
@@ -96,7 +96,7 @@ and constructor_declarations_of_variant_constructors ~self_name ctors =
       | `no_param ->
         ctor.vc_name, Pcstr_tuple []
       | `tuple_like ts ->
-        ctor.vc_name, Pcstr_tuple (ts |&> type_of_coretype ~self_name)
+        ctor.vc_name, Pcstr_tuple (ts |&> fun { va_type; _ } -> type_of_coretype ~self_name @@ nested_type_to_coretype va_type)
       | `inline_record fields ->
         ctor.vc_name, Pcstr_record (fields |> label_declarations_of_record_fields ~self_name)
       | `reused_inline_record decl ->
@@ -126,11 +126,7 @@ and type_of_coretype : self_name:string -> coretype -> core_type =
     | Prim p -> type_of_prim p
     | Uninhabitable -> typcons "unit"
     | Ident { id_name; id_codec; } ->
-      typcons
-        (match id_codec with
-        | `default -> id_name
-        | `open_ m -> sprintf "%s.%s" m id_name
-        | `in_module m -> m ^ ".t")
+      typcons (Utils.type_name_with_codec ~codec:id_codec id_name)
     | Option t -> typcons "option" ~args:[go t]
     | List t -> typcons "list" ~args:[go t]
     | Map (k, v) ->
@@ -146,6 +142,7 @@ and type_of_coretype : self_name:string -> coretype -> core_type =
       Typ.variant cases Closed None
     | Self -> typcons self_name
     in go ct_desc
+
 
 open Bindoj_base.Typed_type_desc
 
@@ -300,7 +297,7 @@ and gen_reflect_record_impl ~self_name ?(mk_ctor=identity) (fields: record_field
     fields |> List.map (fun field ->
       Exp.tuple [
         Exp.constant (Const.string (field.rf_name));
-        [%expr [%e coretype_to_expr ~self_name field.rf_type] [%e evar field.rf_name]]
+        [%expr [%e coretype_to_expr ~self_name @@ nested_type_to_coretype field.rf_type] [%e evar field.rf_name]]
       ]
     ) |> elist |> fun e -> [%expr StringMap.of_list [%e e]]
   in
@@ -315,7 +312,7 @@ and gen_reflect_record_impl ~self_name ?(mk_ctor=identity) (fields: record_field
       [%expr
         [%e arg]
         |> StringMap.find_opt [%e sname]
-        >>= [%e coretype_of_expr ~self_name field.rf_type]
+        >>= [%e coretype_of_expr ~self_name @@ nested_type_to_coretype field.rf_type]
         >>= fun [%p pname] -> [%e body]
       ]
     ) [%expr Some [%e mk_body]]
@@ -340,7 +337,7 @@ and gen_reflect_variant_impl ~self_name ~poly (ctors: variant_constructor list) 
   ctors |> List.map (fun ctor ->
     let ctor_expr = ctor_expr ctor in
     let ctor_pat = ctor_pat ctor in
-    let invalid = [%expr invalid_arg ([%e Exp.constant (Const.string ctor.vc_name)] ^ " is expected")] in
+    let invalid = [%expr invalid_arg ([%e Exp.constant (Const.string (ctor.vc_name ^ " is expected"))])] in
     let of_record_fields ~label fields make_refl =
       if poly then failwith' "case '%s' with an %s cannot be used in a polymorphic variant" ctor.vc_name label
       else
@@ -360,12 +357,12 @@ and gen_reflect_variant_impl ~self_name ~poly (ctors: variant_constructor list) 
     | `tuple_like [] -> invalid_arg "tuple_like but 0 items defined"
     | `tuple_like [t] ->
       let get = [%expr function
-        | [%p ctor_pat ~arg:[%pat? x] ()] -> [[%e coretype_to_expr ~self_name t] x]
+        | [%p ctor_pat ~arg:[%pat? x] ()] -> [[%e coretype_to_expr ~self_name @@ nested_type_to_coretype t.va_type] x]
         | _ -> [%e invalid]]
       in
       let mk = [%expr function
         | [x] ->
-          [%e coretype_of_expr ~self_name t] x
+          [%e coretype_of_expr ~self_name @@ nested_type_to_coretype t.va_type] x
           |> Option.map (fun x -> [%e ctor_expr ~arg:[%expr x] ()])
         | _ -> None]
       in
@@ -375,7 +372,7 @@ and gen_reflect_variant_impl ~self_name ~poly (ctors: variant_constructor list) 
       let evars = ts |> List.mapi (fun i t -> t, evari i) in
       let get_body =
         evars |> List.map (fun (t, x) ->
-          [%expr [%e coretype_to_expr ~self_name t] [%e x]]
+          [%expr [%e coretype_to_expr ~self_name @@ nested_type_to_coretype t.va_type] [%e x]]
         )
       in
       let get = [%expr function
@@ -385,7 +382,7 @@ and gen_reflect_variant_impl ~self_name ~poly (ctors: variant_constructor list) 
       let mk_body =
         let body = ctor_expr ~arg:(evars |> List.map snd |> Exp.tuple) () in
         ts
-        |> List.mapi (fun i t -> pvari i, [%expr [%e coretype_of_expr ~self_name t] [%e evari i]])
+        |> List.mapi (fun i t -> pvari i, [%expr [%e coretype_of_expr ~self_name @@ nested_type_to_coretype t.va_type] [%e evari i]])
         |> List.rev
         |> List.fold_left (fun expr (pv, result) ->
             [%expr [%e result] >>= fun [%p pv] -> [%e expr]]

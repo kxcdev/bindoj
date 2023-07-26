@@ -47,13 +47,17 @@ let create_test_cases (module S : SampleGenerated) =
       in
       check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
       check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path
-    ))) @ [
-      test_case "json_shape_explanation" `Quick(fun () ->
-        check' Testables.json_shape_explanation
-          ~msg:"json_shape_explanation"
-          ~expected:S.expected_json_shape_explanation
-          ~actual:S.json_shape_explanation
-      )]
+    )) |> fun tests ->
+      tests @ begin match S.expected_json_shape_explanation with
+      | None -> [ test_case "json_shape_explanation(skipped)" `Quick ignore]
+      | Some expected -> [
+        test_case "json_shape_explanation" `Quick(fun () ->
+          check' Testables.json_shape_explanation
+            ~msg:"json_shape_explanation"
+            ~expected
+            ~actual:S.json_shape_explanation
+        )]
+      end)
 
 let () =
   all_generated

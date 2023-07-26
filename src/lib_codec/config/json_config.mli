@@ -55,6 +55,14 @@ type json_mangling_style = [
   | `no_mangling (** do not mangle *)
 ]
 
+type json_nested_field_style = [
+  | `nested (** nested field stay as a nested *)
+  | `spreading
+  (** nested field's internal fields being spreading;
+      would result in error if the field does not ultimately
+      resolves to a {!Record_decl} / {!Variant_decl} kinded {!type-type_decl} *)
+  ]
+
 type ('pos, 'kind) config +=
   | Config_json_name : string -> ('pos, [`json_name]) config
   | Config_json_name_of_variant_arg : string -> ([`variant_constructor], [`json_name_of_variant_arg]) config
@@ -64,6 +72,7 @@ type ('pos, 'kind) config +=
     string -> ([`type_decl], [`json_variant_discriminator]) config
   | Config_json_tuple_style :
     json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
+  | Config_json_nested_field_style : json_nested_field_style -> ([< `record_field | `variant_tuple_argument], [`json_nested_field_style]) config
   | Config_json_mangling_style : json_mangling_style -> ('pos, [`json_mangling_style]) config
   | Config_json_custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
   | Config_json_custom_decoder : string -> ([`coretype], [`json_custom_decoder]) config
@@ -95,6 +104,11 @@ val default_tuple_style : json_tuple_style
 val tuple_style : json_tuple_style -> ([< `variant_constructor | `coretype], [`json_tuple_style]) config
 val get_tuple_style : [< `coretype | `variant_constructor] configs -> json_tuple_style
 
+(** default : [ `nested ] *)
+val default_nested_field_style : json_nested_field_style
+val nested_field_style : json_nested_field_style -> ([< `record_field | `variant_tuple_argument], [`json_nested_field_style]) config
+val get_nested_field_style : [< `record_field | `variant_tuple_argument] configs -> json_nested_field_style
+
 val default_mangling_style : json_mangling_style
 val mangling_style : json_mangling_style -> ([< pos], [`json_mangling_style]) config
 val no_mangling : ([< pos], [`json_mangling_style]) config
@@ -117,3 +131,5 @@ val get_custom_decoder : [`coretype] configs -> string option
 
 val custom_shape_explanation : json_shape_explanation -> ([`coretype], [`json_custom_shape_explanation]) config
 val get_custom_shape_explanation : [`coretype] configs -> json_shape_explanation option
+
+val check_field_name_collision : type_decl -> bool

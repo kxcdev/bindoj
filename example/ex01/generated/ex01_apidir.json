@@ -94,6 +94,7 @@
   "components": {
     "schemas": {
       "MyInt": {
+        "title": "MyInt",
         "description": "definition of my_int type",
         "type": "integer"
       },

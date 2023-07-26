@@ -47,7 +47,7 @@ let person_decl = variant_decl "person" [
   variant_constructor "Anonymous" `no_param
     ~doc:(`docstr "Anonymous constructor");
 
-  variant_constructor "With_id" (`tuple_like [cty_int])
+  variant_constructor "With_id" (`tuple_like [variant_argument cty_int])
     ~doc:(`docstr "With_id constructor");
 
   variant_constructor "Student" (`inline_record [

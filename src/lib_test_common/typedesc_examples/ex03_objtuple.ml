@@ -29,12 +29,14 @@ let configs : [`type_decl] configs = Json_config.[ name json_name ]
 
 let vc_configs : [`variant_constructor] configs = Json_config.[ tuple_style (`obj `default) ]
 
+let cty_int = Coretype.mk_prim `int
+
 let decl : type_decl =
   variant_decl "int_list" [
     variant_constructor "IntNil" `no_param;
     variant_constructor "IntCons" (`tuple_like [
-      Coretype.mk_prim `int;
-      Coretype.mk_self ();
+      variant_argument cty_int;
+      variant_argument @@ Coretype.mk_self ();
     ]) ~configs:vc_configs;
   ] ~configs
 
@@ -44,20 +46,22 @@ let decl_with_docstr : type_decl =
       ~doc:(`docstr "nil for int_list");
 
     variant_constructor "IntCons" (`tuple_like [
-      Coretype.mk_prim `int;
-      Coretype.mk_self ();
+      variant_argument cty_int;
+      variant_argument @@ Coretype.mk_self ();
     ]) ~configs:vc_configs
        ~doc:(`docstr "cons for int_list");
 
   ] ~configs ~doc:(`docstr "int list")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let parent = "int_list" in
   "int_list", Util.FwrtTypeEnv.(
     init
     |> bind_object "int_list" []  ~configs
     |> bind_constructor ~parent "IntNil"
-    |> bind_constructor ~parent "IntCons" ~configs:vc_configs ~args:[Coretype.mk_prim `int; Coretype.mk_self ()]
+    |> bind_constructor ~parent "IntCons" ~configs:vc_configs ~args:[
+      variant_argument cty_int;
+      variant_argument @@ Coretype.mk_self ()]
   )
 
 let ts_ast : ts_ast option =
@@ -92,6 +96,8 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd cstrs); };
       Util.Ts_ast.case_analyzer mangled_json_name ("analyze"^mangled_json_name) options cstrs; ]
+
+let expected_json_shape_explanation = None
 
 open Bindoj_openapi.V3
 

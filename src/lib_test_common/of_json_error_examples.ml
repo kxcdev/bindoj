@@ -31,18 +31,20 @@ module type Sample = sig
   val env : Typed_type_desc.Type_decl_environment.env
   val name : string
   val samples : (string * Json.jv * (string * Json.jvpath)) list
-  val expected_json_shape_explanation : json_shape_explanation
+  val expected_json_shape_explanation : json_shape_explanation option
 end
 
 module type SampleGenerated = sig
   include Sample
-  val json_shape_explanation : json_shape_explanation
   val of_json' : ?path:Json.jvpath -> Json.jv -> t OfJsonResult.t
   val pp : ppf -> t -> unit
+  val json_shape_explanation : json_shape_explanation
 end
 
 open struct
-  let record_not_obj = sprintf "an object is expected for a record value, but the given is of type '%s'"
+  let not_obj label = sprintf "an object is expected for a %s value, but the given is of type '%s'" label
+  let record_not_obj = not_obj "record"
+  let tuple_not_obj = not_obj "tuple"
   let discriminator_not_found = sprintf "discriminator field '%s' does not exist"
   let discriminator_not_string = sprintf "a string is expected for a variant discriminator, but the given is of type '%s'"
   let field_not_found = sprintf "mandatory field '%s' does not exist"
@@ -67,20 +69,14 @@ module SampleEx01 : SampleGenerated = struct
     "not integer", `obj [ ("admissionYear", `num 1984.5); ("name", `str "William Gibson") ]
     , (not_integer 1984.5, [ `f "admissionYear" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Student",
-            (`object_of
-                [`mandatory_field ("admissionYear", `integral);
-                `mandatory_field ("name", `string)]))))
+  let expected_json_shape_explanation = Typedesc_examples.Ex01.expected_json_shape_explanation
 end
 
 module SampleEx01_inherited_mangling : SampleGenerated = struct
   include Ex01_inherited_mangling
   let name = "SampleEx01_inherited_mangling"
+  let expected_json_shape_explanation = Typedesc_examples.Ex01_inherited_mangling.expected_json_shape_explanation
+
   let samples = [
     "not obj", `null, (record_not_obj "null", []);
 
@@ -99,22 +95,13 @@ module SampleEx01_inherited_mangling : SampleGenerated = struct
     "not one of", ctor_record "student" [ ("admission_year", `num 1984.); ("name", `str "William Gibson"); ("caseValue", `str "Case_at0")],
     ("given string 'Case_at0' is not one of [ 'Case-at0', 'case_at1' ]", [ `f "caseValue" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-     ("not considering any config if exists",
-       (`named
-          ("student_inherited_mangling",
-            (`object_of
-               [`mandatory_field ("admission_year", `integral);
-               `mandatory_field ("name", `string);
-               `mandatory_field
-                 ("caseValue", (`string_enum ["Case-at0"; "case_at1"]))]))))
 end
 
 module SampleEx02 : SampleGenerated = struct
   include Ex02
   let name = "SampleEx02"
+  let expected_json_shape_explanation = Typedesc_examples.Ex02.expected_json_shape_explanation
+
   let samples = [
     "missing discriminator", `obj [ ],
     (discriminator_not_found "kind", []);
@@ -140,32 +127,12 @@ module SampleEx02 : SampleGenerated = struct
     "teacher: type mismatch", ctor_record "teacher" [ ("facultyId", `num 2001.); ("name", `str "Arthur C. Clark"); ("department", `arr []); ],
     (type_mismatch "string" "array", [ `f "department" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Person",
-            (`anyone_of
-                [`object_of
-                  [`mandatory_field ("kind", (`exactly (`str "anonymous")))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "with-id")));
-                  `mandatory_field ("arg", (`tuple_of [`integral]))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "student")));
-                  `mandatory_field ("studentId", `integral);
-                  `mandatory_field ("name", `string)];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "teacher")));
-                  `mandatory_field ("facultyId", `integral);
-                  `mandatory_field ("name", `string);
-                  `mandatory_field ("department", `string)]]))))
 end
 
 module SampleEx02_no_mangling : SampleGenerated = struct
   include Ex02_no_mangling
   let name = "SampleEx02_no_mangling"
+  let expected_json_shape_explanation = Typedesc_examples.Ex02_no_mangling.expected_json_shape_explanation
   let samples = [
     "missing discriminator", `obj [ ],
     (discriminator_not_found "kind", []);
@@ -191,32 +158,13 @@ module SampleEx02_no_mangling : SampleGenerated = struct
     "Teacher: type mismatch", ctor_record "Teacher" [ ("faculty_id", `num 2001.); ("name", `str "Arthur C. Clark"); ("department", `arr []); ],
     (type_mismatch "string" "array", [ `f "department" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("person_no_mangling",
-            (`anyone_of
-                [`object_of
-                  [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "With_id")));
-                  `mandatory_field ("arg", (`tuple_of [`integral]))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "Student")));
-                  `mandatory_field ("student_id", `integral);
-                  `mandatory_field ("name", `string)];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "Teacher")));
-                  `mandatory_field ("faculty_id", `integral);
-                  `mandatory_field ("name", `string);
-                  `mandatory_field ("department", `string)]]))))
 end
 
 module SampleEx02_inherited_mangling : SampleGenerated = struct
   include Ex02_inherited_mangling
   let name = "SampleEx02_inherited_mangling"
+  let expected_json_shape_explanation = Typedesc_examples.Ex02_inherited_mangling.expected_json_shape_explanation
+
   let samples = [
     "missing discriminator", `obj [ ],
     (discriminator_not_found "kind", []);
@@ -248,34 +196,13 @@ module SampleEx02_inherited_mangling : SampleGenerated = struct
     "Teacher: missing field", ctor_record "Teacher" [ ("faculty_id", `num 2001.) ],
     (field_not_found "facultyId", []);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-            ("person_inherited_mangling",
-              (`anyone_of
-                [`object_of
-                    [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "With_id")));
-                  `mandatory_field ("arg", (`tuple_of [`integral]))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "student")));
-                  `mandatory_field ("student_id", `integral);
-                  `mandatory_field ("name", `string);
-                  `mandatory_field
-                    ("caseValue", (`string_enum ["Case_at0"; "case-at1"]))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "Teacher")));
-                  `mandatory_field ("facultyId", `integral);
-                  `mandatory_field ("name", `string);
-                  `mandatory_field ("department", `string)]]))))
 end
 
 module SampleEx03 : SampleGenerated = struct
   include Ex03
   let name = "SampleEx03"
+  let expected_json_shape_explanation = Typedesc_examples.Ex03.expected_json_shape_explanation
+
   let intCons_null = ctor2 "intcons" `null
   let samples = [
     "missing discriminator", `obj [ ],
@@ -308,47 +235,24 @@ module SampleEx03 : SampleGenerated = struct
     "type mismatch (nested 2)", intCons_null intNil |> intCons 1 |> intCons 2,
     (type_mismatch "int" "null", [ `i 0; `f "arg"; `i 1; `f "arg"; `i 1; `f "arg" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("IntList",
-            (`anyone_of
-                [`object_of
-                  [`mandatory_field ("kind", (`exactly (`str "intnil")))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "intcons")));
-                  `mandatory_field ("arg", (`tuple_of [`integral; `self]))]]))))
 end
 
 module SampleEx04 : SampleGenerated = struct
   include Ex04
   let name = "SampleEx04"
+  let expected_json_shape_explanation = Typedesc_examples.Ex04.expected_json_shape_explanation
+
   let samples = [
     "foo2: incorrect list length", ctorN "foo2" [ `num 1. ],
     (incorrect_list_length 2 1, [ `f "arg" ])
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Foo",
-            (`anyone_of
-                [`object_of
-                  [`mandatory_field ("kind", (`exactly (`str "foo0")))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "foo1")));
-                  `mandatory_field ("arg", (`tuple_of [`integral]))];
-                `object_of
-                  [`mandatory_field ("kind", (`exactly (`str "foo2")));
-                  `mandatory_field ("arg", (`tuple_of [`integral; `integral]))]]))))
 end
 
 module SampleEx05 : SampleGenerated = struct
   include Ex05
   let name = "SampleEx05"
+  let expected_json_shape_explanation = Typedesc_examples.Ex05.expected_json_shape_explanation
+
   let samples = [
     "invalid tuple",
     `obj [
@@ -365,7 +269,7 @@ module SampleEx05 : SampleGenerated = struct
       "tuple", `arr [ `num 4.; `num 2. ];
       "objtuple", `arr [ `num 4.; `num 2. ]
     ],
-    ("an object is expected for a tuple value, but the given is of type 'array'", [ `f "objtuple" ]);
+    (tuple_not_obj "array", [ `f "objtuple" ]);
 
     "incorrect list length in nested field",
     `obj [
@@ -378,30 +282,13 @@ module SampleEx05 : SampleGenerated = struct
     ],
     (incorrect_tuple_length 2 3, [ `i 2; `f "nested" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("ComplexTypes",
-            (`object_of
-                [`optional_field ("option", `integral);
-                `mandatory_field ("list", (`array_of `integral));
-                `mandatory_field ("tuple", (`tuple_of [`integral; `integral]));
-                `mandatory_field
-                  ("objtuple", (`tuple_of [`integral; `integral]));
-                `mandatory_field
-                  ("nested",
-                    (`tuple_of
-                      [`nullable `integral;
-                      `array_of `integral;
-                      `tuple_of [`integral; `integral]]));
-                `mandatory_field ("map", (`record_of `integral))]))))
 end
 
 module SampleEx06 : SampleGenerated = struct
   include Ex06
   let name = "SampleEx06"
+  let expected_json_shape_explanation = Typedesc_examples.Ex06.expected_json_shape_explanation
+
   let samples = [
     "invalid uchar",
     `obj [
@@ -426,27 +313,13 @@ module SampleEx06 : SampleGenerated = struct
     ],
     ("number '512' is not a valid byte value", [ `f "byte" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("VariousPrimTypes",
-            (`object_of
-                [`mandatory_field
-                  ("unit", (`special ("unit", (`exactly `null))));
-                `mandatory_field ("bool", `boolean);
-                `mandatory_field ("int", `integral);
-                `mandatory_field ("float", `proper_float);
-                `mandatory_field ("string", `string);
-                `mandatory_field ("uchar", (`special ("uchar", `string)));
-                `mandatory_field ("byte", (`special ("byte", `string)));
-                `mandatory_field ("bytes", `base64str)]))))
 end
 
 module SampleEx07 : SampleGenerated = struct
   include Ex07
   let name = "SampleEx07"
+  let expected_json_shape_explanation = Typedesc_examples.Ex07.expected_json_shape_explanation
+
   let samples = [
     "missing discriminator", `obj [ ],
     (discriminator_not_found "tag", []);
@@ -472,42 +345,20 @@ module SampleEx07 : SampleGenerated = struct
     "Case2: not integer", ctor_record ~discriminator:"tag" "case2'" [ "x'", `num 4.; "y'", `num 2.1 ],
     (not_integer 2.1, [ `f "y'" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("CustomizedUnion",
-            (`anyone_of
-                [`object_of
-                  [`mandatory_field ("tag", (`exactly (`str "case1'")));
-                  `mandatory_field ("value", (`tuple_of [`integral]))];
-                `object_of
-                  [`mandatory_field ("tag", (`exactly (`str "case2'")));
-                  `mandatory_field ("x'", `integral);
-                  `mandatory_field ("y'", `integral)]]))))
 end
 
 module SampleEx08 : SampleGenerated = struct
   include Ex08
   let name = "SampleEx08"
+  let expected_json_shape_explanation = Typedesc_examples.Ex08.expected_json_shape_explanation
   let samples = []
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("NamedJson",
-            (`object_of
-              [`mandatory_field ("name", `string);
-              `mandatory_field
-                ("json",
-                  (`named ("json_value", `any_json_value)))]))))
 end
 
 module SampleEx09 : SampleGenerated = struct
   include Ex09
   let name = "SampleEx09"
+  let expected_json_shape_explanation = Typedesc_examples.Ex09.expected_json_shape_explanation
+
   let samples = [
     "missing field", `obj [],
     (field_not_found "value", []);
@@ -515,94 +366,60 @@ module SampleEx09 : SampleGenerated = struct
     "missing field", `obj [ "value", `null ],
     (type_mismatch "int53p" "null", [ `f "value" ]);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("WithInt53p",
-            (`object_of [`mandatory_field ("value", `proper_int53p)]))))
 end
 
 module SampleEx10 : SampleGenerated = struct
   include Ex10
   let name = "SampleEx10"
+  let expected_json_shape_explanation = Typedesc_examples.Ex10.expected_json_shape_explanation
+
   let samples = [
     "not obj", `null, (record_not_obj "null", []);
 
     "type mismatch", `obj [ "yOpt", `str "fooBar"],
     (type_mismatch "int" "string", [ `f "yOpt" ])
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("XyOpt",
-            (`object_of
-                [`optional_field ("xOpt", `integral);
-                `optional_field ("yOpt", `integral)]))))
 end
 
 module SampleEx11 : SampleGenerated = struct
   include Ex11
   let name = "SampleEx11"
+  let expected_json_shape_explanation = Typedesc_examples.Ex11.expected_json_shape_explanation
+
   let samples = [
     "null", `null, ("expecting type 'unit' but the given is of type 'null'", []);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named ("Unit", (`special ("unit", (`exactly `null))))))
 end
 
 module SampleEx12 : SampleGenerated = struct
   include Ex12
   let name = "SampleEx12"
+  let expected_json_shape_explanation = Typedesc_examples.Ex12.expected_json_shape_explanation
   let samples = [
     "null", `null, ("expecting type 'string' but the given is of type 'null'", []);
     "not one of", `str "case-at4", ("given string 'case-at4' is not one of [ 'Case_at0', 'case-at1', 'Case-at2', 'Case-third' ]", []);
   ]
-
-  let expected_json_shape_explanation =
-    `with_warning
-     ("not considering any config if exists",
-       (`named ("Cases", (`string_enum ["Case_at0"; "case-at1"; "Case-at2"; "Case-third"]))))
 end
 
 module SampleEx13 : SampleGenerated = struct
   include Ex13
   let name = "SampleEx13"
+  let expected_json_shape_explanation = Typedesc_examples.Ex13.expected_json_shape_explanation
+
   let samples =
     SampleEx01.samples
     |&> (fun (name, jv, (msg, path)) ->
         (name, `obj [ ("student1", jv) ], (msg, path @ [ `f "student1" ]))
       )
-
-  let expected_json_shape_explanation =
-    let student_shape =
-      `named ("Student",
-        `object_of
-          [`mandatory_field ("admissionYear", `integral);
-          `mandatory_field ("name", `string)])
-    in
-    `with_warning
-     ("not considering any config if exists",
-       (`named
-          ("StudentPair",
-            (`object_of
-               [`mandatory_field
-                  ("student1", student_shape);
-               `mandatory_field
-                 ("student2", student_shape)]))))
 end
 
 module SampleEx14 : SampleGenerated = struct
   include Ex14
   let name = "SampleEx14"
+  let expected_json_shape_explanation = Typedesc_examples.Ex14.expected_json_shape_explanation
+
   let samples = [
-    "null", `null, ("an object is expected for a tuple value, but the given is of type 'null'", []);
+    "null", `null, (tuple_not_obj "null", []);
 
     "missing field _0", `obj [],
     (field_not_found "_0", []);
@@ -616,11 +433,99 @@ module SampleEx14 : SampleGenerated = struct
     "type mismatch _1", `obj [ ("_0", `num 12.3); ("_1", `bool false) ],
     (type_mismatch "string" "bool", [ `f "_1" ]);
   ]
+end
 
-  let expected_json_shape_explanation =
-    `with_warning
-     ("not considering any config if exists",
-       (`named ("Objtuple", (`tuple_of [`proper_float; `string]))))
+module SampleEx15 : SampleGenerated = struct
+  include Ex15
+  let name = "SampleEx15"
+  let expected_json_shape_explanation = Typedesc_examples.Ex15.expected_json_shape_explanation
+  let samples =
+    let discriminator = "tag" in
+    let arg = "value" in
+    [
+      "null", `null, (not_obj "variant" "null", []);
+
+      "discriminator not string", `obj [ (discriminator, `null)],
+      (discriminator_not_string "null", [ `f discriminator ]);
+
+      "invalid constructor", ctor0 ~discriminator "FooBar",
+      ("given discriminator field value 'FooBar' is not one of [ 'student1', 'student2', 'student3', 'student4', 'int-list1', 'int-list2' ]", [ `f discriminator ]);
+
+      "student1: missing field", ctor0 ~discriminator "student1",
+      (field_not_found "student", []);
+
+      "student1: missing field", ctor_record ~discriminator "student1" [
+        "student", `obj []
+      ],
+      (field_not_found "admissionYear", [ `f "student" ]);
+
+      "student2: missing field", ctor0 ~discriminator "student2",
+      (field_not_found "admissionYear", []);
+
+      "student3: missing field", ctor0 ~discriminator "student3",
+      (field_not_found arg, []);
+
+      "student3: missing field", ctor1 ~discriminator "student3" ~arg (`obj []),
+      (field_not_found "admissionYear", [ `f arg ]);
+
+      "student4: missing field", ctor0 ~discriminator "student4",
+      (field_not_found "admissionYear", []);
+    ]
+end
+
+module SampleEx16 : SampleGenerated = struct
+  include Ex16
+  let name = "SampleEx16"
+  let expected_json_shape_explanation = Typedesc_examples.Ex16.expected_json_shape_explanation
+  let samples = [
+    "null", `null, (record_not_obj "null", []);
+
+    "missing field", `obj [
+      "student", `obj [
+        ("admissionYear", `num 1984.);
+        ("name", `str "William Gibson")
+      ];
+      "person1", ctor0 "anonymous";
+      "kind", `str "anonymous";
+    ],
+    (field_not_found "value", []);
+
+    "missing discriminator (spreading)", `obj [
+      "student", `obj [
+        ("admissionYear", `num 1984.);
+        ("name", `str "William Gibson")
+      ];
+      "value", `num 12.;
+      "person1", ctor0 "anonymous";
+    ],
+    (discriminator_not_found "kind", []);
+
+    "missing discriminator (nested)", `obj [
+      "student", `obj [
+        ("admissionYear", `num 1984.);
+        ("name", `str "William Gibson")
+      ];
+      "value", `num 12.;
+      "person1", `obj [];
+      "kind", `str "with-id";
+      "arg", `num 123.
+    ],
+    (discriminator_not_found "kind", [ `f "person1" ]);
+
+    "not integer", `obj [
+      "student", `obj [
+        ("admissionYear", `num 1984.);
+        ("name", `str "William Gibson")
+      ];
+      "value", `num 12.;
+      "person1", `obj [
+        "kind", `str "anonymous";
+      ];
+      "kind", `str "with-id";
+      "arg", `num 123.5
+    ],
+    (not_integer 123.5, [ `f "arg" ]);
+  ]
 end
 
 let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =
@@ -660,10 +565,12 @@ module SampleIdentInt_Refl : Sample = struct
   let name = "SampleIdentInt_Refl"
 
   let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Parent", child_json_shape_explanation)))
+    Some (
+      `with_warning
+        ("not considering any config if exists",
+          (`named
+            ("Parent", child_json_shape_explanation)))
+    )
 end
 
 module SampleIdentInt_Coretypes : Sample = struct
@@ -679,10 +586,12 @@ module SampleIdentInt_Coretypes : Sample = struct
   let name = "SampleIdentInt_Coretypes"
 
   let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Parent", child_json_shape_explanation)))
+    Some (
+      `with_warning
+        ("not considering any config if exists",
+          (`named
+            ("Parent", child_json_shape_explanation)))
+    )
 end
 
 module SampleIdentIntOption_Coretypes : Sample = struct
@@ -698,10 +607,12 @@ module SampleIdentIntOption_Coretypes : Sample = struct
   let name = "SampleIdentIntOption_Coretypes"
 
   let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Parent", `nullable child_json_shape_explanation)))
+    Some (
+      `with_warning
+        ("not considering any config if exists",
+          (`named
+            ("Parent", `nullable child_json_shape_explanation)))
+    )
 end
 
 module SampleIdentStudent_base = struct
@@ -742,10 +653,12 @@ module SampleIdentStudent_Refl : Sample = struct
   let name = "SampleIdentStudent_Refl"
 
   let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Parent", child_json_shape_explanation)))
+    Some (
+      `with_warning
+        ("not considering any config if exists",
+          (`named
+            ("Parent", child_json_shape_explanation)))
+    )
 end
 
 module SampleIdentStudent_Coretypes : Sample = struct
@@ -761,10 +674,12 @@ module SampleIdentStudent_Coretypes : Sample = struct
   let name = "SampleIdentStudent_Coretypes"
 
   let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Parent", child_json_shape_explanation)))
+    Some (
+      `with_warning
+        ("not considering any config if exists",
+          (`named
+            ("Parent", child_json_shape_explanation)))
+    )
 end
 
 module SampleIdentStudentOption_Coretypes : Sample = struct
@@ -780,10 +695,12 @@ module SampleIdentStudentOption_Coretypes : Sample = struct
   let name = "SampleIdentStudentOption_Coretypes"
 
   let expected_json_shape_explanation =
-    `with_warning
-      ("not considering any config if exists",
-        (`named
-          ("Parent", `nullable child_json_shape_explanation)))
+    Some (
+      `with_warning
+        ("not considering any config if exists",
+          (`named
+            ("Parent", `nullable child_json_shape_explanation)))
+    )
 end
 
 let all_generated : (module SampleGenerated) list = [
@@ -804,6 +721,8 @@ let all_generated : (module SampleGenerated) list = [
   (module SampleEx12);
   (module SampleEx13);
   (module SampleEx14);
+  (module SampleEx15);
+  (module SampleEx16);
 ]
 
 let all : (module Sample) list = [
@@ -824,6 +743,8 @@ let all : (module Sample) list = [
   (module SampleEx12);
   (module SampleEx13);
   (module SampleEx14);
+  (module SampleEx15);
+  (module SampleEx16);
   (module SampleIdentInt_Refl);
   (module SampleIdentInt_Coretypes);
   (module SampleIdentIntOption_Coretypes);

@@ -39,7 +39,7 @@ let decl_with_docstr : type_decl =
     record_field "student2" cty_student ~doc:(`docstr "student2 field");
   ] ~doc:(`docstr "definition of student pair")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "student_pair", Util.FwrtTypeEnv.(
     snd Ex01.fwrt
     |> bind_object "student_pair"
@@ -61,6 +61,25 @@ let ts_ast : ts_ast option =
                 { tsps_modifiers = [];
                   tsps_name = "student2";
                   tsps_type_desc = `type_reference "Student"; }; ]; } ]
+
+let expected_json_shape_explanation =
+  Some (
+    let student_shape =
+      `named ("Student",
+        `object_of
+          [`mandatory_field ("admissionYear", `integral);
+          `mandatory_field ("name", `string)])
+    in
+    `with_warning
+     ("not considering any config if exists",
+       (`named
+          ("StudentPair",
+            (`object_of
+               [`mandatory_field
+                  ("student1", student_shape);
+               `mandatory_field
+                 ("student2", student_shape)]))))
+  )
 
 open Bindoj_openapi.V3
 

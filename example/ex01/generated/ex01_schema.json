@@ -1,5 +1,5 @@
 {
-  "MyInt": { "description": "definition of my_int type", "type": "integer" },
+  "MyInt": { "title": "MyInt", "description": "definition of my_int type", "type": "integer" },
   "MyTuple": {
     "title": "MyTuple",
     "description": "definition of my_tuple type",

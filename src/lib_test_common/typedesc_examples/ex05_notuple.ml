@@ -52,7 +52,7 @@ let decl_with_docstr : type_decl =
       ~doc:(`docstr "map<string, int>");
   ] ~configs ~doc:(`docstr "collection of complex types")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "complex_types", Util.FwrtTypeEnv.(
     init
     |> bind_object "complex_types" [
@@ -63,6 +63,8 @@ let fwrt : (unit, unit) ts_fwrt_decl =
   )
 
 let ts_ast : ts_ast option = None
+
+let expected_json_shape_explanation = None
 
 open Bindoj_openapi.V3
 

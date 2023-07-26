@@ -37,7 +37,7 @@ let decl_with_docstr : type_decl =
     record_field "json" cty_json ~doc:(`docstr "a json datum");
   ] ~doc:(`docstr "record of name and json datum")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "named_json", Util.FwrtTypeEnv.(
       init
       |> bind_object "named_json"
@@ -60,6 +60,19 @@ let ts_ast : ts_ast option = Some [
                 tsps_type_desc = `type_reference "string"; };
             ];};
   ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("NamedJson",
+            (`object_of
+              [`mandatory_field ("name", `string);
+              `mandatory_field
+                ("json",
+                  (`named ("json_value", `any_json_value)))]))))
+  )
 
 open Bindoj_openapi.V3
 

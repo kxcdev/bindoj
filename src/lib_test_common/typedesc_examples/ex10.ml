@@ -36,7 +36,7 @@ let decl_with_docstr : type_decl =
     record_field "y_opt" cty_int_opt ~doc:(`docstr "an optional int y");
   ] ~doc:(`docstr "record of optional int x and optional int y")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "xy_opt", Util.FwrtTypeEnv.(
       init
       |> bind_object "xy_opt"
@@ -45,6 +45,17 @@ let fwrt : (unit, unit) ts_fwrt_decl =
     )
 
 let ts_ast : ts_ast option = None
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("XyOpt",
+            (`object_of
+                [`optional_field ("xOpt", `integral);
+                `optional_field ("yOpt", `integral)]))))
+  )
 
 open Bindoj_openapi.V3
 

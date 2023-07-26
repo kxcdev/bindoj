@@ -21,17 +21,17 @@ open Bindoj_gen_foreign.Foreign_datatype
 open Bindoj_test_common
 
 let testable_fwrt =
-  let pp : (unit, unit, unit*unit*unit) fwrt_decl Fmt.t =
+  let pp : (unit, unit, unit, unit*unit*unit) fwrt_decl Fmt.t =
     let pp_unit fmt () = Format.pp_print_string fmt "()" in
-    pp_fwrt_decl pp_unit pp_unit pp_unit pp_unit pp_unit
+    pp_fwrt_decl pp_unit pp_unit pp_unit pp_unit pp_unit pp_unit
   in
-  let equal : (unit, unit, unit*unit*unit) fwrt_decl -> (unit, unit, unit*unit*unit) fwrt_decl -> bool =
+  let equal : (unit, unit, unit, unit*unit*unit) fwrt_decl -> (unit, unit, unit, unit*unit*unit) fwrt_decl -> bool =
     let equal_unit () () = true in
-    equal_fwrt_decl equal_unit equal_unit equal_unit equal_unit equal_unit
+    equal_fwrt_decl equal_unit equal_unit equal_unit equal_unit equal_unit equal_unit
   in
   Alcotest.testable pp equal
 
-let fc_annot_to_unit desc : (unit, unit, unit*unit*unit) fwrt_desc =
+let fc_annot_to_unit desc : (unit, unit, unit, unit*unit*unit) fwrt_desc =
   { desc with
     fd_kind = match desc.fd_kind with
       | Fwrt_constructor c ->

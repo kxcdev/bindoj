@@ -257,6 +257,42 @@ type json_field_shape_explanation = Json_shape.field_shape_explanation
 val string_of_json_shape_explanation : json_shape_explanation -> string
 val string_of_json_field_shape_explanation : json_field_shape_explanation -> string
 
+module type Json_shape_explaner = sig
+  type shape
+  type field_shape
+  val shape_of_json_shape_explanation : json_shape_explanation -> shape
+  val self : shape
+  val named : string * shape -> shape
+  val special : string * shape -> shape
+  val with_warning : string * shape -> shape
+  val exactly : Json.jv -> shape
+  val any_json_value : shape
+  val unresolved : string -> shape
+  val anyone_of : shape list -> shape
+  val string_enum : string list -> shape
+  val nullable : shape -> shape
+  val boolean : shape
+  val numeric : shape
+  val integral : shape
+  val proper_int53p : shape
+  val proper_float : shape
+  val string : shape
+  val base64str : shape
+  val array_of : shape -> shape
+  val tuple_of : shape list -> shape
+  val record_of : shape -> shape
+  val object_of : field_shape list -> shape
+  val mandatory_field : string * shape -> field_shape
+  val optional_field : string * shape -> field_shape
+end
+
+type ('shape, 'field_shape) json_shape_explaner =
+(module Json_shape_explaner
+  with type shape = 'shape
+  and type field_shape = 'field_shape)
+
+val json_shape_explanation : (json_shape_explanation, json_field_shape_explanation) json_shape_explaner
+
 module OfJsonResult : sig
   (**
     This module provides functionalities to handle the results of JSON parsing.

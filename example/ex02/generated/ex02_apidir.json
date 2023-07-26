@@ -783,7 +783,7 @@
         "required": ["products", "paymentMethod"],
         "additionalProperties": false
       },
-      "OrderId": { "type": "integer" },
+      "OrderId": { "title": "OrderId", "type": "integer" },
       "OrderList": {
         "title": "OrderList",
         "type": "array",
@@ -829,6 +829,7 @@
       },
       "OrderStatus": {
         "title": "OrderStatus",
+        "description": "Status of an order",
         "enum": ["Unpaid", "Paid", "Shipped", "Delivered", "Canceled"],
         "type": "string"
       },
@@ -932,7 +933,7 @@
         "required": ["_0", "_1"],
         "additionalProperties": false
       },
-      "ProductId": { "type": "integer" },
+      "ProductId": { "title": "ProductId", "type": "integer" },
       "ProductList": {
         "title": "ProductList",
         "type": "array",

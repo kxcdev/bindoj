@@ -36,7 +36,7 @@ let decl_with_docstr : type_decl =
     record_field name ct ~doc:(`docstr name)
   )) ~doc:(`docstr "various primitive types")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "various_prim_types", Util.FwrtTypeEnv.(
     init
     |> bind_object "various_prim_types" (
@@ -68,6 +68,24 @@ let ts_ast : ts_ast option =
         tsa_type_desc = lit
       };
   ] |> some
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("VariousPrimTypes",
+            (`object_of
+                [`mandatory_field
+                  ("unit", (`special ("unit", (`exactly `null))));
+                `mandatory_field ("bool", `boolean);
+                `mandatory_field ("int", `integral);
+                `mandatory_field ("float", `proper_float);
+                `mandatory_field ("string", `string);
+                `mandatory_field ("uchar", (`special ("uchar", `string)));
+                `mandatory_field ("byte", (`special ("byte", `string)));
+                `mandatory_field ("bytes", `base64str)]))))
+  )
 
 open Bindoj_openapi.V3
 

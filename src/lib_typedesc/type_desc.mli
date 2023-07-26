@@ -24,6 +24,7 @@ type pos = [
   | `type_decl
   | `record_field
   | `variant_constructor
+  | `variant_tuple_argument
   | `coretype
   | `string_enum_case
 ]
@@ -230,30 +231,23 @@ val equal_coretype : coretype -> coretype -> bool
 (** Represents a record field. *)
 type record_field = {
   rf_name: string; (** Name of the record field *)
-  rf_type: coretype; (** Type of the record field *)
+  rf_type: [ `direct of coretype | `nested of type_decl * Coretype.codec ]; (** Type of the record field *)
   rf_configs: [`record_field] configs; (** Configurations associated with the record field *)
   rf_doc: doc; (** Documentation of the record field *)
 }
 
-val pp_record_field : ppf -> record_field -> unit
-(** Pretty printer for the {!type-record_field}. *)
-
-val string_of_record_field : record_field -> string
-
-val equal_record_field : record_field -> record_field -> bool
-(** Checks equality of two record_fields. *)
-
-val record_field :
-  ?doc:doc -> ?configs:[`record_field ] configs ->
-  string -> coretype -> record_field
-(** Creates a new {!type-record_field}. *)
+and variant_tuple_argument = {
+  va_type: [ `direct of coretype | `nested of type_decl * Coretype.codec ];
+  va_configs: [`variant_tuple_argument] configs;
+  va_doc: doc;
+}
 
 (** Represents a variant constructor. *)
-type variant_constructor = {
+and variant_constructor = {
   vc_name: string; (** Name of the variant constructor *)
   vc_param: [
     | `no_param
-    | `tuple_like of coretype list (** invariant: at least one *)
+    | `tuple_like of variant_tuple_argument list (** invariant: at least one *)
     | `inline_record of record_field list (** invariant: at least one *)
     | `reused_inline_record of type_decl (** must be Record_decl kinded *)
   ];
@@ -275,6 +269,36 @@ and type_decl = {
   td_doc: doc;  (** Documentation of the type declaration *)
 }
 
+val pp_record_field : ppf -> record_field -> unit
+(** Pretty printer for the {!type-record_field}. *)
+
+val string_of_record_field : record_field -> string
+
+val equal_record_field : record_field -> record_field -> bool
+(** Checks equality of two record_fields. *)
+
+val record_field :
+  ?doc:doc -> ?configs:[`record_field ] configs ->
+  string -> coretype -> record_field
+(** Creates a new {!type-record_field} backed by a {!type-coretype}. *)
+
+val record_field_nested :
+  ?doc:doc -> ?configs:[`record_field ] configs -> ?codec:Coretype.codec ->
+  string -> type_decl -> record_field
+(** Creates a new {!type-record_field} backed by another {!type-type_decl}. *)
+
+val variant_argument :
+  ?doc:doc -> ?configs:[`variant_tuple_argument ] configs ->
+  coretype -> variant_tuple_argument
+(** Creates a new argument type specification backed by a {!type-coretype} for a position
+    in a variant constructor that takes tuple-like arguments. *)
+
+val variant_argument_nested :
+  ?doc:doc -> ?configs:[`variant_tuple_argument ] configs -> ?codec:Coretype.codec ->
+  type_decl -> variant_tuple_argument
+(** Creates a new argument type specification backed by a {!type-type_decl} for a position
+    in a variant constructor that takes tuple-like arguments. *)
+
 val pp_variant_constructor : ppf -> variant_constructor -> unit
 (** Pretty printer for the {!type-variant_constructor}. *)
 
@@ -287,7 +311,7 @@ val variant_constructor :
   ?doc:doc -> ?configs:[`variant_constructor] configs ->
   string -> [
     | `no_param
-    | `tuple_like of coretype list (** invariant: at least one *)
+    | `tuple_like of variant_tuple_argument list (** invariant: at least one *)
     | `inline_record of record_field list (** invariant: at least one *)
     | `reused_inline_record of type_decl (** must be Variant_decl kinded *)
   ] -> variant_constructor

@@ -52,7 +52,7 @@ let decl_with_docstr : type_decl =
     ] ~configs:[ Json_config.no_mangling ])
   ) ~doc:(`docstr "alias of string cases")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "cases", Util.FwrtTypeEnv.(
     init
     |> bind_alias "cases" cty_enum
@@ -72,6 +72,13 @@ let ts_ast : ts_ast option = Some [
       ];
   }
 ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+     ("not considering any config if exists",
+       (`named ("Cases", (`string_enum ["Case_at0"; "case-at1"; "Case-at2"; "Case-third"]))))
+  )
 
 open Bindoj_openapi.V3
 

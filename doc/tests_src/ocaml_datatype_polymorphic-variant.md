@@ -31,8 +31,8 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 
 # let int_or_string_desc =
     variant_decl "int_or_string" [
-      variant_constructor "int" (`tuple_like [Coretype.mk_prim `int]);
-      variant_constructor "string" (`tuple_like [Coretype.mk_prim `string]);
+      variant_constructor "int" (`tuple_like [variant_argument @@ Coretype.mk_prim `int]);
+      variant_constructor "string" (`tuple_like [variant_argument @@ Coretype.mk_prim `string]);
     ] ~configs:[
       Caml_config.variant_type `polymorphic
     ];;
@@ -47,16 +47,22 @@ val int_or_string_desc : type_decl =
      [{vc_name = "int";
        vc_param =
         `tuple_like
-          [{Bindoj.Type_desc.Coretype.ct_desc =
-             Bindoj.Type_desc.Coretype.Prim `int;
-            ct_configs = Bindoj_typedesc.Type_desc.Configs.[]}];
+          [{va_type =
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `int;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            va_configs = Bindoj.Type_desc.Configs.[]; va_doc = `nodoc}];
        vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc};
       {vc_name = "string";
        vc_param =
         `tuple_like
-          [{Bindoj.Type_desc.Coretype.ct_desc =
-             Bindoj.Type_desc.Coretype.Prim `string;
-            ct_configs = Bindoj_typedesc.Type_desc.Configs.[]}];
+          [{va_type =
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `string;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            va_configs = Bindoj.Type_desc.Configs.[]; va_doc = `nodoc}];
        vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc}];
    td_doc = `nodoc}
 

@@ -5,23 +5,23 @@ let (my_int_reflect : _ Bindoj_runtime.Refl.t) =
     (let open Bindoj_runtime in
      let open Kxclib.Option.Ops_monad in
      Refl.Alias { get = Expr.of_int; mk = Expr.to_int })
-  [@@warning "-33-39"]
+[@@warning "-33-39"]
 
 let my_int_json_shape_explanation =
   (`with_warning
      ("not considering any config if exists", `named ("MyInt", `integral))
     : Bindoj_runtime.json_shape_explanation)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 let rec my_int_to_json =
   (let int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    int_to_json
     : my_int -> Kxclib.Json.jv)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and my_int_of_json' =
   (fun ?(path = []) x ->
-     (let rec of_json_impl path =
+     (let rec of_json_impl =
         let int_of_json' path = function
           | (`num x : Kxclib.Json.jv) ->
               if Float.is_integer x then Ok (int_of_float x)
@@ -37,19 +37,19 @@ and my_int_of_json' =
                      string_of_jv_kind (classify_jv jv)),
                   path )
         in
-        int_of_json' path
+        int_of_json'
       in
       of_json_impl)
        path x
      |> Result.map_error (fun (msg, path) ->
             (msg, path, my_int_json_shape_explanation))
     : my_int Bindoj_runtime.json_full_decoder)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and my_int_of_json =
   (fun x -> my_int_of_json' x |> Result.to_option
     : Kxclib.Json.jv -> my_int option)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 type nonrec my_tuple = float * string
 [@@ocaml.doc "definition of my_tuple type"]
@@ -69,14 +69,14 @@ let (my_tuple_reflect : _ Bindoj_runtime.Refl.t) =
                Expr.to_string x1 >>= fun x1 -> Some (x0, x1)
            | _ -> None);
        })
-  [@@warning "-33-39"]
+[@@warning "-33-39"]
 
 let my_tuple_json_shape_explanation =
   (`with_warning
      ( "not considering any config if exists",
        `named ("MyTuple", `tuple_of [ `proper_float; `string ]) )
     : Bindoj_runtime.json_shape_explanation)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 let rec my_tuple_to_json =
   (let string_to_json (x : string) : Kxclib.Json.jv = `str x
@@ -84,11 +84,11 @@ let rec my_tuple_to_json =
    fun (x0, x1) : Kxclib.Json.jv ->
      `obj [ ("_0", float_to_json x0); ("_1", string_to_json x1) ]
     : my_tuple -> Kxclib.Json.jv)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and my_tuple_of_json' =
   (fun ?(path = []) x ->
-     (let rec of_json_impl path =
+     (let rec of_json_impl =
         let string_of_json' path = function
           | (`str x : Kxclib.Json.jv) -> Ok x
           | jv ->
@@ -108,7 +108,7 @@ and my_tuple_of_json' =
                      string_of_jv_kind (classify_jv jv)),
                   path )
         in
-        (fun path -> function
+        fun path -> function
           | (`obj fields : Kxclib.Json.jv) ->
               let fields = Bindoj_runtime.StringMap.of_list fields in
               let ( >>= ) = Result.bind in
@@ -130,20 +130,19 @@ and my_tuple_of_json' =
                      of type '%s'"
                     (let open Kxclib.Json in
                      string_of_jv_kind (classify_jv jv)),
-                  path ))
-          path
+                  path )
       in
       of_json_impl)
        path x
      |> Result.map_error (fun (msg, path) ->
             (msg, path, my_tuple_json_shape_explanation))
     : my_tuple Bindoj_runtime.json_full_decoder)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and my_tuple_of_json =
   (fun x -> my_tuple_of_json' x |> Result.to_option
     : Kxclib.Json.jv -> my_tuple option)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 type student = {
   admission_year : int; [@ocaml.doc "addmission_year field"]
@@ -171,7 +170,7 @@ let rec (student_reflect : _ Bindoj_runtime.Refl.t) =
              xs |> StringMap.find_opt "name" >>= Expr.to_string >>= fun name ->
              Some { admission_year; name });
        })
-  [@@warning "-33-39"]
+[@@warning "-33-39"]
 
 let student_json_shape_explanation =
   (`with_warning
@@ -184,7 +183,7 @@ let student_json_shape_explanation =
                `mandatory_field ("name", `string);
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 let rec student_to_json =
   (let string_to_json (x : string) : Kxclib.Json.jv = `str x
@@ -192,11 +191,11 @@ let rec student_to_json =
    fun { admission_year = x0; name = x1 } ->
      `obj [ ("admissionYear", int_to_json x0); ("name", string_to_json x1) ]
     : student -> Kxclib.Json.jv)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and student_of_json' =
   (fun ?(path = []) x ->
-     (let rec of_json_impl path =
+     (let rec of_json_impl =
         let string_of_json' path = function
           | (`str x : Kxclib.Json.jv) -> Ok x
           | jv ->
@@ -221,43 +220,45 @@ and student_of_json' =
                      string_of_jv_kind (classify_jv jv)),
                   path )
         in
-        function
-        | `obj param ->
-            let ( >>= ) = Result.bind in
-            List.assoc_opt "admissionYear" param
-            |> (function
-                 | Some a -> Ok a
-                 | None ->
-                     Error
-                       ("mandatory field 'admissionYear' does not exist", path))
-            >>= int_of_json' (`f "admissionYear" :: path)
-            >>= fun x0 ->
-            List.assoc_opt "name" param
-            |> (function
-                 | Some a -> Ok a
-                 | None -> Error ("mandatory field 'name' does not exist", path))
-            >>= string_of_json' (`f "name" :: path)
-            >>= fun x1 -> Ok { admission_year = x0; name = x1 }
-        | jv ->
-            Error
-              ( Printf.sprintf
-                  "an object is expected for a record value, but the given is \
-                   of type '%s'"
-                  (let open Kxclib.Json in
-                   string_of_jv_kind (classify_jv jv)),
-                path )
+        fun path __bindoj_orig ->
+          match __bindoj_orig with
+          | `obj param ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "admissionYear" param
+              |> (function
+                   | Some a -> Ok a
+                   | None ->
+                       Error
+                         ("mandatory field 'admissionYear' does not exist", path))
+              >>= int_of_json' (`f "admissionYear" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "name" param
+              |> (function
+                   | Some a -> Ok a
+                   | None ->
+                       Error ("mandatory field 'name' does not exist", path))
+              >>= string_of_json' (`f "name" :: path)
+              >>= fun x1 -> Ok { admission_year = x0; name = x1 }
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a record value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
       in
       of_json_impl)
        path x
      |> Result.map_error (fun (msg, path) ->
             (msg, path, student_json_shape_explanation))
     : student Bindoj_runtime.json_full_decoder)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and student_of_json =
   (fun x -> student_of_json' x |> Result.to_option
     : Kxclib.Json.jv -> student option)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 type person =
   | Anonymous [@ocaml.doc "Anonymous constructor"]
@@ -284,7 +285,7 @@ let rec (person_reflect : _ Bindoj_runtime.Refl.t) =
            get =
              (function
              | With_id x -> [ Expr.of_int x ]
-             | _ -> invalid_arg ("With_id" ^ " is expected"));
+             | _ -> invalid_arg "With_id is expected");
            mk =
              (function
              | x :: [] -> Expr.to_int x |> Option.map (fun x -> With_id x)
@@ -302,7 +303,7 @@ let rec (person_reflect : _ Bindoj_runtime.Refl.t) =
                      ("student_id", Expr.of_int student_id);
                      ("name", Expr.of_string name);
                    ]
-             | _ -> invalid_arg ("Student" ^ " is expected"));
+             | _ -> invalid_arg "Student is expected");
            mk =
              (fun xs ->
                xs |> StringMap.find_opt "student_id" >>= Expr.to_int
@@ -323,7 +324,7 @@ let rec (person_reflect : _ Bindoj_runtime.Refl.t) =
                      ("name", Expr.of_string name);
                      ("department", Expr.of_string department);
                    ]
-             | _ -> invalid_arg ("Teacher" ^ " is expected"));
+             | _ -> invalid_arg "Teacher is expected");
            mk =
              (fun xs ->
                xs |> StringMap.find_opt "faculty_id" >>= Expr.to_int
@@ -352,7 +353,7 @@ let rec (person_reflect : _ Bindoj_runtime.Refl.t) =
            | Student _ -> ("Student", ctor_Student)
            | Teacher _ -> ("Teacher", ctor_Teacher));
        })
-  [@@warning "-33-39"]
+[@@warning "-33-39"]
 
 let person_json_discriminator_value =
   (function
@@ -361,7 +362,7 @@ let person_json_discriminator_value =
    | Student _ -> "student"
    | Teacher _ -> "teacher"
     : person -> string)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 let person_json_shape_explanation =
   (`with_warning
@@ -392,7 +393,7 @@ let person_json_shape_explanation =
                  ];
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 let rec person_to_json =
   (let string_to_json (x : string) : Kxclib.Json.jv = `str x
@@ -416,14 +417,11 @@ let rec person_to_json =
            ("department", string_to_json x2);
          ]
     : person -> Kxclib.Json.jv)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and person_of_json' =
   (fun ?(path = []) x ->
-     (let rec of_json_impl path __bindoj_orig =
-        __bindoj_orig
-        |> Kxclib.Jv.pump_field "kind"
-        |>
+     (let rec of_json_impl =
         let string_of_json' path = function
           | (`str x : Kxclib.Json.jv) -> Ok x
           | jv ->
@@ -448,86 +446,90 @@ and person_of_json' =
                      string_of_jv_kind (classify_jv jv)),
                   path )
         in
-        function
-        | `obj (("kind", `str "anonymous") :: _) -> Ok Anonymous
-        | `obj (("kind", `str "with-id") :: param) -> (
-            match List.assoc_opt "arg" param with
-            | Some arg ->
-                let ( >>= ) = Result.bind in
-                int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
-                Ok (With_id x0)
-            | None -> Error ("mandatory field 'arg' does not exist", path))
-        | `obj (("kind", `str "student") :: param) ->
-            let ( >>= ) = Result.bind in
-            List.assoc_opt "studentId" param
-            |> (function
-                 | Some a -> Ok a
-                 | None ->
-                     Error ("mandatory field 'studentId' does not exist", path))
-            >>= int_of_json' (`f "studentId" :: path)
-            >>= fun x0 ->
-            List.assoc_opt "name" param
-            |> (function
-                 | Some a -> Ok a
-                 | None -> Error ("mandatory field 'name' does not exist", path))
-            >>= string_of_json' (`f "name" :: path)
-            >>= fun x1 -> Ok (Student { student_id = x0; name = x1 })
-        | `obj (("kind", `str "teacher") :: param) ->
-            let ( >>= ) = Result.bind in
-            List.assoc_opt "facultyId" param
-            |> (function
-                 | Some a -> Ok a
-                 | None ->
-                     Error ("mandatory field 'facultyId' does not exist", path))
-            >>= int_of_json' (`f "facultyId" :: path)
-            >>= fun x0 ->
-            List.assoc_opt "name" param
-            |> (function
-                 | Some a -> Ok a
-                 | None -> Error ("mandatory field 'name' does not exist", path))
-            >>= string_of_json' (`f "name" :: path)
-            >>= fun x1 ->
-            List.assoc_opt "department" param
-            |> (function
-                 | Some a -> Ok a
-                 | None ->
-                     Error ("mandatory field 'department' does not exist", path))
-            >>= string_of_json' (`f "department" :: path)
-            >>= fun x2 ->
-            Ok (Teacher { faculty_id = x0; name = x1; department = x2 })
-        | `obj (("kind", `str discriminator_value) :: _) ->
-            Error
-              ( Printf.sprintf
-                  "given discriminator field value '%s' is not one of [ \
-                   'anonymous', 'with-id', 'student', 'teacher' ]"
-                  discriminator_value,
-                `f "kind" :: path )
-        | `obj (("kind", jv) :: _) ->
-            Error
-              ( Printf.sprintf
-                  "a string is expected for a variant discriminator, but the \
-                   given is of type '%s'"
-                  (let open Kxclib.Json in
-                   string_of_jv_kind (classify_jv jv)),
-                `f "kind" :: path )
-        | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
-        | jv ->
-            Error
-              ( Printf.sprintf
-                  "an object is expected for a variant value, but the given is \
-                   of type '%s'"
-                  (let open Kxclib.Json in
-                   string_of_jv_kind (classify_jv jv)),
-                path )
+        fun path __bindoj_orig ->
+          match Kxclib.Jv.pump_field "kind" __bindoj_orig with
+          | `obj (("kind", `str "anonymous") :: _) -> Ok Anonymous
+          | `obj (("kind", `str "with-id") :: param) -> (
+              match List.assoc_opt "arg" param with
+              | Some arg ->
+                  let ( >>= ) = Result.bind in
+                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  Ok (With_id x0)
+              | None -> Error ("mandatory field 'arg' does not exist", path))
+          | `obj (("kind", `str "student") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "studentId" param
+              |> (function
+                   | Some a -> Ok a
+                   | None ->
+                       Error ("mandatory field 'studentId' does not exist", path))
+              >>= int_of_json' (`f "studentId" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "name" param
+              |> (function
+                   | Some a -> Ok a
+                   | None ->
+                       Error ("mandatory field 'name' does not exist", path))
+              >>= string_of_json' (`f "name" :: path)
+              >>= fun x1 -> Ok (Student { student_id = x0; name = x1 })
+          | `obj (("kind", `str "teacher") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "facultyId" param
+              |> (function
+                   | Some a -> Ok a
+                   | None ->
+                       Error ("mandatory field 'facultyId' does not exist", path))
+              >>= int_of_json' (`f "facultyId" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "name" param
+              |> (function
+                   | Some a -> Ok a
+                   | None ->
+                       Error ("mandatory field 'name' does not exist", path))
+              >>= string_of_json' (`f "name" :: path)
+              >>= fun x1 ->
+              List.assoc_opt "department" param
+              |> (function
+                   | Some a -> Ok a
+                   | None ->
+                       Error
+                         ("mandatory field 'department' does not exist", path))
+              >>= string_of_json' (`f "department" :: path)
+              >>= fun x2 ->
+              Ok (Teacher { faculty_id = x0; name = x1; department = x2 })
+          | `obj (("kind", `str discriminator_value) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "given discriminator field value '%s' is not one of [ \
+                     'anonymous', 'with-id', 'student', 'teacher' ]"
+                    discriminator_value,
+                  `f "kind" :: path )
+          | `obj (("kind", jv) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "a string is expected for a variant discriminator, but the \
+                     given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  `f "kind" :: path )
+          | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a variant value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
       in
       of_json_impl)
        path x
      |> Result.map_error (fun (msg, path) ->
             (msg, path, person_json_shape_explanation))
     : person Bindoj_runtime.json_full_decoder)
-  [@@warning "-39"]
+[@@warning "-39"]
 
 and person_of_json =
   (fun x -> person_of_json' x |> Result.to_option
     : Kxclib.Json.jv -> person option)
-  [@@warning "-39"]
+[@@warning "-39"]

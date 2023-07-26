@@ -37,7 +37,7 @@ let decl_with_docstr : type_decl =
     record_field "name" cty_string ~doc:( `docstr "name field");
   ] ~doc:(`docstr "definition of student type")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "student", Util.FwrtTypeEnv.(
     init
     |> bind_object "student"
@@ -59,6 +59,17 @@ let ts_ast : ts_ast option =
                 { tsps_modifiers = [];
                   tsps_name = "name";
                   tsps_type_desc = `type_reference "string"; }; ]; } ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+     ("not considering any config if exists",
+       (`named
+          ("Student",
+            (`object_of
+               [`mandatory_field ("admissionYear", `integral);
+               `mandatory_field ("name", `string)]))))
+  )
 
 open Bindoj_openapi.V3
 

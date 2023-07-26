@@ -1,5 +1,5 @@
 {
-  "ProductId": { "type": "integer" },
+  "ProductId": { "title": "ProductId", "type": "integer" },
   "ProductDetails": {
     "title": "ProductDetails",
     "description": "Product details",
@@ -24,7 +24,7 @@
     "required": ["id", "details"],
     "additionalProperties": false
   },
-  "OrderId": { "type": "integer" },
+  "OrderId": { "title": "OrderId", "type": "integer" },
   "PaymentMethod": {
     "title": "PaymentMethod",
     "description": "Payment method of an order",
@@ -92,6 +92,7 @@
   },
   "OrderStatus": {
     "title": "OrderStatus",
+    "description": "Status of an order",
     "enum": ["Unpaid", "Paid", "Shipped", "Delivered", "Canceled"],
     "type": "string"
   },

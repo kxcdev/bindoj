@@ -26,8 +26,8 @@ let decl : type_decl =
   variant_decl "int_list" [
     variant_constructor "IntNil" `no_param;
     variant_constructor "IntCons" (`tuple_like [
-      Coretype.mk_prim `int;
-      Coretype.mk_self ();
+      variant_argument @@ Coretype.mk_prim `int;
+      variant_argument @@ Coretype.mk_self ();
     ]);
   ]
 
@@ -37,19 +37,22 @@ let decl_with_docstr : type_decl =
       ~doc:(`docstr "nil for int_list");
 
     variant_constructor "IntCons" (`tuple_like [
-      Coretype.mk_prim `int;
-      Coretype.mk_self ();
+      variant_argument @@ Coretype.mk_prim `int;
+      variant_argument @@ Coretype.mk_self ();
     ]) ~doc:(`docstr "cons for int_list");
 
   ] ~doc:(`docstr "int list")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let parent = "int_list" in
   "int_list", Util.FwrtTypeEnv.(
     init
     |> bind_object "int_list" []
     |> bind_constructor ~parent "IntNil"
-    |> bind_constructor ~parent "IntCons" ~args:[Coretype.mk_prim `int; Coretype.mk_self ()]
+    |> bind_constructor ~parent "IntCons" ~args:[
+      variant_argument @@ Coretype.mk_prim `int;
+      variant_argument @@ Coretype.mk_self ();
+    ]
   )
 
 let ts_ast : ts_ast option =
@@ -82,6 +85,20 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd cstrs); };
       Util.Ts_ast.case_analyzer "IntList" "analyzeIntList" options cstrs; ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("IntList",
+            (`anyone_of
+                [`object_of
+                  [`mandatory_field ("kind", (`exactly (`str "intnil")))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "intcons")));
+                  `mandatory_field ("arg", (`tuple_of [`integral; `self]))]]))))
+  )
 
 open Bindoj_openapi.V3
 

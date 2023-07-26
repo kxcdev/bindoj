@@ -45,9 +45,9 @@ val show_ts_ast : ts_ast -> string
 val equal_ts_ast : ts_ast -> ts_ast -> bool
 (** Checks equality of two ts_asts. *)
 
-type ('ann_d, 'ann_f) ts_fwrt_decl = ('ann_d, 'ann_f, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
+type ('ann_d, 'ann_f, 'ann_va) ts_fwrt_decl = ('ann_d, 'ann_f, 'ann_va, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
 
-type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list) ts_fwrt_decl
+type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list, [`readonly] list) ts_fwrt_decl
 
 val ts_fwrt_decl_of_type_decl : export:bool -> readonly:bool -> type_decl -> fwrt_decl_of_ts
 (** Creates a fwrt declaration of the given type declaration. *)

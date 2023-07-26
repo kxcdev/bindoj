@@ -31,7 +31,7 @@ let variant_configs : [`type_decl] configs = [
 
 let decl : type_decl =
   variant_decl "customized_union" [
-    variant_constructor "Case1" (`tuple_like [cty_int])
+    variant_constructor "Case1" (`tuple_like [variant_argument cty_int])
       ~configs:[
         Json_config.name "Case1'";
         Json_config.name_of_variant_arg "value";
@@ -49,7 +49,7 @@ let decl : type_decl =
 
 let decl_with_docstr : type_decl =
   variant_decl "customized_union" [
-    variant_constructor "Case1" (`tuple_like [cty_int])
+    variant_constructor "Case1" (`tuple_like [variant_argument cty_int])
       ~configs:[
         Json_config.name "Case1'";
         Json_config.name_of_variant_arg "value";
@@ -67,7 +67,7 @@ let decl_with_docstr : type_decl =
   ] ~configs:variant_configs
     ~doc:(`docstr "variant with customized discriminator and argument names")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let parent = "customized_union" in
   parent, Util.FwrtTypeEnv.(
     init
@@ -77,7 +77,7 @@ let fwrt : (unit, unit) ts_fwrt_decl =
           Json_config.name "Case1'";
           Json_config.name_of_variant_arg "value";
         ]
-        ~args:[cty_int]
+        ~args:[variant_argument cty_int]
     |> bind_constructor ~parent "Case2"
         ~configs:[
           Json_config.name "Case2'";
@@ -129,6 +129,22 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd customized_union); };
       Util.Ts_ast.case_analyzer "CustomizedUnion" "analyzeCustomizedUnion" options customized_union; ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("CustomizedUnion",
+            (`anyone_of
+                [`object_of
+                  [`mandatory_field ("tag", (`exactly (`str "case1'")));
+                  `mandatory_field ("value", (`tuple_of [`integral]))];
+                `object_of
+                  [`mandatory_field ("tag", (`exactly (`str "case2'")));
+                  `mandatory_field ("x'", `integral);
+                  `mandatory_field ("y'", `integral)]]))))
+  )
 
 open Bindoj_openapi.V3
 

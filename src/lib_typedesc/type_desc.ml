@@ -23,6 +23,7 @@ type pos = [
   | `type_decl
   | `record_field
   | `variant_constructor
+  | `variant_tuple_argument
   | `coretype
   | `string_enum_case
 ]
@@ -213,20 +214,21 @@ let string_of_coretype = show_coretype
 
 type record_field = {
   rf_name: string;
-  rf_type: coretype;
+  rf_type: [ `direct of coretype | `nested of type_decl * Coretype.codec ];
   rf_configs: [`record_field] configs;
   rf_doc: doc;
 } [@@deriving show,eq]
-let string_of_record_field = show_record_field
 
-let record_field ?(doc=`nodoc) ?(configs=Configs.empty) rf_name rf_type =
-  { rf_name; rf_type; rf_configs = configs; rf_doc = doc }
-
-type variant_constructor = {
+and variant_tuple_argument = {
+  va_type: [ `direct of coretype | `nested of type_decl * Coretype.codec ];
+  va_configs: [`variant_tuple_argument] configs;
+  va_doc: doc;
+}
+and variant_constructor = {
   vc_name: string;
   vc_param: [
     | `no_param
-    | `tuple_like of coretype list
+    | `tuple_like of variant_tuple_argument list
     | `inline_record of record_field ignore_order_list
     | `reused_inline_record of type_decl
   ];
@@ -246,6 +248,21 @@ and type_decl = {
   td_kind : type_decl_kind;
   td_doc: doc;
 } [@@deriving show,eq]
+
+let string_of_record_field = show_record_field
+
+let record_field ?(doc=`nodoc) ?(configs=Configs.empty) rf_name rf_type =
+  { rf_name; rf_type = `direct rf_type; rf_configs = configs; rf_doc = doc }
+
+let record_field_nested ?(doc=`nodoc) ?(configs=Configs.empty) ?(codec=`default) rf_name rf_type =
+  { rf_name; rf_type = `nested (rf_type, codec); rf_configs = configs; rf_doc = doc }
+
+let variant_argument ?(doc=`nodoc) ?(configs=Configs.empty) ct =
+  { va_type = `direct ct; va_configs = configs; va_doc = doc }
+
+let variant_argument_nested ?(doc=`nodoc) ?(configs=Configs.empty) ?(codec=`default) ct =
+  { va_type = `nested (ct, codec); va_configs = configs; va_doc = doc }
+
 let string_of_variant_constructor = show_variant_constructor
 
 let variant_constructor ?(doc=`nodoc) ?(configs=Configs.empty) vc_name vc_param =
@@ -309,31 +326,36 @@ let variant_decl ?variant_type ?(doc=`nodoc) ?(configs=Configs.empty) td_name ct
       td_configs = configs;
     }
 
-let fold_coretypes folder state td =
+let rec fold_coretypes folder state td =
+  let fold_record_fields =
+    List.fold_left (fun state field ->
+      match field.rf_type with
+      | `direct ct -> folder state ct
+      | `nested (td, _) -> fold_coretypes folder state td
+    )
+  in
   match td.td_kind with
   | Alias_decl ct -> folder state ct
   | Record_decl fields ->
-    fields |> List.fold_left (fun state field ->
-      folder state field.rf_type
-    ) state
+    fold_record_fields state fields
   | Variant_decl ctors ->
     ctors |> List.fold_left (fun state ctor ->
-      let fold_record_fields =
-        List.fold_left (fun state field ->
-          folder state field.rf_type
-        ) state
-      in
       match ctor.vc_param with
       | `no_param -> state
-      | `tuple_like ts -> List.fold_left folder state ts
+      | `tuple_like ts ->
+        ts |> List.fold_left (fun state va ->
+          match va.va_type with
+          | `direct ct -> folder state ct
+          | `nested (td, _) -> fold_coretypes folder state td
+        ) state
       | `inline_record fields ->
-        fold_record_fields fields
+        fold_record_fields state fields
       | `reused_inline_record decl ->
         let fields = decl.td_kind |> function
           | Record_decl fields -> fields
           | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
         in
-        fold_record_fields fields
+        fold_record_fields state fields
     ) state
 
 let is_recursive =

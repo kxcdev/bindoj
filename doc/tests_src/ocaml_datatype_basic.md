@@ -53,15 +53,17 @@ val student_desc : type_decl =
     Record_decl
      [{rf_name = "admission_year";
        rf_type =
-        {Bindoj.Type_desc.Coretype.ct_desc =
-          Bindoj.Type_desc.Coretype.Prim `int;
-         ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+        `direct
+          {Bindoj.Type_desc.Coretype.ct_desc =
+            Bindoj.Type_desc.Coretype.Prim `int;
+           ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
        rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
       {rf_name = "full_name";
        rf_type =
-        {Bindoj.Type_desc.Coretype.ct_desc =
-          Bindoj.Type_desc.Coretype.Prim `string;
-         ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+        `direct
+          {Bindoj.Type_desc.Coretype.ct_desc =
+            Bindoj.Type_desc.Coretype.Prim `string;
+           ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
        rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc}];
    td_doc = `nodoc}
 ```
@@ -80,7 +82,7 @@ type nonrec type_decl =
 # let person_desc =
     variant_decl "person" [
       variant_constructor "Anonymous" `no_param;
-      variant_constructor "With_id" (`tuple_like [Coretype.mk_prim `int]);
+      variant_constructor "With_id" (`tuple_like [variant_argument @@ Coretype.mk_prim `int]);
       variant_constructor "Student" (`inline_record [
         record_field "student_id" (Coretype.mk_prim `int);
         record_field "name" (Coretype.mk_prim `string);
@@ -100,24 +102,29 @@ val person_desc : type_decl =
       {vc_name = "With_id";
        vc_param =
         `tuple_like
-          [{Bindoj.Type_desc.Coretype.ct_desc =
-             Bindoj.Type_desc.Coretype.Prim `int;
-            ct_configs = Bindoj_typedesc.Type_desc.Configs.[]}];
+          [{va_type =
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `int;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+            va_configs = Bindoj.Type_desc.Configs.[]; va_doc = `nodoc}];
        vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc};
       {vc_name = "Student";
        vc_param =
         `inline_record
           [{rf_name = "student_id";
             rf_type =
-             {Bindoj.Type_desc.Coretype.ct_desc =
-               Bindoj.Type_desc.Coretype.Prim `int;
-              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `int;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
             rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
            {rf_name = "name";
             rf_type =
-             {Bindoj.Type_desc.Coretype.ct_desc =
-               Bindoj.Type_desc.Coretype.Prim `string;
-              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `string;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
             rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc}];
        vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc};
       {vc_name = "Teacher";
@@ -125,21 +132,24 @@ val person_desc : type_decl =
         `inline_record
           [{rf_name = "faculty_id";
             rf_type =
-             {Bindoj.Type_desc.Coretype.ct_desc =
-               Bindoj.Type_desc.Coretype.Prim `int;
-              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `int;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
             rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
            {rf_name = "name";
             rf_type =
-             {Bindoj.Type_desc.Coretype.ct_desc =
-               Bindoj.Type_desc.Coretype.Prim `string;
-              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `string;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
             rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc};
            {rf_name = "department";
             rf_type =
-             {Bindoj.Type_desc.Coretype.ct_desc =
-               Bindoj.Type_desc.Coretype.Prim `string;
-              ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
+             `direct
+               {Bindoj.Type_desc.Coretype.ct_desc =
+                 Bindoj.Type_desc.Coretype.Prim `string;
+                ct_configs = Bindoj_typedesc.Type_desc.Configs.[]};
             rf_configs = Bindoj.Type_desc.Configs.[]; rf_doc = `nodoc}];
        vc_configs = Bindoj.Type_desc.Configs.[]; vc_doc = `nodoc}];
    td_doc = `nodoc}

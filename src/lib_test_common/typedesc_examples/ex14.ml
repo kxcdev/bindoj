@@ -37,7 +37,7 @@ let decl_with_docstr : type_decl =
   alias_decl "objtuple" cty_typle
     ~doc:(`docstr "alias of objtuple type")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "objtuple", Util.FwrtTypeEnv.(
     init
     |> bind_alias "objtuple" cty_typle
@@ -59,6 +59,13 @@ let ts_ast : ts_ast option = Some [
           `type_reference "string" }; ]
   }
 ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+     ("not considering any config if exists",
+       (`named ("Objtuple", (`tuple_of [`proper_float; `string]))))
+  )
 
 open Bindoj_openapi.V3
 

@@ -52,7 +52,7 @@ let configs : [`type_decl] configs = Json_config.[ name json_name ]
 let decl : type_decl =
   variant_decl "person" [
     variant_constructor "Anonymous" `no_param;
-    variant_constructor "With_id" (`tuple_like [cty_int]);
+    variant_constructor "With_id" (`tuple_like [variant_argument cty_int]);
     variant_constructor "Student" (`inline_record [
       record_field "student_id" cty_int;
       record_field "name" cty_string;
@@ -66,7 +66,7 @@ let decl_with_docstr : type_decl =
     variant_constructor "Anonymous" `no_param
       ~doc:(`docstr "Anonymous constructor");
 
-    variant_constructor "With_id" (`tuple_like [cty_int])
+    variant_constructor "With_id" (`tuple_like [variant_argument cty_int])
       ~doc:(`docstr "With_id constructor");
 
     variant_constructor "Student" (`inline_record [
@@ -82,13 +82,13 @@ let decl_with_docstr : type_decl =
 
   ] ~configs ~doc:(`docstr "definition of person type")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let parent = "person" in
   "person", Util.FwrtTypeEnv.(
     init
     |> bind_object "person" [] ~configs
     |> bind_constructor ~parent "Anonymous"
-    |> bind_constructor ~parent "With_id" ~args:[cty_int]
+    |> bind_constructor ~parent "With_id" ~args:[variant_argument cty_int]
     |> bind_constructor ~parent "Student" ~fields:[
       field "student_id" cty_int;
       field "name" cty_string]
@@ -155,6 +155,8 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd person); };
       Util.Ts_ast.case_analyzer json_name_mangled ("analyze"^json_name_mangled) options person; ]
+
+let expected_json_shape_explanation = None
 
 open Bindoj_openapi.V3
 

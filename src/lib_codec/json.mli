@@ -27,6 +27,18 @@ module Json_config = Bindoj_codec_config.Json_config
 
 val get_json_discriminator_value : 'a typed_type_decl -> 'a -> string
 
+val validate_spreading_type :
+  [< `direct of coretype | `nested of type_decl * Coretype.codec]
+  -> [`record_decl of type_decl * record_field list * Coretype.codec
+      | `variant_decl of type_decl * variant_constructor list * Coretype.codec ]
+
+val explain_encoded_json_shape'
+  : ('shape, 'field_shape) json_shape_explaner
+  -> ((type_decl -> 'shape)
+  -> Coretype.ident -> string -> 'shape)
+  -> type_decl -> 'shape
+(** Creates a json shape explanation of the give typed type declaration with the given json shape explaner. *)
+
 val explain_encoded_json_shape : env:tdenv -> 't typed_type_decl -> json_shape_explanation
 (** Creates a json shape explanation of the give typed type declaration. *)
 

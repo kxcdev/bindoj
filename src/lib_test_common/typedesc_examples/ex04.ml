@@ -27,8 +27,8 @@ let cty_int = Coretype.mk_prim `int
 let decl : type_decl =
   variant_decl "foo" [
     variant_constructor "Foo0" `no_param;
-    variant_constructor "Foo1" (`tuple_like [cty_int]);
-    variant_constructor "Foo2" (`tuple_like [cty_int; cty_int]);
+    variant_constructor "Foo1" (`tuple_like [variant_argument cty_int]);
+    variant_constructor "Foo2" (`tuple_like [variant_argument cty_int; variant_argument cty_int]);
   ] ~configs:[
     Caml_config.variant_type `polymorphic
   ]
@@ -37,22 +37,23 @@ let decl_with_docstr : type_decl =
   variant_decl "foo" [
     variant_constructor "Foo0" `no_param
       ~doc:(`docstr "polyvariant case (length=0)");
-    variant_constructor "Foo1" (`tuple_like [cty_int])
+    variant_constructor "Foo1" (`tuple_like [variant_argument cty_int])
       ~doc:(`docstr "polyvariant case (length=1)");
-    variant_constructor "Foo2" (`tuple_like [cty_int; cty_int])
+    variant_constructor "Foo2" (`tuple_like [variant_argument cty_int; variant_argument cty_int])
       ~doc:(`docstr "polyvariant case (length=2)");
   ] ~configs:[
     Caml_config.variant_type `polymorphic
   ] ~doc:(`docstr "polyvariant")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let parent = "foo" in
   "foo", Util.FwrtTypeEnv.(
+    let va_int = variant_argument cty_int in
     init
     |> bind_object ~configs:[Caml_config.variant_type `polymorphic] "foo" []
     |> bind_constructor ~parent "Foo0"
-    |> bind_constructor ~parent "Foo1" ~args:[cty_int]
-    |> bind_constructor ~parent "Foo2" ~args:[cty_int; cty_int]
+    |> bind_constructor ~parent "Foo1" ~args:[va_int]
+    |> bind_constructor ~parent "Foo2" ~args:[va_int; va_int]
   )
 
 let ts_ast : ts_ast option =
@@ -93,6 +94,23 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd foos); };
       Util.Ts_ast.case_analyzer "Foo" "analyzeFoo" options foos ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("Foo",
+            (`anyone_of
+                [`object_of
+                  [`mandatory_field ("kind", (`exactly (`str "foo0")))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "foo1")));
+                  `mandatory_field ("arg", (`tuple_of [`integral]))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "foo2")));
+                  `mandatory_field ("arg", (`tuple_of [`integral; `integral]))]]))))
+  )
 
 open Bindoj_openapi.V3
 

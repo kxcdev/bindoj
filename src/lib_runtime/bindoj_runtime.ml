@@ -146,7 +146,7 @@ module Expr = struct
   let of_refl refl x = Refl (refl, x)
   let to_refl (type a) (refl: a Refl.t) : t -> a option = function
     | Refl (refl', x) ->
-      if Obj.magic refl == Obj.magic refl' then Some (Obj.magic x)
+      if Lazy.force refl == Obj.magic (Lazy.force refl') then Some (Obj.magic x)
       else None
     | _ -> None
 end
@@ -269,6 +269,71 @@ type json_field_shape_explanation = Json_shape.field_shape_explanation
 
 let string_of_json_shape_explanation = Json_shape.string_of_shape_explanation
 let string_of_json_field_shape_explanation = Json_shape.string_of_field_shape_explanation
+
+
+module type Json_shape_explaner = sig
+  type shape
+  type field_shape
+  val shape_of_json_shape_explanation : json_shape_explanation -> shape
+  val self : shape
+  val named : string * shape -> shape
+  val special : string * shape -> shape
+  val with_warning : string * shape -> shape
+  val exactly : jv -> shape
+  val any_json_value : shape
+  val unresolved : string -> shape
+  val anyone_of : shape list -> shape
+  val string_enum : string list -> shape
+  val nullable : shape -> shape
+  val boolean : shape
+  val numeric : shape
+  val integral : shape
+  val proper_int53p : shape
+  val proper_float : shape
+  val string : shape
+  val base64str : shape
+  val array_of : shape -> shape
+  val tuple_of : shape list -> shape
+  val record_of : shape -> shape
+  val object_of : field_shape list -> shape
+  val mandatory_field : string * shape -> field_shape
+  val optional_field : string * shape -> field_shape
+end
+
+type ('shape, 'field_shape) json_shape_explaner =
+(module Json_shape_explaner
+  with type shape = 'shape
+  and type field_shape = 'field_shape)
+
+let json_shape_explanation : (json_shape_explanation, json_field_shape_explanation) json_shape_explaner =
+  (module struct
+    type shape = json_shape_explanation
+    type field_shape = json_field_shape_explanation
+    let shape_of_json_shape_explanation : json_shape_explanation -> shape = identity
+    let self : shape = `self
+    let named : string * shape -> shape = fun x -> `named x
+    let special : string * shape -> shape = fun x -> `special x
+    let with_warning : string * shape -> shape = fun x -> `with_warning x
+    let exactly : jv -> shape = fun x -> `exactly x
+    let any_json_value : shape = `any_json_value
+    let unresolved : string -> shape = fun x -> `unresolved x
+    let anyone_of : shape list -> shape = fun x -> `anyone_of x
+    let string_enum : string list -> shape = fun x -> `string_enum x
+    let nullable : shape -> shape = fun x -> `nullable x
+    let boolean : shape = `boolean
+    let numeric : shape = `numeric
+    let integral : shape = `integral
+    let proper_int53p : shape = `proper_int53p
+    let proper_float : shape = `proper_float
+    let string : shape = `string
+    let base64str : shape = `base64str
+    let array_of : shape -> shape = fun x -> `array_of x
+    let tuple_of : shape list -> shape = fun x -> `tuple_of x
+    let record_of : shape -> shape = fun x -> `record_of x
+    let object_of : field_shape list -> shape = fun x ->  `object_of x
+    let mandatory_field : string * shape -> field_shape = fun x -> `mandatory_field x
+    let optional_field : string * shape -> field_shape = fun x -> `optional_field x
+  end)
 
 module OfJsonResult = struct
   module Err = struct

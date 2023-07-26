@@ -34,7 +34,7 @@ let decl_with_docstr : type_decl =
     record_field "value" cty_int53p ~doc:(`docstr "an int53p value");
   ] ~doc:(`docstr "record of an int53p value")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "with_int53p", Util.FwrtTypeEnv.(
       init
       |> bind_object "with_int53p"
@@ -53,6 +53,15 @@ let ts_ast : ts_ast option = Some [
                 tsps_type_desc = `type_reference "number"; };
             ];};
   ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("WithInt53p",
+            (`object_of [`mandatory_field ("value", `proper_int53p)]))))
+  )
 
 open Bindoj_openapi.V3
 

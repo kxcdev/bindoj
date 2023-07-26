@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
+open Bindoj_base.Runtime
 open Bindoj_gen_ts.Typescript_datatype
 open Bindoj_openapi.V3
 
@@ -27,9 +28,10 @@ module type T = sig
   val example_module_path: string
 
   val decl_with_docstr: type_decl
-  val fwrt: (unit, unit) ts_fwrt_decl
+  val fwrt: (unit, unit, unit) ts_fwrt_decl
   val ts_ast: ts_ast option
   val schema_object: Schema_object.t option
+  val expected_json_shape_explanation : json_shape_explanation option
 end
 
 (** this should contain all the example modules. *)
@@ -54,4 +56,6 @@ let all : (string * (module T)) list = [
   "ex12", (module Ex12);
   "ex13", (module Ex13);
   "ex14", (module Ex14);
+  "ex15", (module Ex15);
+  "ex16", (module Ex16);
 ]

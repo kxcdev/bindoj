@@ -129,11 +129,13 @@ module FwrtTypeEnv =
   FwrtTypeEnv'(struct
     type annot_d = unit
     type annot_f = unit
+    type annot_va = unit
     type annot_ko = unit
     type annot_ka = unit
     type annot_kc = ts_fwrt_constructor_kind_annot
     let default_annot_d = ()
     let default_annot_f = ()
+    let default_annot_va = ()
     let default_annot_ko = ()
     let default_annot_ka = ()
     let default_annot_kc = None

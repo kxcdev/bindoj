@@ -65,7 +65,7 @@ let decl : type_decl =
   variant_decl "person" [
     variant_constructor "Anonymous" `no_param;
 
-    variant_constructor "With_id" (`tuple_like [cty_int]);
+    variant_constructor "With_id" (`tuple_like [variant_argument cty_int]);
 
     variant_constructor "Student" (`inline_record [
       record_field "student_id" cty_int ~configs:[ Json_config.no_mangling ];
@@ -85,7 +85,7 @@ let decl_with_docstr : type_decl =
     variant_constructor "Anonymous" `no_param
       ~doc:(`docstr "Anonymous constructor");
 
-    variant_constructor "With_id" (`tuple_like [cty_int])
+    variant_constructor "With_id" (`tuple_like [variant_argument cty_int])
       ~doc:(`docstr "With_id constructor");
 
     variant_constructor "Student" (`inline_record [
@@ -108,13 +108,13 @@ let decl_with_docstr : type_decl =
   ] ~configs
     ~doc:(`docstr "definition of person type")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let parent = "person" in
   "person", Util.FwrtTypeEnv.(
     init
     |> bind_object "person" [] ~configs
     |> bind_constructor ~parent "Anonymous"
-    |> bind_constructor ~parent "With_id" ~args:[cty_int]
+    |> bind_constructor ~parent "With_id" ~args:[variant_argument cty_int]
     |> bind_constructor ~parent "Student" ~fields:[
       field "student_id" cty_int ~configs:[ Json_config.no_mangling ];
       field "name" cty_string;
@@ -201,6 +201,31 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd person); };
       Util.Ts_ast.case_analyzer json_name ("analyze_"^json_name) options person; ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+            ("person_inherited_mangling",
+              (`anyone_of
+                [`object_of
+                    [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "With_id")));
+                  `mandatory_field ("arg", (`tuple_of [`integral]))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "student")));
+                  `mandatory_field ("student_id", `integral);
+                  `mandatory_field ("name", `string);
+                  `mandatory_field
+                    ("caseValue", (`string_enum ["Case_at0"; "case-at1"]))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "Teacher")));
+                  `mandatory_field ("facultyId", `integral);
+                  `mandatory_field ("name", `string);
+                  `mandatory_field ("department", `string)]]))))
+  )
 
 open Bindoj_openapi.V3
 

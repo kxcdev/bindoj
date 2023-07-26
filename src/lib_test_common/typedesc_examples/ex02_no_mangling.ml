@@ -35,7 +35,7 @@ let configs : [`type_decl] configs = Json_config.[ no_mangling; name json_name ]
 let decl : type_decl =
   variant_decl "person" [
     variant_constructor "Anonymous" `no_param ~configs:[ Json_config.no_mangling ];
-    variant_constructor "With_id" (`tuple_like [cty_int]) ~configs:[ Json_config.no_mangling ];
+    variant_constructor "With_id" (`tuple_like [variant_argument cty_int]) ~configs:[ Json_config.no_mangling ];
     variant_constructor "Student" (`inline_record [
       record_field "student_id" cty_int ~configs:[ Json_config.no_mangling ];
       record_field "name" cty_string ~configs:[ Json_config.no_mangling ];
@@ -53,7 +53,7 @@ let decl_with_docstr : type_decl =
       ~configs:[ Json_config.no_mangling ]
       ~doc:(`docstr "Anonymous constructor");
 
-    variant_constructor "With_id" (`tuple_like [cty_int])
+    variant_constructor "With_id" (`tuple_like [variant_argument cty_int])
       ~configs:[ Json_config.no_mangling ]
       ~doc:(`docstr "With_id constructor");
 
@@ -80,13 +80,13 @@ let decl_with_docstr : type_decl =
 
   ] ~configs ~doc:(`docstr "definition of person type")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let parent = "person" in
   "person", Util.FwrtTypeEnv.(
     init
     |> bind_object "person" [] ~configs
     |> bind_constructor ~parent "Anonymous" ~configs:[ Json_config.no_mangling ]
-    |> bind_constructor ~parent "With_id" ~args:[cty_int] ~configs:[ Json_config.no_mangling ]
+    |> bind_constructor ~parent "With_id" ~args:[variant_argument cty_int] ~configs:[ Json_config.no_mangling ]
     |> bind_constructor ~parent "Student" ~fields:[
       field "student_id" cty_int ~configs:[ Json_config.no_mangling ];
       field "name" cty_string ~configs:[ Json_config.no_mangling ] ]
@@ -158,6 +158,29 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc = `union (List.map snd person); };
       Util.Ts_ast.case_analyzer json_name ("analyze_"^json_name) options person; ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("person_no_mangling",
+            (`anyone_of
+                [`object_of
+                  [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "With_id")));
+                  `mandatory_field ("arg", (`tuple_of [`integral]))];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "Student")));
+                  `mandatory_field ("student_id", `integral);
+                  `mandatory_field ("name", `string)];
+                `object_of
+                  [`mandatory_field ("kind", (`exactly (`str "Teacher")));
+                  `mandatory_field ("faculty_id", `integral);
+                  `mandatory_field ("name", `string);
+                  `mandatory_field ("department", `string)]]))))
+  )
 
 open Bindoj_openapi.V3
 

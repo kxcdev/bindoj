@@ -31,7 +31,7 @@ let decl_with_docstr : type_decl =
   alias_decl "unit" cty_unit
     ~doc:(`docstr "alias of unit type")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "unit", Util.FwrtTypeEnv.(
     init
     |> bind_alias "unit" cty_unit
@@ -45,6 +45,13 @@ let ts_ast : ts_ast option = Some [
     tsa_type_desc = `literal_type (`numeric_literal 1.);
   }
 ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named ("Unit", (`special ("unit", (`exactly `null))))))
+  )
 
 open Bindoj_openapi.V3
 

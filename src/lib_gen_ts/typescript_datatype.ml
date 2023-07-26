@@ -40,6 +40,10 @@ let type_of_prim : Coretype.prim -> ts_type_desc = function
   | `string | `uchar -> `type_reference "string"
   | `bytes -> `type_reference "string" (* base64 *)
 
+let type_of_ident : Json_config.json_mangling_style -> string -> ts_type_desc =
+  fun base_mangling_style name ->
+  `type_reference (Json_config.mangled `type_name base_mangling_style name)
+
 let type_of_coretype :
       ?definitive:bool
       -> self_json_name:string
@@ -56,10 +60,11 @@ let type_of_coretype :
     | Prim p -> type_of_prim p
     | Uninhabitable -> `type_reference "never"
     | Ident { id_name; _ } ->
-      `type_reference
-        (ct_configs
-          |> Json_config.get_name_opt |? id_name
-          |> Json_config.mangled `type_name base_mangling_style)
+      let name =
+        ct_configs
+        |> Json_config.get_name_opt |? id_name
+      in
+      type_of_ident base_mangling_style name
     | Option t -> `union [go t; `type_reference "null"; `type_reference "undefined"]
     | List t -> `array (go t)
     | Tuple ts ->
@@ -101,7 +106,12 @@ let type_of_coretype :
     ct_configs |> Configs.find_foreign_type_expr typescript |? go ct_desc
   else go ct_desc
 
-let get_name_of_fwrt_desc : default:string -> Json_config.json_mangling_style -> ('ann_d, 'ann_f, 'ann_k) fwrt_desc -> string * Json_config.json_mangling_style =
+let nested_type_to_coretype = function
+  | `direct ct -> ct
+  | `nested (name, codec) ->
+    Coretype.mk_ident ~codec name
+
+let get_name_of_fwrt_desc : default:string -> Json_config.json_mangling_style -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) fwrt_desc -> string * Json_config.json_mangling_style =
   fun ~default base_mangling_style desc ->
     let get_mangled_name kind configs = Json_config.(
       let style = get_mangling_style_opt configs |? base_mangling_style in
@@ -113,8 +123,8 @@ let get_name_of_fwrt_desc : default:string -> Json_config.json_mangling_style ->
     | Fwrt_alias { fa_configs; _ } -> get_mangled_name `type_name fa_configs
     | Fwrt_constructor { fc_configs; _ } -> get_mangled_name `discriminator_value fc_configs
 
-type ('ann_d, 'ann_f) ts_fwrt_decl = ('ann_d, 'ann_f, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
-type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list) ts_fwrt_decl
+type ('ann_d, 'ann_f, 'ann_va) ts_fwrt_decl = ('ann_d, 'ann_f, 'ann_va, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
+type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list, [`readonly] list) ts_fwrt_decl
 
 let ts_fwrt_decl_of_type_decl :
   export:bool
@@ -139,6 +149,10 @@ let ts_fwrt_decl_of_type_decl :
       if readonly then (fun ~name:_ ~type_:_ ~configs:_ -> [`readonly])
       else (fun ~name:_ ~type_:_ ~configs:_ -> [])
     );
+    annotate_variant_argument = (
+      if readonly then (fun ~type_:_ ~configs:_ -> [`readonly])
+      else (fun ~type_:_ ~configs:_ -> [])
+    );
   } decl
 
 let rec ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast =
@@ -160,21 +174,34 @@ and ts_type_alias_decl_of_fwrt_decl' :
   assert (name = fd_name);
   let (mangled_name, base_mangling_style) = get_name_of_fwrt_desc ~default:name base_mangling_style desc in
   let self_json_name = self_json_name |? mangled_name in
+  let ts_props_and_nested_types_of_fields base_mangling_style fields =
+    List.fold_right (fun ({ ff_name; ff_type; ff_annot; ff_configs; _}) (members, nested) ->
+      let base_mangling_style = Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
+      let nested_style = Json_config.get_nested_field_style ff_configs in
+      match nested_style, ff_type with
+      | `spreading, `direct _ -> failwith "non-nested argument/field cannot be spread."
+      | `spreading, `nested (name, _) ->
+        members, type_of_ident base_mangling_style name :: nested
+      | `nested, _ ->
+        let ct = nested_type_to_coretype ff_type in
+        let field_name = Json_config.(
+          ff_configs
+          |> get_name_opt |? ff_name
+          |> mangled `field_name base_mangling_style
+        ) in
+        let member =
+          { tsps_modifiers = ff_annot;
+            tsps_name = field_name;
+            tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style ct }
+        in
+        member :: members, nested
+    ) fields ([], [])
+  in
+  let when_not_empty f = function | [] -> None | xs -> Some (f xs) in
   let desc =
     match fd_kind with
     | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
-      let members =
-        fo_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-          let base_mangling_style = Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
-          let field_name = Json_config.(
-            ff_configs
-            |> get_name_opt |? ff_name
-            |> mangled `field_name base_mangling_style
-          ) in
-          { tsps_modifiers = ff_annot;
-            tsps_name = field_name;
-            tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style ff_type }
-      in
+      let members, nested = ts_props_and_nested_types_of_fields base_mangling_style fo_fields in
       let discriminator_name = fo_configs |> Ts_config.get_variant_discriminator in
       let children =
         fo_children |&> fun child ->
@@ -194,11 +221,11 @@ and ts_type_alias_decl_of_fwrt_decl' :
             | _ -> `intersection [ `type_literal [ kind_field ]; tsa_type_desc]
           end
       in
-      let desc = match members, children with
-        | _, [] -> `type_literal members
-        | [], _ -> `union children
-        | _ -> `intersection [`type_literal members; `union children] in
-      desc
+      ([ when_not_empty (fun x -> `type_literal x) members;
+         when_not_empty (fun x -> `union x) children;
+      ] @ (nested |&> Option.some))
+      |&?> identity
+      |> (function | [ t ] -> t | ts -> `intersection ts)
     | Fwrt_alias { fa_type; fa_annot=(); _ } ->
       type_of_coretype ~definitive:true ~self_json_name base_mangling_style fa_type
     | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
@@ -216,42 +243,52 @@ and ts_type_alias_decl_of_fwrt_decl' :
           | None -> base_mangling_style
         in
         let arg_name = Json_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
-        let members =
-          let tmp =
-            fc_fields |&> fun { ff_name; ff_type; ff_annot; ff_configs; _ } ->
-              let base_mangling_style = Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
-              let json_field_name = Json_config.(
-                get_name_opt ff_configs |? ff_name
-                |> mangled `field_name base_mangling_style
-              ) in
-              { tsps_modifiers = ff_annot;
-                tsps_name = json_field_name;
-                tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style ff_type }
+        let members, nested =
+          let tmp, nested =
+            ts_props_and_nested_types_of_fields base_mangling_style fc_fields
+          in
+          let type_of_variant_argument base_mangling_style arg =
+            let base_mangling_style = Json_config.get_mangling_style_opt arg.fva_configs |? base_mangling_style in
+            nested_type_to_coretype arg.fva_type
+            |> type_of_coretype ~self_json_name base_mangling_style
           in
           match fc_args, Json_config.get_tuple_style fc_configs with
-          | [], _ -> tmp
+          | [], _ -> tmp, nested
+          | [arg], _
+            when Json_config.get_nested_field_style arg.fva_configs = `spreading ->
+              begin match arg.fva_type with
+              | `direct _ -> failwith "non-nested argument/field cannot be spread."
+              | `nested (name, _) ->
+                let base_mangling_style = Json_config.get_mangling_style_opt arg.fva_configs |? base_mangling_style in
+                tmp, (type_of_ident base_mangling_style name :: nested)
+              end
           | [arg], _ ->
-            { tsps_modifiers = [];
+            let base_mangling_style = Json_config.get_mangling_style_opt arg.fva_configs |? base_mangling_style in
+            { tsps_modifiers = arg.fva_annot;
               tsps_name = arg_name;
-              tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style arg } :: tmp
+              tsps_type_desc = type_of_variant_argument base_mangling_style arg } :: tmp, nested
           | args, `arr ->
             let desc =
-              `tuple (args |> List.map (type_of_coretype ~self_json_name base_mangling_style))
+              `tuple (args |&> type_of_variant_argument base_mangling_style)
             in
-            { tsps_modifiers = [];
+            { tsps_modifiers = args |&>> (fun { fva_annot; _ } -> fva_annot);
               tsps_name = arg_name;
-              tsps_type_desc = desc } :: tmp
+              tsps_type_desc = desc } :: tmp, nested
           | args, `obj `default ->
             let fields =
-              args |> List.mapi (fun i t -> {
-                tsps_modifiers = [];
-                tsps_name = Json_config.tuple_index_to_field_name i;
-                tsps_type_desc = type_of_coretype ~self_json_name base_mangling_style t
-              })
+              args |> List.mapi (fun i arg ->
+                { tsps_modifiers = arg.fva_annot;
+                  tsps_name = Json_config.tuple_index_to_field_name i;
+                  tsps_type_desc = type_of_variant_argument base_mangling_style arg
+                })
             in
-            tmp @ fields
+            tmp @ fields, nested
         in
-        `type_literal members
+        match members, nested with
+        | ps, [] -> `type_literal ps
+        | [], [ t ] -> t
+        | [], ts -> `intersection ts
+        | ps, ts -> `intersection (`type_literal ps :: ts)
   in
   { tsa_modifiers = fd_annot;
     tsa_name = mangled_name;

@@ -56,7 +56,7 @@ let decl_with_docstr : type_decl =
   ] ~configs
   ~doc:(`docstr "definition of student type")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "student", Util.FwrtTypeEnv.(
     init
     |> bind_object "student"
@@ -89,6 +89,19 @@ let ts_ast : ts_ast option =
                     `literal_type (`string_literal "case_at1");
                   ]; };
               ]; } ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+     ("not considering any config if exists",
+       (`named
+          ("student_inherited_mangling",
+            (`object_of
+               [`mandatory_field ("admission_year", `integral);
+               `mandatory_field ("name", `string);
+               `mandatory_field
+                 ("caseValue", (`string_enum ["Case-at0"; "case_at1"]))]))))
+  )
 
 open Bindoj_openapi.V3
 

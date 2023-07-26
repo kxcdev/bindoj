@@ -79,7 +79,7 @@ let decl_with_docstr : type_decl =
       ~doc:(`docstr "map<string, int>");
   ] ~doc:(`docstr "collection of complex types")
 
-let fwrt : (unit, unit) ts_fwrt_decl =
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
   "complex_types", Util.FwrtTypeEnv.(
     init
     |> bind_object "complex_types" [
@@ -101,6 +101,27 @@ let fwrt : (unit, unit) ts_fwrt_decl =
   )
 
 let ts_ast : ts_ast option = None
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named
+          ("ComplexTypes",
+            (`object_of
+                [`optional_field ("option", `integral);
+                `mandatory_field ("list", (`array_of `integral));
+                `mandatory_field ("tuple", (`tuple_of [`integral; `integral]));
+                `mandatory_field
+                  ("objtuple", (`tuple_of [`integral; `integral]));
+                `mandatory_field
+                  ("nested",
+                    (`tuple_of
+                      [`nullable `integral;
+                      `array_of `integral;
+                      `tuple_of [`integral; `integral]]));
+                `mandatory_field ("map", (`record_of `integral))]))))
+  )
 
 open Bindoj_openapi.V3
 

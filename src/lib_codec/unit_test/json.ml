@@ -49,6 +49,11 @@ let create_test_cases (name: string) (module Ex : T) =
     | Error (msg, _, _) -> eprintf "%s\n" msg; None
   in
 
+  let check_field_name_collision () =
+    check' bool ~msg:"check field name collision" ~expected:true
+      ~actual:(Bindoj_codec_config.Json_config.check_field_name_collision Ex.decl)
+  in
+
   (* encoding *)
   let check_encoder (value: t Sample_value.t) =
     check Testables.jv (msg "encoding")
@@ -75,6 +80,7 @@ let create_test_cases (name: string) (module Ex : T) =
 
   let forall check = fun () -> sample_values |> List.iter check in
   name, [
+    test_case "check field name collition" `Quick check_field_name_collision;
     test_case "[interpreted] encoder works" `Quick (forall check_encoder);
     test_case "[interpreted] decoder works" `Quick (forall check_decoder);
     test_case "[interpreted] works in both direction" `Quick (forall check_combined);

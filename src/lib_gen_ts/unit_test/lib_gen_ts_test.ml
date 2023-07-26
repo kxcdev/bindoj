@@ -26,12 +26,13 @@ module Ast = struct
   let testable_ts_ast =
     Alcotest.testable pp_ts_ast equal_ts_ast
 
-  let annotate_fwrt_decl : bool -> bool -> (unit, unit) ts_fwrt_decl -> fwrt_decl_of_ts =
+  let annotate_fwrt_decl : bool -> bool -> (unit, unit, unit) ts_fwrt_decl -> fwrt_decl_of_ts =
     fun export readonly (name, env) ->
       (name,
       Foreign_datatype.FwrtTypeEnv.annotate
         name
         (if export then ([`export], []) else ([], []))
+        (if readonly then ([`readonly], []) else ([], []))
         (if readonly then ([`readonly], []) else ([], []))
         env)
 
