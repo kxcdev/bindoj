@@ -25,6 +25,7 @@ let example_module_path = "Bindoj_test_common_typedesc_examples.Ex16"
 
 let decl : type_decl =
   record_decl "nested_record" [
+    record_field_nested ~codec:(`open_ "Ex11_gen") "unit" Ex11.decl;
     record_field_nested ~codec:(`open_ "Ex01_gen") "student" Ex01.decl;
     record_field_nested ~codec:(`open_ "Ex09_gen") "int53p" Ex09.decl
       ~configs:[
@@ -39,6 +40,8 @@ let decl : type_decl =
 
 let decl_with_docstr : type_decl =
   record_decl "nested_record" [
+    record_field_nested ~codec:(`open_ "Ex11_gen") "unit" Ex11.decl
+      ~doc:(`docstr "unit field");
     record_field_nested ~codec:(`open_ "Ex01_gen") "student" Ex01.decl
       ~doc:(`docstr "student field");
     record_field_nested ~codec:(`open_ "Ex09_gen") "int53p" Ex09.decl
@@ -56,12 +59,14 @@ let decl_with_docstr : type_decl =
   ] ~doc:(`docstr "definition of nested_record type")
 
 let fwrt : (unit, unit, unit) ts_fwrt_decl =
+  let cty_unit = Coretype.mk_prim `unit in
   let cty_int = Coretype.mk_prim `int in
   let cty_int53p = Coretype.mk_prim `int53p in
   let cty_string = Coretype.mk_prim `string in
   let person = "person" in
   "nested_record", Util.FwrtTypeEnv.(
   init
+  |> bind_alias "unit" cty_unit
   |> bind_object "student"
     [ field "admission_year" cty_int;
       field "name" cty_string; ]
@@ -78,6 +83,7 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
     field "name" cty_string;
     field "department" cty_string ]
   |> bind_object "nested_record" [
+    field_nested ~codec:(`open_ "Ex11_gen") "unit" "unit";
     field_nested ~codec:(`open_ "Ex01_gen") "student" "student";
     field_nested ~codec:(`open_ "Ex09_gen") "int53p" "with_int53p"
       ~configs:[
@@ -100,6 +106,9 @@ let ts_ast : ts_ast option =
         tsa_type_desc = `intersection [
           `type_literal [
             { tsps_modifiers = [];
+              tsps_name = "unit";
+              tsps_type_desc = `type_reference "Unit"; };
+            { tsps_modifiers = [];
               tsps_name = "student";
               tsps_type_desc = `type_reference "Student"; };
             { tsps_modifiers = [];
@@ -120,12 +129,16 @@ let expected_json_shape_explanation =
             (`anyone_of
                [`object_of
                   [`mandatory_field
-                     ("student",
+                     ("unit",
                        (`named
-                          ("Student",
-                            (`object_of
-                               [`mandatory_field ("admissionYear", `integral);
-                               `mandatory_field ("name", `string)]))));
+                          ("Unit", (`special ("unit", (`exactly `null))))));
+                  `mandatory_field
+                    ("student",
+                      (`named
+                         ("Student",
+                           (`object_of
+                              [`mandatory_field ("admissionYear", `integral);
+                              `mandatory_field ("name", `string)]))));
                   `mandatory_field ("value", `proper_int53p);
                   `mandatory_field
                     ("person1",
@@ -154,12 +167,15 @@ let expected_json_shape_explanation =
                   `mandatory_field ("kind", (`exactly (`str "anonymous")))];
                `object_of
                  [`mandatory_field
-                    ("student",
-                      (`named
-                         ("Student",
-                           (`object_of
-                              [`mandatory_field ("admissionYear", `integral);
-                              `mandatory_field ("name", `string)]))));
+                    ("unit",
+                      (`named ("Unit", (`special ("unit", (`exactly `null))))));
+                 `mandatory_field
+                   ("student",
+                     (`named
+                        ("Student",
+                          (`object_of
+                             [`mandatory_field ("admissionYear", `integral);
+                             `mandatory_field ("name", `string)]))));
                  `mandatory_field ("value", `proper_int53p);
                  `mandatory_field
                    ("person1",
@@ -189,12 +205,15 @@ let expected_json_shape_explanation =
                  `mandatory_field ("arg", (`tuple_of [`integral]))];
                `object_of
                  [`mandatory_field
-                    ("student",
-                      (`named
-                         ("Student",
-                           (`object_of
-                              [`mandatory_field ("admissionYear", `integral);
-                              `mandatory_field ("name", `string)]))));
+                    ("unit",
+                      (`named ("Unit", (`special ("unit", (`exactly `null))))));
+                 `mandatory_field
+                   ("student",
+                     (`named
+                        ("Student",
+                          (`object_of
+                             [`mandatory_field ("admissionYear", `integral);
+                             `mandatory_field ("name", `string)]))));
                  `mandatory_field ("value", `proper_int53p);
                  `mandatory_field
                    ("person1",
@@ -225,12 +244,15 @@ let expected_json_shape_explanation =
                  `mandatory_field ("name", `string)];
                `object_of
                  [`mandatory_field
-                    ("student",
-                      (`named
-                         ("Student",
-                           (`object_of
-                              [`mandatory_field ("admissionYear", `integral);
-                              `mandatory_field ("name", `string)]))));
+                    ("unit",
+                      (`named ("Unit", (`special ("unit", (`exactly `null))))));
+                 `mandatory_field
+                   ("student",
+                     (`named
+                        ("Student",
+                          (`object_of
+                             [`mandatory_field ("admissionYear", `integral);
+                             `mandatory_field ("name", `string)]))));
                  `mandatory_field ("value", `proper_int53p);
                  `mandatory_field
                    ("person1",
@@ -280,11 +302,12 @@ let schema_object : Schema_object.t option =
     ];
   ] |&> (fun (name, fields) -> (name, fields @ [ "kind", string () ~enum:[`str name]])) in
   let fields =
-    ("student", record [
-    "admissionYear", integer ();
-    "name", string ();
-  ])
-    :: [
+    ("unit", integer ()
+      ~minimum:1 ~maximum:1)
+    :: ("student", record [
+      "admissionYear", integer ();
+      "name", string ();
+    ]) :: [
       "value", integer ();
       "person1", oneOf (person_ctors |&> fun (name, fields) ->
         record ~title:name fields);

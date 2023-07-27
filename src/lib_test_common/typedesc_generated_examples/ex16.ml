@@ -21,7 +21,8 @@ include Bindoj_gen_test_gen_output.Ex16_gen
 open Bindoj_base
 
 type t = nested_record =
-  { student: Ex01.t;
+  { unit: Ex11.t;
+    student: Ex01.t;
     int53p: Ex09.t;
     person1: Ex02.t;
     person2: Ex02.t; }
@@ -39,6 +40,8 @@ let env =
   { Type_decl_environment.empty with
     alias_ident_typemap =
       StringMap.of_list [
+        "unit",
+        (Boxed (Typed.mk Ex11.decl Ex11.reflect));
         "student",
         (Boxed (Typed.mk Ex01.decl Ex01.reflect));
         "with_int53p",
@@ -97,13 +100,14 @@ end
 let sample_values : t Sample_value.t list =
   sample_persons |> List.map (fun (person, person_fields) ->
     { Sample_value.orig =
-        { student = sample_student;
+        { unit = ();
+          student = sample_student;
           int53p = sample_int53p;
           person1 = person;
           person2 = person;
         };
       jv = `obj (
-        [ ("student", `obj sample_student_jv_fields) ]
+        [ ("unit", `num 1.); ("student", `obj sample_student_jv_fields) ]
         @ sample_int53p_jv_fields
         @ [ ("person1", `obj person_fields) ]
         @ person_fields)

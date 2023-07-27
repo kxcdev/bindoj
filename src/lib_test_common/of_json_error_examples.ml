@@ -481,6 +481,7 @@ module SampleEx16 : SampleGenerated = struct
     "null", `null, (record_not_obj "null", []);
 
     "missing field", `obj [
+      "unit", `num 1.;
       "student", `obj [
         ("admissionYear", `num 1984.);
         ("name", `str "William Gibson")
@@ -491,6 +492,7 @@ module SampleEx16 : SampleGenerated = struct
     (field_not_found "value", []);
 
     "missing discriminator (spreading)", `obj [
+      "unit", `num 1.;
       "student", `obj [
         ("admissionYear", `num 1984.);
         ("name", `str "William Gibson")
@@ -501,6 +503,7 @@ module SampleEx16 : SampleGenerated = struct
     (discriminator_not_found "kind", []);
 
     "missing discriminator (nested)", `obj [
+      "unit", `num 1.;
       "student", `obj [
         ("admissionYear", `num 1984.);
         ("name", `str "William Gibson")
@@ -513,6 +516,7 @@ module SampleEx16 : SampleGenerated = struct
     (discriminator_not_found "kind", [ `f "person1" ]);
 
     "not integer", `obj [
+      "unit", `num 1.;
       "student", `obj [
         ("admissionYear", `num 1984.);
         ("name", `str "William Gibson")

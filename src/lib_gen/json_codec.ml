@@ -205,7 +205,7 @@ let builtin_codecs = Builtin_codecs.all
 let builtin_codecs_map =
   builtin_codecs |> List.to_seq |> StringMap.of_seq
 
-let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case ~string_enum_case ~wrap_ident self_ename (ct: coretype) =
+let codec_of_coretype ~base_ident_codec ~get_custom_codec ~get_name ~map_key_converter ~tuple_case ~string_enum_case ~wrap_ident self_ename (ct: coretype) =
   let loc = Location.none in
   match get_custom_codec ct.ct_configs with
   | Some coder -> evar coder
@@ -216,7 +216,9 @@ let codec_of_coretype ~get_custom_codec ~get_name ~map_key_converter ~tuple_case
     let rec go = function
       | Coretype.Prim p -> evar_name (Coretype.string_of_prim p)
       | Uninhabitable -> evar_name "uninhabitable"
-      | Ident i -> evar_name ~codec:i.id_codec i.id_name |> wrap_ident
+      | Ident i ->
+        let codec = match i.id_codec with | `default -> base_ident_codec | c -> c in
+        evar_name ~codec i.id_name |> wrap_ident
       | Option t -> [%expr [%e evar_name "option"] [%e go t]] (* option_of_json t_of_json *)
       | List t -> [%expr [%e evar_name "list"] [%e go t]] (* list_of_json t_of_json *)
       | Map (k, v) -> [%expr [%e evar_name "map"] [%e map_key_converter k] [%e go v]] (* map_of_json key_of_string t_of_json *)
@@ -301,12 +303,13 @@ let encoder_of_coretype =
     Exp.function_ cases
   in
   let wrap_ident = identity in
-  fun base_mangling_style e ct ->
+  fun base_ident_codec base_mangling_style e ct ->
     let base_mangling_style =
       Json_config.get_mangling_style_opt ct.ct_configs
       |? base_mangling_style
     in
     codec_of_coretype
+      ~base_ident_codec
       ~get_custom_codec:Json_config.get_custom_encoder
       ~get_name:get_encoder_name
       ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case base_mangling_style)
@@ -420,12 +423,13 @@ let decoder_of_coretype =
     [%expr (fun path x ->
         [%e e] ~path x |> Result.map_error (fun (msg, path, _) -> (msg, path)))]
   in
-  fun base_mangling_style e ct ->
+  fun base_ident_codec base_mangling_style e ct ->
   let base_mangling_style =
     Json_config.get_mangling_style_opt ct.ct_configs
     |? base_mangling_style
   in
   codec_of_coretype
+    ~base_ident_codec
     ~get_custom_codec:Json_config.get_custom_decoder
     ~get_name:get_decoder_name
     ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case base_mangling_style)
@@ -536,7 +540,7 @@ let explain_encoded_json_shape :
     json_shape_explanation_resolution |? (constant `default)
   in
   Bindoj_codec.Json.explain_encoded_json_shape' jse
-    (fun _ { id_name; id_codec; } ident_json_name ->
+    (fun _ base_codec { id_name; id_codec; } ident_json_name ->
       let trim eshape = [%expr
         match [%e eshape] with
         | `with_warning (_, (`named _ as s)) -> s
@@ -545,7 +549,10 @@ let explain_encoded_json_shape :
       begin match json_shape_explanation_resolution id_name with
       | `no_resolution -> [%expr `unresolved [%e estring ~loc ("alias: "^id_name)]]
       | `default ->
-        let json_shape_explanation_name = get_json_shape_explanation_name id_name id_codec in
+        let json_shape_explanation_name =
+          (match id_codec with | `default -> base_codec | _ -> id_codec)
+          |> get_json_shape_explanation_name id_name
+        in
         trim (evar json_shape_explanation_name)
       | (`in_module _  | `open_ _) as resolution ->
         let json_shape_explanation_name = get_json_shape_explanation_name id_name resolution in
@@ -574,24 +581,25 @@ let gen_discriminator_value_accessor_name ?(codec=`default) td =
 
 let collect_nested_types_uniq f =
   let rec go =
-    let go_nested_type_decl base_mangling_style state = function
+    let go_nested_type_decl ~base_codec base_mangling_style state = function
       | `direct _ -> state
       | `nested (td, codec) ->
+        let codec = match codec with | `default -> base_codec | _ -> codec in
         let base_mangling_style = Json_config.get_mangling_style_opt td.td_configs |? base_mangling_style in
-        go ((base_mangling_style, (td, codec)) :: state) td
+        go ~base_codec:codec ((base_mangling_style, (td, codec)) :: state) td
     in
-    let fold_record_fields base_mangling_style =
+    let fold_record_fields ~base_codec base_mangling_style =
       List.fold_left
         (fun state field ->
           let base_mangling_style = Json_config.get_mangling_style_opt field.rf_configs |? base_mangling_style in
-          go_nested_type_decl base_mangling_style state field.rf_type)
+          go_nested_type_decl ~base_codec base_mangling_style state field.rf_type)
     in
-    fun ?(base_mangling_style = Json_config.default_mangling_style) state td ->
-    let base_mangling_style = Json_config.get_mangling_style_opt td.td_configs |? base_mangling_style in
+    fun ~base_codec state td ->
+    let base_mangling_style = Json_config.(get_mangling_style_opt td.td_configs |? default_mangling_style) in
     match td with
     | { td_kind = Alias_decl _; _ } -> state
     | { td_kind = Record_decl fields; _ } ->
-      fold_record_fields base_mangling_style state fields
+      fold_record_fields ~base_codec base_mangling_style state fields
     | { td_kind = Variant_decl ctors; _ } ->
       List.fold_left (fun state ctor ->
         match ctor.vc_param with
@@ -599,15 +607,15 @@ let collect_nested_types_uniq f =
         | `tuple_like ts ->
           ts |> List.fold_left (fun state va ->
             let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
-            go_nested_type_decl base_mangling_style state va.va_type) state
+            go_nested_type_decl ~base_codec base_mangling_style state va.va_type) state
         | `inline_record fields
         | `reused_inline_record { td_kind = Record_decl fields; _ } ->
-          fold_record_fields base_mangling_style state fields
+          fold_record_fields ~base_codec base_mangling_style state fields
         | `reused_inline_record _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." ctor.vc_name
       ) state ctors
   in
   fun td ->
-    go [] td
+    go ~base_codec:`default [] td
     |> List.sort_uniq (fun (_, (td1, codec1)) (_, (td2, codec2)) ->
       String.compare
         (Utils.type_name_with_codec ~codec:codec1 td1.td_name)
@@ -633,7 +641,7 @@ let gen_json_encoder :
     | `open_ m | `in_module m -> String.lowercase_ascii m ^ "__")
     ^ json_encoder_name td ^ "_nested"
   in
-  let get_encoder ~nested ~spreading base_mangling_style self_ename ty arg =
+  let get_encoder ~base_ident_codec ~nested ~spreading base_mangling_style self_ename ty arg =
     let wrap_obj cond =
       if cond then
         (fun e -> [%expr `obj ([%e e] [%e arg])])
@@ -641,8 +649,8 @@ let gen_json_encoder :
         (fun e -> [%expr ([%e e] [%e arg])])
     in
     match ty with
-    | `direct ct | `nested ({ td_kind = Alias_decl ct; _ } , _) ->
-      let e = [%expr [%e encoder_of_coretype base_mangling_style self_ename ct]] in
+    | `direct ct | `nested ({ td_kind = Alias_decl ct; _ }, _) ->
+      let e = [%expr [%e encoder_of_coretype base_ident_codec base_mangling_style self_ename ct]] in
       wrap_obj (nested && ct.ct_desc = Coretype.Self) e
     | `nested (td, codec) ->
       let e = evar ~loc (nested_encoder_name codec td) in
@@ -655,7 +663,7 @@ let gen_json_encoder :
          fields)
       Closed
   in
-  let record_to_json_fields ~nested ~self_ename base_mangling_style fields =
+  let record_to_json_fields ~base_ident_codec ~nested ~self_ename base_mangling_style fields =
     let rec go (i, current, state) =
       let update_state () =
         match current with
@@ -670,7 +678,7 @@ let gen_json_encoder :
         in
         let json_field_name = estring ~loc json_field_name in
         let nested_style = Json_config.get_nested_field_style field.rf_configs in
-        let encoder ~spreading = get_encoder ~nested ~spreading base_mangling_style self_ename field.rf_type in
+        let encoder ~spreading = get_encoder ~base_ident_codec ~nested ~spreading base_mangling_style self_ename field.rf_type in
         match nested_style with
         | `spreading ->
           begin match validate_spreading_type field.rf_type with
@@ -722,8 +730,8 @@ let gen_json_encoder :
         in
         of_record_fields ~label:"reused inline record" fields
   in
-  let variant_body : nested:bool -> self_ename:expression -> [`type_decl] configs -> Json_config.json_mangling_style -> variant_constructor list -> expression list =
-    fun ~nested ~self_ename td_configs base_mangling_style cnstrs ->
+  let variant_body : nested:bool -> self_ename:expression -> base_ident_codec:Coretype.codec -> [`type_decl] configs -> Json_config.json_mangling_style -> variant_constructor list -> expression list =
+    fun ~nested ~self_ename ~base_ident_codec td_configs base_mangling_style cnstrs ->
     let discriminator_fname =
       Json_config.get_variant_discriminator td_configs
       |> Json_config.mangled `field_name base_mangling_style
@@ -738,7 +746,7 @@ let gen_json_encoder :
       in
       let cstr = [%expr ([%e estring ~loc discriminator_fname], `str [%e estring ~loc discriminator_value])] in
       let of_record_fields base_mangling_style fields =
-        let args = record_to_json_fields ~nested ~self_ename base_mangling_style fields in
+        let args = record_to_json_fields ~base_ident_codec ~nested ~self_ename base_mangling_style fields in
         [%expr ([%e cstr] :: [%e args])]
       in
       match Json_config.get_variant_style vc_configs with
@@ -751,7 +759,7 @@ let gen_json_encoder :
             let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
             begin match validate_spreading_type va.va_type with
             | `record_decl _ | `variant_decl _ ->
-              let encoder = get_encoder ~nested ~spreading:true base_mangling_style self_ename va.va_type in
+              let encoder = get_encoder ~base_ident_codec ~nested ~spreading:true base_mangling_style self_ename va.va_type in
               [%expr ([%e cstr] :: [%e encoder (evari 0)])]
             end
         | `tuple_like args ->
@@ -759,7 +767,7 @@ let gen_json_encoder :
           let args =
             List.mapi (fun i va ->
               let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
-              let encoder = get_encoder ~nested ~spreading:false base_mangling_style self_ename va.va_type in
+              let encoder = get_encoder ~base_ident_codec ~nested ~spreading:false base_mangling_style self_ename va.va_type in
               encoder (evari i))
               args
           in
@@ -789,6 +797,7 @@ let gen_json_encoder :
   in
   let encoder_of_type_decl =
     fun
+      ?(base_ident_codec = `default)
       ?(base_mangling_style=Json_config.default_mangling_style)
       ~nested
       codec
@@ -804,12 +813,12 @@ let gen_json_encoder :
     let self_pname = pvar ~loc self_name in
     self_pname, (match td_kind with
     | Alias_decl ct ->
-      encoder_of_coretype base_mangling_style self_ename ct
+      encoder_of_coretype base_ident_codec base_mangling_style self_ename ct
     | Record_decl fields -> [%expr fun [%p record_params fields] ->
-      ([%e map_body @@ record_to_json_fields ~nested ~self_ename base_mangling_style fields])]
+      ([%e map_body @@ record_to_json_fields ~base_ident_codec ~nested ~self_ename base_mangling_style fields])]
     | Variant_decl ctors ->
       let params = variant_params td_configs ctors in
-      let body = variant_body ~nested ~self_ename td_configs base_mangling_style ctors in
+      let body = variant_body ~base_ident_codec ~nested ~self_ename td_configs base_mangling_style ctors in
       List.map2
         (fun p b -> case ~lhs:p ~rhs:(map_body b) ~guard:None)
         params body
@@ -828,7 +837,7 @@ let gen_json_encoder :
     td |> collect_nested_types_uniq (fun base_mangling_style ->function
       | { td_kind = Alias_decl _; _ }, _ -> None
       | td, codec -> Some (
-        encoder_of_type_decl ~base_mangling_style ~nested:true codec td
+        encoder_of_type_decl ~base_ident_codec:codec ~base_mangling_style ~nested:true codec td
         /> (fun e ->
           let type_name = Utils.type_name_with_codec ~codec td.td_name in
           pexp_constraint ~loc e
@@ -874,17 +883,17 @@ let gen_json_decoder_impl :
     | `open_ m | `in_module m -> String.lowercase_ascii m ^ "__")
     ^ json_decoder_name td ^ "_nested"
   in
-  let get_decoder base_mangling_style self_ename = function
-    | `direct ct -> decoder_of_coretype base_mangling_style self_ename ct
+  let get_decoder ~base_ident_codec base_mangling_style self_ename = function
+    | `direct ct | `nested ({ td_kind = Alias_decl ct; _ }, _) -> decoder_of_coretype base_ident_codec base_mangling_style self_ename ct
     | `nested (td, codec) -> evar ~loc (nested_decoder_name codec td)
   in
-  let record_bindings : self_ename:expression -> Json_config.json_mangling_style -> record_field list -> (pattern * expression) list =
-    fun ~self_ename base_mangling_style -> List.mapi (fun i field ->
+  let record_bindings : self_ename:expression -> base_ident_codec:Coretype.codec -> Json_config.json_mangling_style -> record_field list -> (pattern * expression) list =
+    fun ~self_ename ~base_ident_codec base_mangling_style -> List.mapi (fun i field ->
       pvari i, (
         let (json_field_name, base_mangling_style) = Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field in
         let json_field = estring ~loc json_field_name in
         let nested_style = Json_config.get_nested_field_style field.rf_configs in
-        let decoder = get_decoder base_mangling_style self_ename field.rf_type in
+        let decoder = get_decoder ~base_ident_codec base_mangling_style self_ename field.rf_type in
         match nested_style, field.rf_type with
         | `spreading, _ ->
           begin match validate_spreading_type field.rf_type with
@@ -921,8 +930,8 @@ let gen_json_decoder_impl :
     in
     object_is_expected_error "record", object_is_expected_error "variant"
   in
-  let variant_body : ?type_name:string -> self_ename:expression -> [`type_decl] configs -> Json_config.json_mangling_style -> variant_constructor list -> (pattern * expression) list =
-    fun ?type_name ~self_ename td_configs base_mangling_style cstrs ->
+  let variant_body : ?type_name:string -> self_ename:expression -> base_ident_codec:Coretype.codec -> [`type_decl] configs -> Json_config.json_mangling_style -> variant_constructor list -> (pattern * expression) list =
+    fun ?type_name ~self_ename ~base_ident_codec td_configs base_mangling_style cstrs ->
     let discriminator_fname =
       Json_config.get_variant_discriminator td_configs
       |> Json_config.mangled `field_name base_mangling_style
@@ -960,7 +969,7 @@ let gen_json_decoder_impl :
           match fields with
           | [] -> cstr_p [%pat? _], construct vc_name None
           | _ ->
-            let bindings = record_bindings ~self_ename base_mangling_style fields in
+            let bindings = record_bindings ~self_ename ~base_ident_codec base_mangling_style fields in
             let body =
               match Caml_config.get_variant_type td_configs with
               | `regular -> record_body fields
@@ -980,7 +989,7 @@ let gen_json_decoder_impl :
               let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
               begin match validate_spreading_type va.va_type with
               | `record_decl _ | `variant_decl _ ->
-                let decoder = get_decoder base_mangling_style self_ename va.va_type in
+                let decoder = get_decoder ~base_ident_codec base_mangling_style self_ename va.va_type in
                 let body = tuple_like_body args in
                 cstr_p [%pat? _], bind_results [
                   pvari 0, [%expr [%e decoder] path [%e ebindoj_orig]]
@@ -991,7 +1000,7 @@ let gen_json_decoder_impl :
             let decoders_of_args =
               args |> List.map (fun va ->
                 let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
-                get_decoder base_mangling_style self_ename va.va_type
+                get_decoder ~base_ident_codec base_mangling_style self_ename va.va_type
               )
             in
             begin match Json_config.get_tuple_style vc_configs, args with
@@ -1097,6 +1106,7 @@ let gen_json_decoder_impl :
   let decoder_of_type_decl =
     fun
       ?self_name
+      ?(base_ident_codec=`default)
       ?(base_mangling_style=Json_config.default_mangling_style)
       ?(codec=`default)
       ~nested
@@ -1109,9 +1119,9 @@ let gen_json_decoder_impl :
     in
     self_name, (match td_kind with
     | Alias_decl ct ->
-      decoder_of_coretype base_mangling_style self_ename ct
+      decoder_of_coretype base_ident_codec base_mangling_style self_ename ct
     | Record_decl fields ->
-      let bindings = record_bindings ~self_ename base_mangling_style fields in
+      let bindings = record_bindings ~self_ename ~base_ident_codec base_mangling_style fields in
       let body = record_body ?type_name fields in
       bind_results bindings [%expr Ok [%e body]]
       |> fun body -> [%expr fun path [%p pbindoj_orig] ->
@@ -1122,7 +1132,7 @@ let gen_json_decoder_impl :
     | Variant_decl ctors ->
       let discriminator_fname = Json_config.get_variant_discriminator td_configs in
       [%expr fun path [%p pbindoj_orig] -> [%e
-        variant_body ?type_name ~self_ename td_configs base_mangling_style ctors
+        variant_body ?type_name ~self_ename ~base_ident_codec td_configs base_mangling_style ctors
         |&> (fun (pat, body) -> case ~lhs:pat ~rhs:(body) ~guard:None)
         |> pexp_match ~loc [%expr
           Kxclib.Jv.pump_field [%e estring ~loc discriminator_fname] [%e ebindoj_orig]
@@ -1142,7 +1152,7 @@ let gen_json_decoder_impl :
     td |> collect_nested_types_uniq (fun base_mangling_style -> function
       | { td_kind = Alias_decl _; _ }, _ -> None
       | td, codec -> Some (
-        decoder_of_type_decl ~base_mangling_style ~codec ~nested:true td
+        decoder_of_type_decl ~base_ident_codec:codec ~base_mangling_style ~codec ~nested:true td
         |> (fun (name, e) -> (pvar ~loc name, e))
         |> !! Vb.mk)
     )
