@@ -26,7 +26,17 @@ let lidloc ?loc x = locmk ?loc (Longident.parse x)
 
 let typcons ?loc ?attrs ?(args=[]) x = Typ.constr ?loc ?attrs (lidloc ?loc x) args
 let pvar ?loc ?attrs s = Pat.var ?loc ?attrs (strloc s)
-let evar ?loc ?attrs s = Exp.ident ?loc ?attrs (lidloc s)
+let evar ?open_ ?loc ?attrs s =
+  Exp.ident ?loc ?attrs (lidloc s)
+  |> match open_ with
+     | None -> identity
+     | Some opening ->
+        ({ popen_expr  = Mod.ident ?loc (lidloc ?loc opening);
+           popen_override = Fresh;
+           popen_loc = loc |? !Ast_helper.default_loc;
+           popen_attributes = [];
+         } : open_declaration
+        ) |> Exp.open_ ?loc
 
 let elist ?(loc=Location.none) =
   let rec go acc = function
