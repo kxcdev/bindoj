@@ -81,3 +81,9 @@ jobs:
           working-directory: ./
           scope: "kxcteam"
           github-comment: false
+
+  setup-ocaml-checked:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "all set"

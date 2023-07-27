@@ -71,3 +71,9 @@ jobs:
 
       - name: build & test
         run: ./scripts/ci_run.sh
+
+  setup-ocaml-matrix-checked:
+    needs: matrix-check
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "all set"
