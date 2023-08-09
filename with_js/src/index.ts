@@ -1,4 +1,4 @@
-/* Copyright 2022 Kotoi-Xie Consultancy, Inc. This file is a part of the
+/* Copyright 2022-2023 Kotoi-Xie Consultancy, Inc. This file is a part of the
 
 ==== Bindoj (https://kxc.dev/bindoj) ====
 

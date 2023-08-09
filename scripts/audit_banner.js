@@ -6,7 +6,7 @@ const path = require('path')
 const assert = require('assert')
 
 const banner = [
-`Copyright 2022 Kotoi-Xie Consultancy, Inc. This file is a part of the
+`Copyright 2022-2023 Kotoi-Xie Consultancy, Inc. This file is a part of the
 
 ==== Bindoj (https://kxc.dev/bindoj) ====
 
@@ -51,7 +51,7 @@ const filetypes = new Map([
 ])
 
 const oldBanners = [
-  [`Copyright 2022 Kotoi-Xie Consultancy, Inc.
+  [`Copyright 2022-2023 Kotoi-Xie Consultancy, Inc.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
