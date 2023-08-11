@@ -34,7 +34,7 @@ val validate_spreading_type :
 
 val explain_encoded_json_shape'
   : ('shape, 'field_shape) json_shape_explaner
-  -> ((type_decl -> 'shape) -> Coretype.codec ->Coretype.ident -> string -> 'shape)
+  -> ((type_decl -> 'shape) -> Coretype.codec -> Coretype.ident -> string -> 'shape)
   -> type_decl -> 'shape
 (** Creates a json shape explanation of the give typed type declaration with the given json shape explaner. *)
 

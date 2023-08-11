@@ -23,40 +23,45 @@ open Bindoj_codec.Json
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex16"
 
-let decl : type_decl =
-  record_decl "nested_record" [
-    record_field_nested ~codec:(`open_ "Ex11_gen") "unit" Ex11.decl;
-    record_field_nested ~codec:(`open_ "Ex01_gen") "student" Ex01.decl;
-    record_field_nested ~codec:(`open_ "Ex09_gen") "int53p" Ex09.decl
-      ~configs:[
-        Json_config.nested_field_style `spreading;
-      ];
-    record_field_nested ~codec:(`open_ "Ex02_gen") "person1" Ex02.decl;
-    record_field_nested ~codec:(`open_ "Ex02_gen") "person2" Ex02.decl
-      ~configs:[
-        Json_config.nested_field_style `spreading;
-      ];
-  ]
+open struct
+  module type Ex = sig val decl: type_decl val decl_with_docstr: type_decl end
+  let make_decl with_doc =
+    let decl, doc, open_ =
+      if with_doc then
+        (fun (module E: Ex) -> E.decl_with_docstr),
+        (fun s -> `docstr s),
+        (fun s -> `open_ (s ^ "_docstr_gen"))
+      else
+        (fun (module E: Ex) -> E.decl),
+        constant `nodoc,
+        (fun s -> `open_ (s ^ "_gen"))
+    in
+    record_decl "nested_record" [
+      record_field_nested ~codec:(open_ "Ex11") "unit" (decl (module Ex11))
+        ~doc:(doc "unit field");
+      record_field_nested ~codec:(open_ "Ex01") "student" (decl (module Ex01))
+        ~configs:[
+          Json_config.no_mangling;
+        ]
+        ~doc:(doc "student field");
+      record_field_nested ~codec:(open_ "Ex09") "int53p" (decl (module Ex09))
+        ~configs:[
+          Json_config.nested_field_style `spreading;
+          Json_config.no_mangling;
+        ]
+        ~doc:(doc "int53p field");
+      record_field_nested ~codec:(open_ "Ex02_no_mangling") "person1" (decl (module Ex02_no_mangling))
+        ~doc:(doc "person1 field");
+      record_field_nested ~codec:(open_ "Ex02_no_mangling") "person2" (decl (module Ex02_no_mangling))
+        ~configs:[
+          Json_config.nested_field_style `spreading;
+        ]
+        ~doc:(doc "person2 field");
+  ]  ~doc:(doc "definition of nested_record type")
+end
 
-let decl_with_docstr : type_decl =
-  record_decl "nested_record" [
-    record_field_nested ~codec:(`open_ "Ex11_gen") "unit" Ex11.decl
-      ~doc:(`docstr "unit field");
-    record_field_nested ~codec:(`open_ "Ex01_gen") "student" Ex01.decl
-      ~doc:(`docstr "student field");
-    record_field_nested ~codec:(`open_ "Ex09_gen") "int53p" Ex09.decl
-      ~configs:[
-        Json_config.nested_field_style `spreading;
-      ]
-      ~doc:(`docstr "int53p field");
-    record_field_nested ~codec:(`open_ "Ex02_gen") "person1" Ex02.decl
-      ~doc:(`docstr "person1 field");
-    record_field_nested ~codec:(`open_ "Ex02_gen") "person2" Ex02.decl
-      ~configs:[
-        Json_config.nested_field_style `spreading;
-      ]
-      ~doc:(`docstr "person2 field");
-  ] ~doc:(`docstr "definition of nested_record type")
+let decl : type_decl = make_decl false
+let decl_with_docstr : type_decl = make_decl true
 
 let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let cty_unit = Coretype.mk_prim `unit in
@@ -72,25 +77,31 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
       field "name" cty_string; ]
   |> bind_object "with_int53p"
     [ field "value" cty_int53p; ]
-  |> bind_object person []
-  |> bind_constructor ~parent:person "Anonymous"
-  |> bind_constructor ~parent:person "With_id" ~args:[variant_argument cty_int]
+  |> bind_object person [] ~configs:Json_config.[ no_mangling; name "person_no_mangling" ]
+  |> bind_constructor ~parent:person "Anonymous" ~configs:[ Json_config.no_mangling ]
+  |> bind_constructor ~parent:person "With_id" ~args:[variant_argument cty_int] ~configs:[ Json_config.no_mangling ]
   |> bind_constructor ~parent:person "Student" ~fields:[
-    field "student_id" cty_int;
-    field "name" cty_string]
+    field "student_id" cty_int ~configs:[ Json_config.no_mangling ];
+    field "name" cty_string ~configs:[ Json_config.no_mangling ] ]
+    ~configs:[ Json_config.no_mangling ]
   |> bind_constructor ~parent:person "Teacher" ~fields:[
-    field "faculty_id" cty_int;
-    field "name" cty_string;
-    field "department" cty_string ]
+    field "faculty_id" cty_int ~configs:[ Json_config.no_mangling ];
+    field "name" cty_string ~configs:[ Json_config.no_mangling ];
+    field "department" cty_string ~configs:[ Json_config.no_mangling ] ]
+    ~configs:[ Json_config.no_mangling ]
   |> bind_object "nested_record" [
     field_nested ~codec:(`open_ "Ex11_gen") "unit" "unit";
-    field_nested ~codec:(`open_ "Ex01_gen") "student" "student";
+    field_nested ~codec:(`open_ "Ex01_gen") "student" "student"
+      ~configs:[
+        Json_config.no_mangling;
+      ];
     field_nested ~codec:(`open_ "Ex09_gen") "int53p" "with_int53p"
       ~configs:[
         Json_config.nested_field_style `spreading;
+        Json_config.no_mangling;
       ];
-    field_nested ~codec:(`open_ "Ex02_gen") "person1" "person";
-    field_nested ~codec:(`open_ "Ex02_gen") "person2" "person"
+    field_nested ~codec:(`open_ "Ex02_no_mangling_gen") "person1" "person";
+    field_nested ~codec:(`open_ "Ex02_no_mangling_gen") "person2" "person"
       ~configs:[
         Json_config.nested_field_style `spreading;
       ];
@@ -113,10 +124,10 @@ let ts_ast : ts_ast option =
               tsps_type_desc = `type_reference "Student"; };
             { tsps_modifiers = [];
               tsps_name = "person1";
-              tsps_type_desc = `type_reference "Person"; };
+              tsps_type_desc = `type_reference "person_no_mangling"; };
           ];
           `type_reference "WithInt53p";
-          `type_reference "Person";
+          `type_reference "person_no_mangling";
         ]; }
   ]
 
@@ -143,28 +154,28 @@ let expected_json_shape_explanation =
                   `mandatory_field
                     ("person1",
                       (`named
-                         ("Person",
+                         ("person_no_mangling",
                            (`anyone_of
                               [`object_of
                                  [`mandatory_field
-                                    ("kind", (`exactly (`str "anonymous")))];
+                                    ("kind", (`exactly (`str "Anonymous")))];
                               `object_of
                                 [`mandatory_field
-                                   ("kind", (`exactly (`str "with-id")));
+                                   ("kind", (`exactly (`str "With_id")));
                                 `mandatory_field
                                   ("arg", (`tuple_of [`integral]))];
                               `object_of
                                 [`mandatory_field
-                                   ("kind", (`exactly (`str "student")));
-                                `mandatory_field ("studentId", `integral);
+                                   ("kind", (`exactly (`str "Student")));
+                                `mandatory_field ("student_id", `integral);
                                 `mandatory_field ("name", `string)];
                               `object_of
                                 [`mandatory_field
-                                   ("kind", (`exactly (`str "teacher")));
-                                `mandatory_field ("facultyId", `integral);
+                                   ("kind", (`exactly (`str "Teacher")));
+                                `mandatory_field ("faculty_id", `integral);
                                 `mandatory_field ("name", `string);
                                 `mandatory_field ("department", `string)]]))));
-                  `mandatory_field ("kind", (`exactly (`str "anonymous")))];
+                  `mandatory_field ("kind", (`exactly (`str "Anonymous")))];
                `object_of
                  [`mandatory_field
                     ("unit",
@@ -180,28 +191,28 @@ let expected_json_shape_explanation =
                  `mandatory_field
                    ("person1",
                      (`named
-                        ("Person",
+                        ("person_no_mangling",
                           (`anyone_of
                              [`object_of
                                 [`mandatory_field
-                                   ("kind", (`exactly (`str "anonymous")))];
+                                   ("kind", (`exactly (`str "Anonymous")))];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "with-id")));
+                                  ("kind", (`exactly (`str "With_id")));
                                `mandatory_field
                                  ("arg", (`tuple_of [`integral]))];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "student")));
-                               `mandatory_field ("studentId", `integral);
+                                  ("kind", (`exactly (`str "Student")));
+                               `mandatory_field ("student_id", `integral);
                                `mandatory_field ("name", `string)];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "teacher")));
-                               `mandatory_field ("facultyId", `integral);
+                                  ("kind", (`exactly (`str "Teacher")));
+                               `mandatory_field ("faculty_id", `integral);
                                `mandatory_field ("name", `string);
                                `mandatory_field ("department", `string)]]))));
-                 `mandatory_field ("kind", (`exactly (`str "with-id")));
+                 `mandatory_field ("kind", (`exactly (`str "With_id")));
                  `mandatory_field ("arg", (`tuple_of [`integral]))];
                `object_of
                  [`mandatory_field
@@ -218,29 +229,29 @@ let expected_json_shape_explanation =
                  `mandatory_field
                    ("person1",
                      (`named
-                        ("Person",
+                        ("person_no_mangling",
                           (`anyone_of
                              [`object_of
                                 [`mandatory_field
-                                   ("kind", (`exactly (`str "anonymous")))];
+                                   ("kind", (`exactly (`str "Anonymous")))];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "with-id")));
+                                  ("kind", (`exactly (`str "With_id")));
                                `mandatory_field
                                  ("arg", (`tuple_of [`integral]))];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "student")));
-                               `mandatory_field ("studentId", `integral);
+                                  ("kind", (`exactly (`str "Student")));
+                               `mandatory_field ("student_id", `integral);
                                `mandatory_field ("name", `string)];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "teacher")));
-                               `mandatory_field ("facultyId", `integral);
+                                  ("kind", (`exactly (`str "Teacher")));
+                               `mandatory_field ("faculty_id", `integral);
                                `mandatory_field ("name", `string);
                                `mandatory_field ("department", `string)]]))));
-                 `mandatory_field ("kind", (`exactly (`str "student")));
-                 `mandatory_field ("studentId", `integral);
+                 `mandatory_field ("kind", (`exactly (`str "Student")));
+                 `mandatory_field ("student_id", `integral);
                  `mandatory_field ("name", `string)];
                `object_of
                  [`mandatory_field
@@ -257,29 +268,29 @@ let expected_json_shape_explanation =
                  `mandatory_field
                    ("person1",
                      (`named
-                        ("Person",
+                        ("person_no_mangling",
                           (`anyone_of
                              [`object_of
                                 [`mandatory_field
-                                   ("kind", (`exactly (`str "anonymous")))];
+                                   ("kind", (`exactly (`str "Anonymous")))];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "with-id")));
+                                  ("kind", (`exactly (`str "With_id")));
                                `mandatory_field
                                  ("arg", (`tuple_of [`integral]))];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "student")));
-                               `mandatory_field ("studentId", `integral);
+                                  ("kind", (`exactly (`str "Student")));
+                               `mandatory_field ("student_id", `integral);
                                `mandatory_field ("name", `string)];
                              `object_of
                                [`mandatory_field
-                                  ("kind", (`exactly (`str "teacher")));
-                               `mandatory_field ("facultyId", `integral);
+                                  ("kind", (`exactly (`str "Teacher")));
+                               `mandatory_field ("faculty_id", `integral);
                                `mandatory_field ("name", `string);
                                `mandatory_field ("department", `string)]]))));
-                 `mandatory_field ("kind", (`exactly (`str "teacher")));
-                 `mandatory_field ("facultyId", `integral);
+                 `mandatory_field ("kind", (`exactly (`str "Teacher")));
+                 `mandatory_field ("faculty_id", `integral);
                  `mandatory_field ("name", `string);
                  `mandatory_field ("department", `string)]]))))
   )
@@ -289,14 +300,14 @@ open Bindoj_openapi.V3
 let schema_object : Schema_object.t option =
   let open Schema_object in
   let person_ctors = [
-    "anonymous", [];
-    "with-id", [ "arg", integer () ];
-    "student", [
-      "studentId", integer ();
+    "Anonymous", [];
+    "With_id", [ "arg", integer () ];
+    "Student", [
+      "student_id", integer ();
       "name", string ();
     ];
-    "teacher", [
-      "facultyId", integer ();
+    "Teacher", [
+      "faculty_id", integer ();
       "name", string ();
       "department", string ();
     ];

@@ -486,8 +486,8 @@ module SampleEx16 : SampleGenerated = struct
         ("admissionYear", `num 1984.);
         ("name", `str "William Gibson")
       ];
-      "person1", ctor0 "anonymous";
-      "kind", `str "anonymous";
+      "person1", ctor0 "Anonymous";
+      "kind", `str "Anonymous";
     ],
     (field_not_found "value", []);
 
@@ -498,7 +498,7 @@ module SampleEx16 : SampleGenerated = struct
         ("name", `str "William Gibson")
       ];
       "value", `num 12.;
-      "person1", ctor0 "anonymous";
+      "person1", ctor0 "Anonymous";
     ],
     (discriminator_not_found "kind", []);
 
@@ -510,7 +510,7 @@ module SampleEx16 : SampleGenerated = struct
       ];
       "value", `num 12.;
       "person1", `obj [];
-      "kind", `str "with-id";
+      "kind", `str "With_id";
       "arg", `num 123.
     ],
     (discriminator_not_found "kind", [ `f "person1" ]);
@@ -523,9 +523,9 @@ module SampleEx16 : SampleGenerated = struct
       ];
       "value", `num 12.;
       "person1", `obj [
-        "kind", `str "anonymous";
+        "kind", `str "Anonymous";
       ];
-      "kind", `str "with-id";
+      "kind", `str "With_id";
       "arg", `num 123.5
     ],
     (not_integer 123.5, [ `f "arg" ]);

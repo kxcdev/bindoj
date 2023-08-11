@@ -37,67 +37,65 @@ let constructor_configs: [`variant_constructor] configs = [
 let cty_int = Coretype.mk_prim `int
 let cty_string = Coretype.mk_prim `string
 
-let decl : type_decl =
-  variant_decl "nested_variant" [
-    variant_constructor "Student1" (`inline_record [
-      record_field_nested ~codec:(`open_ "Ex01_gen") "student" Ex01.decl;
-    ]) ~configs:constructor_configs;
-    variant_constructor "Student2" (`inline_record [
-      record_field_nested ~codec:(`open_ "Ex01_gen") "student" Ex01.decl
-        ~configs:[
-          Json_config.nested_field_style `spreading;
-        ];
-    ]) ~configs:constructor_configs;
-    variant_constructor "Student3" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex01_gen") Ex01.decl;
-    ]) ~configs:constructor_configs;
-    variant_constructor "Student4" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex01_gen") Ex01.decl
-        ~configs:[
-          Json_config.nested_field_style `spreading;
-        ];
-    ]) ~configs:constructor_configs;
-    variant_constructor "Int_list1" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex03_gen") Ex03.decl;
-    ]) ~configs:constructor_configs;
-    variant_constructor "Int_list2" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex03_gen") Ex03.decl
-        ~configs:[
-          Json_config.nested_field_style `spreading;
-        ];
-    ]) ~configs:constructor_configs;
-  ] ~configs:variant_configs
+open struct
+  module type Ex = sig val decl: type_decl val decl_with_docstr: type_decl end
+  let make_decl with_doc =
+    let decl, doc, open_ =
+      if with_doc then
+        (fun (module E: Ex) -> E.decl_with_docstr),
+        (fun s -> `docstr s),
+        (fun s -> `open_ (s ^ "_docstr_gen"))
+      else
+        (fun (module E: Ex) -> E.decl),
+        constant `nodoc,
+        (fun s -> `open_ (s ^ "_gen"))
+    in
+    variant_decl "nested_variant" [
+      variant_constructor "Student1" (`inline_record [
+        record_field_nested ~codec:(open_ "Ex01") "student" (decl (module Ex01))
+          ~configs:[
+            Json_config.no_mangling;
+          ];
+      ]) ~configs:constructor_configs ~doc:(doc "Student1 constructor");
+      variant_constructor "Student2" (`inline_record [
+        record_field_nested ~codec:(open_ "Ex01") "student" (decl (module Ex01))
+          ~configs:[
+            Json_config.nested_field_style `spreading;
+            Json_config.no_mangling;
+          ];
+      ]) ~configs:constructor_configs ~doc:(doc "Student2 constructor");
+      variant_constructor "Student3" (`tuple_like [
+        variant_argument_nested ~codec:(open_ "Ex01") (decl (module Ex01))
+          ~configs:[
+            Json_config.no_mangling;
+          ];
+      ]) ~configs:constructor_configs ~doc:(doc "Student3 constructor");
+      variant_constructor "Student4" (`tuple_like [
+        variant_argument_nested ~codec:(open_ "Ex01") (decl (module Ex01))
+          ~configs:[
+            Json_config.nested_field_style `spreading;
+            Json_config.no_mangling;
+          ];
+      ]) ~configs:constructor_configs ~doc:(doc "Student4 constructor");
+      variant_constructor "Int_list1" (`tuple_like [
+        variant_argument_nested ~codec:(open_ "Ex03") (decl (module Ex03))
+          ~configs:[
+            Json_config.no_mangling;
+          ];
+      ]) ~configs:constructor_configs ~doc:(doc "IntList constructor");
+      variant_constructor "Int_list2" (`tuple_like [
+        variant_argument_nested ~codec:(open_ "Ex03") (decl (module Ex03))
+          ~configs:[
+            Json_config.nested_field_style `spreading;
+            Json_config.no_mangling;
+          ];
+      ]) ~configs:constructor_configs ~doc:(doc "IntList constructor");
+    ] ~configs:variant_configs ~doc:(doc "definition of nested_variant type")
+end
 
-let decl_with_docstr : type_decl =
-  variant_decl "nested_variant" [
-    variant_constructor "Student1" (`inline_record [
-      record_field_nested ~codec:(`open_ "Ex01_docstr_gen") "student" Ex01.decl_with_docstr;
-    ]) ~configs:constructor_configs ~doc:(`docstr "Student1 constructor");
-    variant_constructor "Student2" (`inline_record [
-      record_field_nested ~codec:(`open_ "Ex01_docstr_gen") "student" Ex01.decl_with_docstr
-        ~configs:[
-          Json_config.nested_field_style `spreading;
-        ];
-    ]) ~configs:constructor_configs ~doc:(`docstr "Student2 constructor");
-    variant_constructor "Student3" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex01_docstr_gen") Ex01.decl_with_docstr;
-    ]) ~configs:constructor_configs ~doc:(`docstr "Student3 constructor");
-    variant_constructor "Student4" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex01_docstr_gen") Ex01.decl_with_docstr
-        ~configs:[
-          Json_config.nested_field_style `spreading;
-        ];
-    ]) ~configs:constructor_configs ~doc:(`docstr "Student4 constructor");
-    variant_constructor "Int_list1" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex03_docstr_gen") Ex03.decl_with_docstr;
-    ]) ~configs:constructor_configs ~doc:(`docstr "IntList constructor");
-    variant_constructor "Int_list2" (`tuple_like [
-      variant_argument_nested ~codec:(`open_ "Ex03_docstr_gen") Ex03.decl_with_docstr
-        ~configs:[
-          Json_config.nested_field_style `spreading;
-        ];
-    ]) ~configs:constructor_configs ~doc:(`docstr "IntList constructor");
-  ] ~configs:variant_configs ~doc:(`docstr "definition of nested_variant type")
+let decl : type_decl = make_decl false
+
+let decl_with_docstr : type_decl = make_decl true
 
 let fwrt : (unit, unit, unit) ts_fwrt_decl =
   let int_list = "int_list" in

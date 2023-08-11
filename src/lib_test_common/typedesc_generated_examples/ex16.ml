@@ -24,8 +24,8 @@ type t = nested_record =
   { unit: Ex11.t;
     student: Ex01.t;
     int53p: Ex09.t;
-    person1: Ex02.t;
-    person2: Ex02.t; }
+    person1: Ex02_no_mangling.t;
+    person2: Ex02_no_mangling.t; }
 [@@deriving show]
 
 let decl = Bindoj_test_common_typedesc_examples.Ex16.decl
@@ -47,7 +47,7 @@ let env =
         "with_int53p",
         (Boxed (Typed.mk Ex09.decl Ex09.reflect));
         "person",
-        (Boxed (Typed.mk Ex02.decl Ex02.reflect));
+        (Boxed (Typed.mk Ex02_no_mangling.decl Ex02_no_mangling.reflect));
       ] }
 
 let t : t Alcotest.testable = Alcotest.of_pp pp
@@ -68,20 +68,20 @@ open struct
     "value", `num 102.
   ]
 
-  let sample_persons = Ex02.[
+  let sample_persons = Ex02_no_mangling.[
     Anonymous, [
-      "kind", `str "anonymous"
+      "kind", `str "Anonymous"
     ];
     With_id 1619, [
-      ("kind", `str "with-id");
+      ("kind", `str "With_id");
       ("arg", `num 1619.);
     ];
     Student {
       student_id = 451;
       name = "Ray Bradbury"
     }, [
-        ("kind", `str "student");
-        ("studentId", `num 451.);
+        ("kind", `str "Student");
+        ("student_id", `num 451.);
         ("name", `str "Ray Bradbury");
       ];
     Teacher {
@@ -89,8 +89,8 @@ open struct
       name = "Arthur C. Clark";
       department = "Space";
     }, [
-      ("kind", `str "teacher");
-      ("facultyId", `num 2001.);
+      ("kind", `str "Teacher");
+      ("faculty_id", `num 2001.);
       ("name", `str "Arthur C. Clark");
       ("department", `str "Space");
     ]

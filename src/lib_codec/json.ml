@@ -107,11 +107,10 @@ let explain_encoded_json_shape'
     match va with
     | { va_type = `direct ct; _ } ->
       process_coretype' ~base_ident_codec base_mangling_style ct
-    | { va_type = `nested (td, codec); va_configs; _ } ->
-      let base_mangling_style = Json_config.get_mangling_style_opt va_configs |? base_mangling_style in
-      process_td ~base_ident_codec:(inherit_codec base_ident_codec codec) ~base_mangling_style td
-  and process_spread_variant_argument ~base_ident_codec base_mangling_style va: field_shape list list =
-    let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
+    | { va_type = `nested (td, codec); _ } ->
+      process_td ~base_ident_codec:(inherit_codec base_ident_codec codec) td
+  and process_spread_variant_argument ~base_ident_codec va: field_shape list list =
+    let base_mangling_style = Json_config.default_mangling_style in
     begin match validate_spreading_type va.va_type with
     | `record_decl (td, fields, codec) ->
       let base_mangling_style = Json_config.get_mangling_style_opt td.td_configs |? base_mangling_style in
@@ -146,17 +145,20 @@ let explain_encoded_json_shape'
         List.return [ field_of_coretype base_mangling_style json_field_name ct ]
       | `nested, `nested ({ td_kind = Alias_decl ct; _ } as td, codec) when Coretype.is_option ct ->
         List.return [
-          optional_field (json_field_name, process_td ~base_ident_codec:(inherit_codec base_ident_codec codec) ~base_mangling_style td)
+          optional_field (
+            json_field_name,
+            process_td ~base_ident_codec:(inherit_codec base_ident_codec codec)  td)
         ]
       | `nested, `nested (td, codec) ->
-        List.return [ mandatory_field (json_field_name, process_td ~base_ident_codec:(inherit_codec base_ident_codec codec) ~base_mangling_style td) ]
+        List.return [
+          mandatory_field (json_field_name, process_td ~base_ident_codec:(inherit_codec base_ident_codec codec) td) ]
       | `spreading, _ ->
         begin match validate_spreading_type rf_type with
         | `record_decl (td, fields, codec) ->
-          let base_mangling_style = Json_config.get_mangling_style_opt td.td_configs |? base_mangling_style in
+          let base_mangling_style = Json_config.(get_mangling_style_opt td.td_configs |? default_mangling_style) in
           process_fields ~base_ident_codec:(inherit_codec base_ident_codec codec) base_mangling_style fields
         | `variant_decl (td, ctors, codec) ->
-          let base_mangling_style = Json_config.get_mangling_style_opt td.td_configs |? base_mangling_style in
+          let base_mangling_style = Json_config.(get_mangling_style_opt td.td_configs |? default_mangling_style) in
           let discriminator_fname =
             Json_config.get_variant_discriminator td.td_configs
             |> Json_config.mangled `field_name base_mangling_style
@@ -184,7 +186,7 @@ let explain_encoded_json_shape'
     | `no_param ->
       append_discriminator (List.return [])
     | `tuple_like [ va ] when Json_config.get_nested_field_style va.va_configs = `spreading ->
-      process_spread_variant_argument ~base_ident_codec base_mangling_style va
+      process_spread_variant_argument ~base_ident_codec va
       |> append_discriminator
     | `tuple_like cts ->
       let arg_fname =
@@ -261,18 +263,19 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
       | `in_module _ -> `unresolved ("alias with special custom: "^id_name))
     (Typed.decl td)
 
-let nested_type_to_coretype' = function
+let nested_type_to_coretype =
+  function
   | `direct ct -> ct, Coretype.is_option ct
-  | `nested ({ td_name; td_kind = Alias_decl ct; _ }, codec) ->
-    Coretype.mk_ident ~codec td_name, Coretype.is_option ct
-  | `nested ({ td_name; _ }, codec) ->
-    Coretype.mk_ident ~codec td_name, false
-let nested_type_to_coretype = nested_type_to_coretype' &> fst
-
-let variant_argument_to_coretype base_mangling_style (va: variant_tuple_argument) =
-  let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
-  let ct = nested_type_to_coretype va.va_type in
-  ct, base_mangling_style
+  | `nested ({ td_name; td_kind; td_configs; _ }, codec) ->
+    let is_option = match td_kind with
+      | Alias_decl ct -> Coretype.is_option ct
+      | _ -> false
+    in
+    let mangling_style = Json_config.(get_mangling_style_opt td_configs |? default_mangling_style) in
+    Coretype.mk_ident
+      ~configs:[ Json_config.mangling_style mangling_style ]
+      ~codec td_name,
+      is_option
 
 open MonadOps(ResultOf(struct type err = string * jvpath end))
 
@@ -411,7 +414,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       let obj = StringMap.of_list obj in
       fields |&> (fun ({ rf_name; rf_type; rf_configs; _} as field) ->
         let (json_field_name, base_mangling_style) = Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field in
-        let ct, is_option = nested_type_to_coretype' rf_type in
+        let ct, is_option = nested_type_to_coretype rf_type in
         let ct_of_json path jv =
           expr_of_json base_mangling_style path ct jv
           >|= (fun expr -> [ rf_name, expr ])
@@ -477,7 +480,8 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
               when Json_config.get_nested_field_style va.va_configs = `spreading ->
                 begin match validate_spreading_type va.va_type with
                 | `record_decl _ | `variant_decl _ ->
-                  let ct, base_mangling_style = variant_argument_to_coretype base_mangling_style va in
+                  let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
+                  let ct, _ = nested_type_to_coretype va.va_type in
                   expr_of_json base_mangling_style path ct jv
                   >>= fun expr -> mk_result "tuple" mk path [expr]
                 end
@@ -486,7 +490,8 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
               let variant_argument_of_json base_mangling_style path va jv =
                 if Json_config.get_nested_field_style va.va_configs = `spreading then
                   invalid_arg "Spreading of the nested type of tuple_like is only possible if that element is the only one.";
-                let ct, base_mangling_style = variant_argument_to_coretype base_mangling_style va in
+                let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
+                let ct, _ = nested_type_to_coretype va.va_type in
                 expr_of_json base_mangling_style path ct jv
               in
               begin match Json_config.get_tuple_style ctor.vc_configs, ts with
@@ -616,7 +621,7 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
       match StringMap.find_opt field.rf_name expr with
       | None -> fail (sprintf "missing field '%s'" rf_name)
       | Some value ->
-        let ct = nested_type_to_coretype rf_type in
+        let ct, _ = nested_type_to_coretype rf_type in
         match nested_style, rf_type with
         | `spreading, _ ->
           begin match validate_spreading_type rf_type with
@@ -661,7 +666,8 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
         when Json_config.get_nested_field_style va.va_configs = `spreading ->
         begin match validate_spreading_type va.va_type, get value with
         | (`record_decl _ | `variant_decl _), [e] ->
-          let ct, base_mangling_style = variant_argument_to_coretype base_mangling_style va in
+          let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
+          let ct, _ = nested_type_to_coretype va.va_type in
           let jv = expr_to_json base_mangling_style ct e in
           begin match jv with
           | `obj fields -> `obj (discriminator_field @ fields)
@@ -673,7 +679,7 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
         let variant_argument_to_json base_mangling_style va =
           if Json_config.get_nested_field_style va.va_configs = `spreading then
             invalid_arg "Spreading of the nested type of tuple_like is only possible if that element is the only one.";
-          let ct, base_mangling_style = variant_argument_to_coretype base_mangling_style va in
+          let ct, _ = nested_type_to_coretype va.va_type in
           expr_to_json base_mangling_style ct
         in
         begin match ts, get value, Json_config.get_tuple_style ctor.vc_configs with

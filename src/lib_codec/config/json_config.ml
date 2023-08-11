@@ -178,10 +178,11 @@ let check_field_name_collision =
   let open MonadOps(Option) in
   let rec go_fields base_mangling_style (fs: string list list option) fields: string list list option =
     List.fold_left (fun fs field ->
-      let json_field_name, base_mangling_style = get_mangled_name_of_field ~inherited:base_mangling_style field in
+      let json_field_name, _ = get_mangled_name_of_field ~inherited:base_mangling_style field in
       match get_nested_field_style field.rf_configs with
       | `nested -> fs >>= (List.map (add_field json_field_name) &> sequence_list)
-      | `spreading -> validated (fun td -> go base_mangling_style td fs) field.rf_type
+      | `spreading ->
+        validated (fun td -> go default_mangling_style td fs) field.rf_type
     ) fs fields
   and go base_mangling_style { td_configs; td_kind; _ } (fs: string list list option): string list list option =
     let base_mangling_style = get_mangling_style_opt td_configs |? base_mangling_style in
@@ -201,8 +202,9 @@ let check_field_name_collision =
         | `reused_inline_record _ -> failwith' "type decl of reused inline record '%s' must be record decl." ctor.vc_name
         | `no_param | `tuple_like [] -> fs
         | `tuple_like [ va ] when get_nested_field_style va.va_configs = `spreading ->
-          let base_mangling_style = get_mangling_style_opt va.va_configs |? base_mangling_style in
-          validated (fun td -> go base_mangling_style td fs) va.va_type
+          va.va_type |> validated (fun td ->
+            let base_mangling_style = get_mangling_style_opt va.va_configs |? default_mangling_style in
+            go base_mangling_style td fs)
         | `tuple_like _ ->
           let arg_fname =
             get_name_of_variant_arg default_name_of_variant_arg ctor.vc_configs

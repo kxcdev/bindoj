@@ -423,6 +423,10 @@ let fwrt_decl_of_type_decl' :
   -> type_decl
   -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) fwrt_decl
   =
+  let of_nested = function
+    | `nested({ td_name; _ }, codec) -> `nested(td_name, codec)
+    | (`direct _) as x -> x
+  in
   fun
     ~annotator:(
     { annotate_decl;
@@ -430,12 +434,7 @@ let fwrt_decl_of_type_decl' :
       annotate_kind_alias;
       annotate_kind_constructor;
       annotate_field;
-      annotate_variant_argument; })
-    decl ->
-    let of_nested = function
-      | `nested({ td_name; _ }, codec) -> `nested(td_name, codec)
-      | (`direct _) as x -> x
-    in
+      annotate_variant_argument; }) ->
     let conv_fields fields =
       fields |&> fun { rf_name; rf_type; rf_configs; rf_doc; } ->
       { ff_name = rf_name;
@@ -445,58 +444,78 @@ let fwrt_decl_of_type_decl' :
         ff_doc = rf_doc
       }
     in
-    let { td_name; td_kind; td_configs = configs; td_doc = doc } = decl in
-    match td_kind with
-    | Alias_decl typ ->
-      td_name,
-      FwrtTypeEnv.init
-      |> FwrtTypeEnv.bind_alias
-        ~doc ~annot_d:(annotate_decl decl)
-        ~annot_ka:(annotate_kind_alias ~type_:typ ~configs)
-        ~configs td_name typ
-    | Record_decl fields ->
-      let fields = conv_fields fields in
-      td_name,
-      FwrtTypeEnv.init
-      |> FwrtTypeEnv.bind_object
-        ~doc ~annot_d:(annotate_decl decl)
-        ~annot_ko:(annotate_kind_object ~fields ~children:[] ~configs)
-        ~configs td_name fields
-    | Variant_decl ctors ->
-      let add_ctor parent acc ctor =
-        let { vc_name; vc_param; vc_configs=configs; vc_doc=doc } = ctor in
-        let args, fields =
-          match vc_param with
-          | `no_param -> [], []
-          | `tuple_like args -> (args |&> fun { va_type; va_configs; va_doc } -> {
-            fva_type = of_nested va_type;
-            fva_configs = va_configs;
-            fva_annot = (annotate_variant_argument ~type_:va_type ~configs:va_configs);
-            fva_doc = va_doc;
-          }), []
-          | `inline_record fields ->
-            let fields = conv_fields fields in
-            [], fields
-          | `reused_inline_record decl ->
-            let fields = decl.td_kind |> function
-              | Record_decl fields -> conv_fields fields
-              | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
-            in
-            [], fields
-        in
-        acc
-        |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs
-          ~annot_d:(annotate_decl decl)
-          ~annot_kc:(annotate_kind_constructor ~param:vc_param ~configs)
-          ~args ~fields vc_name
+    let rec go env decl =
+      let fold_nested_types accessor =
+        Fn.flip (List.fold_left (fun env x ->
+          match accessor x with
+          | `nested (td, _) -> go env td
+          | _ -> env
+        ))
       in
-      td_name,
-      FwrtTypeEnv.init
-      |> FwrtTypeEnv.bind_object ~doc ~annot_d:(annotate_decl decl)
-        ~annot_ko:(annotate_kind_object ~fields:[] ~children:(ctors |&> (fun { vc_name; _ } -> vc_name)) ~configs)
-        ~configs td_name []
-      |> fun env ->
-        ctors |> List.fold_left (add_ctor td_name) env
+      let { td_name; td_kind; td_configs = configs; td_doc = doc } = decl in
+      match td_kind with
+      | Alias_decl typ ->
+        env
+        |> FwrtTypeEnv.bind_alias
+          ~doc ~annot_d:(annotate_decl decl)
+          ~annot_ka:(annotate_kind_alias ~type_:typ ~configs)
+          ~configs td_name typ
+      | Record_decl fields ->
+        env
+        |> begin
+          let fields = conv_fields fields in
+          FwrtTypeEnv.bind_object
+            ~doc ~annot_d:(annotate_decl decl)
+            ~annot_ko:(annotate_kind_object ~fields ~children:[] ~configs)
+            ~configs td_name fields
+        end
+        |> fold_nested_types (fun f -> f.rf_type) fields
+      | Variant_decl ctors ->
+        let add_ctor parent acc ctor =
+          let { vc_name; vc_param; vc_configs=configs; vc_doc=doc } = ctor in
+          let args, fields =
+            match vc_param with
+            | `no_param -> [], []
+            | `tuple_like args -> (args |&> fun { va_type; va_configs; va_doc } -> {
+              fva_type = of_nested va_type;
+              fva_configs = va_configs;
+              fva_annot = (annotate_variant_argument ~type_:va_type ~configs:va_configs);
+              fva_doc = va_doc;
+            }), []
+            | `inline_record fields ->
+              let fields = conv_fields fields in
+              [], fields
+            | `reused_inline_record decl ->
+              let fields = decl.td_kind |> function
+                | Record_decl fields -> conv_fields fields
+                | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
+              in
+              [], fields
+          in
+          acc
+          |> FwrtTypeEnv.bind_constructor ~doc ~parent ~configs
+            ~annot_d:(annotate_decl decl)
+            ~annot_kc:(annotate_kind_constructor ~param:vc_param ~configs)
+            ~args ~fields vc_name
+        in
+        env
+        |> FwrtTypeEnv.bind_object ~doc ~annot_d:(annotate_decl decl)
+          ~annot_ko:(annotate_kind_object ~fields:[] ~children:(ctors |&> (fun { vc_name; _ } -> vc_name)) ~configs)
+          ~configs td_name []
+        |> Fn.flip (List.fold_left (add_ctor td_name)) ctors
+        |> Fn.flip (List.fold_left (fun env vc ->
+          match vc.vc_param with
+          | `tuple_like args ->
+            fold_nested_types (fun a -> a.va_type) args env
+          | `inline_record fields
+          | `reused_inline_record { td_kind = Record_decl fields; _ } ->
+            fold_nested_types (fun f -> f.rf_type) fields env
+          | `reused_inline_record _ ->
+            failwith' "type decl of reused inline record '%s' must be record decl." vc.vc_name
+          | _ -> env
+        )) ctors
+    in
+    fun decl -> decl.td_name, go FwrtTypeEnv.init decl
 
 let fwrt_decl_of_type_decl : type_decl -> (unit, unit, unit, unit*unit*unit) fwrt_decl =
   fun decl ->
