@@ -1,6 +1,10 @@
 name: vercel deploy
 
 on:
+  # deploy on main pushed
+  push:
+    branches:
+      - main
   # 一応動確のために手動で GitHub Actions を実行可能にする
   # その際の引数として checkout 時の ref を渡している
   # default 部分はリポジトリに設定されているデフォルトブランチを指定する
@@ -25,7 +29,8 @@ jobs:
         ocaml-version:
           - 4.13.1
 
-    if: github.repository == 'kxcinc/bindoj'
+    ## disable this workflow for now
+    if: ${{ failure() && github.repository == 'kxcinc/bindoj' }}
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -66,6 +71,6 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
           working-directory: ./
-          scope: "kxcteam"
+          scope: "kxcinc"
           vercel-args: '--prod'
           github-comment: false

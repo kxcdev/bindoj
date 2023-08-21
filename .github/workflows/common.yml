@@ -96,12 +96,23 @@ jobs:
 
       # https://github.com/amondnet/vercel-action/issues/170 が解決したら最新のタグに更新
       - uses: amondnet/vercel-action@1d26fa06fdab094080b48d33eea2031cee54724d
+        if: github.ref != 'refs/heads/main'
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
           working-directory: ./
           scope: "kxcinc"
+          github-comment: true
+      - uses: amondnet/vercel-action@1d26fa06fdab094080b48d33eea2031cee54724d
+        if: github.ref == 'refs/heads/main'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
+          working-directory: ./
+          scope: "kxcinc"
+          vercel-args: '--prod'
           github-comment: true
 
   setup-ocaml-checked:
