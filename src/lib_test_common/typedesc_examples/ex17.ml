@@ -17,64 +17,49 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-include Bindoj_gen_test_gen_output.Ex10_gen
-open Bindoj_base
+open Bindoj_base.Type_desc
+open Bindoj_gen_ts.Typescript_datatype
 
-type t = xy_opt = { x_opt : int option; y_opt : int option } [@@deriving show]
-let decl = Bindoj_test_common_typedesc_examples.Ex10.decl
-let reflect = xy_opt_reflect
+let example_module_path = "Bindoj_test_common_typedesc_examples.Ex11"
 
-let json_shape_explanation = xy_opt_json_shape_explanation
-let to_json = xy_opt_to_json
-let of_json' = xy_opt_of_json'
-let env =
-  empty_tdenv
-  |> Bindoj_std.Tdenv_wrappers.json
+let cty_int_opt = Coretype.(mk_option % prim) `int
 
-let t : t Alcotest.testable = Alcotest.of_pp pp
+let decl : type_decl =
+  alias_decl "int_opt" cty_int_opt
 
-let sample_value01 : t Sample_value.t = {
-  orig = {
-    x_opt = None;
-    y_opt = None;
-  };
-  jv = `obj [ ]
-}
+let decl_with_docstr : type_decl =
+  alias_decl "int_opt" cty_int_opt
+    ~doc:(`docstr "alias of int option type")
 
-let sample_value02 : t Sample_value.t = {
-  orig = {
-    x_opt = None;
-    y_opt = Some 42;
-  };
-  jv = `obj [
-    "yOpt", `num 42.;
-  ]
-}
+let fwrt : (unit, unit, unit) ts_fwrt_decl =
+  "int_opt", Util.FwrtTypeEnv.(
+    init
+    |> bind_alias "int_opt" cty_int_opt
+  )
 
-let sample_value03 : t Sample_value.t = {
-  orig = {
-    x_opt = Some (-25);
-    y_opt = None;
-  };
-  jv = `obj [
-    "xOpt", `num (-25.);
-  ]
-}
-
-let sample_value04 : t Sample_value.t = {
-  orig = {
-    x_opt = Some 512;
-    y_opt = Some (-119);
-  };
-  jv = `obj [
-    "xOpt", `num 512.;
-    "yOpt", `num (-119.);
-  ]
-}
-
-let sample_values = [
-  sample_value01;
-  sample_value02;
-  sample_value03;
-  sample_value04;
+let ts_ast : ts_ast option = Some [
+  `type_alias_declaration {
+    tsa_modifiers = [`export];
+    tsa_name = "IntOpt";
+    tsa_type_parameters = [];
+    tsa_type_desc = `union [ `type_reference "number"; `type_reference "null"; `type_reference "undefined"];
+  }
 ]
+
+let expected_json_shape_explanation =
+  Some (
+    `with_warning
+      ("not considering any config if exists",
+        (`named ("IntOpt", `nullable `integral)))
+  )
+
+open Bindoj_openapi.V3
+
+let schema_object : Schema_object.t option =
+  Schema_object.(
+    option (
+      integer () ~schema
+      ~title:"IntOpt"
+      ~id:"#IntOpt"
+    ))
+  |> Option.some

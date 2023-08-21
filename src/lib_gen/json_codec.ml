@@ -229,32 +229,111 @@ let codec_of_coretype ~inherited_codec ~get_custom_codec ~get_name ~map_key_conv
     in
     go ct.ct_desc
 
-let collect_builtin_codecs (td: type_decl) =
-  let folder state (ct: coretype) =
-    Coretype.fold (fun state ->
-      let add name = state |> StringMap.add name (builtin_codecs_map |> StringMap.find name) in
-      function
-      | Prim p -> add (Coretype.string_of_prim p)
-      | Uninhabitable -> add "uninhabitable"
-      | Option _ -> add "option"
-      | List _ -> add "list"
-      | Map _ -> add "map"
-      | Ident _ | Self | Tuple _ | StringEnum _ -> state
-    ) state ct.ct_desc
+let collect_builtin_codecs ~including_optional_fields (td: type_decl) =
+  let folder state =
+    let folder configs =
+      let rec go state =
+        let add name =
+          state |> StringMap.add name
+            (builtin_codecs_map |> StringMap.find name)
+        in
+        function
+        | Coretype.Prim p -> add (Coretype.string_of_prim p)
+        | Uninhabitable -> add "uninhabitable"
+        | Option d -> go (add "option") d
+        | List d -> go (add "list") d
+        | Map (_, d) -> go (add "map") d
+        | Tuple ds ->
+          begin match Json_config.get_tuple_style configs with
+          | `arr -> List.fold_left go state ds
+          | `obj `default ->
+            List.fold_left (fun state -> function
+              | Coretype.Option (Option _) when not including_optional_fields ->
+                failwith "Nested option types cannot be json fields."
+              | Option d when not including_optional_fields ->
+                go state d
+              | d -> go state d
+            ) state ds
+          end
+        | Ident _ | Self | StringEnum _  -> state
+      in
+      go
+    in
+    function
+    | { Coretype.ct_desc; ct_configs }, `alias _ :: [] ->
+      folder ct_configs state ct_desc
+    | { ct_desc = Option desc; ct_configs },
+      ( (`record_field _ | `variant_field _ | `variant_reused_field _ | `variant_argument (1, _, _, _))::_
+      | `alias _ :: (`record_field _ | `variant_field _ | `variant_reused_field _ | `variant_argument (1, _, _, _))::_)
+      when not including_optional_fields ->
+      folder ct_configs state desc
+    | { ct_desc; ct_configs },
+      ( (`variant_argument (_, _, vc_configs, _))::_
+      | `alias _::(`variant_argument (_, _, vc_configs, _))::_) ->
+      begin match Json_config.get_tuple_style vc_configs, ct_desc with
+      | `obj `default, Option desc when not including_optional_fields ->
+        folder ct_configs state desc
+      | _, desc -> folder ct_configs state desc
+      end
+    | { ct_desc; ct_configs }, _ -> folder ct_configs state ct_desc
   in
-  fold_coretypes folder StringMap.empty td
+  fold_coretypes' folder StringMap.empty td
+
+let bind_results'
+  : (pattern * expression * [ `bind | `pipe ]) list
+  -> expression -> expression =
+  fun bindings body ->
+  let loc = Location.none in
+  let expr, has_bind =
+    List.fold_right (fun (p, e, kind) (body, has_bind) ->
+      match kind with
+      | `bind -> [%expr [%e e] >>= (fun [%p p] -> [%e body])], true
+      | `pipe -> [%expr [%e e] |> (fun [%p p] -> [%e body])], has_bind
+    ) bindings (body, false)
+  in
+  if has_bind then
+    [%expr let (>>=) = Result.bind in [%e expr]]
+  else
+    expr
 
 let bind_results : (pattern * expression) list -> expression -> expression = fun bindings body ->
-  let loc = Location.none in
-  [%expr
-    let (>>=) = Result.bind in
-    [%e List.fold_right (fun (p, e) body ->
-          [%expr [%e e] >>= (fun [%p p] -> [%e body])])
-        bindings body]]
+  bindings
+  |&> (fun (p, e) -> (p, e, `bind))
+  |> Fn.flip bind_results' body
 
-let opt_to_result : expression -> expression =
-  let loc = Location.none in
-  fun err -> [%expr function | Some a -> Ok a | None -> Error [%e err]]
+let opt_to_result : loc:location -> expression -> expression =
+  fun ~loc err ->
+    [%expr Option.to_result ~none:[%e err]]
+
+let encoder_of_objtuple ?additional_field ~loc to_expr = function
+  | [] -> additional_field |?! (fun () -> [%expr []])
+  | ts ->
+    let es = ts |> List.mapi (fun i t ->
+      let label = estring ~loc (tuple_index_to_field_name i) in
+      let encoded, is_optional = to_expr i t in
+      let efield = [%expr ([%e label], [%e encoded])] in
+      efield, is_optional)
+    in
+    let has_optional = List.exists snd es in
+    let fields =
+      es |> List.mapi (fun i (efield, is_optional) ->
+        if is_optional then
+          let v = "x"^string_of_int i in
+          [%expr Option.map (fun [%p pvar v] -> [%e efield]) [%e evar v]]
+        else if has_optional then
+          [%expr Some [%e efield]]
+        else efield
+      )
+      |> elist ~loc
+    in
+    let e =
+      if has_optional then
+        [%expr List.filter_map Kxclib.identity [%e fields]]
+      else fields in
+    begin match additional_field with
+    | None -> e
+    | Some f ->  [%expr [%e f] :: [%e e]]
+    end
 
 let encoder_of_coretype =
   let open Coretype in
@@ -267,24 +346,23 @@ let encoder_of_coretype =
       ts |> List.mapi (fun i _ -> pvari i)
          |> Pat.tuple
     in
-    let rec mk_list acc = function
-      | [] -> acc
-      | x :: xs -> mk_list [%expr [%e x] :: [%e acc]] xs
-    in
     let ret =
-      let style = Json_config.get_tuple_style configs in
-      ts
-      |> List.mapi (fun i t ->
-        match style with
-        | `obj `default ->
-          let label = estring ~loc (tuple_index_to_field_name i) in
-          [%expr ([%e label], [%e go t] [%e evari i])]
-        | `arr -> [%expr [%e go t] [%e evari i]])
-      |> List.rev |> mk_list [%expr []]
-      |> (fun ret ->
-        match style with
-        | `obj `default -> [%expr `obj [%e ret]]
-        | `arr -> [%expr `arr [%e ret]])
+      match Json_config.get_tuple_style configs with
+      | `obj `default ->
+        let fields =
+          encoder_of_objtuple ~loc (fun i -> function
+            | Option (Option _) -> failwith "Nested option cannot be json fields."
+            | Option t ->
+              [%expr [%e go t] [%e evari i]], true
+            | t ->
+              [%expr [%e go t] [%e evari i]], false
+          ) ts
+        in
+        [%expr `obj [%e fields] ]
+      | `arr ->
+        [%expr `arr [%e
+          ts |> List.mapi (fun i t -> [%expr [%e go t] [%e evari i]])
+             |> elist ~loc ]]
     in
     [%expr fun [%p args] -> ([%e ret] : Kxclib.Json.jv)]
   in
@@ -324,32 +402,29 @@ let decoder_of_coretype =
   let evari i = evar (vari i) in
   let pvari i = pvar (vari i) in
   let tuple_case (configs: [`coretype] configs) (go: desc -> expression) (ts: desc list) =
-    let rec mk_list acc = function
-      | [] -> acc
-      | x :: xs -> mk_list [%pat? [%p x] :: [%p acc]] xs
-    in
-    let ret to_path =
-      let bindings =
-        ts |> List.mapi (fun i t ->
-            [%pat? [%p pvari i]], [%expr [%e go t] ([%e to_path i] :: path) [%e evari i]]
-          )
-      in
-      let ret =
-        ts |> List.mapi (fun i _ -> [%expr [%e evari i]]) |> Exp.tuple
-      in
-      bind_results bindings [%expr Ok [%e ret]]
+    let ret =
+      ts |> List.mapi (fun i _ -> [%expr [%e evari i]])
+         |> Exp.tuple
+         |> fun e -> [%expr Ok [%e e]]
     in
     match Json_config.get_tuple_style configs with
     | `arr ->
       let args =
         ts |> List.mapi (fun i _ -> pvari i)
-           |> List.rev |> mk_list [%pat? []]
+           |> plist ~loc
       in
       let tuple_length_error_message =
         sprintf "expecting a tuple of length %d, but the given has a length of %%d" (List.length ts)
       in
       [%expr fun path -> function
-        | (`arr [%p args] : Kxclib.Json.jv) -> [%e ret (fun i -> [%expr `i [%e eint ~loc i]])]
+        | (`arr [%p args] : Kxclib.Json.jv) -> [%e
+          let bindings =
+            ts |> List.mapi (fun i t ->
+                pvari i, [%expr [%e go t] (`i [%e eint ~loc i] :: path) [%e evari i]]
+              )
+          in
+
+          bind_results bindings ret]
         | `arr xs ->
           Error (
             Printf.sprintf
@@ -366,21 +441,25 @@ let decoder_of_coretype =
     | `obj `default ->
       [%expr fun path -> function
         | (`obj fields : Kxclib.Json.jv) ->
-          let fields = Bindoj_runtime.StringMap.of_list fields in
           [%e
             ts
-            |> List.mapi (fun i _ ->
+            |> List.mapi (fun i t ->
               let label_name = tuple_index_to_field_name i in
               let label = estring ~loc label_name in
               let error_message = sprintf "mandatory field '%s' does not exist" label_name in
-              pvari i, [%expr
-                Bindoj_runtime.StringMap.find_opt [%e label] fields
-                |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
-              ])
-            |> Fn.flip bind_results (ret (fun i ->
-              let label_name = tuple_index_to_field_name i in
-              let label = estring ~loc label_name in
-              [%expr `f [%e label]]))
+                match t with
+                | Option _ -> pvari i, [%expr
+                  List.assoc_opt [%e label] fields
+                  |> Option.value ~default:`null
+                  |> [%e go t] (`f [%e label] :: path)
+                ]
+                | _ -> pvari i, [%expr
+                  List.assoc_opt [%e label] fields
+                  |> [%e opt_to_result ~loc [%expr ([%e estring ~loc error_message], path)]]
+                  >>= [%e go t] (`f [%e label] :: path)
+                ]
+              )
+            |> Fn.flip bind_results ret
           ]
         | jv ->
           Error (
@@ -437,19 +516,23 @@ let decoder_of_coretype =
     ~wrap_ident
     e ct
 
-let gen_builtin_codecs ?attrs ~get_name ~get_codec (td: type_decl) =
+let gen_builtin_codecs ?attrs ~including_optional_fields ~get_name ~get_codec (td: type_decl) =
   let loc = Location.none in
-  let coders = collect_builtin_codecs td in
+  let coders = collect_builtin_codecs ~including_optional_fields td in
   let bind (_, name) expr = Vb.mk ~loc ?attrs (Pat.var (strloc name)) expr in
   StringMap.fold (fun label coder state ->
     bind (get_name label `default) (get_codec coder) :: state
   ) coders []
 
 let gen_builtin_encoders : ?attrs:attrs -> type_decl -> value_binding list =
-  gen_builtin_codecs ~get_name:get_encoder_name ~get_codec:(fun x -> x.encoder)
+  gen_builtin_codecs
+    ~including_optional_fields:false
+    ~get_name:get_encoder_name ~get_codec:(fun x -> x.encoder)
 
 let gen_builtin_decoders : ?attrs:attrs -> type_decl -> value_binding list =
-  gen_builtin_codecs ~get_name:get_decoder_name ~get_codec:(fun x -> x.decoder)
+  gen_builtin_codecs
+    ~including_optional_fields:true
+    ~get_name:get_decoder_name ~get_codec:(fun x -> x.decoder)
 
 type json_shape_explanation_resolution =
   string -> [
@@ -642,25 +725,35 @@ let gen_json_encoder :
     | `open_ m | `in_module m -> String.lowercase_ascii m ^ "__")
     ^ json_encoder_name td ^ "_nested"
   in
-  let get_encoder ~inherited_codec ~nested ~spreading base_mangling_style self_ename ty arg =
+  let get_encoder ?(is_field=false) ~inherited_codec ~nested ~spreading base_mangling_style self_ename ty arg =
     let wrap_obj cond =
       if cond then
         (fun e -> [%expr `obj ([%e e] [%e arg])])
       else
         (fun e -> [%expr ([%e e] [%e arg])])
     in
+    let unwrap_option (ct: coretype) =
+      if is_field then
+        (match ct.ct_desc with
+        | Option (Option _) when is_field -> failwith "Nested option types cannot be json fields."
+        | Option d -> { ct with ct_desc = d }, true
+        | _ -> ct, false)
+      else ct, false
+    in
     match ty with
     | `direct ct ->
+      let ct, is_option = unwrap_option ct in
       let e = [%expr [%e encoder_of_coretype inherited_codec base_mangling_style self_ename ct]] in
-      wrap_obj (nested && ct.ct_desc = Coretype.Self) e
-    | `nested ({ td_kind = Alias_decl ct; _ }, codec) ->
+      wrap_obj (nested && ct.ct_desc = Coretype.Self) e, is_option
+    | `nested ({ td_kind = Alias_decl ct; _ }, _) ->
+      let ct, is_option = unwrap_option ct in
       let inherited_codec = inherit_codec inherited_codec codec in
       let e = [%expr [%e encoder_of_coretype inherited_codec base_mangling_style self_ename ct]] in
-      wrap_obj (nested && ct.ct_desc = Coretype.Self) e
+      wrap_obj (nested && ct.ct_desc = Coretype.Self) e, is_option
     | `nested (td, codec) ->
       let inherited_codec = inherit_codec inherited_codec codec in
       let e = evar ~loc (nested_encoder_name inherited_codec td) in
-      wrap_obj (not spreading) e
+      wrap_obj (not spreading) e, false
   in
   let record_params : record_field list -> pattern = fun fields ->
     ppat_record ~loc
@@ -670,11 +763,17 @@ let gen_json_encoder :
       Closed
   in
   let record_to_json_fields ~inherited_codec ~nested ~self_ename base_mangling_style fields =
-    let rec go (i, current, state) =
+    let rec go i (current, state) =
       let update_state () =
         match current with
-        | [] -> state
-        | current -> (elist ~loc @@ List.rev current) :: state
+        | `mandatory [] | `optional [] -> state
+        | `mandatory current ->
+          (elist ~loc @@ List.rev current) :: state
+        | `optional current ->
+          [%expr
+            List.filter_map (fun x -> x) [%e
+              elist ~loc @@ List.rev current
+          ]] :: state
       in
       function
       | [] -> update_state ()
@@ -684,29 +783,41 @@ let gen_json_encoder :
         in
         let json_field_name = estring ~loc json_field_name in
         let nested_style = Json_config.get_nested_field_style field.rf_configs in
-        let encoder ~spreading = get_encoder ~inherited_codec ~nested ~spreading base_mangling_style self_ename field.rf_type in
+        let get_encoder ?is_field ~spreading = get_encoder ?is_field ~inherited_codec ~nested ~spreading base_mangling_style self_ename in
         match nested_style with
         | `spreading ->
           begin match validate_spreading_type field.rf_type with
           | `record_decl _ | `variant_decl _ ->
-            let efields = encoder ~spreading:true (evari i) in
-            let state = update_state () in
-            go (i + 1, [], efields :: state) fields
+            let efields, _ = get_encoder ~spreading:true field.rf_type (evari i) in
+            go (i + 1) (`mandatory [], efields :: update_state ()) fields
           end
         | `nested ->
+          let encoded, is_optional = get_encoder ~is_field:true ~spreading:false field.rf_type (evari i) in
+          let efield = [%expr ([%e json_field_name], [%e encoded])] in
           let efield =
-            [%expr ([%e json_field_name],
-                      [%e encoder ~spreading:false (evari i)])] in
-          go (i + 1, efield::current, state) fields
+            if is_optional then
+              [%expr Option.map (fun [%p pvari i] -> [%e efield]) [%e evari i] ]
+            else efield
+          in
+          fields |> go (i + 1) (match is_optional, current with
+          | false, `mandatory current ->
+            (`mandatory (efield::current), state)
+          | false, `optional _ ->
+            (`mandatory [ efield ], update_state ())
+          | true, `optional current ->
+            (`optional (efield::current), state)
+          | true, `mandatory _ ->
+            (`optional [ efield ], update_state ())
+          )
     in
-    go (0, [], []) fields
+    go 0 (`mandatory [], []) fields
     |> function
     | [] -> failwith "A record must have at least one field."
     | hd :: tl ->
       List.fold_left (fun es e -> [%expr [%e e] @ [%e es]]) hd tl
   in
   let variant_params : [`type_decl] configs -> variant_constructor list -> pattern list = fun td_configs constrs ->
-    constrs |&> fun { vc_name; vc_param; _ } ->
+    constrs |&>> fun { vc_name; vc_param; _ } ->
       let of_record_fields ~label fields =
         match Caml_config.get_variant_type td_configs with
         | `regular ->
@@ -716,25 +827,37 @@ let gen_json_encoder :
         | `polymorphic ->
           failwith' "case '%s' with an %s cannot be used in a polymorphic variant" vc_name label
       in
-      match vc_param with
-      | `no_param ->
-        begin match Caml_config.get_variant_type td_configs with
-        | `regular -> Pat.construct (lidloc vc_name) None
-        | `polymorphic -> Pat.variant vc_name None
-      end
-      | `tuple_like args ->
-        let inner = Some (Pat.tuple (List.mapi (fun i _ -> pvari i) args)) in
+      let construct inner =
         begin match Caml_config.get_variant_type td_configs with
         | `regular -> Pat.construct (lidloc vc_name) inner
         | `polymorphic -> Pat.variant vc_name inner
         end
-      | `inline_record fields -> of_record_fields ~label:"inline record" fields
+      in
+      match vc_param with
+      | `no_param -> [ construct None ]
+      | `tuple_like [ arg ] ->
+        let nested_style = Json_config.get_nested_field_style arg.va_configs in
+        begin match nested_style, arg.va_type with
+        | `nested, (`direct ct | `nested({ td_kind = Alias_decl ct; _}, _)) when Coretype.is_option ct ->
+          [ construct (Some [%pat? None]);
+            construct (Some [%pat? Some [%p pvari 0]]);
+          ]
+        | _ -> construct (Some (pvari 0)) |> List.return
+        end
+      | `tuple_like args ->
+        Some (Pat.tuple (List.mapi (fun i _ -> pvari i) args))
+        |> construct
+        |> List.return
+      | `inline_record fields ->
+        of_record_fields ~label:"inline record" fields
+        |> List.return
       | `reused_inline_record decl ->
         let fields = decl.td_kind |> function
           | Record_decl fields -> fields
           | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
         in
         of_record_fields ~label:"reused inline record" fields
+        |> List.return
   in
   let variant_body : nested:bool -> self_ename:expression -> inherited_codec:Coretype.codec -> [`type_decl] configs -> Json_config.json_mangling_style -> variant_constructor list -> expression list =
     fun ~nested ~self_ename ~inherited_codec td_configs base_mangling_style cnstrs ->
@@ -742,7 +865,7 @@ let gen_json_encoder :
       Json_config.get_variant_discriminator td_configs
       |> Json_config.mangled `field_name base_mangling_style
     in
-    cnstrs |&> fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
+    cnstrs |&>> fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
       let (discriminator_value, base_mangling_style) =
         Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
       in
@@ -759,37 +882,50 @@ let gen_json_encoder :
       | `flatten -> begin
         match vc_param with
         | `no_param ->
-          [%expr [ [%e cstr]]]
+          List.return [%expr [ [%e cstr]]]
         | `tuple_like [ va ]
           when Json_config.get_nested_field_style va.va_configs = `spreading ->
             let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
             begin match validate_spreading_type va.va_type with
-            | `record_decl _| `variant_decl _->
-              let encoder = get_encoder ~inherited_codec ~nested ~spreading:true base_mangling_style self_ename va.va_type in
-              [%expr ([%e cstr] :: [%e encoder (evari 0)])]
+            | `record_decl _ | `variant_decl _->
+              let encoder expr =
+                expr
+                |> get_encoder
+                  ~inherited_codec ~nested ~spreading:true
+                  base_mangling_style self_ename va.va_type
+                |> fst
+              in
+              List.return [%expr ([%e cstr] :: [%e encoder (evari 0)])]
             end
         | `tuple_like args ->
           let arg_fname = estring ~loc arg_fname in
-          let args =
-            List.mapi (fun i va ->
-              let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
-              let encoder = get_encoder ~inherited_codec ~nested ~spreading:false base_mangling_style self_ename va.va_type in
-              encoder (evari i))
-              args
+          let expr_of_arg ?is_field i va =
+            let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
+            let encoder = get_encoder ?is_field ~inherited_codec ~nested ~spreading:false base_mangling_style self_ename va.va_type in
+            encoder (evari i)
           in
           begin match args, Json_config.get_tuple_style vc_configs with
-          | [], _ -> [%expr [[%e cstr]]]
-          | [arg], _ -> [%expr [[%e cstr]; ([%e arg_fname], [%e arg])]]
-          | _, `arr -> [%expr [[%e cstr]; ([%e arg_fname], `arr [%e elist ~loc args])]]
+          | [], _ -> List.return [%expr [[%e cstr]]]
+          | [arg], _ ->
+            let expr, is_optional = expr_of_arg ~is_field:true 0 arg in
+            if is_optional then
+              [ [%expr [[%e cstr]]]; [%expr [[%e cstr]; ([%e arg_fname], [%e expr])]] ]
+            else
+              [ [%expr [[%e cstr]; ([%e arg_fname], [%e expr])]] ]
+
+          | _, `arr ->
+            let args = args |> List.mapi (fun i arg -> expr_of_arg i arg |> fst) in
+            List.return [%expr
+              [[%e cstr]; ([%e arg_fname], `arr [%e elist ~loc args])]
+            ]
           | _, `obj `default ->
-            let fields =
-              args |> List.mapi (fun i arg ->
-                let label = estring ~loc (tuple_index_to_field_name i) in
-                [%expr ([%e label], [%e arg])])
-            in
-            [%expr ([%e elist ~loc @@ cstr :: fields])]
+            args
+            |> encoder_of_objtuple ~loc ~additional_field:cstr (expr_of_arg ~is_field:true)
+            |> List.return
           end
-        | `inline_record fields -> of_record_fields base_mangling_style fields
+        | `inline_record fields ->
+          of_record_fields base_mangling_style fields
+          |> List.return
         | `reused_inline_record { td_kind; td_configs; _ } ->
           let base_mangling_style =
             Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
@@ -799,6 +935,7 @@ let gen_json_encoder :
             | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." vc_name
           in
           of_record_fields base_mangling_style fields
+          |> List.return
       end
   in
   let encoder_of_type_decl =
@@ -917,7 +1054,7 @@ let gen_json_decoder_impl :
           let error_message = sprintf "mandatory field '%s' does not exist" json_field_name in
           [%expr
             List.assoc_opt [%e json_field] [%e param_e]
-            |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
+            |> [%e opt_to_result ~loc [%expr ([%e estring ~loc error_message], path)]]
             >>= [%e decoder] (`f [%e json_field] :: path)
           ]))
   in
@@ -947,8 +1084,7 @@ let gen_json_decoder_impl :
       |> Json_config.mangled `field_name base_mangling_style
     in
     let discriminator_fname_p = pstring ~loc discriminator_fname in
-    cstrs
-    |&> (fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
+    cstrs |&> (fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
       let (discriminator_value, base_mangling_style) =
         Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
       in
@@ -986,7 +1122,7 @@ let gen_json_decoder_impl :
               | `regular -> record_body ~gen_typcons:false ~inherited_codec td fields
               | `polymorphic -> failwith' "case '%s' with an %s cannot be used in a polymorphic variant" vc_name label
             in
-            cstr_p(fields
+            cstr_p (fields
             |> List.for_all (fun { rf_configs; _ } ->
               Json_config.get_nested_field_style rf_configs = `spreading)
             |> function | true ->  [%pat? _] | false -> param_p
@@ -1008,43 +1144,65 @@ let gen_json_decoder_impl :
               end
           | `tuple_like args ->
             let body = tuple_like_body args in
-            let decoders_of_args =
-              args |> List.map (fun va ->
-                let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
-                get_decoder ~inherited_codec base_mangling_style self_ename va.va_type
-              )
+            let arg_to_decoder va =
+              let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
+              get_decoder ~inherited_codec base_mangling_style self_ename va.va_type
             in
+            let is_optional = function
+              | { va_type = `direct ct
+              | `nested ({ td_kind = Alias_decl ct; _ }, _); _ } ->
+                Coretype.is_option ct
+              | _ -> false
+            in
+            let path_arg = [%expr `f [%e estring ~loc arg_fname] :: path ] in
             begin match Json_config.get_tuple_style vc_configs, args with
               | _, [] -> cstr_p [%pat? _], [%expr Ok [%e construct vc_name None]]
               | `obj `default, _ :: _ :: _ ->
                 let bindings =
-                  decoders_of_args |> List.mapi (fun i decoder ->
+                  args |> List.mapi (fun i arg ->
                     let label_name = tuple_index_to_field_name i in
                     let label_name_e = estring ~loc label_name in
-                    let error_message = sprintf "mandatory field '%s' does not exist" label_name in
-                    pvari i, [%expr
-                      List.assoc_opt [%e label_name_e] [%e param_e]
-                      |> [%e opt_to_result [%expr ([%e estring ~loc error_message], path)]]
-                      >>= ([%e decoder] (`f [%e label_name_e] :: path))
-                    ])
+                    let assoc_opt = [%expr List.assoc_opt [%e label_name_e] [%e param_e]] in
+                    let decoder = [%expr [%e arg_to_decoder arg] (`f [%e label_name_e] :: path) ] in
+                    pvari i, (
+                      if is_optional arg then
+                        [%expr
+                          [%e assoc_opt]
+                          |> Option.value ~default:`null
+                          |> [%e decoder]]
+                      else
+                        let error_message = sprintf "mandatory field '%s' does not exist" label_name in
+                        [%expr
+                          [%e assoc_opt]
+                          |> [%e opt_to_result ~loc [%expr ([%e estring ~loc error_message], path)]]
+                          >>= [%e decoder]]
+                    ))
                 in
-                cstr_p param_p, [%expr [%e bind_results bindings body]]
+                cstr_p param_p, bind_results bindings body
+              | _, [ va ] when is_optional va ->
+                cstr_p param_p, bind_results [
+                  pvari 0, [%expr
+                    List.assoc_opt [%e estring ~loc arg_fname] [%e param_e]
+                    |> Option.value ~default:`null
+                    |> [%e arg_to_decoder va] [%e path_arg]]
+                ] [%expr
+                  Ok ([%e construct vc_name (Some (evari 0))])
+                ]
               | _, _ ->
                 cstr_p param_p, (
-                  let path_arg = [%expr `f [%e estring ~loc arg_fname] :: path ] in
-                  match decoders_of_args with
-                  | [ decoder ] ->
+                  match args with
+                  | [ arg ] ->
                     [ [%pat? Some arg],
                       bind_results
-                        [ pvari 0, [%expr [%e decoder] [%e path_arg] arg]]
+                        [ pvari 0, [%expr [%e arg_to_decoder arg] [%e path_arg] arg]]
                         body; ]
                   | _ ->
                     [ [%pat? Some (`arr [%p plist ~loc (List.mapi (fun i _ -> pvari i) args)])],
                       bind_results
-                        (List.mapi (fun i decoder -> pvari i, [%expr
-                            [%e decoder]
+                        (args |> List.mapi (fun i arg -> pvari i, [%expr
+                            [%e arg_to_decoder arg]
                               (`i [%e eint ~loc i] :: [%e path_arg])
-                              [%e evari i]]) decoders_of_args)
+                              [%e evari i]]))
                         body;
 
                       [%pat? Some (`arr xs)],
@@ -1502,7 +1660,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         ?id
   in
   let rec fields_to_t ~self_name ~self_mangled_type_name base_mangling_style fields =
-    let field_to_t field =
+    fields |&> (fun field ->
       let field_name, base_mangling_style =
         Json_config.get_mangled_name_of_field ~inherited:base_mangling_style field
       in
@@ -1525,8 +1683,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
           variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td_configs ctors
           |&> (fun (_, _, x) -> x)
         end
-    in
-    fields |&> field_to_t |> List.fold_left (fun result ->
+    ) |> List.fold_left (fun result ->
       List.fmap (fun fields -> result |&> List.rev_append fields)
     ) [ [] ]
     |&> List.rev

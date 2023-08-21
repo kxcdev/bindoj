@@ -115,16 +115,10 @@ let ts_ast : ts_ast option =
         tsa_name = "NestedRecord";
         tsa_type_parameters = [];
         tsa_type_desc = `intersection [
-          `type_literal [
-            { tsps_modifiers = [];
-              tsps_name = "unit";
-              tsps_type_desc = `type_reference "Unit"; };
-            { tsps_modifiers = [];
-              tsps_name = "student";
-              tsps_type_desc = `type_reference "Student"; };
-            { tsps_modifiers = [];
-              tsps_name = "person1";
-              tsps_type_desc = `type_reference "person_no_mangling"; };
+          `type_literal Util.Ts_ast.[
+            property "unit" (`type_reference "Unit");
+            property "student" (`type_reference "Student");
+            property "person1" (`type_reference "person_no_mangling");
           ];
           `type_reference "WithInt53p";
           `type_reference "person_no_mangling";
@@ -163,7 +157,7 @@ let expected_json_shape_explanation =
                                 [`mandatory_field
                                    ("kind", (`exactly (`str "With_id")));
                                 `mandatory_field
-                                  ("arg", (`tuple_of [`integral]))];
+                                  ("arg", `integral)];
                               `object_of
                                 [`mandatory_field
                                    ("kind", (`exactly (`str "Student")));
@@ -200,7 +194,7 @@ let expected_json_shape_explanation =
                                [`mandatory_field
                                   ("kind", (`exactly (`str "With_id")));
                                `mandatory_field
-                                 ("arg", (`tuple_of [`integral]))];
+                                 ("arg", `integral)];
                              `object_of
                                [`mandatory_field
                                   ("kind", (`exactly (`str "Student")));
@@ -213,7 +207,7 @@ let expected_json_shape_explanation =
                                `mandatory_field ("name", `string);
                                `mandatory_field ("department", `string)]]))));
                  `mandatory_field ("kind", (`exactly (`str "With_id")));
-                 `mandatory_field ("arg", (`tuple_of [`integral]))];
+                 `mandatory_field ("arg", `integral)];
                `object_of
                  [`mandatory_field
                     ("unit",
@@ -238,7 +232,7 @@ let expected_json_shape_explanation =
                                [`mandatory_field
                                   ("kind", (`exactly (`str "With_id")));
                                `mandatory_field
-                                 ("arg", (`tuple_of [`integral]))];
+                                 ("arg", `integral)];
                              `object_of
                                [`mandatory_field
                                   ("kind", (`exactly (`str "Student")));
@@ -277,7 +271,7 @@ let expected_json_shape_explanation =
                                [`mandatory_field
                                   ("kind", (`exactly (`str "With_id")));
                                `mandatory_field
-                                 ("arg", (`tuple_of [`integral]))];
+                                 ("arg", `integral)];
                              `object_of
                                [`mandatory_field
                                   ("kind", (`exactly (`str "Student")));

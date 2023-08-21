@@ -40,9 +40,9 @@ let () =
         if not result then
           let print_result label = function
             | Ok x -> eprintf "%s [%s]: Ok %a\n" S.name label S.pp x
-            | Error (msg, _path, shape) ->
+            | Error ((_, _, shape) as e) ->
               eprintf "%s [%s]: Error \"%s\" %a\n"
-                S.name label msg
+                S.name label (OfJsonResult.Err.to_string e)
                 Json_shape.pp_shape_explanation shape
           in
           print_result "interpreted" interpreted;

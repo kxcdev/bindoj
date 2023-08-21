@@ -60,17 +60,13 @@ let ts_ast : ts_ast option =
   let arg_fname = "arg" in
   let int_nil =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "intnil"); } ] in
+      Util.Ts_ast.[
+        property discriminator (`literal_type (`string_literal "intnil")) ] in
   let int_cons =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "intcons"); };
-        { tsps_modifiers = [];
-          tsps_name = arg_fname;
-          tsps_type_desc = `tuple [ `type_reference "number"; `type_reference "IntList"; ]; } ] in
+      Util.Ts_ast.[
+        property discriminator (`literal_type (`string_literal "intcons"));
+        property arg_fname (`tuple [ `type_reference "number"; `type_reference "IntList"; ]) ] in
   let cstrs = ["IntNil", int_nil; "IntCons", int_cons] in
   let options : Util.Ts_ast.options =
     { discriminator;

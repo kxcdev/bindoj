@@ -273,7 +273,6 @@ module SampleEx05 : SampleGenerated = struct
 
     "incorrect list length in nested field",
     `obj [
-      "option", `num 42.;
       "list", `arr [ ];
       "tuple", `arr [ `num 4.; `num 2. ];
       "objtuple", `obj ["_0", `num 4.; "_1", `num 2.];
@@ -532,6 +531,56 @@ module SampleEx16 : SampleGenerated = struct
   ]
 end
 
+module SampleEx17 : SampleGenerated = struct
+  include Ex17
+  let name = "SampleEx17"
+  let expected_json_shape_explanation = Typedesc_examples.Ex17.expected_json_shape_explanation
+  let samples = [
+    "not integer", `num 12.3, (not_integer 12.3, []);
+    "type mismatch", `str "test", (type_mismatch "int" "string", []);
+  ]
+end
+
+module SampleEx18 : SampleGenerated = struct
+  include Ex18
+  let name = "SampleEx18"
+  let expected_json_shape_explanation = Typedesc_examples.Ex18.expected_json_shape_explanation
+  let samples = [
+    "discriminator not found", `obj [], (discriminator_not_found "tag", []);
+    "discriminator not string", `obj [ ("tag", `null)], (discriminator_not_string "null", [ `f "tag" ]);
+
+    "invalid constructor", ctor0 ~discriminator:"tag" "Tuple_like",
+    ("given discriminator field value 'Tuple_like' is not one of [ 'tuple-like', 'tuple-like-alias', 'tuple-like-obj', 'tuple-like-spreading', 'inline-record', 'inline-record-spreading', 'reused-inline-record' ]", [ `f "tag" ]);
+
+    "type mismatch", `obj [ ("tag", `str "tuple-like"); ("value", `obj []); ],
+    (type_mismatch "int" "object", [ `f "value" ]);
+
+    "not integer", `obj [ ("tag", `str "tuple-like"); ("value", `num 12.3); ],
+    (not_integer 12.3, [ `f "value" ]);
+
+    "type mismatch", `obj [ ("tag", `str "tuple-like-alias"); ("value", `arr [ `null; `num 1. ]); ],
+    (type_mismatch "int" "array", [ `f "value" ]);
+
+    "not integer", `obj [ ("tag", `str "tuple-like-alias"); ("value", `num 12.3); ],
+    (not_integer 12.3, [ `f "value" ]);
+
+    "type mismatch", `obj [ ("tag", `str "tuple-like-spreading"); ("xOpt", `bool false) ],
+    (type_mismatch "int" "bool", [ `f "xOpt" ]);
+
+    "type mismatch", `obj [ ("tag", `str "tuple-like-spreading"); ("yOpt", `str "foobar") ],
+    (type_mismatch "int" "string", [ `f "yOpt" ]);
+
+    "type mismatch", `obj [ ("tag", `str "inline-record"); ("yOpt", `str "foobar") ],
+    (type_mismatch "int" "string", [ `f "yOpt" ]);
+
+    "type mismatch", `obj [ ("tag", `str "inline-record-spreading"); ("yOpt", `str "foobar") ],
+    (type_mismatch "int" "string", [ `f "yOpt" ]);
+
+    "type mismatch", `obj [ ("tag", `str "reused-inline-record"); ("yOpt", `str "foobar") ],
+    (type_mismatch "int" "string", [ `f "yOpt" ]);
+  ]
+end
+
 let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =
   Td.decl.td_name
 
@@ -727,6 +776,8 @@ let all_generated : (module SampleGenerated) list = [
   (module SampleEx14);
   (module SampleEx15);
   (module SampleEx16);
+  (module SampleEx17);
+  (module SampleEx18);
 ]
 
 let all : (module Sample) list = [
@@ -749,6 +800,8 @@ let all : (module Sample) list = [
   (module SampleEx14);
   (module SampleEx15);
   (module SampleEx16);
+  (module SampleEx17);
+  (module SampleEx18);
   (module SampleIdentInt_Refl);
   (module SampleIdentInt_Coretypes);
   (module SampleIdentIntOption_Coretypes);

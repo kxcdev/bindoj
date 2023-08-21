@@ -44,7 +44,18 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
           field "y_opt" cty_int_opt; ]
     )
 
-let ts_ast : ts_ast option = None
+let ts_ast : ts_ast option =
+  Some
+    [ `type_alias_declaration
+      { tsa_modifiers = [`export];
+        tsa_name = "XyOpt";
+        tsa_type_parameters = [];
+        tsa_type_desc =
+          `type_literal
+            Util.Ts_ast.[
+              property ~optional:true "xOpt" (`type_reference "number");
+              property ~optional:true "yOpt" (`type_reference "number");
+            ]}]
 
 let expected_json_shape_explanation =
   Some (

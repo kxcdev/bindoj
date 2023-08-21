@@ -95,23 +95,15 @@ let ts_ast : ts_ast option =
   let discriminator = "tag" in
   let case1 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "case1'"); };
-        { tsps_modifiers = [];
-          tsps_name = "value";
-          tsps_type_desc = `type_reference "number"; }; ] in
+      Util.Ts_ast.[
+        property discriminator (`literal_type (`string_literal "case1'"));
+        property "value" (`type_reference "number"); ] in
   let case2 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "case2'"); };
-        { tsps_modifiers = [];
-          tsps_name = "x'";
-          tsps_type_desc = `type_reference "number"; };
-        { tsps_modifiers = [];
-          tsps_name = "y'";
-          tsps_type_desc = `type_reference "number"; }; ] in
+      Util.Ts_ast.[
+        property discriminator (`literal_type (`string_literal "case2'"));
+        property "x'" (`type_reference "number");
+        property "y'" (`type_reference "number"); ] in
   let customized_union = [
     "Case1'", case1;
     "Case2'", case2;
@@ -139,7 +131,7 @@ let expected_json_shape_explanation =
             (`anyone_of
                 [`object_of
                   [`mandatory_field ("tag", (`exactly (`str "case1'")));
-                  `mandatory_field ("value", (`tuple_of [`integral]))];
+                  `mandatory_field ("value", `integral)];
                 `object_of
                   [`mandatory_field ("tag", (`exactly (`str "case2'")));
                   `mandatory_field ("x'", `integral);

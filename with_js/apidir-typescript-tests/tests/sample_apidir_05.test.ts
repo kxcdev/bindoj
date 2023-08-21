@@ -32,13 +32,13 @@ describe("apidir-typescript-tests-sample05", () => {
         list: [1, 2, 3, 4],
         map: { foo: 4, bar: 2 },
       },
-      { option: null, list: [], map: {} },
+      { list: [], map: {} },
     ];
     sample_values.forEach((x, i) => {
       test(`test ${i}`, async () => {
         const { body, status_code } = await mockClient["option-of-complex"](x);
         expect(status_code).toBe(200);
-        expect(body).toBe(x.option);
+        expect(body).toBe(x.option ?? null);
       });
     });
   });

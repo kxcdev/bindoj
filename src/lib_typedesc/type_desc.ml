@@ -326,37 +326,56 @@ let variant_decl ?variant_type ?(doc=`nodoc) ?(configs=Configs.empty) td_name ct
       td_configs = configs;
     }
 
-let rec fold_coretypes folder state td =
-  let fold_record_fields =
-    List.fold_left (fun state field ->
-      match field.rf_type with
-      | `direct ct -> folder state ct
-      | `nested (td, _) -> fold_coretypes folder state td
-    )
-  in
-  match td.td_kind with
-  | Alias_decl ct -> folder state ct
-  | Record_decl fields ->
-    fold_record_fields state fields
-  | Variant_decl ctors ->
-    ctors |> List.fold_left (fun state ctor ->
-      match ctor.vc_param with
-      | `no_param -> state
-      | `tuple_like ts ->
-        ts |> List.fold_left (fun state va ->
-          match va.va_type with
-          | `direct ct -> folder state ct
-          | `nested (td, _) -> fold_coretypes folder state td
-        ) state
-      | `inline_record fields ->
-        fold_record_fields state fields
-      | `reused_inline_record decl ->
-        let fields = decl.td_kind |> function
-          | Record_decl fields -> fields
-          | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
-        in
-        fold_record_fields state fields
-    ) state
+type ancestral_configs = [
+  | `alias of [`type_decl] configs
+  | `record_field of [`type_decl] configs * [`record_field] configs
+  | `variant_field of [`type_decl] configs * [`variant_constructor] configs * [`record_field] configs
+  | `variant_reused_field of [`type_decl] configs * [`variant_constructor] configs * [`type_decl] configs * [`record_field] configs
+  | `variant_argument of (** length of arguments *) int * [`type_decl] configs * [`variant_constructor] configs * [`variant_tuple_argument] configs
+  ] list
+
+let fold_coretypes'
+  : ('a -> coretype * ancestral_configs -> 'a)
+  -> 'a -> type_decl -> 'a =
+  fun folder ->
+  let rec go configs state td =
+    let fold_record_fields to_configs =
+      List.fold_left (fun state field ->
+        let configs = to_configs field.rf_configs in
+        match field.rf_type with
+        | `direct ct -> folder state (ct, configs)
+        | `nested (td, _) -> go configs state td
+      )
+    in
+    match td.td_kind with
+    | Alias_decl ct -> folder state (ct, `alias (td.td_configs) :: configs)
+    | Record_decl fields ->
+      fold_record_fields (fun c -> (`record_field (td.td_configs, c)) :: configs) state fields
+    | Variant_decl ctors ->
+      ctors |> List.fold_left (fun state ctor ->
+        match ctor.vc_param with
+        | `no_param -> state
+        | `tuple_like ts ->
+          let len = List.length ts in
+          ts |> List.fold_left (fun state va ->
+            let configs = `variant_argument (len, td.td_configs, ctor.vc_configs, va.va_configs) :: configs in
+            match va.va_type with
+            | `direct ct -> folder state (ct, configs)
+            | `nested (td, _) -> go configs state td
+          ) state
+        | `inline_record fields ->
+          fold_record_fields (fun c -> `variant_field (td.td_configs, ctor.vc_configs, c) :: configs) state fields
+        | `reused_inline_record decl ->
+          let fields = decl.td_kind |> function
+            | Record_decl fields -> fields
+            | _ -> failwith' "panic - type decl of reused inline record '%s' muts be record decl." ctor.vc_name
+          in
+          fold_record_fields (fun c -> `variant_reused_field (td.td_configs, ctor.vc_configs, decl.td_configs, c) :: configs) state fields
+      ) state
+  in go []
+
+let fold_coretypes folder state td =
+  fold_coretypes' (fun state (ct, _) -> folder state ct) state td
 
 let is_recursive =
   let check =

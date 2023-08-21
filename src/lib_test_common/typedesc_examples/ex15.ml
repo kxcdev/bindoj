@@ -142,57 +142,42 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
   )
 
 let ts_ast : ts_ast option =
+  let discriminator_value kind =
+    Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
+  in
   let student1 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "student1"); };
-        { tsps_modifiers = [];
-          tsps_name = "student";
-          tsps_type_desc = `type_reference "Student"; }; ]
+      [ discriminator_value "student1";
+        Util.Ts_ast.property "student" (`type_reference "Student"); ]
   in
   let student2 =
     `intersection [
       `type_literal
-        [ { tsps_modifiers = [];
-            tsps_name = discriminator;
-            tsps_type_desc = `literal_type (`string_literal "student2"); } ];
+        [ discriminator_value "student2"; ];
       `type_reference "Student";
     ]
   in
   let student3 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "student3"); };
-        { tsps_modifiers = [];
-          tsps_name = arg_fname;
-          tsps_type_desc = `type_reference "Student"; }; ]
+      [ discriminator_value "student3";
+        Util.Ts_ast.property arg_fname (`type_reference "Student"); ]
   in
   let student4 =
     `intersection [
       `type_literal
-        [ { tsps_modifiers = [];
-            tsps_name = discriminator;
-            tsps_type_desc = `literal_type (`string_literal "student4"); } ];
+        [ discriminator_value "student4"; ];
       `type_reference "Student";
     ]
   in
   let int_list1 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "int-list1"); };
-        { tsps_modifiers = [];
-          tsps_name = arg_fname;
-          tsps_type_desc = `type_reference "IntList"; }; ]
+      [ discriminator_value "int-list1";
+        Util.Ts_ast.property arg_fname (`type_reference "IntList") ]
   in
   let int_list2 =
     `intersection [
       `type_literal
-        [ { tsps_modifiers = [];
-            tsps_name = discriminator;
-            tsps_type_desc = `literal_type (`string_literal "int-list2"); } ];
+        [ discriminator_value "int-list2" ];
       `type_reference "IntList";
       ]
   in
@@ -242,13 +227,11 @@ let expected_json_shape_explanation =
                  [`mandatory_field ("tag", (`exactly (`str "student3")));
                  `mandatory_field
                    ("value",
-                     (`tuple_of
-                        [`named
-                           ("Student",
-                             (`object_of
-                                [`mandatory_field
-                                   ("admissionYear", `integral);
-                                `mandatory_field ("name", `string)]))]))];
+                     (`named
+                        ("Student",
+                          (`object_of
+                             [`mandatory_field ("admissionYear", `integral);
+                             `mandatory_field ("name", `string)]))))];
                `object_of
                  [`mandatory_field ("tag", (`exactly (`str "student4")));
                  `mandatory_field ("admissionYear", `integral);
@@ -257,18 +240,17 @@ let expected_json_shape_explanation =
                  [`mandatory_field ("tag", (`exactly (`str "int-list1")));
                  `mandatory_field
                    ("value",
-                     (`tuple_of
-                        [`named
-                           ("IntList",
-                             (`anyone_of
-                                [`object_of
-                                   [`mandatory_field
-                                      ("kind", (`exactly (`str "intnil")))];
-                                `object_of
-                                  [`mandatory_field
-                                     ("kind", (`exactly (`str "intcons")));
-                                  `mandatory_field
-                                    ("arg", (`tuple_of [`integral; `self]))]]))]))];
+                     (`named
+                        ("IntList",
+                          (`anyone_of
+                             [`object_of
+                                [`mandatory_field
+                                   ("kind", (`exactly (`str "intnil")))];
+                             `object_of
+                               [`mandatory_field
+                                  ("kind", (`exactly (`str "intcons")));
+                               `mandatory_field
+                                 ("arg", (`tuple_of [`integral; `self]))]]))))];
                `object_of
                  [`mandatory_field ("tag", (`exactly (`str "int-list2")));
                  `mandatory_field ("kind", (`exactly (`str "intnil")))];

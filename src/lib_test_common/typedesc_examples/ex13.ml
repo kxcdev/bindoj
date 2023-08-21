@@ -55,12 +55,11 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc =
             `type_literal
-              [ { tsps_modifiers = [];
-                  tsps_name = "student1";
-                  tsps_type_desc = `type_reference "Student"; };
-                { tsps_modifiers = [];
-                  tsps_name = "student2";
-                  tsps_type_desc = `type_reference "Student"; }; ]; } ]
+              Util.Ts_ast.[
+                property "student1" (`type_reference "Student");
+                property "student2" (`type_reference "Student");
+              ];
+        } ]
 
 let expected_json_shape_explanation =
   Some (

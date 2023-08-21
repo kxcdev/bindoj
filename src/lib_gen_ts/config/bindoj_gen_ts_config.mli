@@ -89,6 +89,7 @@ and ts_type_desc = [
 and ts_property_signature = {
   tsps_modifiers : [ `readonly ] ignore_order_list;
   tsps_name : string;
+  tsps_optional : bool;
   tsps_type_desc : ts_type_desc;
 } [@@deriving show, eq]
 

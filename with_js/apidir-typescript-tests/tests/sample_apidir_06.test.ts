@@ -10,9 +10,9 @@ const mockClient: clientIntf = createMockClient(invpInfo)(mockServer);
 
 describe("apidir-typescript-tests-sample06", () => {
   const sample_values: XyOpt[] = [
-    { xOpt: null, yOpt: null },
-    { xOpt: null, yOpt: 42 },
-    { xOpt: -25, yOpt: null },
+    { },
+    { yOpt: 42 },
+    { xOpt: -25 },
     { xOpt: 512, yOpt: -119 },
   ];
 
@@ -21,7 +21,7 @@ describe("apidir-typescript-tests-sample06", () => {
       test(`test ${i}`, async () => {
         const { body, status_code } = await mockClient["get-x"](samle);
         expect(status_code).toBe(200);
-        expect(body).toBe(samle.xOpt);
+        expect(body).toBe(samle.xOpt ?? null);
       });
     });
   });
@@ -31,7 +31,7 @@ describe("apidir-typescript-tests-sample06", () => {
       test(`test ${i}`, async () => {
         const { body, status_code } = await mockClient["get-y"](samle);
         expect(status_code).toBe(200);
-        expect(body).toBe(samle.yOpt);
+        expect(body).toBe(samle.yOpt ?? null);
       });
     });
   });

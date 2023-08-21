@@ -146,32 +146,23 @@ and product_details_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x0 ->
               List.assoc_opt "description" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'description' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'description' does not exist", path)
               >>= string_of_json' (`f "description" :: path)
               >>= fun x1 ->
               List.assoc_opt "price" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'price' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'price' does not exist", path)
               >>= int_of_json' (`f "price" :: path)
               >>= fun x2 ->
               List.assoc_opt "count" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'count' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'count' does not exist", path)
               >>= int_of_json' (`f "count" :: path)
               >>= fun x3 ->
               Ok { name = x0; description = x1; price = x2; count = x3 }
@@ -263,19 +254,16 @@ and product_of_json' =
         | `obj param ->
             let ( >>= ) = Result.bind in
             List.assoc_opt "id" param
-            |> (function
-                 | Some a -> Ok a
-                 | None -> Error ("mandatory field 'id' does not exist", path))
+            |> Option.to_result
+                 ~none:("mandatory field 'id' does not exist", path)
             >>= (fun path x ->
                   product_id_of_json' ~path x
                   |> Result.map_error (fun (msg, path, _) -> (msg, path)))
                   (`f "id" :: path)
             >>= fun x0 ->
             List.assoc_opt "details" param
-            |> (function
-                 | Some a -> Ok a
-                 | None ->
-                     Error ("mandatory field 'details' does not exist", path))
+            |> Option.to_result
+                 ~none:("mandatory field 'details' does not exist", path)
             >>= (fun path x ->
                   product_details_of_json' ~path x
                   |> Result.map_error (fun (msg, path, _) -> (msg, path)))
@@ -465,7 +453,12 @@ let payment_method_json_shape_explanation =
                    `mandatory_field ("cardNumber", `string);
                    `mandatory_field ("holderName", `string);
                    `mandatory_field
-                     ("expirationDate", `tuple_of [ `integral; `integral ]);
+                     ( "expirationDate",
+                       `object_of
+                         [
+                           `mandatory_field ("_0", `integral);
+                           `mandatory_field ("_1", `integral);
+                         ] );
                    `mandatory_field ("cvv", `string);
                  ];
                `object_of
@@ -539,48 +532,32 @@ and payment_method_of_json' =
           | `obj (("kind", `str "credit-card") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "cardNumber" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'cardNumber' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'cardNumber' does not exist", path)
               >>= string_of_json' (`f "cardNumber" :: path)
               >>= fun x0 ->
               List.assoc_opt "holderName" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'holderName' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'holderName' does not exist", path)
               >>= string_of_json' (`f "holderName" :: path)
               >>= fun x1 ->
               List.assoc_opt "expirationDate" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ( "mandatory field 'expirationDate' does not exist",
-                           path ))
+              |> Option.to_result
+                   ~none:
+                     ("mandatory field 'expirationDate' does not exist", path)
               >>= (fun path -> function
                     | (`obj fields : Kxclib.Json.jv) ->
-                        let fields = Bindoj_runtime.StringMap.of_list fields in
                         let ( >>= ) = Result.bind in
-                        (Bindoj_runtime.StringMap.find_opt "_0" fields
-                         |> function
-                         | Some a -> Ok a
-                         | None ->
-                             Error ("mandatory field '_0' does not exist", path))
+                        List.assoc_opt "_0" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_0' does not exist", path)
+                        >>= int_of_json' (`f "_0" :: path)
                         >>= fun x0 ->
-                        (Bindoj_runtime.StringMap.find_opt "_1" fields
-                         |> function
-                         | Some a -> Ok a
-                         | None ->
-                             Error ("mandatory field '_1' does not exist", path))
-                        >>= fun x1 ->
-                        let ( >>= ) = Result.bind in
-                        int_of_json' (`f "_0" :: path) x0 >>= fun x0 ->
-                        int_of_json' (`f "_1" :: path) x1 >>= fun x1 ->
-                        Ok (x0, x1)
+                        List.assoc_opt "_1" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_1' does not exist", path)
+                        >>= int_of_json' (`f "_1" :: path)
+                        >>= fun x1 -> Ok (x0, x1)
                     | jv ->
                         Error
                           ( Printf.sprintf
@@ -592,9 +569,8 @@ and payment_method_of_json' =
                     (`f "expirationDate" :: path)
               >>= fun x2 ->
               List.assoc_opt "cvv" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field 'cvv' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'cvv' does not exist", path)
               >>= string_of_json' (`f "cvv" :: path)
               >>= fun x3 ->
               Ok
@@ -608,26 +584,18 @@ and payment_method_of_json' =
           | `obj (("kind", `str "bank-transfer") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "accountNumber" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'accountNumber' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'accountNumber' does not exist", path)
               >>= string_of_json' (`f "accountNumber" :: path)
               >>= fun x0 ->
               List.assoc_opt "bankName" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'bankName' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'bankName' does not exist", path)
               >>= string_of_json' (`f "bankName" :: path)
               >>= fun x1 ->
               List.assoc_opt "holderName" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'holderName' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'holderName' does not exist", path)
               >>= string_of_json' (`f "holderName" :: path)
               >>= fun x2 ->
               Ok
@@ -723,12 +691,15 @@ let order_details_json_shape_explanation =
                `mandatory_field
                  ( "products",
                    `array_of
-                     (`tuple_of
+                     (`object_of
                        [
-                         (match product_id_json_shape_explanation with
-                         | `with_warning (_, (`named _ as s)) -> s
-                         | `with_warning (_, s) | s -> `named ("ProductId", s));
-                         `integral;
+                         `mandatory_field
+                           ( "_0",
+                             match product_id_json_shape_explanation with
+                             | `with_warning (_, (`named _ as s)) -> s
+                             | `with_warning (_, s) | s ->
+                                 `named ("ProductId", s) );
+                         `mandatory_field ("_1", `integral);
                        ]) );
                `mandatory_field
                  ( "paymentMethod",
@@ -792,35 +763,25 @@ and order_details_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "products" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'products' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'products' does not exist", path)
               >>= (list_of_json' (fun path -> function
                      | (`obj fields : Kxclib.Json.jv) ->
-                         let fields = Bindoj_runtime.StringMap.of_list fields in
                          let ( >>= ) = Result.bind in
-                         (Bindoj_runtime.StringMap.find_opt "_0" fields
-                          |> function
-                          | Some a -> Ok a
-                          | None ->
-                              Error ("mandatory field '_0' does not exist", path))
+                         List.assoc_opt "_0" fields
+                         |> Option.to_result
+                              ~none:("mandatory field '_0' does not exist", path)
+                         >>= (fun path x ->
+                               product_id_of_json' ~path x
+                               |> Result.map_error (fun (msg, path, _) ->
+                                      (msg, path)))
+                               (`f "_0" :: path)
                          >>= fun x0 ->
-                         (Bindoj_runtime.StringMap.find_opt "_1" fields
-                          |> function
-                          | Some a -> Ok a
-                          | None ->
-                              Error ("mandatory field '_1' does not exist", path))
-                         >>= fun x1 ->
-                         let ( >>= ) = Result.bind in
-                         (fun path x ->
-                           product_id_of_json' ~path x
-                           |> Result.map_error (fun (msg, path, _) ->
-                                  (msg, path)))
-                           (`f "_0" :: path) x0
-                         >>= fun x0 ->
-                         int_of_json' (`f "_1" :: path) x1 >>= fun x1 ->
-                         Ok (x0, x1)
+                         List.assoc_opt "_1" fields
+                         |> Option.to_result
+                              ~none:("mandatory field '_1' does not exist", path)
+                         >>= int_of_json' (`f "_1" :: path)
+                         >>= fun x1 -> Ok (x0, x1)
                      | jv ->
                          Error
                            ( Printf.sprintf
@@ -832,11 +793,8 @@ and order_details_of_json' =
                     (`f "products" :: path)
               >>= fun x0 ->
               List.assoc_opt "paymentMethod" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'paymentMethod' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'paymentMethod' does not exist", path)
               >>= (fun path x ->
                     payment_method_of_json' ~path x
                     |> Result.map_error (fun (msg, path, _) -> (msg, path)))
@@ -1051,37 +1009,29 @@ and order_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "id" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field 'id' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'id' does not exist", path)
               >>= (fun path x ->
                     order_id_of_json' ~path x
                     |> Result.map_error (fun (msg, path, _) -> (msg, path)))
                     (`f "id" :: path)
               >>= fun x0 ->
               List.assoc_opt "totalPrice" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'totalPrice' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'totalPrice' does not exist", path)
               >>= int_of_json' (`f "totalPrice" :: path)
               >>= fun x1 ->
               List.assoc_opt "details" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'details' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'details' does not exist", path)
               >>= (fun path x ->
                     order_details_of_json' ~path x
                     |> Result.map_error (fun (msg, path, _) -> (msg, path)))
                     (`f "details" :: path)
               >>= fun x2 ->
               List.assoc_opt "status" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'status' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'status' does not exist", path)
               >>= (fun path x ->
                     order_status_of_json' ~path x
                     |> Result.map_error (fun (msg, path, _) -> (msg, path)))
@@ -1173,18 +1123,17 @@ let product_query_json_shape_explanation =
 
 let rec product_query_to_json =
   (let string_to_json (x : string) : Kxclib.Json.jv = `str x
-   and option_to_json t_to_json = function
-     | Some x -> t_to_json x
-     | None -> (`null : Kxclib.Json.jv)
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    fun { searchQuery = x0; minimum_price = x1; maximum_price = x2; limit = x3 } ->
      `obj
-       [
-         ("searchQuery", (option_to_json string_to_json) x0);
-         ("minimumPrice", (option_to_json int_to_json) x1);
-         ("maximumPrice", (option_to_json int_to_json) x2);
-         ("limit", (option_to_json int_to_json) x3);
-       ]
+       (List.filter_map
+          (fun x -> x)
+          [
+            Option.map (fun x0 -> ("searchQuery", string_to_json x0)) x0;
+            Option.map (fun x1 -> ("minimumPrice", int_to_json x1)) x1;
+            Option.map (fun x2 -> ("maximumPrice", int_to_json x2)) x2;
+            Option.map (fun x3 -> ("limit", int_to_json x3)) x3;
+          ])
     : product_query -> Kxclib.Json.jv)
 [@@warning "-39"]
 
@@ -1348,10 +1297,7 @@ let order_query_json_shape_explanation =
 [@@warning "-39"]
 
 let rec order_query_to_json =
-  (let option_to_json t_to_json = function
-     | Some x -> t_to_json x
-     | None -> (`null : Kxclib.Json.jv)
-   and list_to_json t_to_json xs : Kxclib.Json.jv = `arr (List.map t_to_json xs)
+  (let list_to_json t_to_json xs : Kxclib.Json.jv = `arr (List.map t_to_json xs)
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    fun {
          products = x0;
@@ -1361,13 +1307,19 @@ let rec order_query_to_json =
          limit = x4;
        } ->
      `obj
-       [
-         ("products", (option_to_json (list_to_json int_to_json)) x0);
-         ("status", (option_to_json (list_to_json order_status_to_json)) x1);
-         ("minimumPrice", (option_to_json int_to_json) x2);
-         ("maximumPrice", (option_to_json int_to_json) x3);
-         ("limit", (option_to_json int_to_json) x4);
-       ]
+       (List.filter_map
+          (fun x -> x)
+          [
+            Option.map
+              (fun x0 -> ("products", (list_to_json int_to_json) x0))
+              x0;
+            Option.map
+              (fun x1 -> ("status", (list_to_json order_status_to_json) x1))
+              x1;
+            Option.map (fun x2 -> ("minimumPrice", int_to_json x2)) x2;
+            Option.map (fun x3 -> ("maximumPrice", int_to_json x3)) x3;
+            Option.map (fun x4 -> ("limit", int_to_json x4)) x4;
+          ])
     : order_query -> Kxclib.Json.jv)
 [@@warning "-39"]
 

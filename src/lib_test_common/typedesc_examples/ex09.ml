@@ -48,9 +48,7 @@ let ts_ast : ts_ast option = Some [
         tsa_type_parameters = [];
         tsa_type_desc =
           `type_literal [
-              { tsps_modifiers = [];
-                tsps_name = "value";
-                tsps_type_desc = `type_reference "number"; };
+              Util.Ts_ast.property "value" (`type_reference "number")
             ];};
   ]
 

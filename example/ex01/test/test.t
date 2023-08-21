@@ -42,9 +42,9 @@ Check endpoints
   >   -d '{"kind":"student","studentId":0}'
   HTTP/1.1 400 Status 400
   Content-Type: application/json
-  content-length: 768
+  content-length: 762
   
-  "Bad request: invalid json format - mandatory field 'name' does not exist; expected shape: `with_warning (\n(\"not considering any config if exists\",\n `named ((\"Person\",\n          `anyone_of ([`object_of ([`mandatory_field ((\"kind\", `exactly (\"anonymous\")))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"with-id\"))); `mandatory_field ((\"arg\", `tuple_of ([`integral])))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"student\"))); `mandatory_field ((\"studentId\", `integral));\n`mandatory_field ((\"name\", `string))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"teacher\"))); `mandatory_field ((\"facultyId\", `integral));\n`mandatory_field ((\"name\", `string));\n`mandatory_field ((\"department\", `string))])\n])))))"
+  "Bad request: invalid json format - mandatory field 'name' does not exist at root; expected shape: `with_warning (\n(\"not considering any config if exists\",\n `named ((\"Person\",\n          `anyone_of ([`object_of ([`mandatory_field ((\"kind\", `exactly (\"anonymous\")))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"with-id\"))); `mandatory_field ((\"arg\", `integral))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"student\"))); `mandatory_field ((\"studentId\", `integral));\n`mandatory_field ((\"name\", `string))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"teacher\"))); `mandatory_field ((\"facultyId\", `integral));\n`mandatory_field ((\"name\", `string));\n`mandatory_field ((\"department\", `string))])\n])))))"
 
 Kill the server process in the background.
   $ kill -9 $PID

@@ -104,38 +104,26 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
 let ts_ast : ts_ast option =
   let discriminator = "kind" in
   let arg_fname = "arg" in
+  let discriminator_value kind =
+    Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
+  in
   let anonymous =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "anonymous"); } ] in
+      [ discriminator_value "anonymous"; ] in
   let with_id =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "with-id"); };
-        { tsps_modifiers = [];
-          tsps_name = arg_fname;
-          tsps_type_desc = `type_reference "number"; }; ] in
+      [ discriminator_value "with-id";
+        Util.Ts_ast.property arg_fname (`type_reference "number") ] in
   let student =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "student"); };
-        { tsps_modifiers = [];
-          tsps_name = "studentId";
-          tsps_type_desc = `type_reference "number"; };
-        { tsps_modifiers = [];
-          tsps_name = "name";
-          tsps_type_desc = `type_reference "string"; } ] in
+      Util.Ts_ast.[
+        discriminator_value "student";
+        property "studentId" (`type_reference "number");
+        property "name" (`type_reference "string") ] in
   let teacher =
     `intersection
-      [`type_literal
-          [ { tsps_modifiers = [];
-            tsps_name = discriminator;
-            tsps_type_desc = `literal_type (`string_literal "teacher"); }];
-        `type_reference "Teacher"
-      ] in
+      [`type_literal [ discriminator_value "teacher" ];
+        `type_reference "Teacher" ] in
   let person = [
     "With_id", with_id;
     "Teacher", teacher;

@@ -59,27 +59,20 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
 let ts_ast : ts_ast option =
   let discriminator = "kind" in
   let arg_fname = "arg" in
+  let discriminator_value kind =
+    Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
+  in
   let foo0 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "foo0"); } ] in
+      [  discriminator_value "foo0" ] in
   let foo1 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "foo1"); };
-        { tsps_modifiers = [];
-          tsps_name = arg_fname;
-          tsps_type_desc = `type_reference "number"; } ] in
+      [ discriminator_value "foo1";
+        Util.Ts_ast.property arg_fname (`type_reference "number") ] in
   let foo2 =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "foo2"); };
-        { tsps_modifiers = [];
-          tsps_name = arg_fname;
-          tsps_type_desc = `tuple [`type_reference "number"; `type_reference "number"]; } ] in
+      [ discriminator_value "foo2";
+        Util.Ts_ast.property arg_fname (`tuple [`type_reference "number"; `type_reference "number"]) ] in
   let foos = ["Foo0", foo0; "Foo1", foo1; "Foo2", foo2] in
   let options : Util.Ts_ast.options =
     { discriminator;
@@ -106,7 +99,7 @@ let expected_json_shape_explanation =
                   [`mandatory_field ("kind", (`exactly (`str "foo0")))];
                 `object_of
                   [`mandatory_field ("kind", (`exactly (`str "foo1")));
-                  `mandatory_field ("arg", (`tuple_of [`integral]))];
+                  `mandatory_field ("arg", `integral)];
                 `object_of
                   [`mandatory_field ("kind", (`exactly (`str "foo2")));
                   `mandatory_field ("arg", (`tuple_of [`integral; `integral]))]]))))

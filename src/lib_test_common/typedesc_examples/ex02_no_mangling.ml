@@ -101,44 +101,29 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
 let ts_ast : ts_ast option =
   let discriminator = "kind" in
   let arg_fname = "arg" in
+  let discriminator_value kind =
+    Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
+  in
   let anonymous =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Anonymous"); } ] in
+      [ discriminator_value "Anonymous" ] in
   let with_id =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "With_id"); };
-        { tsps_modifiers = [];
-          tsps_name = arg_fname;
-          tsps_type_desc = `type_reference "number"; }; ] in
+      [ discriminator_value "With_id";
+        Util.Ts_ast.property arg_fname (`type_reference "number") ] in
   let student =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Student"); };
-        { tsps_modifiers = [];
-          tsps_name = "student_id";
-          tsps_type_desc = `type_reference "number"; };
-        { tsps_modifiers = [];
-          tsps_name = "name";
-          tsps_type_desc = `type_reference "string"; } ] in
+      Util.Ts_ast.[
+        discriminator_value "Student";
+        property "student_id" (`type_reference "number");
+        property "name" (`type_reference "string") ] in
   let teacher =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "Teacher"); };
-        { tsps_modifiers = [];
-          tsps_name = "faculty_id";
-          tsps_type_desc = `type_reference "number"; };
-        { tsps_modifiers = [];
-          tsps_name = "name";
-          tsps_type_desc = `type_reference "string"; };
-        { tsps_modifiers = [];
-          tsps_name = "department";
-          tsps_type_desc = `type_reference "string"; } ] in
+      Util.Ts_ast.[
+        discriminator_value "Teacher";
+        property "faculty_id" (`type_reference "number");
+        property"name" (`type_reference "string");
+        property"department" (`type_reference "string") ] in
   let person = [
     "With_id", with_id;
     "Teacher", teacher;
@@ -170,7 +155,7 @@ let expected_json_shape_explanation =
                   [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
                 `object_of
                   [`mandatory_field ("kind", (`exactly (`str "With_id")));
-                  `mandatory_field ("arg", (`tuple_of [`integral]))];
+                  `mandatory_field ("arg", `integral)];
                 `object_of
                   [`mandatory_field ("kind", (`exactly (`str "Student")));
                   `mandatory_field ("student_id", `integral);

@@ -362,6 +362,24 @@ val variant_decl :
   string -> variant_constructor list -> type_decl
 (** Creates a new {!type_decl} of {!type_decl_kind.Variant_decl}. *)
 
+type ancestral_configs = [
+  | `alias of [`type_decl] configs
+  (** config of alias decl. *)
+  | `record_field of [`type_decl] configs * [`record_field] configs
+  (** configs of field of record decl. *)
+  | `variant_field of [`type_decl] configs * [`variant_constructor] configs * [`record_field] configs
+  (** configs of field of variant decl. *)
+  | `variant_reused_field of [`type_decl] configs * [`variant_constructor] configs * [`type_decl] configs * [`record_field] configs
+  (** configs of reused field of variant decl. *)
+  | `variant_argument of (** length of arguments *) int * [`type_decl] configs * [`variant_constructor] configs * [`variant_tuple_argument] configs
+  (** length of arguments and configs of argument of variant decl. *)
+  ] list
+  (** List of kind and configs of type_decl, the parent of the coretype.
+      The format of the list is path, with head being the closest. *)
+
+val fold_coretypes' : ('a -> coretype * ancestral_configs -> 'a) -> 'a -> type_decl -> 'a
+(** Folds a function over all {!coretype} in the given {!type_decl}. *)
+
 val fold_coretypes : ('a -> coretype -> 'a) -> 'a -> type_decl -> 'a
 (** Folds a function over all {!coretype} in the given {!type_decl}. *)
 

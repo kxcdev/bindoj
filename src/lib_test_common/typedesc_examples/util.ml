@@ -39,6 +39,9 @@ module Ts_ast = struct
   type literal = (string * ts_type_desc)
   let compare_literal (xname, (_: ts_type_desc)) (yname, (_: ts_type_desc)) = String.compare xname yname
 
+  let property ?(modifiers=[]) ?(optional=false) tsps_name tsps_type_desc =
+    { tsps_modifiers=modifiers; tsps_name; tsps_optional=optional; tsps_type_desc }
+
   let case_analyzer_parameters :
     options -> literal list -> ts_parameter list =
     fun options cstrs ->
@@ -52,6 +55,7 @@ module Ts_ast = struct
                 | Some { tsps_type_desc = `literal_type (`string_literal kind); _; } ->
                   { tsps_modifiers = [];
                     tsps_name = kind;
+                    tsps_optional = false;
                     tsps_type_desc =
                       `func_type
                         { tsft_parameters =

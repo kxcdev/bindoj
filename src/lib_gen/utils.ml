@@ -73,15 +73,6 @@ let to_rec_flag { td_kind; _ } =
   | Alias_decl _ -> Nonrecursive
   | Record_decl _ | Variant_decl _ -> Recursive
 
-let nested_type_to_coretype' = function
-  | `direct ct -> ct, Coretype.is_option ct
-  | `nested ({ td_name; td_kind = Alias_decl ct; _ }, codec) ->
-    Coretype.mk_ident ~codec td_name, Coretype.is_option ct
-  | `nested ({ td_name; _ }, codec) ->
-    Coretype.mk_ident ~codec td_name, false
-
-let nested_type_to_coretype ty = nested_type_to_coretype' ty |> fst
-
 let type_name_with_codec : ?codec:Coretype.codec -> string -> string =
   fun ?(codec=`default) name ->
   match codec with

@@ -103,12 +103,22 @@ let explain_encoded_json_shape'
       |> process_object
   and process_non_spread_variant_argument ~base_ident_codec base_mangling_style va: shape =
     if Json_config.get_nested_field_style va.va_configs = `spreading then
-      invalid_arg "Spreading of the nested type of tuple_like is only possible if that element is the only one.";
-    match va with
-    | { va_type = `direct ct; _ } ->
+      invalid_arg "Spreading of the nested type of tuple_like is only valid if there is only a single argument.";
+    match va.va_type with
+    | `direct ct ->
       process_coretype' ~base_ident_codec base_mangling_style ct
-    | { va_type = `nested (td, codec); _ } ->
+    | `nested (td, codec) ->
       process_td ~base_ident_codec:(inherit_codec base_ident_codec codec) td
+  and process_non_spread_variant_argument' ~base_ident_codec base_mangling_style field_name va: field_shape =
+    if Json_config.get_nested_field_style va.va_configs = `spreading then
+      invalid_arg "Spreading of the nested type of tuple_like is only valid if there is only a single argument.";
+    match va.va_type with
+    | `direct ({ ct_desc = Option desc; _ } as ct)
+    | `nested ({ td_kind = Alias_decl ({ ct_desc = Option desc; _ } as ct); _ }, _) ->
+      optional_field (field_name, process_coretype' ~base_ident_codec base_mangling_style { ct with ct_desc = desc })
+    | _ ->
+      let shape = process_non_spread_variant_argument ~base_ident_codec base_mangling_style va in
+      mandatory_field (field_name, shape)
   and process_spread_variant_argument ~base_ident_codec va: field_shape list list =
     let base_mangling_style = Json_config.default_mangling_style in
     begin match validate_spreading_type va.va_type with
@@ -143,11 +153,14 @@ let explain_encoded_json_shape'
       match nested_style, rf_type with
       | `nested, `direct ct ->
         List.return [ field_of_coretype base_mangling_style json_field_name ct ]
-      | `nested, `nested ({ td_kind = Alias_decl ct; _ } as td, codec) when Coretype.is_option ct ->
+      | `nested, `nested ({ td_kind = Alias_decl ({ ct_desc = Option desc; _ } as ct); _ }, codec) ->
         List.return [
           optional_field (
             json_field_name,
-            process_td ~base_ident_codec:(inherit_codec base_ident_codec codec)  td)
+            process_coretype'
+              ~base_ident_codec:(inherit_codec base_ident_codec codec)
+              Json_config.default_mangling_style
+              { ct with ct_desc = desc })
         ]
       | `nested, `nested (td, codec) ->
         List.return [
@@ -174,29 +187,31 @@ let explain_encoded_json_shape'
     let (discriminator_value, base_mangling_style) =
       Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
     in
-    let append_discriminator fields =
-      let kind_field  =
-        mandatory_field (discriminator_fname, exactly (`str discriminator_value))
-      in
-      match fields with
-      | [] -> failwith "The given list must not be empty."
-      | fs ->  (fs |&> (fun fields -> (kind_field :: fields)))
-    in
-    match vc_param with
+    begin match vc_param with
     | `no_param ->
-      append_discriminator (List.return [])
+      List.return []
     | `tuple_like [ va ] when Json_config.get_nested_field_style va.va_configs = `spreading ->
       process_spread_variant_argument ~base_ident_codec va
-      |> append_discriminator
-    | `tuple_like cts ->
+    | `tuple_like vas ->
       let arg_fname =
         Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
         |> Json_config.mangled `field_name base_mangling_style
       in
-      let arg_shape = tuple_of (cts |&> process_non_spread_variant_argument ~base_ident_codec base_mangling_style) in
-      append_discriminator (List.return [ mandatory_field (arg_fname, arg_shape) ])
+      let tuple_style = Json_config.get_tuple_style vc_configs in
+      begin match tuple_style, vas with
+      | `obj `default, vas ->
+        vas |> List.mapi (fun i ->
+          Json_config.tuple_index_to_field_name i
+          |> process_non_spread_variant_argument' ~base_ident_codec base_mangling_style)
+      | `arr, [ va ] ->
+        [ process_non_spread_variant_argument' ~base_ident_codec base_mangling_style arg_fname va ]
+      | `arr, vas ->
+        let arg_shape = tuple_of (vas |&> process_non_spread_variant_argument ~base_ident_codec base_mangling_style) in
+        [ mandatory_field (arg_fname, arg_shape) ]
+      end
+      |> List.return
     | `inline_record fields ->
-      append_discriminator (process_fields ~base_ident_codec base_mangling_style fields)
+      process_fields ~base_ident_codec base_mangling_style fields
     | `reused_inline_record { td_kind; td_configs; _ } ->
       let base_mangling_style =
         Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
@@ -205,7 +220,13 @@ let explain_encoded_json_shape'
         | Record_decl fields -> fields
         | _ -> failwith' "panic - type decl of reused inline record '%s' must be record decl." vc_name
       in
-      append_discriminator (process_fields ~base_ident_codec base_mangling_style fields)
+      process_fields ~base_ident_codec base_mangling_style fields
+    end
+    |> function
+    | [] -> failwith "The given list must not be empty."
+    | fs ->
+      fs |&> fun fields ->
+        (mandatory_field (discriminator_fname, exactly (`str discriminator_value)) :: fields)
   and process_object fields =
     match fields with
     | [] -> failwith "The given list must not be empty."
@@ -241,7 +262,17 @@ let explain_encoded_json_shape'
               ~base_mangling_style)
             base_ident_codec ident ident_json_name)
       | Option d -> nullable (go d)
-      | Tuple ds -> tuple_of (ds |&> go)
+      | Tuple ds ->
+        begin match Json_config.get_tuple_style configs with
+        | `obj `default ->
+          ds |> List.mapi (fun i ->
+            let field_name = Json_config.tuple_index_to_field_name i in
+            function
+            | Coretype.Option desc -> optional_field (field_name, go desc)
+            | desc -> mandatory_field (field_name, go desc))
+          |> object_of
+        | `arr -> tuple_of (ds |&> go)
+        end
       | List desc -> array_of (go desc)
       | Map (`string, d) -> record_of (go d)
       | StringEnum xs -> string_enum (xs |&> Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style)
@@ -265,17 +296,14 @@ let explain_encoded_json_shape ~(env: tdenv) (td: 't typed_type_decl) : json_sha
 
 let nested_type_to_coretype =
   function
-  | `direct ct -> ct, Coretype.is_option ct
-  | `nested ({ td_name; td_kind; td_configs; _ }, codec) ->
-    let is_option = match td_kind with
-      | Alias_decl ct -> Coretype.is_option ct
-      | _ -> false
-    in
+  | `direct ct | `nested({ td_kind = Alias_decl ct; _ }, _) ->
+    ct, Coretype.is_option ct
+  | `nested ({ td_name; td_configs; _ }, codec) ->
     let mangling_style = Json_config.(get_mangling_style_opt td_configs |? default_mangling_style) in
     Coretype.mk_ident
       ~configs:[ Json_config.mangling_style mangling_style ]
       ~codec td_name,
-      is_option
+      false
 
 open MonadOps(ResultOf(struct type err = string * jvpath end))
 
@@ -287,15 +315,12 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
     | Some a -> Result.ok a
   in
   let try_result jvpath f = try f () with Invalid_argument msg -> Error (msg, jvpath) in
-  let parse_obj_style_tuple path (conv: jvpath -> _ -> jv -> (Expr.t, string * jvpath) result) (ts: _ list) (fields: jv StringMap.t) =
+  let parse_obj_style_tuple path (conv: jvpath -> string -> _ -> jv option -> (Expr.t, string * jvpath) result) (ts: _ list) (fields: jv StringMap.t) =
     ts
     |> List.mapi (fun i t ->
       let field_name = Json_config.tuple_index_to_field_name i in
       fields |> StringMap.find_opt field_name
-      |> function
-      | None -> Result.error (sprintf "mandatory field '%s' does not exist" field_name, path)
-      | Some x -> Result.ok x
-      >>= fun jv -> conv (`f field_name :: path) t jv)
+      |> conv (`f field_name :: path) field_name t)
     |> sequence_list
   in
   let map2i f l1 l2 =
@@ -377,7 +402,12 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
           | _, `arr ->
             Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
           | `obj fields, `obj `default ->
-            parse_obj_style_tuple path go ts (StringMap.of_list fields)
+            parse_obj_style_tuple path (fun path' field_name -> !? (function
+              | Coretype.Option (Option _), _ -> Error ("Nested option types cannot be json fields.", path')
+              | Option _, None -> Ok Expr.None
+              | desc, Some jv -> go path' desc jv
+              | _, None -> Error (sprintf "mandatory field '%s' does not exist" field_name, path)
+            )) ts (StringMap.of_list fields)
             >|= (fun xs -> Expr.Tuple xs)
           | _, `obj `default ->
             Result.error (sprintf "an object is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
@@ -489,38 +519,47 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
               let mk_result = mk_result "tuple" mk in
               let variant_argument_of_json base_mangling_style path va jv =
                 if Json_config.get_nested_field_style va.va_configs = `spreading then
-                  invalid_arg "Spreading of the nested type of tuple_like is only possible if that element is the only one.";
+                  invalid_arg "Spreading of the nested type of tuple_like is only valid if there is only a single argument.";
                 let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in
                 let ct, _ = nested_type_to_coretype va.va_type in
                 expr_of_json base_mangling_style path ct jv
               in
               begin match Json_config.get_tuple_style ctor.vc_configs, ts with
               | `obj `default, _ :: _ :: _ ->
-                parse_obj_style_tuple path (variant_argument_of_json base_mangling_style) ts obj
+                parse_obj_style_tuple path (fun path' field_name -> !?(function
+                  | { va_type = `direct ct | `nested ({ td_kind = Alias_decl ct; _ }, _); _ }, None
+                    when Coretype.is_option ct ->
+                      Ok Expr.None
+                  | va, Some jv -> variant_argument_of_json base_mangling_style path' va jv
+                  | _, None -> Error (sprintf "mandatory field '%s' does not exist" field_name, path))
+                ) ts obj
                 >>= (fun x -> mk_result path x)
               | _, [] -> mk_result path []
               | _, _ ->
                 obj
                 |> StringMap.find_opt arg_fname
-                |> opt_to_result (sprintf "mandatory field '%s' does not exist" arg_fname, path)
-                >>= (fun arg ->
-                  let path = `f arg_fname :: path in
+                |> (fun arg ->
+                  let arg_path = `f arg_fname :: path in
                   match ts, arg with
-                  | [t], _ ->
-                    variant_argument_of_json base_mangling_style path t arg
+                  | [ { va_type = `direct ct | `nested ({ td_kind = Alias_decl ct; _}, _); _ }
+                    ], None when Coretype.is_option ct ->
+                    mk_result path [ Expr.None ]
+                  | [t], Some arg ->
+                    variant_argument_of_json base_mangling_style arg_path t arg
                     >>= fun expr -> mk_result path [expr]
-                  | ts, `arr xs ->
-                    try_result path
-                      (fun () ->
-                        map2i (fun i va ->
-                          variant_argument_of_json base_mangling_style (`i i :: path) va) ts xs |> function
-                          | Some es -> es >>=* fun x -> mk_result path x
-                          | None ->
-                            let ts_len = List.length ts in
-                            let xs_len = List.length xs in
-                            let msg = sprintf "expecting an array of length %d, but the given has a length of %d" ts_len xs_len in
-                            Result.error (msg, path))
-                  | _, jv -> Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
+                  | ts, Some (`arr xs) ->
+                    try_result path (fun () ->
+                      map2i (fun i va ->
+                        variant_argument_of_json base_mangling_style (`i i :: arg_path) va) ts xs
+                        |> function
+                        | Some es -> es >>=* fun x -> mk_result path x
+                        | None ->
+                          let ts_len = List.length ts in
+                          let xs_len = List.length xs in
+                          let msg = sprintf "expecting an array of length %d, but the given has a length of %d" ts_len xs_len in
+                          Result.error (msg, arg_path))
+                  | _, Some jv -> Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
+                  | _, None -> Result.error (sprintf "mandatory field '%s' does not exist" arg_fname, path)
                 )
               end
             | `inline_record fields, InlineRecord { mk; _ } ->
@@ -597,7 +636,14 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
           match Json_config.get_tuple_style ct.ct_configs with
           | `arr -> `arr (List.map2 go ts xs)
           | `obj `default ->
-            `obj (List.combine ts xs |> List.mapi (fun i (t, x) -> Json_config.tuple_index_to_field_name i, go t x))
+            `obj (
+              List.combine ts xs
+              |> List.mapi (fun i -> function
+                | Coretype.Option (Option _), _ -> failwith "Nested option types cannot be json fields."
+                | Option _, Expr.None -> None
+                | (t, x) -> Some (Json_config.tuple_index_to_field_name i, go t x)
+              )
+              |> List.filter_map identity)
         end
       | Map (`string, t), Expr.Map xs -> `obj (List.map (fun (k, v) -> k, go t v) xs)
       | Option t, Expr.Some x -> go t x
@@ -621,7 +667,7 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
       match StringMap.find_opt field.rf_name expr with
       | None -> fail (sprintf "missing field '%s'" rf_name)
       | Some value ->
-        let ct, _ = nested_type_to_coretype rf_type in
+        let ct, is_option = nested_type_to_coretype rf_type in
         match nested_style, rf_type with
         | `spreading, _ ->
           begin match validate_spreading_type rf_type with
@@ -631,6 +677,7 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
             | _ -> fail "Only record decl or variant decl can be spread."
             end
           end
+        | `nested, _ when is_option && value = Expr.None -> []
         | `nested, _ -> [ json_field_name, expr_to_json base_mangling_style ct value ]
   in
   let variant_to_json base_mangling_style (ctor: variant_constructor) (expr: 'a Refl.constructor) =
@@ -676,24 +723,30 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
           fail "tuple length mismatch"
         end
       | `tuple_like ts, TupleLike { get; _ } ->
-        let variant_argument_to_json base_mangling_style va =
+        let variant_argument_to_json base_mangling_style va expr =
           if Json_config.get_nested_field_style va.va_configs = `spreading then
-            invalid_arg "Spreading of the nested type of tuple_like is only possible if that element is the only one.";
-          let ct, _ = nested_type_to_coretype va.va_type in
-          expr_to_json base_mangling_style ct
+            invalid_arg "Spreading of the nested type of tuple_like is only valid if there is only a single argument.";
+          let ct, is_option = nested_type_to_coretype va.va_type in
+          expr_to_json base_mangling_style ct expr, is_option
         in
         begin match ts, get value, Json_config.get_tuple_style ctor.vc_configs with
         | [], [], _ -> `obj discriminator_field
         | [t], [e], _ ->
-          let value = variant_argument_to_json base_mangling_style t e in
-          `obj (discriminator_field @ [arg_fname, value])
+          let value, is_option = variant_argument_to_json base_mangling_style t e in
+          if is_option && e = Expr.None then
+            `obj discriminator_field
+          else
+            `obj (discriminator_field @ [arg_fname, value])
         | ts, es, `arr ->
-          let value = `arr (List.map2 (variant_argument_to_json base_mangling_style) ts es) in
+          let value = `arr (List.map2 (fun va expr -> variant_argument_to_json base_mangling_style va expr |> fst) ts es) in
           `obj (discriminator_field @ [arg_fname, value])
         | ts, es, `obj `default ->
-          let fields = List.combine ts es |> List.mapi (fun i (t, x) ->
-            Json_config.tuple_index_to_field_name i,
-            variant_argument_to_json base_mangling_style t x)
+          let fields = List.combine ts es |> List.mapi (fun i (t, e) ->
+            let value, is_option = variant_argument_to_json base_mangling_style t e in
+            if is_option && e = Expr.None then None
+            else
+              Some (Json_config.tuple_index_to_field_name i, value)
+            ) |&?> identity
           in
           `obj (discriminator_field @ fields)
         end

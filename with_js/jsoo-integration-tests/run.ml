@@ -23,6 +23,7 @@ module Ts = Ts2ocaml
 module Faker = Json_schema_faker
 
 open Bindoj_base
+open Bindoj_base.Runtime
 open Bindoj_test_common.Typedesc_generated_examples
 
 let notNone (_: 'a Alcotest.testable) : 'a option Alcotest.testable =
@@ -120,7 +121,8 @@ let create_test_cases name (module Ex : T) filter =
 
   let handle_error = function
     | Ok x -> Some x
-    | Error (msg, _, _) -> eprintf "%s\n" msg; None
+    | Error e ->
+      eprintf "%s\n" (OfJsonResult.Err.to_string e); None
   in
 
   let interpreted jv =

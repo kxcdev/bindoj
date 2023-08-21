@@ -51,13 +51,9 @@ let ts_ast : ts_ast option = Some [
         tsa_name = "NamedJson";
         tsa_type_parameters = [];
         tsa_type_desc =
-          `type_literal [
-              { tsps_modifiers = [];
-                tsps_name = "json";
-                tsps_type_desc = `type_reference "json_value"; };
-              { tsps_modifiers = [];
-                tsps_name = "name";
-                tsps_type_desc = `type_reference "string"; };
+          `type_literal Util.Ts_ast.[
+              property "json" (`type_reference "json_value");
+              property "name" (`type_reference "string");
             ];};
   ]
 

@@ -46,20 +46,16 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
   )
 
 let ts_ast : ts_ast option =
-  let make_case tsps_name tsps_type_desc =
-    { tsps_modifiers = [];
-        tsps_name;
-        tsps_type_desc; } in
   let lit =
-    `type_literal [
-        make_case "unit" (`literal_type (`numeric_literal 1.));
-        make_case "bool" (`type_reference "boolean");
-        make_case "int" (`type_reference "number");
-        make_case "float" (`type_reference "number");
-        make_case "string" (`type_reference "string");
-        make_case "uchar" (`type_reference "string");
-        make_case "byte" (`type_reference "number");
-        make_case "bytes" (`type_reference "string");
+    `type_literal Util.Ts_ast.[
+        property "unit" (`literal_type (`numeric_literal 1.));
+        property "bool" (`type_reference "boolean");
+        property "int" (`type_reference "number");
+        property "float" (`type_reference "number");
+        property "string" (`type_reference "string");
+        property "uchar" (`type_reference "string");
+        property "byte" (`type_reference "number");
+        property "bytes" (`type_reference "string");
       ] in
   [ `type_alias_declaration {
         tsa_modifiers = [`export];

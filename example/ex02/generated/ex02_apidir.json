@@ -12,29 +12,12 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/ProductQuery" },
               "examples": {
-                "Sample to get all products": {
-                  "value": {
-                    "searchQuery": null,
-                    "minimumPrice": null,
-                    "maximumPrice": null,
-                    "limit": null
-                  }
-                },
+                "Sample to get all products": { "value": {} },
                 "Sample with search query": {
-                  "value": {
-                    "searchQuery": "novel",
-                    "minimumPrice": null,
-                    "maximumPrice": null,
-                    "limit": null
-                  }
+                  "value": { "searchQuery": "novel" }
                 },
                 "Sample with minimum price": {
-                  "value": {
-                    "searchQuery": null,
-                    "minimumPrice": 1000,
-                    "maximumPrice": null,
-                    "limit": null
-                  }
+                  "value": { "minimumPrice": 1000 }
                 }
               }
             }
@@ -141,41 +124,13 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/OrderQuery" },
               "examples": {
-                "sample to get all orders": {
-                  "value": {
-                    "products": null,
-                    "status": null,
-                    "minimumPrice": null,
-                    "maximumPrice": null,
-                    "limit": null
-                  }
-                },
-                "Sample with products": {
-                  "value": {
-                    "products": [0],
-                    "status": null,
-                    "minimumPrice": null,
-                    "maximumPrice": null,
-                    "limit": null
-                  }
-                },
+                "sample to get all orders": { "value": {} },
+                "Sample with products": { "value": { "products": [0] } },
                 "Sample with status": {
-                  "value": {
-                    "products": null,
-                    "status": ["Delivered"],
-                    "minimumPrice": null,
-                    "maximumPrice": null,
-                    "limit": null
-                  }
+                  "value": { "status": ["Delivered"] }
                 },
                 "Sample with minimum total price": {
-                  "value": {
-                    "products": null,
-                    "status": null,
-                    "minimumPrice": 1500,
-                    "maximumPrice": null,
-                    "limit": null
-                  }
+                  "value": { "minimumPrice": 1500 }
                 }
               }
             }

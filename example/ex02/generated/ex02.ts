@@ -47,17 +47,12 @@ export type OrderStatus = "Unpaid" | "Paid" | "Shipped" | "Delivered" | "Cancele
 
 export type Order = { details: OrderDetails; id: OrderId; status: OrderStatus; totalPrice: number };
 
-export type ProductQuery = {
-  limit: number | null | undefined;
-  maximumPrice: number | null | undefined;
-  minimumPrice: number | null | undefined;
-  searchQuery: string | null | undefined;
-};
+export type ProductQuery = { limit?: number; maximumPrice?: number; minimumPrice?: number; searchQuery?: string };
 
 export type OrderQuery = {
-  limit: number | null | undefined;
-  maximumPrice: number | null | undefined;
-  minimumPrice: number | null | undefined;
-  products: number[] | null | undefined;
-  status: OrderStatus[] | null | undefined;
+  limit?: number;
+  maximumPrice?: number;
+  minimumPrice?: number;
+  products?: number[];
+  status?: OrderStatus[];
 };

@@ -68,20 +68,14 @@ let ts_ast : ts_ast option =
   let discriminator = "kind" in
   let int_nil =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "intnil"); } ] in
+      Util.Ts_ast.[
+        property discriminator (`literal_type (`string_literal "intnil"))] in
   let int_cons =
     `type_literal
-      [ { tsps_modifiers = [];
-          tsps_name = discriminator;
-          tsps_type_desc = `literal_type (`string_literal "intcons"); };
-        { tsps_modifiers = [];
-          tsps_name = "_0";
-          tsps_type_desc = `type_reference "number" };
-        { tsps_modifiers = [];
-          tsps_name = "_1";
-          tsps_type_desc = `type_reference mangled_json_name } ] in
+      Util.Ts_ast.[
+        property discriminator (`literal_type (`string_literal "intcons"));
+        property "_0" (`type_reference "number");
+        property "_1" (`type_reference mangled_json_name) ] in
   let cstrs = ["IntNil", int_nil; "IntCons", int_cons] in
   let options : Util.Ts_ast.options =
     { discriminator;

@@ -76,18 +76,13 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc =
             `type_literal
-              [ { tsps_modifiers = [];
-                  tsps_name = "admission_year";
-                  tsps_type_desc = `type_reference "number"; };
-                { tsps_modifiers = [];
-                  tsps_name = "name";
-                  tsps_type_desc = `type_reference "string"; };
-                { tsps_modifiers = [];
-                  tsps_name = "caseValue";
-                  tsps_type_desc = `union [
+              Util.Ts_ast.[
+                property "admission_year" (`type_reference "number");
+                property "name" (`type_reference "string");
+                property "caseValue" (`union [
                     `literal_type (`string_literal "Case-at0");
                     `literal_type (`string_literal "case_at1");
-                  ]; };
+                  ]);
               ]; } ]
 
 let expected_json_shape_explanation =

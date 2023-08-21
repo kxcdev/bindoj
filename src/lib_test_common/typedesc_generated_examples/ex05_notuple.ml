@@ -57,7 +57,6 @@ let sample_value02 : sample = {
     map = [];
   };
   jv = `obj [
-    "option", `null;
     "list", `arr [];
     "map", `obj [];
   ]

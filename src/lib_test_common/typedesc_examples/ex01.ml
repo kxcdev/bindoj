@@ -53,12 +53,9 @@ let ts_ast : ts_ast option =
           tsa_type_parameters = [];
           tsa_type_desc =
             `type_literal
-              [ { tsps_modifiers = [];
-                  tsps_name = "admissionYear";
-                  tsps_type_desc = `type_reference "number"; };
-                { tsps_modifiers = [];
-                  tsps_name = "name";
-                  tsps_type_desc = `type_reference "string"; }; ]; } ]
+              Util.Ts_ast.[
+                property "admissionYear" (`type_reference "number");
+                property "name" (`type_reference "string") ]; } ]
 
 let expected_json_shape_explanation =
   Some (

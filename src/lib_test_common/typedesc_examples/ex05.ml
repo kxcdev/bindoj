@@ -42,40 +42,40 @@ let decl : type_decl =
 
     record_field "objtuple" cty_int_obt;
 
-    record_field "nested" (Coretype.(
-      mk_tuple [
+    record_field "nested" (
+      Coretype.mk_tuple [
         cty_int_opt.ct_desc;
         cty_int_lst.ct_desc;
         cty_int_tpl.ct_desc;
       ]
-    ));
+    );
 
     record_field "map" cty_int_map;
   ]
 
 let decl_with_docstr : type_decl =
   record_decl "complex_types" [
-    record_field "option" (Coretype.(mk_option (prim `int)))
+    record_field "option" cty_int_opt
       ~doc:(`docstr "int option");
 
-    record_field "list" (Coretype.(mk_list (prim `int)))
+    record_field "list" cty_int_lst
       ~doc:(`docstr "int list");
 
-    record_field "tuple" (Coretype.(mk_tuple [prim `int; prim `int]))
+    record_field "tuple" cty_int_tpl
       ~doc:(`docstr "(int * int)");
 
-    record_field "objtuple" (Coretype.(mk_tuple ~configs:tuple_configs [prim `int; prim `int]))
+    record_field "objtuple" cty_int_obt
       ~doc:(`docstr "(int * int) (as object)");
 
-    record_field "nested" (Coretype.(
-      mk_tuple [
-        option (prim `int);
-        list (prim `int);
-        tuple [prim `int; prim `int];
+    record_field "nested" (
+      Coretype.mk_tuple [
+        cty_int_opt.ct_desc;
+        cty_int_lst.ct_desc;
+        cty_int_tpl.ct_desc;
       ]
-    )) ~doc:(`docstr "(int option * int list * (int * int))");
+    ) ~doc:(`docstr "(int option * int list * (int * int))");
 
-    record_field "map" (Coretype.(mk_map `string (prim `int)))
+    record_field "map" cty_int_map
       ~doc:(`docstr "map<string, int>");
   ] ~doc:(`docstr "collection of complex types")
 
@@ -100,26 +100,55 @@ let fwrt : (unit, unit, unit) ts_fwrt_decl =
     ]
   )
 
-let ts_ast : ts_ast option = None
+let ts_ast : ts_ast option =
+  Some [
+    `type_alias_declaration
+      { tsa_modifiers = [`export];
+        tsa_name = "ComplexTypes";
+        tsa_type_parameters = [];
+        tsa_type_desc =
+          let ts_number = `type_reference "number" in
+          `type_literal
+            Util.Ts_ast.[
+              property ~optional:true "option" ts_number;
+              property "list" (`array ts_number);
+              property "tuple" (`tuple [ ts_number; ts_number ]);
+              property "objtuple" (`type_literal [
+                property "_0" ts_number;
+                property "_1" ts_number;
+              ]);
+              property "nested" (`tuple
+                [ `union [ts_number; `type_reference "null"; `type_reference "undefined" ];
+                  `array ts_number;
+                  `tuple [ ts_number; ts_number ];
+                ]);
+              property "map" (`record (`type_reference "string", ts_number));
+
+            ]
+        }
+  ]
 
 let expected_json_shape_explanation =
   Some (
     `with_warning
       ("not considering any config if exists",
         (`named
-          ("ComplexTypes",
-            (`object_of
+            ("ComplexTypes",
+              (`object_of
                 [`optional_field ("option", `integral);
                 `mandatory_field ("list", (`array_of `integral));
                 `mandatory_field ("tuple", (`tuple_of [`integral; `integral]));
                 `mandatory_field
-                  ("objtuple", (`tuple_of [`integral; `integral]));
+                  ("objtuple",
+                    (`object_of
+                        [`mandatory_field ("_0", `integral);
+                        `mandatory_field ("_1", `integral)]));
                 `mandatory_field
                   ("nested",
                     (`tuple_of
-                      [`nullable `integral;
-                      `array_of `integral;
-                      `tuple_of [`integral; `integral]]));
+                        [`nullable `integral;
+                        `array_of `integral;
+                        `tuple_of [`integral; `integral]]));
                 `mandatory_field ("map", (`record_of `integral))]))))
   )
 

@@ -49,14 +49,9 @@ let ts_ast : ts_ast option = Some [
     tsa_name = "Objtuple";
     tsa_type_parameters = [];
     tsa_type_desc =
-      `type_literal [
-        { tsps_modifiers = [];
-          tsps_name = "_0";
-          tsps_type_desc = `type_reference "number" };
-        { tsps_modifiers = [];
-          tsps_name = "_1";
-          tsps_type_desc =
-          `type_reference "string" }; ]
+      `type_literal Util.Ts_ast.[
+        property "_0" (`type_reference "number");
+        property "_1" (`type_reference "string"); ]
   }
 ]
 
@@ -64,7 +59,11 @@ let expected_json_shape_explanation =
   Some (
     `with_warning
      ("not considering any config if exists",
-       (`named ("Objtuple", (`tuple_of [`proper_float; `string]))))
+       (`named
+          ("Objtuple",
+            (`object_of
+               [`mandatory_field ("_0", `proper_float);
+               `mandatory_field ("_1", `string)]))))
   )
 
 open Bindoj_openapi.V3

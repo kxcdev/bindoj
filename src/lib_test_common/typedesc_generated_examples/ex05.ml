@@ -73,7 +73,6 @@ let sample_value02 : sample = {
     map = [];
   };
   jv = `obj [
-    "option", `null;
     "list", `arr [];
     "tuple", `arr [`num 0.; `num 0.];
     "objtuple", `obj ["_0", `num 0.; "_1", `num 0.];

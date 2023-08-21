@@ -323,13 +323,19 @@ module Code = struct
          |> Rope.to_string);
       test_case'
         "rope_of_ts_type_desc"
-        ("{ " ^ var_x ^ " : " ^ number ^ " , " ^ var_y ^ " : " ^ number ^ " }" )
+        ("{ " ^ var_x ^ " : " ^ number ^ " , " ^ var_y ^ " : " ^ number ^ " , " ^ var_z ^ "? :" ^ number ^ " }" )
         (`type_literal [
             { tsps_modifiers = [];
               tsps_name = var_x;
+              tsps_optional = false;
               tsps_type_desc = `type_reference number; };
             { tsps_modifiers = [];
               tsps_name = var_y;
+              tsps_optional = false;
+              tsps_type_desc = `type_reference number; };
+            { tsps_modifiers = [];
+              tsps_name = var_z;
+              tsps_optional = true;
               tsps_type_desc = `type_reference number; };
           ]
          |> rope_of_ts_type_desc
@@ -447,7 +453,7 @@ module Code = struct
     let statement_case = [
       test_case'
         "rope_of_ts_statement"
-        ("type " ^ type_A ^ " = { " ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ ": " ^ string ^ " }")
+        ("type " ^ type_A ^ " = { " ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ ": " ^ string ^ ", " ^ var_z ^ "?: " ^ string ^ " }")
         (`type_alias_declaration {
             tsa_modifiers = [];
             tsa_name = type_A;
@@ -455,9 +461,15 @@ module Code = struct
             tsa_type_desc = `type_literal [
                 { tsps_modifiers = [];
                   tsps_name = var_x;
+                  tsps_optional = false;
                   tsps_type_desc = `type_reference number; };
                 { tsps_modifiers = [];
                   tsps_name = var_y;
+                  tsps_optional = false;
+                  tsps_type_desc = `type_reference string; };
+                { tsps_modifiers = [];
+                  tsps_name = var_z;
+                  tsps_optional = true;
                   tsps_type_desc = `type_reference string; };
               ];
           }
