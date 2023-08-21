@@ -65,17 +65,13 @@ and named_json_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x0 ->
               List.assoc_opt "json" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'json' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'json' does not exist", path)
               >>= (fun path x ->
                     Bindoj_std_runtime.Json_value.of_json' ~path x
                     |> Result.map_error (fun (msg, path, _) -> (msg, path)))

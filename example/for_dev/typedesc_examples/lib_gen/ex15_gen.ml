@@ -173,16 +173,13 @@ let nested_variant_json_shape_explanation =
                    `mandatory_field ("tag", `exactly (`str "student3"));
                    `mandatory_field
                      ( "value",
-                       `tuple_of
-                         [
-                           `named
-                             ( "Student",
-                               `object_of
-                                 [
-                                   `mandatory_field ("admissionYear", `integral);
-                                   `mandatory_field ("name", `string);
-                                 ] );
-                         ] );
+                       `named
+                         ( "Student",
+                           `object_of
+                             [
+                               `mandatory_field ("admissionYear", `integral);
+                               `mandatory_field ("name", `string);
+                             ] ) );
                  ];
                `object_of
                  [
@@ -195,26 +192,23 @@ let nested_variant_json_shape_explanation =
                    `mandatory_field ("tag", `exactly (`str "int-list1"));
                    `mandatory_field
                      ( "value",
-                       `tuple_of
-                         [
-                           `named
-                             ( "IntList",
-                               `anyone_of
+                       `named
+                         ( "IntList",
+                           `anyone_of
+                             [
+                               `object_of
                                  [
-                                   `object_of
-                                     [
-                                       `mandatory_field
-                                         ("kind", `exactly (`str "intnil"));
-                                     ];
-                                   `object_of
-                                     [
-                                       `mandatory_field
-                                         ("kind", `exactly (`str "intcons"));
-                                       `mandatory_field
-                                         ("arg", `tuple_of [ `integral; `self ]);
-                                     ];
-                                 ] );
-                         ] );
+                                   `mandatory_field
+                                     ("kind", `exactly (`str "intnil"));
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("kind", `exactly (`str "intcons"));
+                                   `mandatory_field
+                                     ("arg", `tuple_of [ `integral; `self ]);
+                                 ];
+                             ] ) );
                  ];
                `object_of
                  [
@@ -311,18 +305,13 @@ and nested_variant_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "admissionYear" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'admissionYear' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'admissionYear' does not exist", path)
               >>= int_of_json' (`f "admissionYear" :: path)
               >>= fun x0 ->
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x1 ->
               Ok ({ admission_year = x0; name = x1 } : Ex01_gen.student)
@@ -392,10 +381,8 @@ and nested_variant_of_json' =
           | `obj (("tag", `str "student1") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "student" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'student' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'student' does not exist", path)
               >>= ex01_gen__student_of_json_nested (`f "student" :: path)
               >>= fun x0 -> Ok (Student1 { student = x0 })
           | `obj (("tag", `str "student2") :: _) ->

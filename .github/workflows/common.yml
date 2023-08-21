@@ -59,9 +59,30 @@ jobs:
 
       - name: check diff
         run: |
-          git add example/*/generated/
-          git add example/for_dev/typedesc_examples/
-          git diff --cached --exit-code
+          GITHUB_STATUS_SHA="${{ github.event.pull_request.head.sha }}"
+          GITHUB_STATUS_SHA="${GITHUB_STATUS_SHA:=$GITHUB_SHA}"
+          git add example/
+          git diff --cached --exit-code && ( \
+            curl --request POST \
+            --url $GITHUB_API_URL/repos/${{ github.repository }}/statuses/$GITHUB_STATUS_SHA \
+            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            --header 'content-type: application/json' \
+            --data '{
+              "state": "success",
+              "context": "verify-built-artifact"
+              }' \
+            --fail \
+          ) || ( \
+            curl --request POST \
+            --url $GITHUB_API_URL/repos/${{ github.repository }}/statuses/$GITHUB_STATUS_SHA \
+            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            --header 'content-type: application/json' \
+            --data '{
+              "state": "failure",
+              "context": "verify-built-artifact"
+              }' \
+            --fail \
+          )
 
       - run: |
           opam exec -- make doc

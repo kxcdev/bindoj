@@ -12,9 +12,9 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/XyOpt" },
               "examples": {
-                "example_0": { "value": { "xOpt": null, "yOpt": null } },
-                "example_1": { "value": { "xOpt": null, "yOpt": 42 } },
-                "example_2": { "value": { "xOpt": -25, "yOpt": null } },
+                "example_0": { "value": {} },
+                "example_1": { "value": { "yOpt": 42 } },
+                "example_2": { "value": { "xOpt": -25 } },
                 "example_3": { "value": { "xOpt": 512, "yOpt": -119 } }
               }
             }
@@ -50,9 +50,9 @@
             "application/json": {
               "schema": { "$ref": "#/components/schemas/XyOpt" },
               "examples": {
-                "example_0": { "value": { "xOpt": null, "yOpt": null } },
-                "example_1": { "value": { "xOpt": null, "yOpt": 42 } },
-                "example_2": { "value": { "xOpt": -25, "yOpt": null } },
+                "example_0": { "value": {} },
+                "example_1": { "value": { "yOpt": 42 } },
+                "example_2": { "value": { "xOpt": -25 } },
                 "example_3": { "value": { "xOpt": 512, "yOpt": -119 } }
               }
             }

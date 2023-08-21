@@ -44,10 +44,7 @@ let complex_types_json_shape_explanation =
 [@@warning "-39"]
 
 let rec complex_types_to_json =
-  (let option_to_json t_to_json = function
-     | Some x -> t_to_json x
-     | None -> (`null : Kxclib.Json.jv)
-   and map_to_json key_to_string v_to_json fields =
+  (let map_to_json key_to_string v_to_json fields =
      let fields =
        fields |> List.map (fun (k, v) -> (key_to_string k, v_to_json v))
      in
@@ -56,11 +53,13 @@ let rec complex_types_to_json =
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    fun { option = x0; list = x1; map = x2 } ->
      `obj
-       [
-         ("option", (option_to_json int_to_json) x0);
-         ("list", (list_to_json int_to_json) x1);
-         ("map", (map_to_json (fun (k : string) -> k) int_to_json) x2);
-       ]
+       (List.filter_map
+          (fun x -> x)
+          [ Option.map (fun x0 -> ("option", int_to_json x0)) x0 ]
+       @ [
+           ("list", (list_to_json int_to_json) x1);
+           ("map", (map_to_json (fun (k : string) -> k) int_to_json) x2);
+         ])
     : complex_types -> Kxclib.Json.jv)
 [@@warning "-39"]
 
@@ -133,16 +132,13 @@ and complex_types_of_json' =
               |> (option_of_json' int_of_json') (`f "option" :: path)
               >>= fun x0 ->
               List.assoc_opt "list" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'list' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'list' does not exist", path)
               >>= (list_of_json' int_of_json') (`f "list" :: path)
               >>= fun x1 ->
               List.assoc_opt "map" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field 'map' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'map' does not exist", path)
               >>= (map_of_json' (fun (s : string) -> Some s) int_of_json')
                     (`f "map" :: path)
               >>= fun x2 -> Ok { option = x0; list = x1; map = x2 }

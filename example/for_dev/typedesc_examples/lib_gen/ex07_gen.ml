@@ -58,7 +58,7 @@ let customized_union_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("tag", `exactly (`str "case1'"));
-                   `mandatory_field ("value", `tuple_of [ `integral ]);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
@@ -112,15 +112,13 @@ and customized_union_of_json' =
           | `obj (("tag", `str "case2'") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "x'" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field 'x'' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'x'' does not exist", path)
               >>= int_of_json' (`f "x'" :: path)
               >>= fun x0 ->
               List.assoc_opt "y'" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field 'y'' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'y'' does not exist", path)
               >>= int_of_json' (`f "y'" :: path)
               >>= fun x1 -> Ok (Case2 { x = x0; y = x1 })
           | `obj (("tag", `str discriminator_value) :: _) ->

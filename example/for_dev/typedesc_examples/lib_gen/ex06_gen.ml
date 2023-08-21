@@ -197,58 +197,43 @@ and various_prim_types_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "unit" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'unit' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'unit' does not exist", path)
               >>= unit_of_json' (`f "unit" :: path)
               >>= fun x0 ->
               List.assoc_opt "bool" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'bool' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'bool' does not exist", path)
               >>= bool_of_json' (`f "bool" :: path)
               >>= fun x1 ->
               List.assoc_opt "int" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field 'int' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'int' does not exist", path)
               >>= int_of_json' (`f "int" :: path)
               >>= fun x2 ->
               List.assoc_opt "float" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'float' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'float' does not exist", path)
               >>= float_of_json' (`f "float" :: path)
               >>= fun x3 ->
               List.assoc_opt "string" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'string' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'string' does not exist", path)
               >>= string_of_json' (`f "string" :: path)
               >>= fun x4 ->
               List.assoc_opt "uchar" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'uchar' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'uchar' does not exist", path)
               >>= uchar_of_json' (`f "uchar" :: path)
               >>= fun x5 ->
               List.assoc_opt "byte" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'byte' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'byte' does not exist", path)
               >>= byte_of_json' (`f "byte" :: path)
               >>= fun x6 ->
               List.assoc_opt "bytes" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'bytes' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'bytes' does not exist", path)
               >>= bytes_of_json' (`f "bytes" :: path)
               >>= fun x7 ->
               Ok

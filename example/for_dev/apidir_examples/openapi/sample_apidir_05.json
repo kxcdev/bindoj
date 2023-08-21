@@ -62,9 +62,7 @@
                     "map": { "foo": 4, "bar": 2 }
                   }
                 },
-                "example_1": {
-                  "value": { "option": null, "list": [], "map": {} }
-                }
+                "example_1": { "value": { "list": [], "map": {} } }
               }
             }
           },

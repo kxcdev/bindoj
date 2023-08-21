@@ -1,6 +1,1 @@
-[
-  { "xOpt": null, "yOpt": null },
-  { "xOpt": null, "yOpt": 42 },
-  { "xOpt": -25, "yOpt": null },
-  { "xOpt": 512, "yOpt": -119 }
-]
+[{}, { "yOpt": 42 }, { "xOpt": -25 }, { "xOpt": 512, "yOpt": -119 }]

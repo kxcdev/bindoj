@@ -106,7 +106,7 @@ let person_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "With_id"));
-                   `mandatory_field ("arg", `tuple_of [ `integral ]);
+                   `mandatory_field ("arg", `integral);
                  ];
                `object_of
                  [
@@ -189,43 +189,30 @@ and person_of_json' =
           | `obj (("kind", `str "Student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "student_id" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'student_id' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'student_id' does not exist", path)
               >>= int_of_json' (`f "student_id" :: path)
               >>= fun x0 ->
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x1 -> Ok (Student { student_id = x0; name = x1 })
           | `obj (("kind", `str "Teacher") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "faculty_id" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'faculty_id' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'faculty_id' does not exist", path)
               >>= int_of_json' (`f "faculty_id" :: path)
               >>= fun x0 ->
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x1 ->
               List.assoc_opt "department" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'department' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'department' does not exist", path)
               >>= string_of_json' (`f "department" :: path)
               >>= fun x2 ->
               Ok (Teacher { faculty_id = x0; name = x1; department = x2 })

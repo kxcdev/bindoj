@@ -1,1 +1,1 @@
-export type ComplexTypesNotuple = { list: number[]; map: Record<string, number>; option: number | null | undefined };
+export type ComplexTypesNotuple = { list: number[]; map: Record<string, number>; option?: number };

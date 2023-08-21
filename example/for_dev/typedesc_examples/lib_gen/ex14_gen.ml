@@ -20,7 +20,13 @@ let (objtuple_reflect : _ Bindoj_runtime.Refl.t) =
 let objtuple_json_shape_explanation =
   (`with_warning
      ( "not considering any config if exists",
-       `named ("Objtuple", `tuple_of [ `proper_float; `string ]) )
+       `named
+         ( "Objtuple",
+           `object_of
+             [
+               `mandatory_field ("_0", `proper_float);
+               `mandatory_field ("_1", `string);
+             ] ) )
     : Bindoj_runtime.json_shape_explanation)
 [@@warning "-39"]
 
@@ -56,19 +62,17 @@ and objtuple_of_json' =
         in
         fun path -> function
           | (`obj fields : Kxclib.Json.jv) ->
-              let fields = Bindoj_runtime.StringMap.of_list fields in
               let ( >>= ) = Result.bind in
-              (Bindoj_runtime.StringMap.find_opt "_0" fields |> function
-               | Some a -> Ok a
-               | None -> Error ("mandatory field '_0' does not exist", path))
+              List.assoc_opt "_0" fields
+              |> Option.to_result
+                   ~none:("mandatory field '_0' does not exist", path)
+              >>= float_of_json' (`f "_0" :: path)
               >>= fun x0 ->
-              (Bindoj_runtime.StringMap.find_opt "_1" fields |> function
-               | Some a -> Ok a
-               | None -> Error ("mandatory field '_1' does not exist", path))
-              >>= fun x1 ->
-              let ( >>= ) = Result.bind in
-              float_of_json' (`f "_0" :: path) x0 >>= fun x0 ->
-              string_of_json' (`f "_1" :: path) x1 >>= fun x1 -> Ok (x0, x1)
+              List.assoc_opt "_1" fields
+              |> Option.to_result
+                   ~none:("mandatory field '_1' does not exist", path)
+              >>= string_of_json' (`f "_1" :: path)
+              >>= fun x1 -> Ok (x0, x1)
           | jv ->
               Error
                 ( Printf.sprintf

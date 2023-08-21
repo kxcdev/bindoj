@@ -7,12 +7,5 @@
     "nested": [42, [4, 2], [4, 2]],
     "map": { "foo": 4, "bar": 2 }
   },
-  {
-    "option": null,
-    "list": [],
-    "tuple": [0, 0],
-    "objtuple": { "_0": 0, "_1": 0 },
-    "nested": [null, [], [0, 0]],
-    "map": {}
-  }
+  { "list": [], "tuple": [0, 0], "objtuple": { "_0": 0, "_1": 0 }, "nested": [null, [], [0, 0]], "map": {} }
 ]

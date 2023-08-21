@@ -36,16 +36,15 @@ let xy_opt_json_shape_explanation =
 [@@warning "-39"]
 
 let rec xy_opt_to_json =
-  (let option_to_json t_to_json = function
-     | Some x -> t_to_json x
-     | None -> (`null : Kxclib.Json.jv)
-   and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+  (let int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    fun { x_opt = x0; y_opt = x1 } ->
      `obj
-       [
-         ("xOpt", (option_to_json int_to_json) x0);
-         ("yOpt", (option_to_json int_to_json) x1);
-       ]
+       (List.filter_map
+          (fun x -> x)
+          [
+            Option.map (fun x0 -> ("xOpt", int_to_json x0)) x0;
+            Option.map (fun x1 -> ("yOpt", int_to_json x1)) x1;
+          ])
     : xy_opt -> Kxclib.Json.jv)
 [@@warning "-39"]
 

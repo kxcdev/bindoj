@@ -50,7 +50,8 @@ let int_list_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "intcons"));
-                   `mandatory_field ("arg", `tuple_of [ `integral; `self ]);
+                   `mandatory_field ("_0", `integral);
+                   `mandatory_field ("_1", `self);
                  ];
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
@@ -94,15 +95,13 @@ and int_list_of_json' =
           | `obj (("kind", `str "intcons") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "_0" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field '_0' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field '_0' does not exist", path)
               >>= int_of_json' (`f "_0" :: path)
               >>= fun x0 ->
               List.assoc_opt "_1" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field '_1' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field '_1' does not exist", path)
               >>= of_json_impl (`f "_1" :: path)
               >>= fun x1 -> Ok (IntCons (x0, x1))
           | `obj (("kind", `str discriminator_value) :: _) ->

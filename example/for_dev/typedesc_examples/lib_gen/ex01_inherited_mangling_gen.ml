@@ -98,26 +98,19 @@ and student_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "admission_year" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ( "mandatory field 'admission_year' does not exist",
-                           path ))
+              |> Option.to_result
+                   ~none:
+                     ("mandatory field 'admission_year' does not exist", path)
               >>= int_of_json' (`f "admission_year" :: path)
               >>= fun x0 ->
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x1 ->
               List.assoc_opt "caseValue" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'caseValue' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'caseValue' does not exist", path)
               >>= (fun path -> function
                     | `str s ->
                         (function

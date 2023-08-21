@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "IntOpt",
+  "description": "alias of int option type",
+  "nullable": true,
+  "id": "#IntOpt",
+  "type": "integer"
+}

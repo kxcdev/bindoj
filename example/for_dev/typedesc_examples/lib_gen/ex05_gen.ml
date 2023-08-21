@@ -86,7 +86,13 @@ let complex_types_json_shape_explanation =
                `optional_field ("option", `integral);
                `mandatory_field ("list", `array_of `integral);
                `mandatory_field ("tuple", `tuple_of [ `integral; `integral ]);
-               `mandatory_field ("objtuple", `tuple_of [ `integral; `integral ]);
+               `mandatory_field
+                 ( "objtuple",
+                   `object_of
+                     [
+                       `mandatory_field ("_0", `integral);
+                       `mandatory_field ("_1", `integral);
+                     ] );
                `mandatory_field
                  ( "nested",
                    `tuple_of
@@ -120,30 +126,32 @@ let rec complex_types_to_json =
          map = x5;
        } ->
      `obj
-       [
-         ("option", (option_to_json int_to_json) x0);
-         ("list", (list_to_json int_to_json) x1);
-         ( "tuple",
-           (fun (x0, x1) : Kxclib.Json.jv ->
-             `arr [ int_to_json x0; int_to_json x1 ])
-             x2 );
-         ( "objtuple",
-           (fun (x0, x1) : Kxclib.Json.jv ->
-             `obj [ ("_0", int_to_json x0); ("_1", int_to_json x1) ])
-             x3 );
-         ( "nested",
-           (fun (x0, x1, x2) : Kxclib.Json.jv ->
-             `arr
-               [
-                 (option_to_json int_to_json) x0;
-                 (list_to_json int_to_json) x1;
-                 (fun (x0, x1) : Kxclib.Json.jv ->
-                   `arr [ int_to_json x0; int_to_json x1 ])
-                   x2;
-               ])
-             x4 );
-         ("map", (map_to_json (fun (k : string) -> k) int_to_json) x5);
-       ]
+       (List.filter_map
+          (fun x -> x)
+          [ Option.map (fun x0 -> ("option", int_to_json x0)) x0 ]
+       @ [
+           ("list", (list_to_json int_to_json) x1);
+           ( "tuple",
+             (fun (x0, x1) : Kxclib.Json.jv ->
+               `arr [ int_to_json x0; int_to_json x1 ])
+               x2 );
+           ( "objtuple",
+             (fun (x0, x1) : Kxclib.Json.jv ->
+               `obj [ ("_0", int_to_json x0); ("_1", int_to_json x1) ])
+               x3 );
+           ( "nested",
+             (fun (x0, x1, x2) : Kxclib.Json.jv ->
+               `arr
+                 [
+                   (option_to_json int_to_json) x0;
+                   (list_to_json int_to_json) x1;
+                   (fun (x0, x1) : Kxclib.Json.jv ->
+                     `arr [ int_to_json x0; int_to_json x1 ])
+                     x2;
+                 ])
+               x4 );
+           ("map", (map_to_json (fun (k : string) -> k) int_to_json) x5);
+         ])
     : complex_types -> Kxclib.Json.jv)
 [@@warning "-39"]
 
@@ -216,17 +224,13 @@ and complex_types_of_json' =
               |> (option_of_json' int_of_json') (`f "option" :: path)
               >>= fun x0 ->
               List.assoc_opt "list" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'list' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'list' does not exist", path)
               >>= (list_of_json' int_of_json') (`f "list" :: path)
               >>= fun x1 ->
               List.assoc_opt "tuple" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'tuple' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'tuple' does not exist", path)
               >>= (fun path -> function
                     | (`arr [ x0; x1 ] : Kxclib.Json.jv) ->
                         let ( >>= ) = Result.bind in
@@ -250,30 +254,21 @@ and complex_types_of_json' =
                     (`f "tuple" :: path)
               >>= fun x2 ->
               List.assoc_opt "objtuple" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'objtuple' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'objtuple' does not exist", path)
               >>= (fun path -> function
                     | (`obj fields : Kxclib.Json.jv) ->
-                        let fields = Bindoj_runtime.StringMap.of_list fields in
                         let ( >>= ) = Result.bind in
-                        (Bindoj_runtime.StringMap.find_opt "_0" fields
-                         |> function
-                         | Some a -> Ok a
-                         | None ->
-                             Error ("mandatory field '_0' does not exist", path))
+                        List.assoc_opt "_0" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_0' does not exist", path)
+                        >>= int_of_json' (`f "_0" :: path)
                         >>= fun x0 ->
-                        (Bindoj_runtime.StringMap.find_opt "_1" fields
-                         |> function
-                         | Some a -> Ok a
-                         | None ->
-                             Error ("mandatory field '_1' does not exist", path))
-                        >>= fun x1 ->
-                        let ( >>= ) = Result.bind in
-                        int_of_json' (`f "_0" :: path) x0 >>= fun x0 ->
-                        int_of_json' (`f "_1" :: path) x1 >>= fun x1 ->
-                        Ok (x0, x1)
+                        List.assoc_opt "_1" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_1' does not exist", path)
+                        >>= int_of_json' (`f "_1" :: path)
+                        >>= fun x1 -> Ok (x0, x1)
                     | jv ->
                         Error
                           ( Printf.sprintf
@@ -285,10 +280,8 @@ and complex_types_of_json' =
                     (`f "objtuple" :: path)
               >>= fun x3 ->
               List.assoc_opt "nested" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'nested' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'nested' does not exist", path)
               >>= (fun path -> function
                     | (`arr [ x0; x1; x2 ] : Kxclib.Json.jv) ->
                         let ( >>= ) = Result.bind in
@@ -337,9 +330,8 @@ and complex_types_of_json' =
                     (`f "nested" :: path)
               >>= fun x4 ->
               List.assoc_opt "map" param
-              |> (function
-                   | Some a -> Ok a
-                   | None -> Error ("mandatory field 'map' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'map' does not exist", path)
               >>= (map_of_json' (fun (s : string) -> Some s) int_of_json')
                     (`f "map" :: path)
               >>= fun x5 ->

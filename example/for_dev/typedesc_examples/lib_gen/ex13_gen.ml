@@ -76,10 +76,8 @@ and student_pair_of_json' =
         | `obj param ->
             let ( >>= ) = Result.bind in
             List.assoc_opt "student1" param
-            |> (function
-                 | Some a -> Ok a
-                 | None ->
-                     Error ("mandatory field 'student1' does not exist", path))
+            |> Option.to_result
+                 ~none:("mandatory field 'student1' does not exist", path)
             >>= (fun path x ->
                   (let open Ex01_gen in
                    student_of_json')
@@ -88,10 +86,8 @@ and student_pair_of_json' =
                   (`f "student1" :: path)
             >>= fun x0 ->
             List.assoc_opt "student2" param
-            |> (function
-                 | Some a -> Ok a
-                 | None ->
-                     Error ("mandatory field 'student2' does not exist", path))
+            |> Option.to_result
+                 ~none:("mandatory field 'student2' does not exist", path)
             >>= (fun path x ->
                   (let open Ex01_gen in
                    student_of_json')

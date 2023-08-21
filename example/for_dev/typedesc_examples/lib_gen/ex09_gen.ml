@@ -51,10 +51,8 @@ and with_int53p_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "value" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'value' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'value' does not exist", path)
               >>= int53p_of_json' (`f "value" :: path)
               >>= fun x0 -> Ok { value = x0 }
           | jv ->

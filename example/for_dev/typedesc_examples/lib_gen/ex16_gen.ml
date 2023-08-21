@@ -16,7 +16,7 @@ let rec (nested_record_reflect : _ Bindoj_runtime.Refl.t) =
            (fun { unit; student; int53p; person1; person2 } ->
              StringMap.of_list
                [
-                 ("unit", (Expr.of_refl Ex11_gen.unit_reflect) unit);
+                 ("unit", Expr.of_unit unit);
                  ("student", (Expr.of_refl Ex01_gen.student_reflect) student);
                  ("int53p", (Expr.of_refl Ex09_gen.with_int53p_reflect) int53p);
                  ( "person1",
@@ -26,9 +26,7 @@ let rec (nested_record_reflect : _ Bindoj_runtime.Refl.t) =
                ]);
          mk =
            (fun xs ->
-             xs |> StringMap.find_opt "unit"
-             >>= Expr.to_refl Ex11_gen.unit_reflect
-             >>= fun unit ->
+             xs |> StringMap.find_opt "unit" >>= Expr.to_unit >>= fun unit ->
              xs
              |> StringMap.find_opt "student"
              >>= Expr.to_refl Ex01_gen.student_reflect
@@ -84,8 +82,7 @@ let nested_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field
-                                     ("arg", `tuple_of [ `integral ]);
+                                   `mandatory_field ("arg", `integral);
                                  ];
                                `object_of
                                  [
@@ -134,8 +131,7 @@ let nested_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field
-                                     ("arg", `tuple_of [ `integral ]);
+                                   `mandatory_field ("arg", `integral);
                                  ];
                                `object_of
                                  [
@@ -154,7 +150,7 @@ let nested_record_json_shape_explanation =
                                  ];
                              ] ) );
                    `mandatory_field ("kind", `exactly (`str "With_id"));
-                   `mandatory_field ("arg", `tuple_of [ `integral ]);
+                   `mandatory_field ("arg", `integral);
                  ];
                `object_of
                  [
@@ -185,8 +181,7 @@ let nested_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field
-                                     ("arg", `tuple_of [ `integral ]);
+                                   `mandatory_field ("arg", `integral);
                                  ];
                                `object_of
                                  [
@@ -237,8 +232,7 @@ let nested_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field
-                                     ("arg", `tuple_of [ `integral ]);
+                                   `mandatory_field ("arg", `integral);
                                  ];
                                `object_of
                                  [
@@ -359,18 +353,13 @@ and nested_record_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "admissionYear" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'admissionYear' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'admissionYear' does not exist", path)
               >>= int_of_json' (`f "admissionYear" :: path)
               >>= fun x0 ->
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x1 ->
               Ok ({ admission_year = x0; name = x1 } : Ex01_gen.student)
@@ -396,18 +385,13 @@ and nested_record_of_json' =
           | `obj (("kind", `str "Student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "student_id" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'student_id' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'student_id' does not exist", path)
               >>= int_of_json' (`f "student_id" :: path)
               >>= fun x0 ->
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x1 ->
               Ok
@@ -416,26 +400,18 @@ and nested_record_of_json' =
           | `obj (("kind", `str "Teacher") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "faculty_id" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'faculty_id' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'faculty_id' does not exist", path)
               >>= int_of_json' (`f "faculty_id" :: path)
               >>= fun x0 ->
               List.assoc_opt "name" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'name' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
               >>= string_of_json' (`f "name" :: path)
               >>= fun x1 ->
               List.assoc_opt "department" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error
-                         ("mandatory field 'department' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'department' does not exist", path)
               >>= string_of_json' (`f "department" :: path)
               >>= fun x2 ->
               Ok
@@ -470,10 +446,8 @@ and nested_record_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "value" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'value' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'value' does not exist", path)
               >>= int53p_of_json' (`f "value" :: path)
               >>= fun x0 -> Ok ({ value = x0 } : Ex09_gen.with_int53p)
           | jv ->
@@ -490,26 +464,20 @@ and nested_record_of_json' =
           | `obj param ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "unit" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'unit' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'unit' does not exist", path)
               >>= unit_of_json' (`f "unit" :: path)
               >>= fun x0 ->
               List.assoc_opt "student" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'student' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'student' does not exist", path)
               >>= ex01_gen__student_of_json_nested (`f "student" :: path)
               >>= fun x1 ->
               ex09_gen__with_int53p_of_json_nested path __bindoj_orig
               >>= fun x2 ->
               List.assoc_opt "person1" param
-              |> (function
-                   | Some a -> Ok a
-                   | None ->
-                       Error ("mandatory field 'person1' does not exist", path))
+              |> Option.to_result
+                   ~none:("mandatory field 'person1' does not exist", path)
               >>= ex02_no_mangling_gen__person_of_json_nested
                     (`f "person1" :: path)
               >>= fun x3 ->

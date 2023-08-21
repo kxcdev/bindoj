@@ -3,6 +3,6 @@ export type ComplexTypes = {
   map: Record<string, number>;
   nested: [number | null | undefined, number[], [number, number]];
   objtuple: { _0: number; _1: number };
-  option: number | null | undefined;
+  option?: number;
   tuple: [number, number];
 };

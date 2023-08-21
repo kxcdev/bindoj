@@ -1,2 +1,2 @@
 type json_value = any;
-export type XyOpt = { xOpt: number | null | undefined; yOpt: number | null | undefined };
+export type XyOpt = { xOpt?: number; yOpt?: number };

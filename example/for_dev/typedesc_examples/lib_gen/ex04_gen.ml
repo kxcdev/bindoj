@@ -62,7 +62,7 @@ let foo_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "foo1"));
-                   `mandatory_field ("arg", `tuple_of [ `integral ]);
+                   `mandatory_field ("arg", `integral);
                  ];
                `object_of
                  [
