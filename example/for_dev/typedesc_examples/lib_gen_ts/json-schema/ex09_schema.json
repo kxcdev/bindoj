@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "WithInt53p",
+  "description": "record of an int53p value",
+  "id": "#WithInt53p",
+  "type": "object",
+  "properties": { "value": { "description": "an int53p value", "type": "integer" } },
+  "required": ["value"],
+  "additionalProperties": false
+}

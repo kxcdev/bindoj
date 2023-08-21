@@ -1,0 +1,96 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "sample_apidir_06", "version": "0.0.1" },
+  "paths": {
+    "/xy-opt/x": {
+      "summary": "get-x",
+      "post": {
+        "summary": "get-x",
+        "requestBody": {
+          "description": "xy_opt",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/XyOpt" },
+              "examples": {
+                "example_0": { "value": { "xOpt": null, "yOpt": null } },
+                "example_1": { "value": { "xOpt": null, "yOpt": 42 } },
+                "example_2": { "value": { "xOpt": -25, "yOpt": null } },
+                "example_3": { "value": { "xOpt": 512, "yOpt": -119 } }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "int_opt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "examples": {
+                  "example_0": { "value": null },
+                  "example_1": { "value": null },
+                  "example_2": { "value": -25 },
+                  "example_3": { "value": 512 }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/xy-opt/y": {
+      "summary": "get-y",
+      "post": {
+        "summary": "get-y",
+        "requestBody": {
+          "description": "xy_opt",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/XyOpt" },
+              "examples": {
+                "example_0": { "value": { "xOpt": null, "yOpt": null } },
+                "example_1": { "value": { "xOpt": null, "yOpt": 42 } },
+                "example_2": { "value": { "xOpt": -25, "yOpt": null } },
+                "example_3": { "value": { "xOpt": 512, "yOpt": -119 } }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "int_opt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "examples": {
+                  "example_0": { "value": null },
+                  "example_1": { "value": 42 },
+                  "example_2": { "value": null },
+                  "example_3": { "value": -119 }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "IntOpt": { "title": "IntOpt", "nullable": true, "type": "integer" },
+      "XyOpt": {
+        "title": "XyOpt",
+        "type": "object",
+        "properties": {
+          "xOpt": { "nullable": true, "type": "integer" },
+          "yOpt": { "nullable": true, "type": "integer" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

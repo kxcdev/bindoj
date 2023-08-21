@@ -1,0 +1,6 @@
+[
+  { "kind": "Anonymous" },
+  { "kind": "With_id", "arg": 1619 },
+  { "kind": "Student", "student_id": 451, "name": "Ray Bradbury" },
+  { "kind": "Teacher", "faculty_id": 2001, "name": "Arthur C. Clark", "department": "Space" }
+]

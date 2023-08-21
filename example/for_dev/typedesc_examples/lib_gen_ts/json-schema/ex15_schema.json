@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "NestedVariant",
+  "description": "definition of nested_variant type",
+  "id": "#NestedVariant",
+  "oneOf": [
+    {
+      "title": "student1",
+      "description": "Student1 constructor",
+      "type": "object",
+      "properties": {
+        "student": {
+          "description": "definition of student type",
+          "type": "object",
+          "properties": {
+            "admissionYear": { "description": "addmission_year field", "type": "integer" },
+            "name": { "description": "name field", "type": "string" }
+          },
+          "required": ["admissionYear", "name"],
+          "additionalProperties": false
+        },
+        "tag": { "enum": ["student1"], "type": "string" }
+      },
+      "required": ["student", "tag"],
+      "additionalProperties": false
+    },
+    {
+      "title": "student2",
+      "description": "Student2 constructor",
+      "type": "object",
+      "properties": {
+        "admissionYear": { "description": "addmission_year field", "type": "integer" },
+        "name": { "description": "name field", "type": "string" },
+        "tag": { "enum": ["student2"], "type": "string" }
+      },
+      "required": ["admissionYear", "name", "tag"],
+      "additionalProperties": false
+    },
+    {
+      "title": "student3",
+      "description": "Student3 constructor",
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "definition of student type",
+          "type": "object",
+          "properties": {
+            "admissionYear": { "description": "addmission_year field", "type": "integer" },
+            "name": { "description": "name field", "type": "string" }
+          },
+          "required": ["admissionYear", "name"],
+          "additionalProperties": false
+        },
+        "tag": { "enum": ["student3"], "type": "string" }
+      },
+      "required": ["value", "tag"],
+      "additionalProperties": false
+    },
+    {
+      "title": "student4",
+      "type": "object",
+      "properties": {
+        "admissionYear": { "description": "addmission_year field", "type": "integer" },
+        "name": { "description": "name field", "type": "string" },
+        "tag": { "enum": ["student4"], "type": "string" }
+      },
+      "required": ["admissionYear", "name", "tag"],
+      "additionalProperties": false
+    },
+    {
+      "title": "int-list1",
+      "description": "IntList constructor",
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "int list",
+          "oneOf": [
+            {
+              "title": "intnil",
+              "description": "nil for int_list",
+              "type": "object",
+              "properties": { "kind": { "enum": ["intnil"], "type": "string" } },
+              "required": ["kind"],
+              "additionalProperties": false
+            },
+            {
+              "title": "intcons",
+              "description": "cons for int_list",
+              "type": "object",
+              "properties": {
+                "arg": {
+                  "type": "array",
+                  "items": [{ "type": "integer" }, { "$ref": "#IntList" }],
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "kind": { "enum": ["intcons"], "type": "string" }
+              },
+              "required": ["arg", "kind"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "tag": { "enum": ["int-list1"], "type": "string" }
+      },
+      "required": ["value", "tag"],
+      "additionalProperties": false
+    },
+    {
+      "title": "int-list2_intnil",
+      "description": "nil for int_list",
+      "type": "object",
+      "properties": {
+        "kind": { "enum": ["intnil"], "type": "string" },
+        "tag": { "enum": ["int-list2"], "type": "string" }
+      },
+      "required": ["kind", "tag"],
+      "additionalProperties": false
+    },
+    {
+      "title": "int-list2_intcons",
+      "description": "cons for int_list",
+      "type": "object",
+      "properties": {
+        "arg": {
+          "type": "array",
+          "items": [{ "type": "integer" }, { "$ref": "#IntList" }],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "kind": { "enum": ["intcons"], "type": "string" },
+        "tag": { "enum": ["int-list2"], "type": "string" }
+      },
+      "required": ["arg", "kind", "tag"],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Unit",
+  "description": "alias of unit type",
+  "id": "#Unit",
+  "type": "integer",
+  "minimum": 1,
+  "maximum": 1
+}

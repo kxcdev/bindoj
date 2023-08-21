@@ -35,6 +35,9 @@ const Home: NextPage<Props> = ({ allDocs }) => {
           <a href="example" className={styles.card}>
             <h2>Example</h2>
           </a>
+          <a href="dev-example/apidir/openapi/html/index.html" className={styles.card}>
+            <h2>Dev Example (apidir openapi)</h2>
+          </a>
         </div>
       </main>
     </div>

@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Student",
+  "description": "definition of student type",
+  "id": "#Student",
+  "type": "object",
+  "properties": {
+    "admissionYear": { "description": "addmission_year field", "type": "integer" },
+    "name": { "description": "name field", "type": "string" }
+  },
+  "required": ["admissionYear", "name"],
+  "additionalProperties": false
+}

@@ -60,6 +60,7 @@ jobs:
       - name: check diff
         run: |
           git add example/*/generated/
+          git add example/for_dev/typedesc_examples/
           git diff --cached --exit-code
 
       - run: |
@@ -79,8 +80,8 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
           working-directory: ./
-          scope: "kxcteam"
-          github-comment: false
+          scope: "kxcinc"
+          github-comment: true
 
   setup-ocaml-checked:
     needs: build

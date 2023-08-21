@@ -29,6 +29,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.`
 const sourceDirs = [
   "./doc/tests_src",
   "./src",
+  "./example/for_dev/generator",
   "./with_js/src",
   "./with_js/apidir-tests",
   "./with_js/compile-tests",

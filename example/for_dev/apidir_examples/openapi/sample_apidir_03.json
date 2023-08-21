@@ -1,0 +1,124 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "sample_apidir_03", "version": "0.0.1" },
+  "paths": {
+    "/person/id": {
+      "summary": "id-of-person",
+      "post": {
+        "summary": "id-of-person",
+        "requestBody": {
+          "description": "the person record to get the id",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Person" },
+              "examples": {
+                "example_0": { "value": { "kind": "anonymous" } },
+                "example_1": { "value": { "kind": "with-id", "arg": 1619 } },
+                "example_2": {
+                  "value": {
+                    "kind": "student",
+                    "studentId": 451,
+                    "name": "Ray Bradbury"
+                  }
+                },
+                "example_3": {
+                  "value": {
+                    "kind": "teacher",
+                    "facultyId": 2001,
+                    "name": "Arthur C. Clark",
+                    "department": "Space"
+                  }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "The ID of the given person.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Int" },
+                "examples": {
+                  "example_0": { "value": 1619 },
+                  "example_1": { "value": 451 }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The reason why the ID of the given person is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {
+                  "a sample value with error message": {
+                    "value": "error message like this 1"
+                  },
+                  "another sample value with error message": {
+                    "value": "error message like this 2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Int": { "title": "Int", "type": "integer" },
+      "Person": {
+        "title": "Person",
+        "oneOf": [
+          {
+            "title": "anonymous",
+            "type": "object",
+            "properties": {
+              "kind": { "enum": ["anonymous"], "type": "string" }
+            },
+            "required": ["kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "with-id",
+            "type": "object",
+            "properties": {
+              "arg": { "type": "integer" },
+              "kind": { "enum": ["with-id"], "type": "string" }
+            },
+            "required": ["arg", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "student",
+            "type": "object",
+            "properties": {
+              "studentId": { "type": "integer" },
+              "name": { "type": "string" },
+              "kind": { "enum": ["student"], "type": "string" }
+            },
+            "required": ["studentId", "name", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "teacher",
+            "type": "object",
+            "properties": {
+              "facultyId": { "type": "integer" },
+              "name": { "type": "string" },
+              "department": { "type": "string" },
+              "kind": { "enum": ["teacher"], "type": "string" }
+            },
+            "required": ["facultyId", "name", "department", "kind"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "String": { "title": "String", "type": "string" }
+    }
+  }
+}

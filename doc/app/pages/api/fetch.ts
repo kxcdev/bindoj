@@ -2,7 +2,7 @@
 import fs from "fs";
 import path from "path";
 
-type Doc = {
+export type Doc = {
   filename: string;
   content: string;
 };

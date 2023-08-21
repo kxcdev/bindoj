@@ -3,6 +3,10 @@
 *_gen.mli
 *.sw*
 
+!example/for_dev/**/*_gen.ts
+!example/for_dev/**/*_gen.ml
+!example/for_dev/**/*_gen.mli
+
 # editor specifics
 .vscode/*
 

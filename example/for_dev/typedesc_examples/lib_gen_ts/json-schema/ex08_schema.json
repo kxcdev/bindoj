@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "NamedJson",
+  "description": "record of name and json datum",
+  "id": "#NamedJson",
+  "type": "object",
+  "properties": { "name": { "description": "a name of datum", "type": "string" }, "json": {} },
+  "required": ["name", "json"],
+  "additionalProperties": false
+}

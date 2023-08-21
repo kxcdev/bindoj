@@ -1,0 +1,15 @@
+[
+  { "kind": "intnil" },
+  { "kind": "intcons", "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }] },
+  {
+    "kind": "intcons",
+    "arg": [
+      1,
+      {
+        "kind": "intcons",
+        "arg": [2, { "kind": "intcons", "arg": [3, { "kind": "intcons", "arg": [4, { "kind": "intnil" }] }] }]
+      }
+    ]
+  },
+  { "kind": "intcons", "arg": [26335605, { "kind": "intcons", "arg": [35460072, { "kind": "intnil" }] }] }
+]

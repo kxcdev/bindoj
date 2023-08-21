@@ -1,0 +1,19 @@
+(rule
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff typedesc_examples-dune.inc typedesc_examples-dune.inc.gen)))
+(rule
+ (target typedesc_examples-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run generator/duneinc_generator.exe -target %{target}))))
+(include typedesc_examples-dune.inc)
+
+(rule
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff apidir_examples-dune.inc apidir_examples-dune.inc.gen)))
+(rule
+ (target apidir_examples-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run generator/duneinc_generator.exe -target %{target}))))
+(include apidir_examples-dune.inc)

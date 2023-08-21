@@ -1,0 +1,4 @@
+[
+  { "option": 42, "list": [1, 2, 3, 4], "map": { "foo": 4, "bar": 2 } },
+  { "option": null, "list": [], "map": {} }
+]

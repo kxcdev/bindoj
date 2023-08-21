@@ -1,0 +1,7 @@
+[
+  { "name": "position", "json": { "x": 2, "y": -5 } },
+  { "name": "greeting", "json": "hello?" },
+  { "name": "tup_pos", "json": ["x", 2, "y", -5] },
+  { "name": "flag", "json": true },
+  { "name": "null_val", "json": null }
+]

@@ -1,0 +1,197 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "sample_apidir_02", "version": "0.0.1" },
+  "paths": {
+    "/int-list/any-one": {
+      "summary": "get-any-int-list",
+      "get": {
+        "summary": "get-any-int-list",
+        "responses": {
+          "default": {
+            "description": "a int-list record (could be anyone) in the database",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+                "examples": {
+                  "example_0": { "value": { "kind": "intnil" } },
+                  "example_1": {
+                    "value": {
+                      "kind": "intcons",
+                      "_0": 1,
+                      "_1": {
+                        "kind": "intcons",
+                        "_0": 2,
+                        "_1": {
+                          "kind": "intcons",
+                          "_0": 3,
+                          "_1": {
+                            "kind": "intcons",
+                            "_0": 4,
+                            "_1": { "kind": "intnil" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/int-list/inc": {
+      "summary": "inc-int-list",
+      "post": {
+        "summary": "inc-int-list",
+        "requestBody": {
+          "description": "an int list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+              "examples": {
+                "example_0": { "value": { "kind": "intnil" } },
+                "example_1": {
+                  "value": {
+                    "kind": "intcons",
+                    "_0": 1,
+                    "_1": {
+                      "kind": "intcons",
+                      "_0": 2,
+                      "_1": {
+                        "kind": "intcons",
+                        "_0": 3,
+                        "_1": {
+                          "kind": "intcons",
+                          "_0": 4,
+                          "_1": { "kind": "intnil" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "an int list with all elements of the supplied int list inclimented",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+                "examples": {
+                  "example_0": { "value": { "kind": "intnil" } },
+                  "example_1": {
+                    "value": {
+                      "kind": "intcons",
+                      "_0": 2,
+                      "_1": {
+                        "kind": "intcons",
+                        "_0": 3,
+                        "_1": {
+                          "kind": "intcons",
+                          "_0": 4,
+                          "_1": {
+                            "kind": "intcons",
+                            "_0": 5,
+                            "_1": { "kind": "intnil" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/int-list/sum": {
+      "summary": "sum-of-int-list",
+      "post": {
+        "summary": "sum-of-int-list",
+        "requestBody": {
+          "description": "an int-list",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+              "examples": {
+                "example_0": { "value": { "kind": "intnil" } },
+                "example_1": {
+                  "value": {
+                    "kind": "intcons",
+                    "_0": 1,
+                    "_1": {
+                      "kind": "intcons",
+                      "_0": 2,
+                      "_1": {
+                        "kind": "intcons",
+                        "_0": 3,
+                        "_1": {
+                          "kind": "intcons",
+                          "_0": 4,
+                          "_1": { "kind": "intnil" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "sum of the supplied int list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Int" },
+                "examples": {
+                  "example_0": { "value": 0 },
+                  "example_1": { "value": 10 }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Int": { "title": "Int", "type": "integer" },
+      "IntListObjtuple": {
+        "title": "IntListObjtuple",
+        "oneOf": [
+          {
+            "title": "intnil",
+            "type": "object",
+            "properties": {
+              "kind": { "enum": ["intnil"], "type": "string" }
+            },
+            "required": ["kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "intcons",
+            "type": "object",
+            "properties": {
+              "_0": { "type": "integer" },
+              "_1": { "$ref": "#/components/schemas/IntListObjtuple" },
+              "kind": { "enum": ["intcons"], "type": "string" }
+            },
+            "required": ["_0", "_1", "kind"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  }
+}

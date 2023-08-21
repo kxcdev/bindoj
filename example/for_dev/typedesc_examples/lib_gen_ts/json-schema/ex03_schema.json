@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "IntList",
+  "description": "int list",
+  "id": "#IntList",
+  "oneOf": [
+    {
+      "title": "intnil",
+      "description": "nil for int_list",
+      "type": "object",
+      "properties": { "kind": { "enum": ["intnil"], "type": "string" } },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    {
+      "title": "intcons",
+      "description": "cons for int_list",
+      "type": "object",
+      "properties": {
+        "arg": {
+          "type": "array",
+          "items": [{ "type": "integer" }, { "$ref": "#IntList" }],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "kind": { "enum": ["intcons"], "type": "string" }
+      },
+      "required": ["arg", "kind"],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "person_no_mangling",
+  "description": "definition of person type",
+  "id": "#person_no_mangling",
+  "oneOf": [
+    {
+      "title": "Anonymous",
+      "description": "Anonymous constructor",
+      "type": "object",
+      "properties": { "kind": { "enum": ["Anonymous"], "type": "string" } },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    {
+      "title": "With_id",
+      "description": "With_id constructor",
+      "type": "object",
+      "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+      "required": ["arg", "kind"],
+      "additionalProperties": false
+    },
+    {
+      "title": "Student",
+      "description": "Student constructor",
+      "type": "object",
+      "properties": {
+        "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+        "name": { "description": "name field in Student constructor", "type": "string" },
+        "kind": { "enum": ["Student"], "type": "string" }
+      },
+      "required": ["student_id", "name", "kind"],
+      "additionalProperties": false
+    },
+    {
+      "title": "Teacher",
+      "description": "Teacher constructor",
+      "type": "object",
+      "properties": {
+        "faculty_id": { "description": "faculty_id field in Teacher constructor", "type": "integer" },
+        "name": { "description": "name field in Teacher constructor", "type": "string" },
+        "department": { "description": "dapartment field in Teacher constructor", "type": "string" },
+        "kind": { "enum": ["Teacher"], "type": "string" }
+      },
+      "required": ["faculty_id", "name", "department", "kind"],
+      "additionalProperties": false
+    }
+  ]
+}

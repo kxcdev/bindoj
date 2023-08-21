@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html style="height: calc(100vh - 20px); padding: 0">
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <title>Bindoj example/for_dev/apidir_examples/openapi/html</title>
+  <meta name='viewport' content='width=device-width, height=device-height, initial-scale=1'>
+  <style>
+    html, body {
+      overflow-y: hidden;
+    }
+    body {
+      position: relative;
+    }
+    body * {
+      margin: 0;
+    }
+  </style>
+  <script>
+    (() => {
+      var handleHash;
+      var listingContainer;
+      var previewIframe;
+      var previewContainer;
+      var previewNavigateLink;
+
+      const $$ = id => document.getElementById(id);
+
+      addEventListener("hashchange", handleHash = ((evt) => {
+        const hash = window.location.hash;
+        console.debug("handleHash: ", hash, "; event: ", evt);
+        if (hash && !!hash.trim()) {
+          const loc = hash.substring(1);
+          listingContainer.style.height = "calc(20% - 20px)";
+          previewIframe.src = loc;
+          previewNavigateLink.href = loc;
+          previewContainer.hidden = false;
+        } else {
+          listingContainer.style.height = "100%";
+          previewContainer.hidden = true;
+        }
+      }));
+      addEventListener("DOMContentLoaded", (evt) => {
+        listingContainer = $$("listing-container");
+        previewIframe = $$("preview-iframe");
+        previewContainer = $$("preview-container");
+        previewNavigateLink = $$("preview-navigate-link");
+
+        var hash;
+        if (!!(hash = window.location.hash)) handleHash(evt);
+      });
+    })();
+  </script>
+</head>
+<body style="height: calc(100vh - 20px);">
+<ul id="listing-container" style="overflow: scroll;">
+  <li><a href="./sample_apidir_01.openapi.html">sample_apidir_01</a> (<a href="#./sample_apidir_01.openapi.html">preview</a>, <a href="../sample_apidir_01.json">json</a>, <a href="../../typescript-metainfo/sample_apidir_01.ts">typescript-metainfo</a>)</li>
+  <li><a href="./sample_apidir_01_no_mangling.openapi.html">sample_apidir_01_no_mangling</a> (<a href="#./sample_apidir_01_no_mangling.openapi.html">preview</a>, <a href="../sample_apidir_01_no_mangling.json">json</a>, <a href="../../typescript-metainfo/sample_apidir_01_no_mangling.ts">typescript-metainfo</a>)</li>
+  <li><a href="./sample_apidir_02.openapi.html">sample_apidir_02</a> (<a href="#./sample_apidir_02.openapi.html">preview</a>, <a href="../sample_apidir_02.json">json</a>, <a href="../../typescript-metainfo/sample_apidir_02.ts">typescript-metainfo</a>)</li>
+  <li><a href="./sample_apidir_03.openapi.html">sample_apidir_03</a> (<a href="#./sample_apidir_03.openapi.html">preview</a>, <a href="../sample_apidir_03.json">json</a>, <a href="../../typescript-metainfo/sample_apidir_03.ts">typescript-metainfo</a>)</li>
+  <li><a href="./sample_apidir_04.openapi.html">sample_apidir_04</a> (<a href="#./sample_apidir_04.openapi.html">preview</a>, <a href="../sample_apidir_04.json">json</a>, <a href="../../typescript-metainfo/sample_apidir_04.ts">typescript-metainfo</a>)</li>
+  <li><a href="./sample_apidir_05.openapi.html">sample_apidir_05</a> (<a href="#./sample_apidir_05.openapi.html">preview</a>, <a href="../sample_apidir_05.json">json</a>, <a href="../../typescript-metainfo/sample_apidir_05.ts">typescript-metainfo</a>)</li>
+  <li><a href="./sample_apidir_06.openapi.html">sample_apidir_06</a> (<a href="#./sample_apidir_06.openapi.html">preview</a>, <a href="../sample_apidir_06.json">json</a>, <a href="../../typescript-metainfo/sample_apidir_06.ts">typescript-metainfo</a>)</li>
+</ul>
+<div hidden id="preview-container" style="height: 80%; width: 100%;">
+  <span style="display: block; position: relative; float: right;">
+    <a id="preview-navigate-link" style="color: inherit;" href="#">[navigate]</a>
+    <span style="display: inline-block; width: 0.4em;"></span>
+    <a style="color: inherit;" href="#">(x) close preview</a>
+  </span>
+  <iframe id="preview-iframe" src="./sample_apidir_01.openapi.html" width="100%" height="100%"></iframe>
+</div>
+</body>
+</html>
+

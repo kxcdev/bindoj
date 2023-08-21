@@ -6,6 +6,12 @@
 
 (rule
  (alias gen)
+ (target sample_apidir_01_no_mangling.json)
+ (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
  (target sample_apidir_02.json)
  (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
  (mode (promote (until-clean))))

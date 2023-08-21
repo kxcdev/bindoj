@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "IntListObjtuple",
+  "description": "int list",
+  "id": "#IntListObjtuple",
+  "oneOf": [
+    {
+      "title": "intnil",
+      "description": "nil for int_list",
+      "type": "object",
+      "properties": { "kind": { "enum": ["intnil"], "type": "string" } },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    {
+      "title": "intcons",
+      "description": "cons for int_list",
+      "type": "object",
+      "properties": {
+        "_0": { "type": "integer" },
+        "_1": { "$ref": "#IntListObjtuple" },
+        "kind": { "enum": ["intcons"], "type": "string" }
+      },
+      "required": ["_0", "_1", "kind"],
+      "additionalProperties": false
+    }
+  ]
+}

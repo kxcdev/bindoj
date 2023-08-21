@@ -1,0 +1,1 @@
+[{ "kind": "foo0" }, { "kind": "foo1", "arg": 1 }, { "kind": "foo2", "arg": [1, 2] }]

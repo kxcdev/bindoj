@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Foo",
+  "description": "polyvariant",
+  "id": "#Foo",
+  "oneOf": [
+    {
+      "title": "foo0",
+      "description": "polyvariant case (length=0)",
+      "type": "object",
+      "properties": { "kind": { "enum": ["foo0"], "type": "string" } },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    {
+      "title": "foo1",
+      "description": "polyvariant case (length=1)",
+      "type": "object",
+      "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["foo1"], "type": "string" } },
+      "required": ["arg", "kind"],
+      "additionalProperties": false
+    },
+    {
+      "title": "foo2",
+      "description": "polyvariant case (length=2)",
+      "type": "object",
+      "properties": {
+        "arg": {
+          "type": "array",
+          "items": [{ "type": "integer" }, { "type": "integer" }],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "kind": { "enum": ["foo2"], "type": "string" }
+      },
+      "required": ["arg", "kind"],
+      "additionalProperties": false
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Objtuple",
+  "description": "alias of objtuple type",
+  "id": "#Objtuple",
+  "type": "object",
+  "properties": {
+    "_0": { "description": "alias of objtuple type", "type": "number" },
+    "_1": { "description": "alias of objtuple type", "type": "string" }
+  },
+  "required": ["_0", "_1"],
+  "additionalProperties": false
+}

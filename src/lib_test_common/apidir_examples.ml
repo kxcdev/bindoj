@@ -20,22 +20,4 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 [@@@ocaml.warning "-32-33"]
 include Bindoj_test_common_apidir_examples
 
-module type MockServerBuilder = Utils.MockServerBuilder
-
-module type T = sig
-  include Bindoj_apidir_shared.RegistryInfo
-
-  val tests : unit Alcotest.test_case list
-
-  val build_mock_server : (module MockServerBuilder) -> unit
-end
-
-let all : (string * (module T)) list = [
-  "sample_apidir_01", (module Sample_apidir_01);
-  "sample_apidir_01_no_mangling", (module Sample_apidir_01_no_mangling);
-  "sample_apidir_02", (module Sample_apidir_02);
-  "sample_apidir_03", (module Sample_apidir_03);
-  "sample_apidir_04", (module Sample_apidir_04);
-  "sample_apidir_05", (module Sample_apidir_05);
-  "sample_apidir_06", (module Sample_apidir_06);
-]
+include All

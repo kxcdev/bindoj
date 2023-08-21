@@ -1,0 +1,121 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "sample_apidir_04", "version": "0.0.1" },
+  "paths": {
+    "/named_json/name": {
+      "summary": "name-of-named_json",
+      "post": {
+        "summary": "name-of-named_json",
+        "requestBody": {
+          "description": "named_json",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NamedJson" },
+              "examples": {
+                "example_0": {
+                  "value": {
+                    "name": "position",
+                    "json": { "x": 2, "y": -5 }
+                  }
+                },
+                "example_1": {
+                  "value": { "name": "greeting", "json": "hello?" }
+                },
+                "example_2": {
+                  "value": { "name": "tup_pos", "json": ["x", 2, "y", -5] }
+                },
+                "example_3": { "value": { "name": "flag", "json": true } },
+                "example_4": {
+                  "value": { "name": "null_val", "json": null }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "string",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/String" },
+                "examples": {
+                  "example_0": { "value": "position" },
+                  "example_1": { "value": "greeting" },
+                  "example_2": { "value": "tup_pos" },
+                  "example_3": { "value": "flag" },
+                  "example_4": { "value": "null_val" }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/named_json/json": {
+      "summary": "json-of-named_json",
+      "post": {
+        "summary": "json-of-named_json",
+        "requestBody": {
+          "description": "named_json",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NamedJson" },
+              "examples": {
+                "example_0": {
+                  "value": {
+                    "name": "position",
+                    "json": { "x": 2, "y": -5 }
+                  }
+                },
+                "example_1": {
+                  "value": { "name": "greeting", "json": "hello?" }
+                },
+                "example_2": {
+                  "value": { "name": "tup_pos", "json": ["x", 2, "y", -5] }
+                },
+                "example_3": { "value": { "name": "flag", "json": true } },
+                "example_4": {
+                  "value": { "name": "null_val", "json": null }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "json_value",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/json_value" },
+                "examples": {
+                  "example_0": { "value": { "x": 2, "y": -5 } },
+                  "example_1": { "value": "hello?" },
+                  "example_2": { "value": ["x", 2, "y", -5] },
+                  "example_3": { "value": true },
+                  "example_4": { "value": null }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NamedJson": {
+        "title": "NamedJson",
+        "type": "object",
+        "properties": { "name": { "type": "string" }, "json": {} },
+        "required": ["name", "json"],
+        "additionalProperties": false
+      },
+      "String": { "title": "String", "type": "string" },
+      "json_value": {}
+    }
+  }
+}

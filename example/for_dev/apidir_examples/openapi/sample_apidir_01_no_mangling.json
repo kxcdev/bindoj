@@ -1,0 +1,132 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "sample_apidir_01_no_mangling", "version": "0.0.1" },
+  "paths": {
+    "/student/any-one": {
+      "summary": "get-any-student",
+      "get": {
+        "summary": "get-any-student",
+        "responses": {
+          "default": {
+            "description": "a student record (could be anyone) in the database",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Student" },
+                "examples": {
+                  "example_0": {
+                    "value": {
+                      "admissionYear": 1984,
+                      "name": "William Gibson"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/student/from-person": {
+      "summary": "get-student-from-person",
+      "post": {
+        "summary": "get-student-from-person",
+        "requestBody": {
+          "description": "a person record identifying a student",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/person_no_mangling" },
+              "examples": {
+                "example_0": {
+                  "value": {
+                    "kind": "Student",
+                    "student_id": 451,
+                    "name": "Ray Bradbury"
+                  }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "the student record corresponding to the supplied person",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Student" },
+                "examples": {
+                  "example_0": {
+                    "value": { "admissionYear": 451, "name": "Ray Bradbury" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Student": {
+        "title": "Student",
+        "type": "object",
+        "properties": {
+          "admissionYear": { "type": "integer" },
+          "name": { "type": "string" }
+        },
+        "required": ["admissionYear", "name"],
+        "additionalProperties": false
+      },
+      "person_no_mangling": {
+        "title": "person_no_mangling",
+        "oneOf": [
+          {
+            "title": "Anonymous",
+            "type": "object",
+            "properties": {
+              "kind": { "enum": ["Anonymous"], "type": "string" }
+            },
+            "required": ["kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "With_id",
+            "type": "object",
+            "properties": {
+              "arg": { "type": "integer" },
+              "kind": { "enum": ["With_id"], "type": "string" }
+            },
+            "required": ["arg", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "Student",
+            "type": "object",
+            "properties": {
+              "student_id": { "type": "integer" },
+              "name": { "type": "string" },
+              "kind": { "enum": ["Student"], "type": "string" }
+            },
+            "required": ["student_id", "name", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "Teacher",
+            "type": "object",
+            "properties": {
+              "faculty_id": { "type": "integer" },
+              "name": { "type": "string" },
+              "department": { "type": "string" },
+              "kind": { "enum": ["Teacher"], "type": "string" }
+            },
+            "required": ["faculty_id", "name", "department", "kind"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  }
+}

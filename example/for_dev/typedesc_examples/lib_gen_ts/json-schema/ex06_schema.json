@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "VariousPrimTypes",
+  "description": "various primitive types",
+  "id": "#VariousPrimTypes",
+  "type": "object",
+  "properties": {
+    "unit": { "description": "unit", "type": "integer", "minimum": 1, "maximum": 1 },
+    "bool": { "description": "bool", "type": "boolean" },
+    "int": { "description": "int", "type": "integer" },
+    "float": { "description": "float", "type": "number" },
+    "string": { "description": "string", "type": "string" },
+    "uchar": { "description": "uchar", "type": "string", "minLength": 1, "maxLength": 1 },
+    "byte": { "description": "byte", "type": "integer", "minimum": 0, "maximum": 255 },
+    "bytes": {
+      "description": "bytes",
+      "type": "string",
+      "pattern": "^(?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z0-9+\\/][AQgw]==|[A-Za-z0-9+\\/]{2}[AEIMQUYcgkosw048]=)?$",
+      "format": "byte"
+    }
+  },
+  "required": ["unit", "bool", "int", "float", "string", "uchar", "byte", "bytes"],
+  "additionalProperties": false
+}

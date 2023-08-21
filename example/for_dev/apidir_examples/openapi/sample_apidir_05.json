@@ -1,0 +1,111 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "sample_apidir_05", "version": "0.0.1" },
+  "paths": {
+    "/option/int-of-string": {
+      "summary": "int-of-string",
+      "post": {
+        "summary": "int-of-string",
+        "requestBody": {
+          "description": "string",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/String" },
+              "examples": {
+                "example_0": { "value": "42" },
+                "example_1": { "value": "" },
+                "example_2": { "value": "0" },
+                "example_3": { "value": "2020" },
+                "example_4": { "value": "a" },
+                "example_5": { "value": "11.2" }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "int_opt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "examples": {
+                  "example_0": { "value": null },
+                  "example_1": { "value": 0 },
+                  "example_2": { "value": 2020 },
+                  "example_3": { "value": null },
+                  "example_4": { "value": null }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/option/of-complex": {
+      "summary": "option-of-complex",
+      "post": {
+        "summary": "option-of-complex",
+        "requestBody": {
+          "description": "complex_types",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComplexTypesNotuple"
+              },
+              "examples": {
+                "example_0": {
+                  "value": {
+                    "option": 42,
+                    "list": [1, 2, 3, 4],
+                    "map": { "foo": 4, "bar": 2 }
+                  }
+                },
+                "example_1": {
+                  "value": { "option": null, "list": [], "map": {} }
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "default": {
+            "description": "int_opt",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "examples": {
+                  "example_0": { "value": 42 },
+                  "example_1": { "value": null }
+                }
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ComplexTypesNotuple": {
+        "title": "ComplexTypesNotuple",
+        "type": "object",
+        "properties": {
+          "option": { "nullable": true, "type": "integer" },
+          "list": { "type": "array", "items": { "type": "integer" } },
+          "map": {
+            "type": "object",
+            "additionalProperties": { "type": "integer" }
+          }
+        },
+        "required": ["list", "map"],
+        "additionalProperties": false
+      },
+      "IntOpt": { "title": "IntOpt", "nullable": true, "type": "integer" },
+      "String": { "title": "String", "type": "string" }
+    }
+  }
+}

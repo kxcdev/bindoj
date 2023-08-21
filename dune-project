@@ -25,6 +25,7 @@
  (name bindoj)
  (synopsis "A generative datatype toolkit for OCaml centric workflows")
  (depends
+  (fmt (and :with-test (>= 0.8.10)))
   (ppxlib (>= 0.26))
   (ppx_deriving (>= 5.2.1))
   (yojson (>= 1.7))

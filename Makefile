@@ -1,4 +1,4 @@
-.PHONY: default info setup build test doc doc-serve clean audit promote-audit promote-test promote
+.PHONY: default info setup dune-gen build test gen doc doc-serve clean audit promote-audit promote-test promote
 
 default: info build
 
@@ -14,7 +14,10 @@ setup:
 	yarn --cwd with_js install
 	yarn --cwd doc/app install
 
-build:
+dune-gen:
+	dune build @dune-gen --auto-promote
+
+build: dune-gen
 	dune build
 
 audit:
@@ -28,11 +31,14 @@ promote-test:
 
 promote: promote-audit promote-test
 
-test: audit
+gen: build
+	dune build @gen
+
+test: audit build gen
 	yarn --cwd with_js clean || echo "yarn clean failed... you probably does not have a complete setup yet"
 	dune runtest
 
-doc:
+doc: build
 	dune build @doc
 	dune build @doc --root=vendors/kxclib
 
