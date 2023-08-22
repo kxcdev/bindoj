@@ -203,13 +203,12 @@ let rec (product_reflect : _ Bindoj_runtime.Refl.t) =
            (fun { id; details } ->
              StringMap.of_list
                [
-                 ("id", (Expr.of_refl product_id_reflect) id);
+                 ("id", Expr.of_int id);
                  ("details", (Expr.of_refl product_details_reflect) details);
                ]);
          mk =
            (fun xs ->
-             xs |> StringMap.find_opt "id" >>= Expr.to_refl product_id_reflect
-             >>= fun id ->
+             xs |> StringMap.find_opt "id" >>= Expr.to_int >>= fun id ->
              xs
              |> StringMap.find_opt "details"
              >>= Expr.to_refl product_details_reflect
@@ -224,59 +223,129 @@ let product_json_shape_explanation =
          ( "Product",
            `object_of
              [
-               `mandatory_field
-                 ( "id",
-                   match product_id_json_shape_explanation with
-                   | `with_warning (_, (`named _ as s)) -> s
-                   | `with_warning (_, s) | s -> `named ("ProductId", s) );
+               `mandatory_field ("id", `named ("ProductId", `integral));
                `mandatory_field
                  ( "details",
-                   match product_details_json_shape_explanation with
-                   | `with_warning (_, (`named _ as s)) -> s
-                   | `with_warning (_, s) | s -> `named ("ProductDetails", s) );
+                   `named
+                     ( "ProductDetails",
+                       `object_of
+                         [
+                           `mandatory_field ("name", `string);
+                           `mandatory_field ("description", `string);
+                           `mandatory_field ("price", `integral);
+                           `mandatory_field ("count", `integral);
+                         ] ) );
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
 [@@warning "-39"]
 
 let rec product_to_json =
-  (fun { id = x0; details = x1 } ->
+  (let string_to_json (x : string) : Kxclib.Json.jv = `str x
+   and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+   let rec product_details_to_json_nested =
+     (fun { name = x0; description = x1; price = x2; count = x3 } ->
+        [
+          ("name", string_to_json x0);
+          ("description", string_to_json x1);
+          ("price", int_to_json x2);
+          ("count", int_to_json x3);
+        ]
+       : product_details -> (string * Kxclib.Json.jv) list)
+   in
+   fun { id = x0; details = x1 } ->
      `obj
        [
-         ("id", product_id_to_json x0); ("details", product_details_to_json x1);
+         ("id", int_to_json x0);
+         ("details", `obj (product_details_to_json_nested x1));
        ]
     : product -> Kxclib.Json.jv)
 [@@warning "-39"]
 
 and product_of_json' =
   (fun ?(path = []) x ->
-     (let rec of_json_impl path __bindoj_orig =
-        match __bindoj_orig with
-        | `obj param ->
-            let ( >>= ) = Result.bind in
-            List.assoc_opt "id" param
-            |> Option.to_result
-                 ~none:("mandatory field 'id' does not exist", path)
-            >>= (fun path x ->
-                  product_id_of_json' ~path x
-                  |> Result.map_error (fun (msg, path, _) -> (msg, path)))
-                  (`f "id" :: path)
-            >>= fun x0 ->
-            List.assoc_opt "details" param
-            |> Option.to_result
-                 ~none:("mandatory field 'details' does not exist", path)
-            >>= (fun path x ->
-                  product_details_of_json' ~path x
-                  |> Result.map_error (fun (msg, path, _) -> (msg, path)))
-                  (`f "details" :: path)
-            >>= fun x1 -> Ok { id = x0; details = x1 }
-        | jv ->
-            Error
-              ( Printf.sprintf
-                  "an object is expected for a record value, but the given is \
-                   of type '%s'"
-                  (let open Kxclib.Json in
-                   string_of_jv_kind (classify_jv jv)),
-                path )
+     (let rec of_json_impl =
+        let string_of_json' path = function
+          | (`str x : Kxclib.Json.jv) -> Ok x
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "expecting type 'string' but the given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        and int_of_json' path = function
+          | (`num x : Kxclib.Json.jv) ->
+              if Float.is_integer x then Ok (int_of_float x)
+              else
+                Error
+                  ( Printf.sprintf "expecting an integer but the given is '%f'" x,
+                    path )
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "expecting type 'int' but the given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        in
+        let rec product_details_of_json_nested path __bindoj_orig =
+          match __bindoj_orig with
+          | `obj param ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "name" param
+              |> Option.to_result
+                   ~none:("mandatory field 'name' does not exist", path)
+              >>= string_of_json' (`f "name" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "description" param
+              |> Option.to_result
+                   ~none:("mandatory field 'description' does not exist", path)
+              >>= string_of_json' (`f "description" :: path)
+              >>= fun x1 ->
+              List.assoc_opt "price" param
+              |> Option.to_result
+                   ~none:("mandatory field 'price' does not exist", path)
+              >>= int_of_json' (`f "price" :: path)
+              >>= fun x2 ->
+              List.assoc_opt "count" param
+              |> Option.to_result
+                   ~none:("mandatory field 'count' does not exist", path)
+              >>= int_of_json' (`f "count" :: path)
+              >>= fun x3 ->
+              Ok
+                ({ name = x0; description = x1; price = x2; count = x3 }
+                  : product_details)
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a record value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        in
+        fun path __bindoj_orig ->
+          match __bindoj_orig with
+          | `obj param ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "id" param
+              |> Option.to_result
+                   ~none:("mandatory field 'id' does not exist", path)
+              >>= int_of_json' (`f "id" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "details" param
+              |> Option.to_result
+                   ~none:("mandatory field 'details' does not exist", path)
+              >>= product_details_of_json_nested (`f "details" :: path)
+              >>= fun x1 -> Ok { id = x0; details = x1 }
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a record value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
       in
       of_json_impl)
        path x
@@ -703,16 +772,67 @@ let order_details_json_shape_explanation =
                        ]) );
                `mandatory_field
                  ( "paymentMethod",
-                   match payment_method_json_shape_explanation with
-                   | `with_warning (_, (`named _ as s)) -> s
-                   | `with_warning (_, s) | s -> `named ("PaymentMethod", s) );
+                   `named
+                     ( "PaymentMethod",
+                       `anyone_of
+                         [
+                           `object_of
+                             [
+                               `mandatory_field
+                                 ("kind", `exactly (`str "credit-card"));
+                               `mandatory_field ("cardNumber", `string);
+                               `mandatory_field ("holderName", `string);
+                               `mandatory_field
+                                 ( "expirationDate",
+                                   `object_of
+                                     [
+                                       `mandatory_field ("_0", `integral);
+                                       `mandatory_field ("_1", `integral);
+                                     ] );
+                               `mandatory_field ("cvv", `string);
+                             ];
+                           `object_of
+                             [
+                               `mandatory_field
+                                 ("kind", `exactly (`str "bank-transfer"));
+                               `mandatory_field ("accountNumber", `string);
+                               `mandatory_field ("bankName", `string);
+                               `mandatory_field ("holderName", `string);
+                             ];
+                         ] ) );
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
 [@@warning "-39"]
 
 let rec order_details_to_json =
-  (let list_to_json t_to_json xs : Kxclib.Json.jv = `arr (List.map t_to_json xs)
+  (let string_to_json (x : string) : Kxclib.Json.jv = `str x
+   and list_to_json t_to_json xs : Kxclib.Json.jv = `arr (List.map t_to_json xs)
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+   let rec payment_method_to_json_nested =
+     (function
+      | Credit_card
+          { card_number = x0; holder_name = x1; expiration_date = x2; cvv = x3 }
+        ->
+          [
+            ("kind", `str "credit-card");
+            ("cardNumber", string_to_json x0);
+            ("holderName", string_to_json x1);
+            ( "expirationDate",
+              (fun (x0, x1) : Kxclib.Json.jv ->
+                `obj [ ("_0", int_to_json x0); ("_1", int_to_json x1) ])
+                x2 );
+            ("cvv", string_to_json x3);
+          ]
+      | Bank_transfer { account_number = x0; bank_name = x1; holder_name = x2 }
+        ->
+          [
+            ("kind", `str "bank-transfer");
+            ("accountNumber", string_to_json x0);
+            ("bankName", string_to_json x1);
+            ("holderName", string_to_json x2);
+          ]
+       : payment_method -> (string * Kxclib.Json.jv) list)
+   in
    fun { products = x0; payment_method = x1 } ->
      `obj
        [
@@ -720,7 +840,7 @@ let rec order_details_to_json =
            (list_to_json (fun (x0, x1) : Kxclib.Json.jv ->
                 `obj [ ("_0", product_id_to_json x0); ("_1", int_to_json x1) ]))
              x0 );
-         ("paymentMethod", payment_method_to_json x1);
+         ("paymentMethod", `obj (payment_method_to_json_nested x1));
        ]
     : order_details -> Kxclib.Json.jv)
 [@@warning "-39"]
@@ -728,7 +848,16 @@ let rec order_details_to_json =
 and order_details_of_json' =
   (fun ?(path = []) x ->
      (let rec of_json_impl =
-        let list_of_json' t_of_json path = function
+        let string_of_json' path = function
+          | (`str x : Kxclib.Json.jv) -> Ok x
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "expecting type 'string' but the given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        and list_of_json' t_of_json path = function
           | (`arr xs : Kxclib.Json.jv) ->
               let open Kxclib.MonadOps (Kxclib.ResultOf (struct
                 type err = string * Kxclib.Json.jvpath
@@ -754,6 +883,107 @@ and order_details_of_json' =
               Error
                 ( Printf.sprintf
                     "expecting type 'int' but the given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        in
+        let rec payment_method_of_json_nested path __bindoj_orig =
+          match Kxclib.Jv.pump_field "kind" __bindoj_orig with
+          | `obj (("kind", `str "credit-card") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "cardNumber" param
+              |> Option.to_result
+                   ~none:("mandatory field 'cardNumber' does not exist", path)
+              >>= string_of_json' (`f "cardNumber" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "holderName" param
+              |> Option.to_result
+                   ~none:("mandatory field 'holderName' does not exist", path)
+              >>= string_of_json' (`f "holderName" :: path)
+              >>= fun x1 ->
+              List.assoc_opt "expirationDate" param
+              |> Option.to_result
+                   ~none:
+                     ("mandatory field 'expirationDate' does not exist", path)
+              >>= (fun path -> function
+                    | (`obj fields : Kxclib.Json.jv) ->
+                        let ( >>= ) = Result.bind in
+                        List.assoc_opt "_0" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_0' does not exist", path)
+                        >>= int_of_json' (`f "_0" :: path)
+                        >>= fun x0 ->
+                        List.assoc_opt "_1" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_1' does not exist", path)
+                        >>= int_of_json' (`f "_1" :: path)
+                        >>= fun x1 -> Ok (x0, x1)
+                    | jv ->
+                        Error
+                          ( Printf.sprintf
+                              "an object is expected for a tuple value, but \
+                               the given is of type '%s'"
+                              (let open Kxclib.Json in
+                               string_of_jv_kind (classify_jv jv)),
+                            path ))
+                    (`f "expirationDate" :: path)
+              >>= fun x2 ->
+              List.assoc_opt "cvv" param
+              |> Option.to_result
+                   ~none:("mandatory field 'cvv' does not exist", path)
+              >>= string_of_json' (`f "cvv" :: path)
+              >>= fun x3 ->
+              Ok
+                (Credit_card
+                   {
+                     card_number = x0;
+                     holder_name = x1;
+                     expiration_date = x2;
+                     cvv = x3;
+                   }
+                  : payment_method)
+          | `obj (("kind", `str "bank-transfer") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "accountNumber" param
+              |> Option.to_result
+                   ~none:("mandatory field 'accountNumber' does not exist", path)
+              >>= string_of_json' (`f "accountNumber" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "bankName" param
+              |> Option.to_result
+                   ~none:("mandatory field 'bankName' does not exist", path)
+              >>= string_of_json' (`f "bankName" :: path)
+              >>= fun x1 ->
+              List.assoc_opt "holderName" param
+              |> Option.to_result
+                   ~none:("mandatory field 'holderName' does not exist", path)
+              >>= string_of_json' (`f "holderName" :: path)
+              >>= fun x2 ->
+              Ok
+                (Bank_transfer
+                   { account_number = x0; bank_name = x1; holder_name = x2 }
+                  : payment_method)
+          | `obj (("kind", `str discriminator_value) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "given discriminator field value '%s' is not one of [ \
+                     'credit-card', 'bank-transfer' ]"
+                    discriminator_value,
+                  `f "kind" :: path )
+          | `obj (("kind", jv) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "a string is expected for a variant discriminator, but the \
+                     given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  `f "kind" :: path )
+          | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a variant value, but the given \
+                     is of type '%s'"
                     (let open Kxclib.Json in
                      string_of_jv_kind (classify_jv jv)),
                   path )
@@ -795,10 +1025,7 @@ and order_details_of_json' =
               List.assoc_opt "paymentMethod" param
               |> Option.to_result
                    ~none:("mandatory field 'paymentMethod' does not exist", path)
-              >>= (fun path x ->
-                    payment_method_of_json' ~path x
-                    |> Result.map_error (fun (msg, path, _) -> (msg, path)))
-                    (`f "paymentMethod" :: path)
+              >>= payment_method_of_json_nested (`f "paymentMethod" :: path)
               >>= fun x1 -> Ok { products = x0; payment_method = x1 }
           | jv ->
               Error
@@ -924,24 +1151,34 @@ let rec (order_reflect : _ Bindoj_runtime.Refl.t) =
            (fun { id; total_price; details; status } ->
              StringMap.of_list
                [
-                 ("id", (Expr.of_refl order_id_reflect) id);
+                 ("id", Expr.of_int id);
                  ("total_price", Expr.of_int total_price);
                  ("details", (Expr.of_refl order_details_reflect) details);
-                 ("status", (Expr.of_refl order_status_reflect) status);
+                 ( "status",
+                   (function
+                     | `Unpaid -> Expr.StringEnum "Unpaid"
+                     | `Paid -> Expr.StringEnum "Paid"
+                     | `Shipped -> Expr.StringEnum "Shipped"
+                     | `Delivered -> Expr.StringEnum "Delivered"
+                     | `Canceled -> Expr.StringEnum "Canceled")
+                     status );
                ]);
          mk =
            (fun xs ->
-             xs |> StringMap.find_opt "id" >>= Expr.to_refl order_id_reflect
-             >>= fun id ->
+             xs |> StringMap.find_opt "id" >>= Expr.to_int >>= fun id ->
              xs |> StringMap.find_opt "total_price" >>= Expr.to_int
              >>= fun total_price ->
              xs
              |> StringMap.find_opt "details"
              >>= Expr.to_refl order_details_reflect
              >>= fun details ->
-             xs
-             |> StringMap.find_opt "status"
-             >>= Expr.to_refl order_status_reflect
+             (xs |> StringMap.find_opt "status" >>= function
+              | Expr.StringEnum "Unpaid" -> Some `Unpaid
+              | Expr.StringEnum "Paid" -> Some `Paid
+              | Expr.StringEnum "Shipped" -> Some `Shipped
+              | Expr.StringEnum "Delivered" -> Some `Delivered
+              | Expr.StringEnum "Canceled" -> Some `Canceled
+              | _ -> None)
              >>= fun status -> Some { id; total_price; details; status });
        })
 [@@warning "-33-39"]
@@ -953,35 +1190,135 @@ let order_json_shape_explanation =
          ( "Order",
            `object_of
              [
-               `mandatory_field
-                 ( "id",
-                   match order_id_json_shape_explanation with
-                   | `with_warning (_, (`named _ as s)) -> s
-                   | `with_warning (_, s) | s -> `named ("OrderId", s) );
+               `mandatory_field ("id", `named ("OrderId", `integral));
                `mandatory_field ("totalPrice", `integral);
                `mandatory_field
                  ( "details",
-                   match order_details_json_shape_explanation with
-                   | `with_warning (_, (`named _ as s)) -> s
-                   | `with_warning (_, s) | s -> `named ("OrderDetails", s) );
+                   `named
+                     ( "OrderDetails",
+                       `object_of
+                         [
+                           `mandatory_field
+                             ( "products",
+                               `array_of
+                                 (`object_of
+                                   [
+                                     `mandatory_field
+                                       ( "_0",
+                                         match
+                                           product_id_json_shape_explanation
+                                         with
+                                         | `with_warning (_, (`named _ as s)) ->
+                                             s
+                                         | `with_warning (_, s) | s ->
+                                             `named ("ProductId", s) );
+                                     `mandatory_field ("_1", `integral);
+                                   ]) );
+                           `mandatory_field
+                             ( "paymentMethod",
+                               `named
+                                 ( "PaymentMethod",
+                                   `anyone_of
+                                     [
+                                       `object_of
+                                         [
+                                           `mandatory_field
+                                             ( "kind",
+                                               `exactly (`str "credit-card") );
+                                           `mandatory_field
+                                             ("cardNumber", `string);
+                                           `mandatory_field
+                                             ("holderName", `string);
+                                           `mandatory_field
+                                             ( "expirationDate",
+                                               `object_of
+                                                 [
+                                                   `mandatory_field
+                                                     ("_0", `integral);
+                                                   `mandatory_field
+                                                     ("_1", `integral);
+                                                 ] );
+                                           `mandatory_field ("cvv", `string);
+                                         ];
+                                       `object_of
+                                         [
+                                           `mandatory_field
+                                             ( "kind",
+                                               `exactly (`str "bank-transfer")
+                                             );
+                                           `mandatory_field
+                                             ("accountNumber", `string);
+                                           `mandatory_field ("bankName", `string);
+                                           `mandatory_field
+                                             ("holderName", `string);
+                                         ];
+                                     ] ) );
+                         ] ) );
                `mandatory_field
                  ( "status",
-                   match order_status_json_shape_explanation with
-                   | `with_warning (_, (`named _ as s)) -> s
-                   | `with_warning (_, s) | s -> `named ("OrderStatus", s) );
+                   `named
+                     ( "OrderStatus",
+                       `string_enum
+                         [
+                           "Unpaid"; "Paid"; "Shipped"; "Delivered"; "Canceled";
+                         ] ) );
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
 [@@warning "-39"]
 
 let rec order_to_json =
-  (let int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+  (let string_to_json (x : string) : Kxclib.Json.jv = `str x
+   and list_to_json t_to_json xs : Kxclib.Json.jv = `arr (List.map t_to_json xs)
+   and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+   let rec order_details_to_json_nested =
+     (fun { products = x0; payment_method = x1 } ->
+        [
+          ( "products",
+            (list_to_json (fun (x0, x1) : Kxclib.Json.jv ->
+                 `obj [ ("_0", product_id_to_json x0); ("_1", int_to_json x1) ]))
+              x0 );
+          ("paymentMethod", `obj (payment_method_to_json_nested x1));
+        ]
+       : order_details -> (string * Kxclib.Json.jv) list)
+   and payment_method_to_json_nested =
+     (function
+      | Credit_card
+          { card_number = x0; holder_name = x1; expiration_date = x2; cvv = x3 }
+        ->
+          [
+            ("kind", `str "credit-card");
+            ("cardNumber", string_to_json x0);
+            ("holderName", string_to_json x1);
+            ( "expirationDate",
+              (fun (x0, x1) : Kxclib.Json.jv ->
+                `obj [ ("_0", int_to_json x0); ("_1", int_to_json x1) ])
+                x2 );
+            ("cvv", string_to_json x3);
+          ]
+      | Bank_transfer { account_number = x0; bank_name = x1; holder_name = x2 }
+        ->
+          [
+            ("kind", `str "bank-transfer");
+            ("accountNumber", string_to_json x0);
+            ("bankName", string_to_json x1);
+            ("holderName", string_to_json x2);
+          ]
+       : payment_method -> (string * Kxclib.Json.jv) list)
+   in
    fun { id = x0; total_price = x1; details = x2; status = x3 } ->
      `obj
        [
-         ("id", order_id_to_json x0);
+         ("id", int_to_json x0);
          ("totalPrice", int_to_json x1);
-         ("details", order_details_to_json x2);
-         ("status", order_status_to_json x3);
+         ("details", `obj (order_details_to_json_nested x2));
+         ( "status",
+           (function
+             | `Unpaid -> `str "Unpaid"
+             | `Paid -> `str "Paid"
+             | `Shipped -> `str "Shipped"
+             | `Delivered -> `str "Delivered"
+             | `Canceled -> `str "Canceled")
+             x3 );
        ]
     : order -> Kxclib.Json.jv)
 [@@warning "-39"]
@@ -989,7 +1326,31 @@ let rec order_to_json =
 and order_of_json' =
   (fun ?(path = []) x ->
      (let rec of_json_impl =
-        let int_of_json' path = function
+        let string_of_json' path = function
+          | (`str x : Kxclib.Json.jv) -> Ok x
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "expecting type 'string' but the given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        and list_of_json' t_of_json path = function
+          | (`arr xs : Kxclib.Json.jv) ->
+              let open Kxclib.MonadOps (Kxclib.ResultOf (struct
+                type err = string * Kxclib.Json.jvpath
+              end)) in
+              xs
+              |> List.mapi (fun i -> t_of_json (`i i :: path))
+              |> sequence_list
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "expecting type 'list' but the given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        and int_of_json' path = function
           | (`num x : Kxclib.Json.jv) ->
               if Float.is_integer x then Ok (int_of_float x)
               else
@@ -1004,6 +1365,155 @@ and order_of_json' =
                      string_of_jv_kind (classify_jv jv)),
                   path )
         in
+        let rec order_details_of_json_nested path __bindoj_orig =
+          match __bindoj_orig with
+          | `obj param ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "products" param
+              |> Option.to_result
+                   ~none:("mandatory field 'products' does not exist", path)
+              >>= (list_of_json' (fun path -> function
+                     | (`obj fields : Kxclib.Json.jv) ->
+                         let ( >>= ) = Result.bind in
+                         List.assoc_opt "_0" fields
+                         |> Option.to_result
+                              ~none:("mandatory field '_0' does not exist", path)
+                         >>= (fun path x ->
+                               product_id_of_json' ~path x
+                               |> Result.map_error (fun (msg, path, _) ->
+                                      (msg, path)))
+                               (`f "_0" :: path)
+                         >>= fun x0 ->
+                         List.assoc_opt "_1" fields
+                         |> Option.to_result
+                              ~none:("mandatory field '_1' does not exist", path)
+                         >>= int_of_json' (`f "_1" :: path)
+                         >>= fun x1 -> Ok (x0, x1)
+                     | jv ->
+                         Error
+                           ( Printf.sprintf
+                               "an object is expected for a tuple value, but \
+                                the given is of type '%s'"
+                               (let open Kxclib.Json in
+                                string_of_jv_kind (classify_jv jv)),
+                             path )))
+                    (`f "products" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "paymentMethod" param
+              |> Option.to_result
+                   ~none:("mandatory field 'paymentMethod' does not exist", path)
+              >>= payment_method_of_json_nested (`f "paymentMethod" :: path)
+              >>= fun x1 ->
+              Ok ({ products = x0; payment_method = x1 } : order_details)
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a record value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        and payment_method_of_json_nested path __bindoj_orig =
+          match Kxclib.Jv.pump_field "kind" __bindoj_orig with
+          | `obj (("kind", `str "credit-card") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "cardNumber" param
+              |> Option.to_result
+                   ~none:("mandatory field 'cardNumber' does not exist", path)
+              >>= string_of_json' (`f "cardNumber" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "holderName" param
+              |> Option.to_result
+                   ~none:("mandatory field 'holderName' does not exist", path)
+              >>= string_of_json' (`f "holderName" :: path)
+              >>= fun x1 ->
+              List.assoc_opt "expirationDate" param
+              |> Option.to_result
+                   ~none:
+                     ("mandatory field 'expirationDate' does not exist", path)
+              >>= (fun path -> function
+                    | (`obj fields : Kxclib.Json.jv) ->
+                        let ( >>= ) = Result.bind in
+                        List.assoc_opt "_0" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_0' does not exist", path)
+                        >>= int_of_json' (`f "_0" :: path)
+                        >>= fun x0 ->
+                        List.assoc_opt "_1" fields
+                        |> Option.to_result
+                             ~none:("mandatory field '_1' does not exist", path)
+                        >>= int_of_json' (`f "_1" :: path)
+                        >>= fun x1 -> Ok (x0, x1)
+                    | jv ->
+                        Error
+                          ( Printf.sprintf
+                              "an object is expected for a tuple value, but \
+                               the given is of type '%s'"
+                              (let open Kxclib.Json in
+                               string_of_jv_kind (classify_jv jv)),
+                            path ))
+                    (`f "expirationDate" :: path)
+              >>= fun x2 ->
+              List.assoc_opt "cvv" param
+              |> Option.to_result
+                   ~none:("mandatory field 'cvv' does not exist", path)
+              >>= string_of_json' (`f "cvv" :: path)
+              >>= fun x3 ->
+              Ok
+                (Credit_card
+                   {
+                     card_number = x0;
+                     holder_name = x1;
+                     expiration_date = x2;
+                     cvv = x3;
+                   }
+                  : payment_method)
+          | `obj (("kind", `str "bank-transfer") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "accountNumber" param
+              |> Option.to_result
+                   ~none:("mandatory field 'accountNumber' does not exist", path)
+              >>= string_of_json' (`f "accountNumber" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "bankName" param
+              |> Option.to_result
+                   ~none:("mandatory field 'bankName' does not exist", path)
+              >>= string_of_json' (`f "bankName" :: path)
+              >>= fun x1 ->
+              List.assoc_opt "holderName" param
+              |> Option.to_result
+                   ~none:("mandatory field 'holderName' does not exist", path)
+              >>= string_of_json' (`f "holderName" :: path)
+              >>= fun x2 ->
+              Ok
+                (Bank_transfer
+                   { account_number = x0; bank_name = x1; holder_name = x2 }
+                  : payment_method)
+          | `obj (("kind", `str discriminator_value) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "given discriminator field value '%s' is not one of [ \
+                     'credit-card', 'bank-transfer' ]"
+                    discriminator_value,
+                  `f "kind" :: path )
+          | `obj (("kind", jv) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "a string is expected for a variant discriminator, but the \
+                     given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  `f "kind" :: path )
+          | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a variant value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        in
         fun path __bindoj_orig ->
           match __bindoj_orig with
           | `obj param ->
@@ -1011,10 +1521,7 @@ and order_of_json' =
               List.assoc_opt "id" param
               |> Option.to_result
                    ~none:("mandatory field 'id' does not exist", path)
-              >>= (fun path x ->
-                    order_id_of_json' ~path x
-                    |> Result.map_error (fun (msg, path, _) -> (msg, path)))
-                    (`f "id" :: path)
+              >>= int_of_json' (`f "id" :: path)
               >>= fun x0 ->
               List.assoc_opt "totalPrice" param
               |> Option.to_result
@@ -1024,17 +1531,36 @@ and order_of_json' =
               List.assoc_opt "details" param
               |> Option.to_result
                    ~none:("mandatory field 'details' does not exist", path)
-              >>= (fun path x ->
-                    order_details_of_json' ~path x
-                    |> Result.map_error (fun (msg, path, _) -> (msg, path)))
-                    (`f "details" :: path)
+              >>= order_details_of_json_nested (`f "details" :: path)
               >>= fun x2 ->
               List.assoc_opt "status" param
               |> Option.to_result
                    ~none:("mandatory field 'status' does not exist", path)
-              >>= (fun path x ->
-                    order_status_of_json' ~path x
-                    |> Result.map_error (fun (msg, path, _) -> (msg, path)))
+              >>= (fun path -> function
+                    | `str s ->
+                        (function
+                          | "Unpaid" -> Ok `Unpaid
+                          | "Paid" -> Ok `Paid
+                          | "Shipped" -> Ok `Shipped
+                          | "Delivered" -> Ok `Delivered
+                          | "Canceled" -> Ok `Canceled
+                          | s ->
+                              Error
+                                ( Printf.sprintf
+                                    "given string '%s' is not one of [ \
+                                     'Unpaid', 'Paid', 'Shipped', 'Delivered', \
+                                     'Canceled' ]"
+                                    s,
+                                  path ))
+                          s
+                    | jv ->
+                        Error
+                          ( Printf.sprintf
+                              "expecting type 'string' but the given is of \
+                               type '%s'"
+                              (let open Kxclib.Json in
+                               string_of_jv_kind (classify_jv jv)),
+                            path ))
                     (`f "status" :: path)
               >>= fun x3 ->
               Ok { id = x0; total_price = x1; details = x2; status = x3 }

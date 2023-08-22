@@ -25,8 +25,6 @@ open struct
   let cty_string = Coretype.mk_prim `string
   let cty_int_opt = Coretype.(mk_option (prim `int))
   let cty_string_opt = Coretype.(mk_option (prim `string))
-
-  let cty_ident td = Coretype.mk_ident td.td_name
 end
 
 let product_id_decl = alias_decl "product_id" Coretype.(mk_prim `int)
@@ -39,8 +37,8 @@ let product_details_decl = record_decl "product_details" [
 ] ~doc:(`docstr "Product details")
 
 let product_decl = record_decl "product" [
-  record_field "id" (cty_ident product_id_decl) ~doc:(`docstr "Product ID");
-  record_field "details" (cty_ident product_details_decl);
+  record_field_nested "id" product_id_decl ~doc:(`docstr "Product ID");
+  record_field_nested "details" product_details_decl;
 ] ~doc:(`docstr "Product")
 
 let order_id_decl = alias_decl "order_id" Coretype.(mk_prim `int)
@@ -74,7 +72,7 @@ let order_details_decl = record_decl "order_details" [
       Json_config.tuple_style (`obj `default)
     ])
     ~doc:(`docstr "ID and it's count of ordered products");
-  record_field "payment_method" (cty_ident payment_method_decl) ~doc:(`docstr "Payment method");
+  record_field_nested "payment_method" payment_method_decl ~doc:(`docstr "Payment method");
 ]
 
 let order_status_decl = alias_decl "order_status" (
@@ -88,10 +86,10 @@ let order_status_decl = alias_decl "order_status" (
 ) ~doc:(`docstr "Status of an order")
 
 let order_decl = record_decl "order" [
-  record_field "id" (cty_ident order_id_decl) ~doc:(`docstr "Order ID");
+  record_field_nested "id" order_id_decl ~doc:(`docstr "Order ID");
   record_field "total_price" cty_int;
-  record_field "details" (cty_ident order_details_decl);
-  record_field "status" (cty_ident order_status_decl);
+  record_field_nested "details" order_details_decl;
+  record_field_nested "status" order_status_decl;
 ]
 
 let product_query_decl = record_decl "product_query" [

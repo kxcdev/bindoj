@@ -18,8 +18,19 @@
     "description": "Product",
     "type": "object",
     "properties": {
-      "id": { "$ref": "#/components/schemas/ProductId" },
-      "details": { "$ref": "#/components/schemas/ProductDetails" }
+      "id": { "type": "integer" },
+      "details": {
+        "description": "Product details",
+        "type": "object",
+        "properties": {
+          "name": { "description": "Product name", "type": "string" },
+          "description": { "description": "Product description", "type": "string" },
+          "price": { "description": "Product price", "type": "integer" },
+          "count": { "description": "Count of the product", "type": "integer" }
+        },
+        "required": ["name", "description", "price", "count"],
+        "additionalProperties": false
+      }
     },
     "required": ["id", "details"],
     "additionalProperties": false
@@ -85,7 +96,47 @@
           "additionalProperties": false
         }
       },
-      "paymentMethod": { "$ref": "#/components/schemas/PaymentMethod" }
+      "paymentMethod": {
+        "description": "Payment method of an order",
+        "oneOf": [
+          {
+            "title": "credit-card",
+            "description": "Payment by credit card",
+            "type": "object",
+            "properties": {
+              "cardNumber": { "description": "Card number", "type": "string" },
+              "holderName": { "description": "Card holder name", "type": "string" },
+              "expirationDate": {
+                "description": "Expiration date",
+                "type": "object",
+                "properties": {
+                  "_0": { "description": "Expiration date", "type": "integer" },
+                  "_1": { "description": "Expiration date", "type": "integer" }
+                },
+                "required": ["_0", "_1"],
+                "additionalProperties": false
+              },
+              "cvv": { "description": "Card CVV", "type": "string" },
+              "kind": { "enum": ["credit-card"], "type": "string" }
+            },
+            "required": ["cardNumber", "holderName", "expirationDate", "cvv", "kind"],
+            "additionalProperties": false
+          },
+          {
+            "title": "bank-transfer",
+            "description": "Payment by bank transer",
+            "type": "object",
+            "properties": {
+              "accountNumber": { "description": "Account number", "type": "string" },
+              "bankName": { "description": "Bank name", "type": "string" },
+              "holderName": { "description": "Account holder name", "type": "string" },
+              "kind": { "enum": ["bank-transfer"], "type": "string" }
+            },
+            "required": ["accountNumber", "bankName", "holderName", "kind"],
+            "additionalProperties": false
+          }
+        ]
+      }
     },
     "required": ["products", "paymentMethod"],
     "additionalProperties": false
@@ -100,10 +151,75 @@
     "title": "Order",
     "type": "object",
     "properties": {
-      "id": { "$ref": "#/components/schemas/OrderId" },
+      "id": { "type": "integer" },
       "totalPrice": { "type": "integer" },
-      "details": { "$ref": "#/components/schemas/OrderDetails" },
-      "status": { "$ref": "#/components/schemas/OrderStatus" }
+      "details": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "description": "ID and it's count of ordered products",
+            "type": "array",
+            "items": {
+              "description": "ID and it's count of ordered products",
+              "type": "object",
+              "properties": {
+                "_0": { "$ref": "#/components/schemas/ProductId" },
+                "_1": { "description": "ID and it's count of ordered products", "type": "integer" }
+              },
+              "required": ["_0", "_1"],
+              "additionalProperties": false
+            }
+          },
+          "paymentMethod": {
+            "description": "Payment method of an order",
+            "oneOf": [
+              {
+                "title": "credit-card",
+                "description": "Payment by credit card",
+                "type": "object",
+                "properties": {
+                  "cardNumber": { "description": "Card number", "type": "string" },
+                  "holderName": { "description": "Card holder name", "type": "string" },
+                  "expirationDate": {
+                    "description": "Expiration date",
+                    "type": "object",
+                    "properties": {
+                      "_0": { "description": "Expiration date", "type": "integer" },
+                      "_1": { "description": "Expiration date", "type": "integer" }
+                    },
+                    "required": ["_0", "_1"],
+                    "additionalProperties": false
+                  },
+                  "cvv": { "description": "Card CVV", "type": "string" },
+                  "kind": { "enum": ["credit-card"], "type": "string" }
+                },
+                "required": ["cardNumber", "holderName", "expirationDate", "cvv", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "bank-transfer",
+                "description": "Payment by bank transer",
+                "type": "object",
+                "properties": {
+                  "accountNumber": { "description": "Account number", "type": "string" },
+                  "bankName": { "description": "Bank name", "type": "string" },
+                  "holderName": { "description": "Account holder name", "type": "string" },
+                  "kind": { "enum": ["bank-transfer"], "type": "string" }
+                },
+                "required": ["accountNumber", "bankName", "holderName", "kind"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": ["products", "paymentMethod"],
+        "additionalProperties": false
+      },
+      "status": {
+        "description": "Status of an order",
+        "enum": ["Unpaid", "Paid", "Shipped", "Delivered", "Canceled"],
+        "type": "string"
+      }
     },
     "required": ["id", "totalPrice", "details", "status"],
     "additionalProperties": false
