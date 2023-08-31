@@ -1,0 +1,5 @@
+(test
+ (name mangling_test)
+ (libraries alcotest bindoj_common kxclib)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show)))

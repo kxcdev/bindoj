@@ -27,7 +27,9 @@
    ex15_gen
    ex16_gen
    ex17_gen
-   ex18_gen)
+   ex18_gen
+   ex19_gen
+   ex20_gen)
   (libraries
    bindoj.base
    bindoj.std_runtime
@@ -391,7 +393,37 @@
     (with-stdout-to ex18_gen.mli
      (pipe-stdout
       (run %{generator} ex18_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex18_gen.mli -)))))))
+      (run %{bin:ocamlformat} --name ex18_gen.mli -))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (targets ex19_gen.ml ex19_gen.mli)
+  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
+  (action
+   (progn
+    (with-stdout-to ex19_gen.ml
+     (pipe-stdout
+      (run %{generator} ex19_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex19_gen.ml -)))
+    (with-stdout-to ex19_gen.mli
+     (pipe-stdout
+      (run %{generator} ex19_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex19_gen.mli -))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (targets ex20_gen.ml ex20_gen.mli)
+  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
+  (action
+   (progn
+    (with-stdout-to ex20_gen.ml
+     (pipe-stdout
+      (run %{generator} ex20_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex20_gen.ml -)))
+    (with-stdout-to ex20_gen.mli
+     (pipe-stdout
+      (run %{generator} ex20_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex20_gen.mli -)))))))
 (subdir typedesc_examples/lib_gen_ts
  (rule
   (alias gen)
@@ -1346,4 +1378,82 @@
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex18_schema.json ex18_schema.json)))))
+    (copy ../ex18_schema.json ex18_schema.json))))
+ (rule
+  (alias gen)
+  (targets ex19_gen.ts ex19_examples.json ex19_schema.json)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
+   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   %{workspace_root}/with_js/node_modules)
+  (action
+   (progn
+    (with-stdout-to ex19_gen.ts
+     (pipe-stdout
+      (run %{ts_gen} ex19_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex19_gen.ts)))
+    (with-stdout-to ex19_examples.json
+     (pipe-stdout
+      (run %{json_gen} ex19_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex19_examples.json)))
+    (with-stdout-to ex19_schema.json
+     (pipe-stdout
+      (run %{schema_gen} ex19_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex19_schema.json))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (action
+   (copy ex19_gen.ts ex19.ts)))
+ (subdir json-examples
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex19_examples.json ex19_examples.json))))
+ (subdir json-schema
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex19_schema.json ex19_schema.json))))
+ (rule
+  (alias gen)
+  (targets ex20_gen.ts ex20_examples.json ex20_schema.json)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
+   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   %{workspace_root}/with_js/node_modules)
+  (action
+   (progn
+    (with-stdout-to ex20_gen.ts
+     (pipe-stdout
+      (run %{ts_gen} ex20_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex20_gen.ts)))
+    (with-stdout-to ex20_examples.json
+     (pipe-stdout
+      (run %{json_gen} ex20_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex20_examples.json)))
+    (with-stdout-to ex20_schema.json
+     (pipe-stdout
+      (run %{schema_gen} ex20_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex20_schema.json))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (action
+   (copy ex20_gen.ts ex20.ts)))
+ (subdir json-examples
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex20_examples.json ex20_examples.json))))
+ (subdir json-schema
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex20_schema.json ex20_schema.json)))))

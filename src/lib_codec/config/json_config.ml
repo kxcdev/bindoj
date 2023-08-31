@@ -34,6 +34,7 @@ type json_tuple_style = [
 
 type json_mangling_style = [
   | `default
+  | `default_no_preserving_version_substring
   | `no_mangling
 ]
 
@@ -112,6 +113,7 @@ let default_mangling_style = `default
 let mangling_style style = Config_json_mangling_style style
 let no_mangling = Config_json_mangling_style `no_mangling
 let default_mangling = Config_json_mangling_style `default
+let default_mangling_no_preserving_version_substring = Config_json_mangling_style `default_no_preserving_version_substring
 
 let get_mangling_style_opt configs =
   Configs.find (function
@@ -121,13 +123,17 @@ let get_mangling_style_opt configs =
 let mangled kind mangling_style name =
   match mangling_style with
   | `no_mangling -> name
-  | `default ->
+  | `default | `default_no_preserving_version_substring ->
+    let preserve_version_substring =
+      mangling_style = `default
+    in
     let open Bindoj_common.Mangling in
-    name |> (match kind with
-    | `type_name -> snake_to_upper_camel
-    | `field_name -> snake_to_lower_camel
-    | `discriminator_value -> cap_snake_to_kebab
-    | `string_enum_case -> snake_to_kebab)
+    let mangler = match kind with
+      | `type_name -> snake_to_upper_camel
+      | `field_name -> snake_to_lower_camel
+      | `discriminator_value -> cap_snake_to_kebab
+      | `string_enum_case -> snake_to_kebab in
+    mangler ~preserve_version_substring name
 
 let get_mangled_name_of_type : ?inherited:json_mangling_style -> type_decl -> string * json_mangling_style =
   fun ?(inherited=default_mangling_style) { td_name; td_configs; _ } ->
@@ -146,6 +152,26 @@ let get_mangled_name_of_discriminator : ?inherited:json_mangling_style -> varian
     let style = get_mangling_style_opt vc_configs |? inherited in
     vc_configs |> get_name_opt |? vc_name
     |> mangled `discriminator_value style, style
+
+let get_mangled_name_of_discriminator_field': ?inherited:json_mangling_style -> [`type_decl] configs -> string =
+  fun ?(inherited=default_mangling_style) td_configs ->
+    let style = get_mangling_style_opt td_configs |? inherited in
+    td_configs |> get_variant_discriminator
+    |> mangled `field_name style
+
+let get_mangled_name_of_discriminator_field =
+  fun ?inherited { td_configs; _ } ->
+    get_mangled_name_of_discriminator_field' ?inherited td_configs
+
+let get_mangled_name_of_variant_arg' =
+  fun ?(inherited=default_mangling_style) vc_configs ->
+    let style = get_mangling_style_opt vc_configs |? inherited in
+    vc_configs |> get_name_of_variant_arg default_name_of_variant_arg
+    |> mangled `field_name style
+
+let get_mangled_name_of_variant_arg =
+  fun ?inherited { vc_configs; _ } ->
+    get_mangled_name_of_variant_arg' ?inherited vc_configs
 
 let get_mangled_name_of_string_enum_case : ?inherited:json_mangling_style -> Coretype.string_enum_case -> string =
   fun ?(inherited=default_mangling_style) (name, configs, _) ->
@@ -176,30 +202,45 @@ let check_field_name_collision =
   | `nested (td, _) -> f td
   in
   let open MonadOps(Option) in
-  let rec go_fields base_mangling_style (fs: string list list option) fields: string list list option =
+  let rec go_fields
+    base_mangling_style
+    (fs: string list list option) fields: string list list option =
     List.fold_left (fun fs field ->
-      let json_field_name, _ = get_mangled_name_of_field ~inherited:base_mangling_style field in
+      let json_field_name, _ =
+        get_mangled_name_of_field
+          ~inherited:base_mangling_style
+          field in
       match get_nested_field_style field.rf_configs with
       | `nested -> fs >>= (List.map (add_field json_field_name) &> sequence_list)
       | `spreading ->
         validated (fun td -> go default_mangling_style td fs) field.rf_type
     ) fs fields
-  and go base_mangling_style { td_configs; td_kind; _ } (fs: string list list option): string list list option =
+  and go :
+    json_mangling_style
+    -> type_decl
+    -> string list list option
+    -> string list list option =
+    fun
+      base_mangling_style
+      ({ td_configs; td_kind; _ } as td)
+      (fs: string list list option) ->
     let base_mangling_style = get_mangling_style_opt td_configs |? base_mangling_style in
     match td_kind with
     | Alias_decl _ -> fs
     | Record_decl fields -> go_fields base_mangling_style fs fields
     | Variant_decl ctors ->
       let discriminator_fname =
-        get_variant_discriminator td_configs
-        |> mangled `field_name base_mangling_style
-      in
+        get_mangled_name_of_discriminator_field
+          ~inherited:base_mangling_style
+          td in
       let fs = fs >>= (List.map (add_field discriminator_fname) &> sequence_list) in
       ctors |&> (fun ctor ->
         let base_mangling_style = get_mangling_style_opt ctor.vc_configs |? base_mangling_style in
         match ctor.vc_param with
-        | `inline_record fields | `reused_inline_record { td_kind = Record_decl fields; _ } -> go_fields base_mangling_style fs fields
-        | `reused_inline_record _ -> failwith' "type decl of reused inline record '%s' must be record decl." ctor.vc_name
+        | `inline_record fields | `reused_inline_record { td_kind = Record_decl fields; _ } ->
+          go_fields base_mangling_style fs fields
+        | `reused_inline_record _ ->
+          failwith' "type decl of reused inline record '%s' must be record decl." ctor.vc_name
         | `no_param | `tuple_like [] -> fs
         | `tuple_like [ va ] when get_nested_field_style va.va_configs = `spreading ->
           va.va_type |> validated (fun td ->
@@ -207,9 +248,9 @@ let check_field_name_collision =
             go base_mangling_style td fs)
         | `tuple_like _ ->
           let arg_fname =
-            get_name_of_variant_arg default_name_of_variant_arg ctor.vc_configs
-            |> mangled `field_name base_mangling_style
-          in
+            get_mangled_name_of_variant_arg
+              ~inherited:base_mangling_style
+              ctor in
           fs >>? (List.map (add_field arg_fname) &> sequence_list)
       )
       |> sequence_list

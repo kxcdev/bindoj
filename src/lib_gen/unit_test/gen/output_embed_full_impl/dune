@@ -220,3 +220,21 @@
  (target ex18_gen.mli)
  (action (with-stdout-to %{target} (run %{exe:../gen_embed_full_impl.exe} %{target} -gen-type-decl)))
  (mode (promote (until-clean))))
+
+(rule
+ (target ex19_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen_embed_full_impl.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+(rule
+ (target ex19_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen_embed_full_impl.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+
+(rule
+ (target ex20_gen.ml)
+ (action (with-stdout-to %{target} (run %{exe:../gen_embed_full_impl.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))
+(rule
+ (target ex20_gen.mli)
+ (action (with-stdout-to %{target} (run %{exe:../gen_embed_full_impl.exe} %{target} -gen-type-decl)))
+ (mode (promote (until-clean))))

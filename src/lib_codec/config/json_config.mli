@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 (** This module provides functionalities to configure the JSON shape. *)
+
 open Bindoj_base
 open Bindoj_runtime
 open Typed_type_desc
@@ -41,17 +42,52 @@ type json_mangling_style = [
       snake_case to UpperCamelCase, e.g.
       - ocaml: `some_type_name`
       - typescript: `SomeTypeName`
-
       {2 field name}
       snake_case to lowerCamelCase, e.g.
       - ocaml: `some_field_foo`
       - json: `someFieldFoo`
-
       {2 variant name}
       Capitalized_snake_case to kebab-case
       - ocaml: `Some_branch_foo`
       - json: `some-branch-foo`
+
+      {2 when a version substring is present}
+
+      {3 major version + minor version}
+      {4 type name}
+      - ocaml: `version_info_v1_0`
+      - typescript: `VersionInfoV1_0`
+      {4 variant/kind/enum name}
+      - ocaml`Version_info_v1_0`
+      - json: `version-info-v1_0`
+      {4 field name}
+      - ocaml: `version_info_v1_0`
+      - json: `versionInfoV1_0`
+
+      {3 major version only}
+      {4 type name}
+      - ocaml: `version_info_v1`
+      - typescript: `VersionInfoV1`
+      {4 variant/kind/enum name}
+      - ocaml: `Version_info_v1`
+      - json: `version-info-v1`
+      {4 field name}
+      - ocaml: `version_info_v1`
+      - json: `versionInfoV1`
+
+      {3 with patch number}
+      {4 type name}
+      - ocaml: `version_info_v1_0_1`
+      - typescript: `VersionInfoV1_0_1`
+      {4 variant/kind/enum name}
+      - ocaml: `Version_info_v1_0_1`
+      - json: `version-info-v1_0_1`
+      {4 field name}
+      - ocaml: `version_info_v1_0_1`
+      - json: `versionInfoV1_0_1`
     *)
+  | `default_no_preserving_version_substring
+  (** the mangling style is almost same as default, but the version substring like `v1_0` is not presrved. *)
   | `no_mangling (** do not mangle *)
 ]
 
@@ -60,7 +96,7 @@ type json_nested_field_style = [
   | `spreading
   (** nested field's internal fields being spreading;
       would result in error if the field does not ultimately
-      resolves to a {!Record_decl} / {!Variant_decl} kinded {!type-type_decl} *)
+      resolves to a {!Bindoj_typedesc.Type_desc.Record_decl} / {!Bindoj_typedesc.Type_desc.Variant_decl} kinded {!Bindoj_typedesc.Type_desc.type_decl} *)
   ]
 
 type ('pos, 'kind) config +=
@@ -109,19 +145,42 @@ val default_nested_field_style : json_nested_field_style
 val nested_field_style : json_nested_field_style -> ([< `record_field | `variant_tuple_argument], [`json_nested_field_style]) config
 val get_nested_field_style : [< `record_field | `variant_tuple_argument] configs -> json_nested_field_style
 
+(** default : [ `default true ] *)
 val default_mangling_style : json_mangling_style
 val mangling_style : json_mangling_style -> ([< pos], [`json_mangling_style]) config
 val no_mangling : ([< pos], [`json_mangling_style]) config
 val default_mangling : ([< pos], [`json_mangling_style]) config
+val default_mangling_no_preserving_version_substring : ([< pos], [`json_mangling_style]) config
 val get_mangling_style_opt : [< pos] configs -> json_mangling_style option
 
-val mangled : [ `type_name | `field_name | `discriminator_value | `string_enum_case ] -> json_mangling_style -> string -> string
+val mangled :
+  [ `type_name | `field_name | `discriminator_value | `string_enum_case ]
+  -> json_mangling_style -> string -> string
 
-val get_mangled_name_of_type : ?inherited:json_mangling_style -> type_decl -> string * json_mangling_style
-val get_mangled_name_of_field : ?inherited:json_mangling_style -> record_field -> string * json_mangling_style
-val get_mangled_name_of_discriminator : ?inherited:json_mangling_style -> variant_constructor -> string * json_mangling_style
-val get_mangled_name_of_string_enum_case : ?inherited:json_mangling_style -> Coretype.string_enum_case -> string
-
+val get_mangled_name_of_type :
+  ?inherited:json_mangling_style
+  -> type_decl -> string * json_mangling_style
+val get_mangled_name_of_field :
+  ?inherited:json_mangling_style
+  -> record_field -> string * json_mangling_style
+val get_mangled_name_of_discriminator :
+  ?inherited:json_mangling_style
+  -> variant_constructor -> string * json_mangling_style
+val get_mangled_name_of_discriminator_field' :
+  ?inherited:json_mangling_style
+  -> [`type_decl] configs -> string
+val get_mangled_name_of_discriminator_field :
+  ?inherited:json_mangling_style
+  -> type_decl -> string
+val get_mangled_name_of_variant_arg' :
+  ?inherited:json_mangling_style
+  -> [`variant_constructor] configs -> string
+val get_mangled_name_of_variant_arg :
+  ?inherited:json_mangling_style
+  -> variant_constructor -> string
+val get_mangled_name_of_string_enum_case :
+  ?inherited:json_mangling_style
+  -> Coretype.string_enum_case -> string
 
 val custom_encoder : string -> ([`coretype], [`json_custom_encoder]) config
 val get_custom_encoder : [`coretype] configs -> string option

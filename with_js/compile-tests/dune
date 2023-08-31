@@ -405,3 +405,37 @@
  (target ex18_schema.json)
  (action (with-stdout-to %{target} (run %{exe:./schema/gen.exe} %{target})))
  (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target ex19_gen.ts)
+ (deps %{exe:../../src/lib_gen_ts/unit_test/gen/gen.exe})
+ (action (with-stdout-to %{target} (run %{deps} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex19_examples.json)
+ (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex19_schema.json)
+ (action (with-stdout-to %{target} (run %{exe:./schema/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+
+(rule
+ (alias gen)
+ (target ex20_gen.ts)
+ (deps %{exe:../../src/lib_gen_ts/unit_test/gen/gen.exe})
+ (action (with-stdout-to %{target} (run %{deps} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex20_examples.json)
+ (action (with-stdout-to %{target} (run %{exe:./json/gen.exe} %{target})))
+ (mode (promote (until-clean))))
+(rule
+ (alias gen)
+ (target ex20_schema.json)
+ (action (with-stdout-to %{target} (run %{exe:./schema/gen.exe} %{target})))
+ (mode (promote (until-clean))))

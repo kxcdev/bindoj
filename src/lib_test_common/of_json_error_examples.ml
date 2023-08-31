@@ -581,6 +581,112 @@ module SampleEx18 : SampleGenerated = struct
   ]
 end
 
+module SampleEx19 : SampleGenerated = struct
+  include Ex19
+  let name = "SampleEx19"
+  let expected_json_shape_explanation = Typedesc_examples.Ex19.expected_json_shape_explanation
+  let samples = [
+    "discriminator not found", `obj [], (discriminator_not_found "kind", []);
+    "discriminator not string", `obj [ ("kind", `null)], (discriminator_not_string "null", [ `f "kind" ]);
+
+    "invalid constructor", ctor0 "version-info-v1-0",
+    ("given discriminator field value 'version-info-v1-0' is not one of [ 'version-info-v1_0', 'version-v1_0-info', 'v1_0-version-info', 'no-preserving-version-substring-v1-0' ]", [ `f "kind" ]);
+    "invalid constructor", ctor0 "version-v1-0-info",
+    ("given discriminator field value 'version-v1-0-info' is not one of [ 'version-info-v1_0', 'version-v1_0-info', 'v1_0-version-info', 'no-preserving-version-substring-v1-0' ]", [ `f "kind" ]);
+    "invalid constructor", ctor0 "v1-0-version-info",
+    ("given discriminator field value 'v1-0-version-info' is not one of [ 'version-info-v1_0', 'version-v1_0-info', 'v1_0-version-info', 'no-preserving-version-substring-v1-0' ]", [ `f "kind" ]);
+    "invalid constructor", ctor0 "no-preserving-version-substring-v1_0",
+    ("given discriminator field value 'no-preserving-version-substring-v1_0' is not one of [ 'version-info-v1_0', 'version-v1_0-info', 'v1_0-version-info', 'no-preserving-version-substring-v1-0' ]", [ `f "kind" ]);
+
+    "field not found", ctor_record "version-info-v1_0" [
+      "versionInfoV1", `num 1.;
+      "versionInfoV10", `num 2.;
+    ],
+    (field_not_found "versionInfoV1_0", []);
+
+    "field not found", ctor_record "version-info-v1_0" [
+      "versionInfoV1", `num 1.;
+      "versionInfoV1_0", `num 2.;
+      "versionInfoV101", `num 3.;
+    ],
+    (field_not_found "versionInfoV1_0_1", []);
+
+    "field not found", ctor_record "version-v1_0-info" [
+      "versionV1Info", `num 1.;
+      "versionV10Info", `num 2.;
+    ],
+    (field_not_found "versionV1_0Info", []);
+
+    "field not found", ctor_record "version-v1_0-info" [
+      "versionV1Info", `num 1.;
+      "versionV1_0Info", `num 2.;
+      "versionV101Info", `num 3.;
+    ],
+    (field_not_found "versionV1_0_1Info", []);
+
+    "field not found", ctor_record "v1_0-version-info" [
+      "v1VersionInfo", `num 1.;
+      "v10VersionInfo", `num 2.;
+    ],
+    (field_not_found "v1_0VersionInfo", []);
+
+    "field not found", ctor_record "v1_0-version-info" [
+      "v1VersionInfo", `num 1.;
+      "v1_0VersionInfo", `num 2.;
+      "v101VersionInfo", `num 3.;
+    ],
+    (field_not_found "v1_0_1VersionInfo", []);
+
+    "field not found", ctor_record "no-preserving-version-substring-v1-0" [
+      "versionInfoV1", `num 1.;
+      "versionInfoV1_0", `num 2.;
+    ],
+    (field_not_found "versionInfoV10", []);
+    "field not found", ctor_record "no-preserving-version-substring-v1-0" [
+      "versionInfoV1", `num 1.;
+      "versionInfoV10", `num 2.;
+      "versionInfoV1_0_1", `num 3.;
+    ],
+    (field_not_found "versionInfoV101", []);
+  ]
+end
+
+module SampleEx20 : SampleGenerated = struct
+  include Ex20
+  let name = "SampleEx20"
+  let expected_json_shape_explanation = Typedesc_examples.Ex20.expected_json_shape_explanation
+  let samples =
+    let fields = [
+      (Some "v5-3VersionInfo", "v5_3VersionInfo", `str "Case-version-v1");
+      (None, "versionInfoV2", `num (-1.));
+      (Some "versionInfoV20", "versionInfoV2_0", `num (-2.));
+      (Some "versionInfoV201", "versionInfoV2_0_1", `num (-3.));
+      (None, "versionV3Info", `num 1.);
+      (Some "versionV30Info", "versionV3_0Info", `num 2.);
+      (Some "versionV301Info", "versionV3_0_1Info", `num 3.);
+      (None, "v4VersionInfo", `num 4.);
+      (Some "v40VersionInfo", "v4_0VersionInfo", `num 5.);
+      (Some "v401VersionInfo", "v4_0_1VersionInfo", `num 6.);
+    ] in
+    (fields |&?> function
+      | (None, _, _) -> None
+      | (Some invalid_name, json_name, _) ->
+      Some (sprintf "field '%s' not found" json_name, `obj (
+        fields |&> fun (invalid_name', json_name, jv) ->
+          ((match invalid_name' with
+            | Some s' when invalid_name = s' -> invalid_name
+            | _ -> json_name), jv)),
+      (field_not_found json_name, [])))
+    @ [
+      "invalid enum case", `obj [
+        ("v5_3VersionInfo", `str "Case-v2-0-version")
+      ], ("given string 'Case-v2-0-version' is not one of [ 'Case-version-v1', 'Case-v2_0-version', 'v3_0_1-case-version' ]", [ `f "v5_3VersionInfo" ]);
+      "invalid enum case", `obj [
+        ("v5_3VersionInfo", `str "v3-0-1-case-version")
+      ], ("given string 'v3-0-1-case-version' is not one of [ 'Case-version-v1', 'Case-v2_0-version', 'v3_0_1-case-version' ]", [ `f "v5_3VersionInfo" ]);
+    ]
+end
+
 let ttd_name (type t) ((module Td) : t Typed_type_desc.typed_type_decl) =
   Td.decl.td_name
 
@@ -778,6 +884,8 @@ let all_generated : (module SampleGenerated) list = [
   (module SampleEx16);
   (module SampleEx17);
   (module SampleEx18);
+  (module SampleEx19);
+  (module SampleEx20);
 ]
 
 let all : (module Sample) list = [
@@ -802,6 +910,8 @@ let all : (module Sample) list = [
   (module SampleEx16);
   (module SampleEx17);
   (module SampleEx18);
+  (module SampleEx19);
+  (module SampleEx20);
   (module SampleIdentInt_Refl);
   (module SampleIdentInt_Coretypes);
   (module SampleIdentIntOption_Coretypes);

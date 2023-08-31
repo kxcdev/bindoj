@@ -1,4 +1,6 @@
 (library
  (name bindoj_common)
  (public_name bindoj.common)
- (instrumentation (backend bisect_ppx)))
+ (libraries kxclib)
+ (instrumentation (backend bisect_ppx))
+ (flags :standard -open Kxclib))

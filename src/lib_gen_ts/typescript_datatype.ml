@@ -243,15 +243,14 @@ and ts_type_alias_decl_of_fwrt_decl' :
     match fd_kind with
     | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
       let members, nested = ts_props_and_nested_types_of_fields base_mangling_style fo_fields in
-      let discriminator_name = fo_configs |> Ts_config.get_variant_discriminator in
+      let discriminator_name =
+        Json_config.get_mangled_name_of_discriminator_field'
+          ~inherited:base_mangling_style fo_configs
+      in
       let children: ts_type_desc ignore_order_list =
         fo_children |&> fun child ->
-          let { tsa_name; tsa_type_desc; _; } =
+          let { tsa_name = discriminator_value; tsa_type_desc; _; } =
             ts_type_alias_decl_of_fwrt_decl' ~self_json_name ~base_mangling_style (child, env) in
-          let (discriminator_value, _) =
-            FwrtTypeEnv.lookup child env
-            |> get_name_of_fwrt_desc ~default:tsa_name base_mangling_style
-          in
           let kind_field =
             { tsps_modifiers = [];
               tsps_name = discriminator_name;
@@ -280,7 +279,11 @@ and ts_type_alias_decl_of_fwrt_decl' :
             Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
           | None -> base_mangling_style
         in
-        let arg_name = Json_config.(get_name_of_variant_arg default_name_of_variant_arg fc_configs) in
+        let arg_name =
+          Json_config.get_mangled_name_of_variant_arg'
+            ~inherited:base_mangling_style
+            fc_configs
+        in
         let members, nested =
           let members, nested =
             ts_props_and_nested_types_of_fields base_mangling_style fc_fields
@@ -356,20 +359,19 @@ and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
     let type_param = "__bindoj_ret" in
     let param = "__bindoj_fns" in
     let var_v = "__bindoj_v" in
-    let discriminator_name = Ts_config.get_variant_discriminator fo_configs in
+    let discriminator_name =
+      Json_config.get_mangled_name_of_discriminator_field'
+        ~inherited:base_mangling_style fo_configs
+    in
     let param_type =
       `type_literal (List.sort String.compare fo_children |&> fun child ->
-        let decl = ts_type_alias_decl_of_fwrt_decl' ~self_json_name ~base_mangling_style (child, env) in
-        let (discriminator_value, _) =
-          FwrtTypeEnv.lookup child env
-          |> get_name_of_fwrt_desc ~default:decl.tsa_name base_mangling_style
-        in
+        let { tsa_name = discriminator_value; tsa_type_desc; _ } = ts_type_alias_decl_of_fwrt_decl' ~self_json_name ~base_mangling_style (child, env) in
         let kind_field =
           { tsps_modifiers = [];
             tsps_name = discriminator_name;
             tsps_optional = false;
             tsps_type_desc = `literal_type (`string_literal discriminator_value); } in
-        let desc = add_kind_field kind_field decl.tsa_type_desc in
+        let desc = add_kind_field kind_field tsa_type_desc in
         { tsps_modifiers = [];
           tsps_name = discriminator_value;
           tsps_optional = false;

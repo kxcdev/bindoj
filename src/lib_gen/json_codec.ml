@@ -859,20 +859,14 @@ let gen_json_encoder :
         of_record_fields ~label:"reused inline record" fields
         |> List.return
   in
-  let variant_body : nested:bool -> self_ename:expression -> inherited_codec:Coretype.codec -> [`type_decl] configs -> Json_config.json_mangling_style -> variant_constructor list -> expression list =
-    fun ~nested ~self_ename ~inherited_codec td_configs base_mangling_style cnstrs ->
-    let discriminator_fname =
-      Json_config.get_variant_discriminator td_configs
-      |> Json_config.mangled `field_name base_mangling_style
-    in
+  let variant_body : nested:bool -> self_ename:expression -> inherited_codec:Coretype.codec -> type_decl -> Json_config.json_mangling_style -> variant_constructor list -> expression list =
+    fun ~nested ~self_ename ~inherited_codec td base_mangling_style cnstrs ->
+    let discriminator_fname = Json_config.get_mangled_name_of_discriminator_field ~inherited:base_mangling_style td in
     cnstrs |&>> fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
       let (discriminator_value, base_mangling_style) =
         Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
       in
-      let arg_fname =
-        Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
-        |> Json_config.mangled `field_name base_mangling_style
-      in
+      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style ctor in
       let cstr = [%expr ([%e estring ~loc discriminator_fname], `str [%e estring ~loc discriminator_value])] in
       let of_record_fields base_mangling_style fields =
         let args = record_to_json_fields ~inherited_codec ~nested ~self_ename base_mangling_style fields in
@@ -958,7 +952,7 @@ let gen_json_encoder :
       ([%e map_body @@ record_to_json_fields ~inherited_codec ~nested ~self_ename base_mangling_style fields])]
     | Variant_decl ctors ->
       let params = variant_params td_configs ctors in
-      let body = variant_body ~inherited_codec ~nested ~self_ename td_configs base_mangling_style ctors in
+      let body = variant_body ~inherited_codec ~nested ~self_ename td base_mangling_style ctors in
       List.map2
         (fun p b -> case ~lhs:p ~rhs:(map_body b) ~guard:None)
         params body
@@ -1079,19 +1073,13 @@ let gen_json_decoder_impl :
   in
   let variant_body : self_ename:expression -> inherited_codec:Coretype.codec -> gen_typcons:bool -> type_decl -> Json_config.json_mangling_style -> variant_constructor list -> (pattern * expression) list =
     fun ~self_ename ~inherited_codec ~gen_typcons ({ td_name; td_configs; _ } as td) base_mangling_style cstrs ->
-    let discriminator_fname =
-      Json_config.get_variant_discriminator td_configs
-      |> Json_config.mangled `field_name base_mangling_style
-    in
+    let discriminator_fname = Json_config.get_mangled_name_of_discriminator_field ~inherited:base_mangling_style td in
     let discriminator_fname_p = pstring ~loc discriminator_fname in
     cstrs |&> (fun ({ vc_name; vc_param; vc_configs; _ } as ctor) ->
       let (discriminator_value, base_mangling_style) =
         Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
       in
-      let arg_fname =
-        Json_config.(get_name_of_variant_arg default_name_of_variant_arg) vc_configs
-        |> Json_config.mangled `field_name base_mangling_style
-      in
+      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style ctor in
       let cstr_p tail = [%pat? `obj (([%p discriminator_fname_p], `str [%p pstring ~loc discriminator_value])::[%p tail])] in
       let construct name args =
         match Caml_config.get_variant_type td_configs with
@@ -1678,9 +1666,9 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         | `record_decl({ td_name=self_name; _ } as td, fields, _) ->
           let (self_mangled_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type td in
           fields_to_t ~self_name ~self_mangled_type_name base_mangling_style fields
-        | `variant_decl({ td_name=self_name; td_configs; _ } as td, ctors, _) ->
+        | `variant_decl({ td_name=self_name; _ } as td, ctors, _) ->
           let (self_mangled_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type td in
-          variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td_configs ctors
+          variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td ctors
           |&> (fun (_, _, x) -> x)
         end
     ) |> List.fold_left (fun result ->
@@ -1691,11 +1679,8 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
     fields_to_t ~self_name ~self_mangled_type_name base_mangling_style fields
     |&> (fun x -> (None, `nodoc, x))
     |> variant_or_record_of_fields ?schema ?id ?title ?additional_fields ~doc
-  and variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td_configs ctors =
-    let discriminator_fname =
-      Json_config.get_variant_discriminator td_configs
-      |> Json_config.mangled `field_name base_mangling_style
-    in
+  and variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td ctors =
+    let discriminator_fname = Json_config.get_mangled_name_of_discriminator_field ~inherited:base_mangling_style td in
     ctors |&>> fun ({ vc_param; vc_doc; vc_configs; _ } as ctor) ->
       let (discriminator_value, base_mangling_style) =
         Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
@@ -1715,9 +1700,9 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
             let (self_mangled_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type td in
             fields_to_t ~self_name ~self_mangled_type_name base_mangling_style fields
             |&> (fun x -> (Some discriminator_value, `nodoc, x @ discriminator_field))
-          | `variant_decl ({ td_name = self_name; td_configs; _ } as td, ctors, _) ->
+          | `variant_decl ({ td_name = self_name; _ } as td, ctors, _) ->
             let (self_mangled_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type td in
-            variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td_configs ctors
+            variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td ctors
             |&> (fun (a, b, c) ->
               let title = match a with | None -> discriminator_value | Some a -> discriminator_value^"_"^a in
               (Some title, b, c @ discriminator_field))
@@ -1766,10 +1751,10 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
           |> List.map (fun xs ->
             Some discriminator_value, vc_doc, xs @ discriminator_field)
         end
-  and variant_to_t ?schema ?id ?title ~self_name ~self_mangled_type_name ~doc td_configs base_mangling_style ctors =
-    variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td_configs ctors
+  and variant_to_t ?schema ?id ?title ~self_name ~self_mangled_type_name ~doc td base_mangling_style ctors =
+    variant_to_t' ~self_name ~self_mangled_type_name base_mangling_style td ctors
     |> variant_or_record_of_fields ?schema ?id ?title ~doc
-  and type_decl_to_t ?schema ?(id=false) ?base_mangling_style ~gen_title ({ td_name = name; td_doc=doc; td_kind; td_configs; _} as td) =
+  and type_decl_to_t ?schema ?(id=false) ?base_mangling_style ~gen_title ({ td_name = name; td_doc=doc; td_kind; _} as td) =
     let self_name = name in
     let (self_mangled_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type ?inherited:base_mangling_style td in
     let id = if id then get_id self_mangled_type_name else None in
@@ -1778,7 +1763,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
     | Record_decl fields ->
       record_to_t ?schema ?id ?title ~self_name ~self_mangled_type_name ~doc base_mangling_style fields
     | Variant_decl ctors ->
-      variant_to_t ?schema ?id ?title ~self_name ~self_mangled_type_name ~doc td_configs base_mangling_style ctors
+      variant_to_t ?schema ?id ?title ~self_name ~self_mangled_type_name ~doc td base_mangling_style ctors
     | Alias_decl cty ->
       convert_coretype
         ~alias_decl_props:(schema, id, title)
