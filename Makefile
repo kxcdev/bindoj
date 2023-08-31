@@ -1,4 +1,4 @@
-.PHONY: default info setup dune-gen build test gen doc doc-serve clean audit promote-audit promote-test promote
+.PHONY: default info setup dune-gen build test _coverage coverage gen _doc doc doc-serve clean audit promote-audit promote-test promote
 
 default: info build
 
@@ -38,7 +38,18 @@ test: audit build gen
 	yarn --cwd with_js clean || echo "yarn clean failed... you probably does not have a complete setup yet"
 	dune runtest
 
-doc: build
+_coverage:
+	rm -rf _coverage
+	-dune runtest -f --instrument-with bisect_ppx --no-buffer
+	@(mkdir -p _coverage/ocaml/coverage-files && \
+	  find _build/default | grep -E 'bisect.+[.]coverage$$' | xargs -I{} cp {} _coverage/ocaml/coverage-files)
+	@(bisect-ppx-report html -o _coverage/ocaml/doc _coverage/ocaml/coverage-files/*)
+	@echo ">>> OCaml coverage:"
+	@(bisect-ppx-report summary _coverage/ocaml/coverage-files/*)
+
+coverage: build _coverage
+
+_doc:
 	dune build @doc
 	dune build @doc --root=vendors/kxclib
 
@@ -51,6 +62,11 @@ doc: build
 
 	rm -rf doc/example
 	cp -r _build/default/example/docs doc/example
+
+	rm -rf doc/app/public/coverage
+	cp -r _coverage/ocaml/doc doc/app/public/coverage
+
+doc: build coverage
 
 doc-serve: doc
 	cd doc/app && yarn dev

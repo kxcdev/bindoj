@@ -1,6 +1,7 @@
 (library
  (name bindoj_apidir_runtime)
  (public_name bindoj.apidir_runtime)
+ (instrumentation (backend bisect_ppx))
  (libraries
   kxclib
   bindoj_base

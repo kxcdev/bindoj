@@ -1,4 +1,5 @@
 (library
  (name bindoj_base)
  (public_name bindoj.base)
+ (instrumentation (backend bisect_ppx))
  (libraries kxclib bindoj_typedesc bindoj_runtime))

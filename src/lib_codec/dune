@@ -1,5 +1,6 @@
 (library
  (name bindoj_codec)
  (public_name bindoj.codec)
+ (instrumentation (backend bisect_ppx))
  (libraries bindoj_codec_config kxclib bindoj_common bindoj_base bindoj_runtime)
  (flags (:standard -open Kxclib)))

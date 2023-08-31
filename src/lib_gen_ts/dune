@@ -1,6 +1,7 @@
 (library
  (name bindoj_gen_ts)
  (public_name bindoj.gen_ts)
+ (instrumentation (backend bisect_ppx))
  (libraries bindoj_gen_ts_config bindoj_gen bindoj_gen_foreign kxclib zed)
  (preprocess (pps ppx_deriving.std))
  (flags (:standard -open Kxclib)))

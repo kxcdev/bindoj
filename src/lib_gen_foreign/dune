@@ -1,6 +1,7 @@
 (library
  (name bindoj_gen_foreign)
  (public_name bindoj.gen_foreign)
+ (instrumentation (backend bisect_ppx))
  (libraries bindoj_base kxclib)
  (flags (:standard -open Kxclib))
  (preprocess (pps ppx_deriving.std)))

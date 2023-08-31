@@ -1,6 +1,7 @@
 (library
  (name bindoj_openapi_security_requirement_object)
  (public_name bindoj.openapi.security_requirement_object)
+ (instrumentation (backend bisect_ppx))
  (libraries
   bindoj_openapi_util
   bindoj_base kxclib)

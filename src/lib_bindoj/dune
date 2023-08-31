@@ -1,6 +1,7 @@
 (library
  (name bindoj)
  (public_name bindoj)
+ (instrumentation (backend bisect_ppx))
  (preprocess
   (pps ppxlib.metaquot))
  (libraries kxclib ppxlib bindoj_typedesc bindoj_gen bindoj_gen_ts)

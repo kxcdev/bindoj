@@ -1,6 +1,7 @@
 (library
  (name bindoj_openapi_util)
  (public_name bindoj.openapi.util)
+ (instrumentation (backend bisect_ppx))
  (libraries
   bindoj_base kxclib)
  (preprocess

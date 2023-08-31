@@ -1,6 +1,7 @@
 (library
  (name bindoj_typedesc)
  (public_name bindoj.typedesc)
+ (instrumentation (backend bisect_ppx))
  (flags (:standard -open Kxclib))
  (preprocess (pps ppx_deriving.show ppx_deriving.eq))
  (libraries kxclib bindoj_runtime))

@@ -1,6 +1,7 @@
 (library
  (name bindoj_openapi)
  (public_name bindoj.openapi)
+ (instrumentation (backend bisect_ppx))
  (libraries
   bindoj_openapi_util
   bindoj_openapi_info_object

@@ -1,3 +1,4 @@
 (library
  (name bindoj_common)
- (public_name bindoj.common))
+ (public_name bindoj.common)
+ (instrumentation (backend bisect_ppx)))

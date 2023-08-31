@@ -1,6 +1,7 @@
 (library
  (name bindoj_openapi_style_value)
  (public_name bindoj.openapi.style_value)
+ (instrumentation (backend bisect_ppx))
  (libraries
   bindoj_openapi_util
   bindoj_base kxclib)

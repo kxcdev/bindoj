@@ -1,6 +1,7 @@
 (library
  (name bindoj_apidir_generative)
  (public_name bindoj.apidir_generative)
+ (instrumentation (backend bisect_ppx))
  (libraries
   kxclib
   uri

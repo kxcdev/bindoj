@@ -1,6 +1,7 @@
 (library
  (name bindoj_openapi_external_documentation_object)
  (public_name bindoj.openapi.external_documentation_object)
+ (instrumentation (backend bisect_ppx))
  (libraries
   bindoj_openapi_util
   bindoj_base kxclib)

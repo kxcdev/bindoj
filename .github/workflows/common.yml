@@ -2,6 +2,7 @@ name: Common CI workflow
 
 on:
   push:
+  pull_request:
 
 jobs:
   build:
@@ -54,8 +55,8 @@ jobs:
       - name: Install dependencies
         run: opam install . --deps-only --with-test --with-doc
 
-      - name: build & test
-        run: ./scripts/ci_run.sh
+      - name: build
+        run: opam exec -- make gen
 
       - name: check diff
         run: |
@@ -84,8 +85,11 @@ jobs:
             --fail \
           )
 
-      - run: |
-          opam exec -- make doc
+      - name: test with coverage
+        run: opam exec -- make _coverage
+
+      - name: doc
+        run: opam exec -- make _doc
 
       - name: upload odoc generated document
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-version == '4.12.1' }}

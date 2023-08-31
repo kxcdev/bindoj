@@ -1,6 +1,7 @@
 (library
  (name bindoj_apidir_shared)
  (public_name bindoj.apidir_shared)
+ (instrumentation (backend bisect_ppx))
  (libraries kxclib bindoj_base bindoj_typedesc)
  (flags (:standard
           -open Kxclib)))

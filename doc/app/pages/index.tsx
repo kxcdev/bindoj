@@ -32,6 +32,9 @@ const Home: NextPage<Props> = ({ allDocs }) => {
           <a href="html/index.html" className={styles.card}>
             <h2>dune build @doc</h2>
           </a>
+          <a href="coverage/index.html" className={styles.card}>
+            <h2>Coverage</h2>
+          </a>
           <a href="example" className={styles.card}>
             <h2>Example</h2>
           </a>

@@ -49,8 +49,12 @@ setup.log
 # Local OPAM switch
 _opam/
 
+# ppx_bisect
+/_coverage/
+
 # project specific
 doc/dist/*.md
 doc/example/*.html
 doc/app/public/html
+doc/app/public/coverage
 .vercel

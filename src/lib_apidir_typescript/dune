@@ -1,6 +1,7 @@
 (library
  (name bindoj_apidir_typescript)
  (public_name bindoj.apidir_typescript)
+ (instrumentation (backend bisect_ppx))
  (libraries
   kxclib
   bindoj_typedesc

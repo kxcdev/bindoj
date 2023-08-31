@@ -1,5 +1,6 @@
 (library
  (name bindoj_std_runtime)
  (public_name bindoj.std_runtime)
+ (instrumentation (backend bisect_ppx))
  (libraries kxclib bindoj_runtime)
  (flags (:standard -open Kxclib)))
