@@ -6,8 +6,8 @@ export const Sample_apidir_03InvpInfo = {
     name: "id-of-person",
     method: "POST",
     urlpath: "/person/id",
-    req_type: undefined as unknown as Person,
-    resp_type: undefined as unknown as Int | String,
+    requestType: undefined as unknown as Person,
+    responseType: undefined as unknown as Int | String,
   },
 } as const;
 export type Sample_apidir_03InvpInfoMap = bindoj.IsApiDirInfoMap<typeof Sample_apidir_03InvpInfo>;

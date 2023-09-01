@@ -6,15 +6,15 @@ export const Sample_apidir_05InvpInfo = {
     name: "int-of-string",
     method: "POST",
     urlpath: "/option/int-of-string",
-    req_type: undefined as unknown as String,
-    resp_type: undefined as unknown as number | null | undefined,
+    requestType: undefined as unknown as String,
+    responseType: undefined as unknown as number | null | undefined,
   },
   "option-of-complex": {
     name: "option-of-complex",
     method: "POST",
     urlpath: "/option/of-complex",
-    req_type: undefined as unknown as ComplexTypesNotuple,
-    resp_type: undefined as unknown as number | null | undefined,
+    requestType: undefined as unknown as ComplexTypesNotuple,
+    responseType: undefined as unknown as number | null | undefined,
   },
 } as const;
 export type Sample_apidir_05InvpInfoMap = bindoj.IsApiDirInfoMap<typeof Sample_apidir_05InvpInfo>;

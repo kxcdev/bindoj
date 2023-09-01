@@ -123,7 +123,7 @@ let gen_raw :
       let endp_urlpath = invp.ip_urlpath |> litstr in
       let endp_method = litstr @@ match invp.ip_method with
         | `get -> "GET" | `post -> "POST" in
-      let resp_type_entry = "resp_type", typescript_resptypes invp' |> type_designator in
+      let resp_type_entry = "responseType", typescript_resptypes invp' |> type_designator in
       endp_name,
       objexpr ([
           "name", litstr endp_name;
@@ -136,7 +136,7 @@ let gen_raw :
                    ]
               | `post ->
                  Fn.flip List.append [
-                     "req_type", typescript_reqtype invp' |> type_designator;
+                     "requestType", typescript_reqtype invp' |> type_designator;
                      resp_type_entry;
                    ]
         ))

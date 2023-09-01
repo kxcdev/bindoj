@@ -7,14 +7,14 @@ export const Sample_apidir_01_no_manglingInvpInfo = {
     name: "get-any-student",
     method: "GET",
     urlpath: "/student/any-one",
-    resp_type: undefined as unknown as Student,
+    responseType: undefined as unknown as Student,
   },
   "get-student-from-person": {
     name: "get-student-from-person",
     method: "POST",
     urlpath: "/student/from-person",
-    req_type: undefined as unknown as person_no_mangling,
-    resp_type: undefined as unknown as Student,
+    requestType: undefined as unknown as person_no_mangling,
+    responseType: undefined as unknown as Student,
   },
 } as const;
 export type Sample_apidir_01_no_manglingInvpInfoMap = bindoj.IsApiDirInfoMap<

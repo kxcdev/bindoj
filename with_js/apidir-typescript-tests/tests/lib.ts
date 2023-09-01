@@ -11,11 +11,11 @@ export const createMockClient =
     const res: { [prop: string]: any } = {};
     for (const [k, v] of Object.entries(invpInfo)) {
       if (v.method === "GET") {
-        res[k] = (): Promise<{body: typeof v.resp_type, status_code: number}> => {
+        res[k] = (): Promise<{ body: typeof v.responseType; status_code: number }> => {
           return mockServer.handle_path_json_get(v.urlpath);
         };
       } else {
-        res[k] = (reqBody: typeof v): Promise<{body: typeof v.resp_type, status_code: number}> => {
+        res[k] = (reqBody: typeof v): Promise<{ body: typeof v.responseType; status_code: number }> => {
           return mockServer.handle_path_json_post(v.urlpath, reqBody);
         };
       }

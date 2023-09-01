@@ -6,15 +6,15 @@ export const Sample_apidir_06InvpInfo = {
     name: "get-x",
     method: "POST",
     urlpath: "/xy-opt/x",
-    req_type: undefined as unknown as XyOpt,
-    resp_type: undefined as unknown as number | null | undefined,
+    requestType: undefined as unknown as XyOpt,
+    responseType: undefined as unknown as number | null | undefined,
   },
   "get-y": {
     name: "get-y",
     method: "POST",
     urlpath: "/xy-opt/y",
-    req_type: undefined as unknown as XyOpt,
-    resp_type: undefined as unknown as number | null | undefined,
+    requestType: undefined as unknown as XyOpt,
+    responseType: undefined as unknown as number | null | undefined,
   },
 } as const;
 export type Sample_apidir_06InvpInfoMap = bindoj.IsApiDirInfoMap<typeof Sample_apidir_06InvpInfo>;

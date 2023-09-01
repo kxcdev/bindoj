@@ -1,19 +1,19 @@
-export type ApiDirGetInvpInfo = {
+export type ApiDirGetInvpInfo<Req> = {
   name: string;
   urlpath: string;
-  resp_type: unknown;
+  responseType: Req;
   method: "GET";
 };
-export type ApiDirPostInvpInfo = {
+export type ApiDirPostInvpInfo<Req, Resp> = {
   name: string;
   urlpath: string;
-  req_type: unknown;
-  resp_type: unknown;
+  requestType: Req;
+  responseType: Resp;
   method: "POST";
 };
 
 export type ApiDirInfoMap = {
-  [invp: string]: ApiDirGetInvpInfo | ApiDirPostInvpInfo;
+  [invp: string]: ApiDirGetInvpInfo<unknown> | ApiDirPostInvpInfo<unknown, unknown>;
 };
 
 export type IsApiDirInfoMap<Dir extends ApiDirInfoMap> = Dir;
@@ -23,9 +23,9 @@ export type ApiDirAllInvps<InfoMap> = keyof InfoMap;
 export type ApiDirInvpRequestType<
   Dir extends ApiDirInfoMap,
   invp extends keyof Dir
-> = Dir[invp] extends ApiDirPostInvpInfo ? Dir[invp]["req_type"] : undefined;
+> = Dir[invp] extends ApiDirPostInvpInfo<unknown, unknown> ? Dir[invp]["requestType"] : undefined;
 
-export type ApiDirInvpResponseType<Dir extends ApiDirInfoMap, invp extends keyof Dir> = Dir[invp]["resp_type"];
+export type ApiDirInvpResponseType<Dir extends ApiDirInfoMap, invp extends keyof Dir> = Dir[invp]["responseType"];
 
 export type ApiDirInvpFunctionType<
   Dir extends ApiDirInfoMap,
