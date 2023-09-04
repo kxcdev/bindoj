@@ -1,6 +1,6 @@
 {
   "name": "bindoj-runtime",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "Base runtime library for Bindoj -- A generative datatype toolkit for OCaml centric workflows",
   "keywords": ["bindoj", "ocaml"],
   "main": "./dist/index.js",
