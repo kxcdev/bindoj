@@ -95,13 +95,12 @@ let create_cases ex =
       (check doc testable a b) in
 
   let name = Ex.name in
-  let url = "https://example.com" in
   let get_name = "get-" ^ name in
   let post_name = "post-" ^ name in
   let get_path = "/" ^ get_name in
   let post_path = "/" ^ post_name in
-  let get_urlpath = url ^ get_path in
-  let post_urlpath = url ^ post_path in
+  let get_urlpath = get_path in
+  let post_urlpath = post_path in
   let get_invp_name = "get" in
   let post_invp_name = "post" in
 
@@ -155,7 +154,6 @@ let create_cases ex =
                                    ()])
                       get_name
                     |> Either.left ])
-          ~servers:[ OpenApi.Server_object.mk url ]
           ();
         post_path,
         OpenApi.Path_item_object.mk
@@ -181,7 +179,6 @@ let create_cases ex =
                                     ()])
                        post_name
                      |> Either.left ])
-          ~servers:[ OpenApi.Server_object.mk url ]
           ();
       ] in
     let document_object =
@@ -209,7 +206,7 @@ let create_cases ex =
     in
     let invocation_point_info =
       { ip_name = name;
-        ip_urlpath = url ^ get_path;
+        ip_urlpath = get_path;
         ip_method = `get;
         ip_request_body = None;
         ip_responses = [resp];
@@ -233,7 +230,6 @@ let create_cases ex =
                                   ()])
                      resp_desc
                    |> Either.left); ])
-        ~servers:[ OpenApi.Server_object.mk url ]
         () in
     [ test_case'
       "openapi_path_item_object_of_invocation_point_info"

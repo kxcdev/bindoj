@@ -20,6 +20,16 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_runtime
 open Bindoj_typedesc.Typed_type_desc
 
+module Utils : sig
+  module PathComps : sig
+    type t
+    val combine : t -> t -> t
+    val of_url_path : string -> t
+    val to_url_path : ?leading_slash:bool -> t -> string
+    val remake_url_path : ?leading_slash:bool -> string -> string
+  end
+end
+
 (** TODO.future - temporary solution before the arrival of type cosmos *)
 type type_decl_collection = {
     type_declarations : type_decl_info list;
@@ -131,19 +141,19 @@ val make_response_case :
   -> 'respty response_case
 
 type invocation_point_meta = {
-  ipm_name : string;
   ipm_urlpath : string;
   ipm_method : [ `get | `post ];
 }
 
 type ('reqty, 'respty) invocation_point_additional_info = {
-  mutable ipa_request_body : 'reqty request_body option;
-  mutable ipa_responses : 'respty response_case list;
-  mutable ipa_deprecated : bool;
-  mutable ipa_summary : string option;
-  mutable ipa_description : string option;
-  mutable ipa_external_doc : external_doc option;
-  mutable ipa_usage_samples : ('reqty, 'respty) invp_usage_sample list;
+  ipa_name : string;
+  ipa_request_body : 'reqty request_body option;
+  ipa_responses : 'respty response_case list;
+  ipa_deprecated : bool;
+  ipa_summary : string option;
+  ipa_description : string option;
+  ipa_external_doc : external_doc option;
+  ipa_usage_samples : ('reqty, 'respty) invp_usage_sample list;
 }
 
 type untyped_invocation_point_info =

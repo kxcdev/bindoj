@@ -20,6 +20,40 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_runtime
 open Bindoj_typedesc.Typed_type_desc
 
+module Utils = struct
+  module PathComps = struct
+    type t = string list
+    (** path components *)
+
+    let combine: t -> t -> t = List.append
+
+    let canonize_front_back comps =
+      let rec drop_front = function
+        | "" :: rest -> drop_front rest
+        | comps -> comps in
+      let rec rev_remove_internal_empty_components acc comps =
+        match acc, comps with
+        | _, [] -> acc
+        | [], head :: rest -> rev_remove_internal_empty_components [ head ] rest
+        | _ :: _, "" :: rest -> rev_remove_internal_empty_components acc rest
+        | _ :: _, head :: rest ->
+          rev_remove_internal_empty_components (head :: acc) rest in
+      comps |> drop_front |> List.rev |> drop_front
+      |> rev_remove_internal_empty_components []
+
+    let of_url_path path =
+      let comps = String.split_on_char '/' path in
+      canonize_front_back comps
+
+    let to_url_path ?(leading_slash = true) comps =
+      let leading_slash = if leading_slash then "/" else "" in
+      leading_slash ^ String.concat "/" comps
+
+    let remake_url_path ?(leading_slash = true) path =
+      path |> of_url_path |> to_url_path ~leading_slash
+  end
+end
+
 (** TODO.future - temporary solution before the arrival of type cosmos *)
 type type_decl_collection = {
     type_declarations : type_decl_info list;
@@ -160,19 +194,19 @@ let make_response_case ?(status=`default) ?name ?doc ?(samples=[]) ~pack ~unpack
   }
 
 type invocation_point_meta = {
-  ipm_name : string;
   ipm_urlpath : string;
   ipm_method : [ `get | `post ];
 }
 
 type ('reqty, 'respty) invocation_point_additional_info = {
-  mutable ipa_request_body : 'reqty request_body option;
-  mutable ipa_responses : 'respty response_case list;
-  mutable ipa_deprecated : bool;
-  mutable ipa_summary : string option;
-  mutable ipa_description : string option;
-  mutable ipa_external_doc : external_doc option;
-  mutable ipa_usage_samples : ('reqty, 'respty) invp_usage_sample list;
+  ipa_name : string;
+  ipa_request_body : 'reqty request_body option;
+  ipa_responses : 'respty response_case list;
+  ipa_deprecated : bool;
+  ipa_summary : string option;
+  ipa_description : string option;
+  ipa_external_doc : external_doc option;
+  ipa_usage_samples : ('reqty, 'respty) invp_usage_sample list;
 }
 
 type untyped_invocation_point_info =
@@ -182,12 +216,12 @@ type untyped_invocation_point_additional_info =
   | InvpAdditionalInfo : (_, _) invocation_point_additional_info -> untyped_invocation_point_additional_info
 
 let to_invocation_point_info_meta invp =
-  ({  ipm_name = invp.ip_name;
-      ipm_urlpath = invp.ip_urlpath;
-      ipm_method = invp.ip_method })
+  { ipm_urlpath = invp.ip_urlpath;
+    ipm_method = invp.ip_method }
 
 let to_invocation_point_additional_info invp =
-  { ipa_request_body = invp.ip_request_body;
+  { ipa_name = invp.ip_name;
+    ipa_request_body = invp.ip_request_body;
     ipa_responses = invp.ip_responses;
     ipa_deprecated = invp.ip_deprecated;
     ipa_summary = invp.ip_summary;
@@ -196,7 +230,7 @@ let to_invocation_point_additional_info invp =
     ipa_usage_samples = invp.ip_usage_samples }
 
 let to_invocation_point_info invp_meta invpa =
-  { ip_name = invp_meta.ipm_name;
+  { ip_name = invpa.ipa_name;
     ip_urlpath = invp_meta.ipm_urlpath;
     ip_method = invp_meta.ipm_method;
     ip_request_body = invpa.ipa_request_body;
@@ -382,7 +416,7 @@ module MakeRegistry () : MakeRegistryS = struct
     -> ('reqty, 'respty) invocation_point_info
     -> unit =
     fun typs invp ->
-    let invp_meta = to_invocation_point_info_meta invp in
+    let invp_meta = { ipm_urlpath = invp.ip_urlpath; ipm_method = invp.ip_method } in
     Hashtbl.replace invp_registry invp_meta (InvpAdditionalInfo (to_invocation_point_additional_info invp));
     refappend invp_meta_registry invp_meta;
     typs |!> append_to_type_registry
@@ -409,7 +443,7 @@ module MakeRegistry () : MakeRegistryS = struct
     fun ?summary ?description ?(resp_samples = []) ~urlpath name responses ->
     let invp = {
       ip_name = name;
-      ip_urlpath = urlpath;
+      ip_urlpath = Utils.PathComps.remake_url_path ~leading_slash:true urlpath;
       ip_method = `get;
       ip_request_body = None;
       ip_responses = responses;
@@ -467,7 +501,7 @@ module MakeRegistry () : MakeRegistryS = struct
     } in
     let invp = {
       ip_name = name;
-      ip_urlpath = urlpath;
+      ip_urlpath = Utils.PathComps.remake_url_path ~leading_slash:true urlpath;
       ip_method = `post;
       ip_request_body = Some request_body;
       ip_responses = responses;
@@ -500,13 +534,15 @@ module MakeRegistry () : MakeRegistryS = struct
     -> ('reqty, 'respty) invocation_point_info
     -> unit =
     fun samples invp ->
-    Hashtbl.find_opt
-      invp_registry
-      (to_invocation_point_info_meta invp)
-    |> Option.iter (fun (InvpAdditionalInfo invpa) ->
+    let invpm = to_invocation_point_info_meta invp in
+    Hashtbl.find_opt invp_registry invpm
+    |> function
+    | None ->
+      invalid_arg' "The given invocation_point_info of name '%s' is not registered." invp.ip_name
+    | Some (InvpAdditionalInfo invpa) ->
       let invpa = (Obj.magic invpa : ('reqty, 'respty) invocation_point_additional_info) in
-      invpa.ipa_usage_samples <- samples @ invpa.ipa_usage_samples
-    )
+      (InvpAdditionalInfo { invpa with ipa_usage_samples = samples @ invpa.ipa_usage_samples })
+      |> Hashtbl.replace invp_registry invpm
 
   let register_response_samples resp_samples =
     update_usage_samples (resp_samples |&> InvpUsageSamples.resp_sample)

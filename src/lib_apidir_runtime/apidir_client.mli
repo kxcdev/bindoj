@@ -19,7 +19,6 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Kxclib
 open Bindoj_base
-open Bindoj_apidir_shared
 
 type error =
   | Unexpected_response of { status: int; body: Json.jv }
@@ -57,16 +56,16 @@ module type T = sig
   val perform_json_post :
     ?additional_headers:string list ->
     ?additional_query_params:(string * string) list ->
-    ('req, 'resp) invocation_point_info -> 'req -> 'resp io
+    ('req, 'resp) Bindoj_apidir_shared.invocation_point_info -> 'req -> 'resp io
 
   val perform_json_get :
     ?additional_headers:string list ->
     ?additional_query_params:(string * string) list ->
-    (unit, 'resp) invocation_point_info -> 'resp io
+    (unit, 'resp) Bindoj_apidir_shared.invocation_point_info -> 'resp io
 end
 
 module Make :
-  functor (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) ->
+  functor (Dir : Bindoj_apidir_shared.ApiDirManifest) (Fetcher : ScopedJsonFetcher) ->
     sig
       include module type of Apidir_base.Make(Dir)(Fetcher.IoStyle)
 

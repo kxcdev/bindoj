@@ -20,6 +20,9 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Kxclib
 open Kxclib.Json
 open Bindoj_base
+
+module Runtime_utils = Utils
+
 open Bindoj_apidir_shared
 
 type error =
@@ -35,7 +38,7 @@ exception Apidir_client_error of error
 module type JsonResponse = Apidir_base.JsonResponse
 
 module type ScopedJsonFetcher = sig
-  module IoStyle : Utils.IoStyle
+  module IoStyle : Runtime_utils.IoStyle
   module Response : JsonResponse
 
   val perform_get :
@@ -115,7 +118,7 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
       ) |> Fetcher.IoStyle.inject_error
     | Some (Response_case { response; pack; _ }) ->
       process_response
-        (Utils.ttd_of_media_type response.rs_media_type)
+        (Runtime_utils.ttd_of_media_type response.rs_media_type)
         resp_body
       >|= pack
 
@@ -131,7 +134,7 @@ module Make (Dir : ApiDirManifest) (Fetcher : ScopedJsonFetcher) = struct
       | `get, _ -> invalid_arg' "perform_json_post called on GET invp: %s" invp.ip_name
       | `post, None -> invalid_arg' "POST method must have a request body definition: %s" invp.ip_name
       | `post, Some desc ->
-         let ttd = Utils.ttd_of_media_type desc.rq_media_type in
+         let ttd = Runtime_utils.ttd_of_media_type desc.rq_media_type in
          reqbody |> Bindoj_codec.Json.to_json ~env:tdenv ttd in
     let urlpath = invp.ip_urlpath in
     let query_params = additional_query_params |? [] in

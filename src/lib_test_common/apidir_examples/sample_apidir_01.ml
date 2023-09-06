@@ -19,6 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 [@@@warning "-33-32"]
 
+open Utils
 open Bindoj_apidir_shared
 open Bindoj_typedesc.Typed_type_desc
 open Bindoj_test_common_typedesc_generated_examples
@@ -78,7 +79,6 @@ end
 include R.Public
 
 open Alcotest
-open Utils
 
 let test_individual_invocation_points() = begin
     check_invp "get_any_student" get_any_student
@@ -116,7 +116,13 @@ let build_mock_server (module M: MockServerBuilder) =
     let invp = get_any_student in
     let { orig; jv } = Ex01.sample_value01 in
     M.register_get_handler invp (fun () -> return (200, orig));
-    M.register_get_example invp.ip_urlpath (Invp invp) ~orig ~jv ~pp:Ex01.pp
+    M.register_get_example invp.ip_urlpath (Invp invp) ~orig ~jv ~pp:Ex01.pp;
+    M.register_get_example "/student/any-one" (Invp invp) ~orig ~jv ~pp:Ex01.pp;
+    M.register_get_example "/student/any-one/" (Invp invp) ~orig ~jv ~pp:Ex01.pp;
+    M.register_get_example "/student/any-one///" (Invp invp) ~orig ~jv ~pp:Ex01.pp;
+    M.register_get_example "/student//any-one/" (Invp invp) ~orig ~jv ~pp:Ex01.pp;
+    M.register_get_example "/student///any-one/" (Invp invp) ~orig ~jv ~pp:Ex01.pp;
+    M.register_get_example "/student///any-one//" (Invp invp) ~orig ~jv ~pp:Ex01.pp;
   in
 
   let () (* get-student-from-person *) =

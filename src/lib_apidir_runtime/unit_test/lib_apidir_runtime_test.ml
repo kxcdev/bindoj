@@ -19,6 +19,9 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_apidir_runtime
 open Bindoj_apidir_runtime.Utils
+
+module Runtime_utils = Bindoj_apidir_runtime.Utils
+
 open Bindoj_apidir_shared
 open Test_utils
 module Samples = Bindoj_test_common.Apidir_examples
@@ -115,7 +118,7 @@ module MakeJvIo(Io : IoStyle) = struct
         let open MonadOps(Io) in
         (mx >>= fun x ->
          sprintf "(async:jv.%d) %a"
-           id Utils.pp_jv x
+           id Runtime_utils.pp_jv x
          |> return)
         |> Io.trace;
         fprintf ppf "[async:jv.%d]" id
@@ -221,8 +224,33 @@ let client_cases =
                 end)
      end) |> List.concat
 
+let examples_test =
+  (all |&>
+  fun (name, test) ->
+    let examples = make_examples(test) in
+    let module Test = (val test : TestS) in
+    let open Test in
+    let open MonadOps(Io) in
+    let open MakeJvIo(Io) in
+    begin Examples.get examples |&> fun (key, value) ->
+      test_case (name ^ " : example")
+        `Quick
+        (fun () ->
+            value.get |> Option.iter (fun (get: _ Examples.get) ->
+              check jv_io (name ^^ key.path ^^ "GET")
+                (Io.return get.jv)
+                (Bridge.handle_path_json_get key.path >|= snd);
+            value.post |> List.iter (fun (post:  _ Examples.post) ->
+              check jv_io (name ^^ key.path ^^ "POST")
+                (Io.return post.jv_resp)
+                (Bridge.handle_path_json_post key.path post.jv_req >|= snd))
+              ))
+    end
+     )
+    |> List.concat
+
 let () =
   run "lib_apidir_runtime_test.ml" [
-    "apidir_server_bridge", bridge_path_handler_cases @ bridge_handler_cases;
+    "apidir_server_bridge", bridge_path_handler_cases @ bridge_handler_cases @ examples_test;
     "apidir_client", client_cases;
   ]

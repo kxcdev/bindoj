@@ -19,6 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 [@@@warning "-33-32"]
 
+open Utils
 open Bindoj_apidir_shared
 open Bindoj_typedesc
 open Bindoj_typedesc.Typed_type_desc
@@ -75,7 +76,6 @@ end
 include R.Public
 
 open Alcotest
-open Utils
 
 let test_individual_invocation_points () = begin
   check_invp "get-x" get_x
