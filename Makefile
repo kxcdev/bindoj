@@ -66,9 +66,9 @@ _doc:
 	rm -rf doc/app/public/coverage
 	cp -r _coverage/ocaml/doc doc/app/public/coverage
 
-doc: build coverage
+doc: build coverage _doc
 
-doc-serve: doc
+doc-serve: build _doc
 	cd doc/app && yarn dev
 
 clean:

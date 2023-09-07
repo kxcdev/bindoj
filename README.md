@@ -90,12 +90,13 @@ We use the following tools to develop bindoj:
 
 Tool | version
 -----|-------
-[OCaml](https://ocaml.org/) | 4.12.x, 4.13.x, 4.14.x
+[OCaml](https://ocaml.org/) | 4.13.x, 4.14.x 5.0.x
 [dune](https://dune.build/) | 3.x
-[js\_of\_ocaml](https://github.com/ocsigen/js_of_ocaml) | 4.0.0
-[Node.js](https://nodejs.org/) | 14.x (but also test against 16.x LTS && 17.x)
-[Yarn](https://yarnpkg.com/) | 1.22.17
+[js\_of\_ocaml](https://github.com/ocsigen/js_of_ocaml) | 4.x.x
+[Node.js](https://nodejs.org/) | 18.x LTS (but also test against 16.x LTS && 20.x)
+[Yarn](https://yarnpkg.com/) | 1.22.19
 
+To check for other packages, see the [dune-project](dune-project) and [with_js/package.json](with_js/package.json) files.
 ### Setup
 
 1. Install the following tools:
@@ -119,11 +120,22 @@ Tool | version
 
 ### `make` commands
 
-Use the followings to build, run tests, or generate docs.
+Use the followings to build, generate files, run tests, or generate docs.
 ```bash
 $ make build # or `dune build`
+$ make gen # or `dune build @gen`
 $ make test # or `dune runtest`
 $ make doc # or `dune build @doc`
+```
+
+#### Brows docs
+
+Because the coverage test takes time to run, `doc-serve` does not run `coverage`.
+Therefore, if you want to view the result of the coverage test, you must run `make coverage` each time.
+
+```bash
+$ make coverage
+$ make doc-serve
 ```
 
 ### Code formatting

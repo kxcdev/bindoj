@@ -45,5 +45,5 @@
   (uri (>= 4.2.0))
   (bisect_ppx (>= 2.7.1))
   (ocamlformat (and :with-test (= 0.26.0)))
-  (ocaml (>= 4.12))
+  (ocaml (>= 4.13))
   (cohttp-lwt-unix :with-test)))

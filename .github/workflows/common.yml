@@ -14,7 +14,6 @@ jobs:
         ocaml-version:
           - 4.13.1
           ## we only test all versions at the [all-variants] flow
-          # - 4.14.x
         node-version:
           - lts/hydrogen # v18 Active LTS
 
@@ -62,6 +61,7 @@ jobs:
         run: |
           GITHUB_STATUS_SHA="${{ github.event.pull_request.head.sha }}"
           GITHUB_STATUS_SHA="${GITHUB_STATUS_SHA:=$GITHUB_SHA}"
+          git add *.opam
           git add src/
           git add tooling/
           git add with_js/
@@ -95,7 +95,7 @@ jobs:
         run: opam exec -- make _doc
 
       - name: upload odoc generated document
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-version == '4.12.1' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-version == '4.13.1' }}
         uses: actions/upload-artifact@v3
         with:
           name: odoc-html-${{ github.sha }}
