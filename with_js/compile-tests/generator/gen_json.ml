@@ -17,6 +17,25 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_test_common
+open Bindoj_test_common.Typedesc_generated_examples
 
-let () = Gen_mock_server.export_to_js(module Apidir_examples.Sample_apidir_02)
+let print_json (module Ex : T) =
+  Ex.sample_values
+  |> List.map Sample_value.orig
+  |> List.map Ex.to_json
+  |> (fun x -> `arr x)
+  |> Json.to_yojson
+  |> Yojson.Safe.to_string
+  |> print_endline
+
+let mapping =
+  all |> List.map (fun (s, m) -> sprintf "%s_examples.json" s, m)
+
+let () =
+  match Array.to_list Sys.argv |> List.tl with
+  | [] | _ :: _ :: _ ->
+    failwith "usage: gen_json <filename>"
+  | [name] ->
+    match List.assoc_opt name mapping with
+    | None -> failwith (sprintf "unknown example %s" name)
+    | Some m -> print_json m

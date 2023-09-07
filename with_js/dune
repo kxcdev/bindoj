@@ -10,8 +10,8 @@
   (sandbox none)
   node_modules
   (alias compile-tests/gen)
+  (alias apidir-tests/gen)
   (alias apidir-typescript-tests/gen)
-  (alias apidir-typescript-tests/gen_mock_server)
   (alias jsoo-gen/jsoo_gen)
   (source_tree unit-tests)
   (source_tree public-packages)

@@ -21,57 +21,15 @@
  (flags (:standard -open Kxclib)))
 
 (executable
- (name gen_mock_server_01)
- (modules gen_mock_server_01)
- (modes js)
- (libraries gen_mock_server)
- (preprocess (pps js_of_ocaml-ppx))
- (flags (:standard -open Kxclib)))
+  (name gen_server)
+  (modules gen_server)
+  (libraries kxclib bindoj_test_common_apidir_examples)
+  (flags (:standard -open Kxclib)))
 
 (executable
- (name gen_mock_server_01_no_mangling)
- (modules gen_mock_server_01_no_mangling)
- (modes js)
- (libraries gen_mock_server)
- (preprocess (pps js_of_ocaml-ppx))
- (flags (:standard -open Kxclib)))
-
-(executable
- (name gen_mock_server_02)
- (modules gen_mock_server_02)
- (modes js)
- (libraries gen_mock_server)
- (preprocess (pps js_of_ocaml-ppx))
- (flags (:standard -open Kxclib)))
-
-(executable
- (name gen_mock_server_03)
- (modules gen_mock_server_03)
- (modes js)
- (libraries gen_mock_server)
- (preprocess (pps js_of_ocaml-ppx))
- (flags (:standard -open Kxclib)))
-
-(executable
- (name gen_mock_server_04)
- (modules gen_mock_server_04)
- (modes js)
- (libraries gen_mock_server)
- (preprocess (pps js_of_ocaml-ppx))
- (flags (:standard -open Kxclib)))
-
-(executable
- (name gen_mock_server_05)
- (modules gen_mock_server_05)
- (modes js)
- (libraries gen_mock_server)
- (preprocess (pps js_of_ocaml-ppx))
- (flags (:standard -open Kxclib)))
-
-(executable
- (name gen_mock_server_06)
- (modules gen_mock_server_06)
- (modes js)
- (libraries gen_mock_server)
- (preprocess (pps js_of_ocaml-ppx))
- (flags (:standard -open Kxclib)))
+ (name duneinc_generator)
+ (modules duneinc_generator)
+ (libraries
+   kxclib fmt dune_file_parts
+   bindoj_test_common_apidir_examples)
+ (flags :standard -open Kxclib))

@@ -9,3 +9,41 @@
  (modules gen_embed_full_impl)
  (libraries bindoj_test_common_typedesc_examples bindoj_gen bindoj_runtime)
  (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name duneinc_generator)
+ (modules duneinc_generator)
+ (libraries
+   kxclib fmt dune_file_parts
+   bindoj_test_common_typedesc_examples)
+ (flags :standard -open Kxclib -w "-32-33"))
+
+(rule
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff output-dune.inc output-dune.inc.gen)))
+(rule
+ (target output-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run %{exe:duneinc_generator.exe} -target %{target}))))
+(include output-dune.inc)
+
+(rule
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff output-with-decl-dune.inc output-with-decl-dune.inc.gen)))
+(rule
+ (target output-with-decl-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run %{exe:duneinc_generator.exe} -target %{target}))))
+(include output-with-decl-dune.inc)
+
+(rule
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff output-embed_full_impl-dune.inc output-embed_full_impl-dune.inc.gen)))
+(rule
+ (target output-embed_full_impl-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run %{exe:duneinc_generator.exe} -target %{target}))))
+(include output-embed_full_impl-dune.inc)

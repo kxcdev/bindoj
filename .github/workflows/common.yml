@@ -62,6 +62,9 @@ jobs:
         run: |
           GITHUB_STATUS_SHA="${{ github.event.pull_request.head.sha }}"
           GITHUB_STATUS_SHA="${GITHUB_STATUS_SHA:=$GITHUB_SHA}"
+          git add src/
+          git add tooling/
+          git add with_js/
           git add example/
           git diff --cached --exit-code && ( \
             curl --request POST \

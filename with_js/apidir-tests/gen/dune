@@ -1,8 +1,17 @@
 (executable
  (name gen)
+ (modules gen)
  (libraries
    bindoj_openapi
    bindoj_test_common bindoj_base
    bindoj_apidir_shared bindoj_apidir_generative
    kxclib)
  (flags (:standard -open Kxclib)))
+
+(executable
+ (name duneinc_generator)
+ (modules duneinc_generator)
+ (libraries
+   kxclib fmt dune_file_parts
+   bindoj_test_common_apidir_examples)
+ (flags :standard -open Kxclib))

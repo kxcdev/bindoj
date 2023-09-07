@@ -19,21 +19,16 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Kxclib
 
-open struct
-  [@@@warning "-32"]
-
-  let (&) f a = f a
-  let (&.) f a = f [a]
-end
-
 let lib_gen_generator_dep = "%{workspace_root}/src/lib_gen/unit_test/gen/gen.exe"
 let lib_gen_ts_generator_dep = "%{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe"
-let json_examples_generator_dep = "%{workspace_root}/with_js/compile-tests/json/gen.exe"
-let json_schema_generator_dep = "%{workspace_root}/with_js/compile-tests/schema/gen.exe"
+let json_examples_generator_dep = "%{workspace_root}/with_js/compile-tests/generator/gen_json.exe"
+let json_schema_generator_dep = "%{workspace_root}/with_js/compile-tests/generator/gen_schema.exe"
 
 let chop_suffix_exn suffix = String.(chop_suffix suffix &> Option.get)
 
 module Dparts = Dune_file_parts
+include Dparts.Fcomb.Ops
+
 module Dcomb = struct
   [@@@warning "-32"]
 
@@ -93,13 +88,14 @@ let () =
              named "schema_gen" (atomic json_schema_generator_dep);
              atomic "%{workspace_root}/with_js/node_modules"
             ]);
-           Action.(vpbox ~lead:"action" &.
+           Action.(mk_progn &
              let single gen f =
                with_stdout_to_piped (`expr (fmt f)) [
                  run (sprintf "%%{%s}" gen) [fmt f];
                  run_prettier' ~compact:true (fmt f);
-                ] in
-             progn [
+                ]
+              in
+             [
                single "ts_gen" "%s_gen.ts";
                single "json_gen" "%s_examples.json";
                single "schema_gen" "%s_schema.json";
@@ -135,7 +131,8 @@ let () =
        (subdir "typedesc_examples/lib_gen" [
           Library.mk []
             ~name:("dev_example_" ^ chop_suffix_exn "-dune.inc" target_name ^ "-lib_gen"
-                   |> mangle_library_name)
+                   |> mangle_library_name
+                   |> str)
           ~modules':[list ~sep:sp string]
           ~libraries:[
             "bindoj.base";

@@ -430,8 +430,9 @@
   (targets ex01_gen.ts ex01_examples.json ex01_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -472,8 +473,9 @@
    ex01_inherited_mangling_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -511,8 +513,9 @@
   (targets ex02_gen.ts ex02_examples.json ex02_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -553,8 +556,9 @@
    ex02_reused_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -595,8 +599,9 @@
    ex02_no_mangling_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -637,8 +642,9 @@
    ex02_inherited_mangling_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -676,8 +682,9 @@
   (targets ex03_gen.ts ex03_examples.json ex03_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -718,8 +725,9 @@
    ex03_objtuple_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -757,8 +765,9 @@
   (targets ex04_gen.ts ex04_examples.json ex04_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -796,8 +805,9 @@
   (targets ex05_gen.ts ex05_examples.json ex05_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -838,8 +848,9 @@
    ex05_notuple_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -877,8 +888,9 @@
   (targets ex06_gen.ts ex06_examples.json ex06_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -916,8 +928,9 @@
   (targets ex07_gen.ts ex07_examples.json ex07_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -955,8 +968,9 @@
   (targets ex08_gen.ts ex08_examples.json ex08_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -994,8 +1008,9 @@
   (targets ex09_gen.ts ex09_examples.json ex09_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1033,8 +1048,9 @@
   (targets ex10_gen.ts ex10_examples.json ex10_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1072,8 +1088,9 @@
   (targets ex11_gen.ts ex11_examples.json ex11_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1111,8 +1128,9 @@
   (targets ex12_gen.ts ex12_examples.json ex12_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1150,8 +1168,9 @@
   (targets ex13_gen.ts ex13_examples.json ex13_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1189,8 +1208,9 @@
   (targets ex14_gen.ts ex14_examples.json ex14_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1228,8 +1248,9 @@
   (targets ex15_gen.ts ex15_examples.json ex15_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1267,8 +1288,9 @@
   (targets ex16_gen.ts ex16_examples.json ex16_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1306,8 +1328,9 @@
   (targets ex17_gen.ts ex17_examples.json ex17_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1345,8 +1368,9 @@
   (targets ex18_gen.ts ex18_examples.json ex18_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1384,8 +1408,9 @@
   (targets ex19_gen.ts ex19_examples.json ex19_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
@@ -1423,8 +1448,9 @@
   (targets ex20_gen.ts ex20_examples.json ex20_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/json/gen.exe)
-   (:schema_gen %{workspace_root}/with_js/compile-tests/schema/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
    %{workspace_root}/with_js/node_modules)
   (action
    (progn

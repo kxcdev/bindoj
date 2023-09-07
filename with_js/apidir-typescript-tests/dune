@@ -1,90 +1,9 @@
 (rule
- (alias gen)
- (target sample_apidir_01.ts)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff apidir-typescript-tests-dune.inc apidir-typescript-tests-dune.inc.gen)))
 (rule
- (alias gen)
- (target sample_apidir_01_no_mangling.ts)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_02.ts)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_03.ts)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_04.ts)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_05.ts)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_06.ts)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
-  (alias gen_mock_server)
-  (targets sample_apidir_01_server.js)
-  (deps gen/gen_mock_server_01.bc.js)
-  (mode (promote (until-clean)))
-  (action (copy %{deps} %{targets})))
-
-(rule
-  (alias gen_mock_server)
-  (targets sample_apidir_01_no_mangling_server.js)
-  (deps gen/gen_mock_server_01_no_mangling.bc.js)
-  (mode (promote (until-clean)))
-  (action (copy %{deps} %{targets})))
-
-(rule
-  (alias gen_mock_server)
-  (targets sample_apidir_02_server.js)
-  (deps gen/gen_mock_server_02.bc.js)
-  (mode (promote (until-clean)))
-  (action (copy %{deps} %{targets})))
-
-(rule
-  (alias gen_mock_server)
-  (targets sample_apidir_03_server.js)
-  (deps gen/gen_mock_server_03.bc.js)
-  (mode (promote (until-clean)))
-  (action (copy %{deps} %{targets})))
-
-(rule
-  (alias gen_mock_server)
-  (targets sample_apidir_04_server.js)
-  (deps gen/gen_mock_server_04.bc.js)
-  (mode (promote (until-clean)))
-  (action (copy %{deps} %{targets})))
-
-(rule
-  (alias gen_mock_server)
-  (targets sample_apidir_05_server.js)
-  (deps gen/gen_mock_server_05.bc.js)
-  (mode (promote (until-clean)))
-  (action (copy %{deps} %{targets})))
-
-(rule
-  (alias gen_mock_server)
-  (targets sample_apidir_06_server.js)
-  (deps gen/gen_mock_server_06.bc.js)
-  (mode (promote (until-clean)))
-  (action (copy %{deps} %{targets})))
+ (target apidir-typescript-tests-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run gen/duneinc_generator.exe -target %{target}))))
+(include apidir-typescript-tests-dune.inc)

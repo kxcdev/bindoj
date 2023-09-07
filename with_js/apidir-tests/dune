@@ -1,60 +1,9 @@
 (rule
- (alias gen)
- (target sample_apidir_01.json)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff apidir-tests-dune.inc apidir-tests-dune.inc.gen)))
 (rule
- (alias gen)
- (target sample_apidir_01_no_mangling.json)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_02.json)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_03.json)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_04.json)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_05.json)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias gen)
- (target sample_apidir_06.json)
- (action (with-stdout-to %{target} (run %{exe:./gen/gen.exe} %{target})))
- (mode (promote (until-clean))))
-
-(rule
- (alias runtest)
- (deps
-  (sandbox none)
-  (:outputs
-    sample_apidir_01.json
-    sample_apidir_02.json
-    sample_apidir_03.json
-    sample_apidir_04.json
-    sample_apidir_05.json
-    sample_apidir_06.json
-  )
-  (file ../.redocly.yaml)
-  ../node_modules)
- (action
-  (progn
-   (with-accepted-exit-codes 0
-    (run npx redocly lint --config ../.redocly.yaml %{outputs})))))
+ (target apidir-tests-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run gen/duneinc_generator.exe -target %{target}))))
+(include apidir-tests-dune.inc)

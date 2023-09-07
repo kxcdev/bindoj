@@ -1,0 +1,3 @@
+(library
+  (name dune_file_parts)
+  (libraries kxclib fmt))

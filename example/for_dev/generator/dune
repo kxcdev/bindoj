@@ -1,7 +1,7 @@
 (executables
  (names duneinc_generator openapi_listing_generator)
  (libraries
-   kxclib fmt
+   kxclib fmt dune_file_parts
    bindoj_test_common_typedesc_examples
    bindoj_test_common_apidir_examples)
  (flags :standard))

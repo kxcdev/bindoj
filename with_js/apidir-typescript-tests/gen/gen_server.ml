@@ -17,6 +17,19 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_test_common
+open Bindoj_test_common_apidir_examples
+let mapping =
+  All.all |&> (fun (name, _) -> sprintf "%s_mock_server.ml" name, name)
 
-let () = Gen_mock_server.export_to_js(module Apidir_examples.Sample_apidir_06)
+let () =
+  match Array.to_list Sys.argv |> List.tl with
+  | [] | _ :: _ :: _ ->
+    failwith "usage: gen_server_impl <filename>"
+  | [name] ->
+    List.assoc_opt name mapping
+    |> function
+    | None -> failwith (sprintf "unknown generator %s" name)
+    | Some s ->
+      String.capitalize_ascii s
+      |> sprintf "Bindoj_test_common_apidir_examples.%s"
+      |> printf "let () = Gen_mock_server.export_to_js(module %s)\n"
