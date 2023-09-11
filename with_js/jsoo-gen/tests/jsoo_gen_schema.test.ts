@@ -5,6 +5,11 @@ const b = require("../jsoo_gen_schema.js").jsoo_gen_schema;
 const generator = b.generator;
 
 describe("jsoo_gen_schema", () => {
+  afterAll(() => {
+    b.coverage_helper.write_coverage_data();
+    b.coverage_helper.reset_counters();
+  });
+
   const names: string[] = generator.module_names;
   for (const name of names) {
     test(name, async () => {

@@ -280,3 +280,19 @@ module Alcotest_jsoo_platform : Alcotest_engine.Platform.MAKER = functor (M : Al
 end
 
 module Alcotest_jsoo = Alcotest_engine.V1.Cli.Make(Alcotest_jsoo_platform)(FutexnIo)
+
+let coverage_helper_js = object%js
+  method reset_counters_js =
+    info "Bisect.Runtime.reset_counters";
+    Bisect.Runtime.reset_counters();
+    Jv.undefined
+  method write_coverage_data_js =
+    info "Bisect.Runtime.write_coverage_data";
+    Bisect.Runtime.write_coverage_data();
+    Jv.undefined
+  method get_coverage_data_js =
+    info "Bisect.Runtime.get_coverage_data";
+    Bisect.Runtime.get_coverage_data ()
+    >? Jv.of_string
+    |? Jv.null
+end [@@coverage off]

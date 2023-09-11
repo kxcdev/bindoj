@@ -11,6 +11,11 @@ const getFileName = (name: string, gen_type_decl: boolean, kind: "structure" | "
 };
 
 describe("jsoo_gen_ml", () => {
+  afterAll(() => {
+    b.coverage_helper.write_coverage_data();
+    b.coverage_helper.reset_counters();
+  });
+
   const names: string[] = generator.module_names;
   names
     .flatMap((name) => [

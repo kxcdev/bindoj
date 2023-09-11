@@ -31,6 +31,7 @@ let modules, mapping =
 
 let () =
   Js_of_ocaml.Js.export "jsoo_gen_ml" (object%js
+    val coverage_helper_js = coverage_helper_js
     val generator_js = object%js
       val module_names_js = modules |> Jv.(of_list of_string) |> cast
       method generate_js name gen_type_decl =

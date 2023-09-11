@@ -9,6 +9,11 @@ const mockServer: MockServer = b.server_mock;
 const mockClient: clientIntf = createMockClient(invpInfo)(mockServer);
 
 describe("apidir-typescript-tests-sample05", () => {
+  afterAll(() => {
+    b.coverage_helper.write_coverage_data();
+    b.coverage_helper.reset_counters();
+  });
+
   describe("int-of-string", () => {
     [
       { value: "", result: null },

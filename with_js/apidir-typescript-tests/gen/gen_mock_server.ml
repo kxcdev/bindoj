@@ -71,5 +71,6 @@ let export_to_js (module Dir : Sample_apidir) =
     end
   in
   Js_of_ocaml.Js.export "bindoj_jsoo_bridge" (object%js
+    val coverage_helper_js = coverage_helper_js
     val server_mock_js = make_server_mock_js (module Bridge_dir)
   end)

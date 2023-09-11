@@ -9,6 +9,11 @@ const mockServer: MockServer = b.server_mock;
 const mockClient: clientIntf = createMockClient(invpInfo)(mockServer);
 
 describe("apidir-typescript-tests-sample06", () => {
+  afterAll(() => {
+    b.coverage_helper.write_coverage_data();
+    b.coverage_helper.reset_counters();
+  });
+
   const sample_values: XyOpt[] = [
     { },
     { yOpt: 42 },

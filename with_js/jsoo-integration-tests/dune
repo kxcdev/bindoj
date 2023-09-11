@@ -9,7 +9,8 @@
   alcotest
   yojson
   kxclib
-  ojs)
+  ojs
+  bisect_ppx.runtime)
  (modes js)
  (optional)
  (preprocess (pps js_of_ocaml-ppx ppx_inline_test))

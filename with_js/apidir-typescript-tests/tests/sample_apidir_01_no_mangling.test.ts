@@ -9,6 +9,11 @@ const mockServer: MockServer = b.server_mock;
 const mockClient: clientIntf = createMockClient(invpInfo)(mockServer);
 
 describe("apidir-typescript-tests-sample01-no-mangling", () => {
+  afterAll(() => {
+    b.coverage_helper.write_coverage_data();
+    b.coverage_helper.reset_counters();
+  });
+
   test("get-any-student", async () => {
     const { body: student, status_code } = await mockClient["get-any-student"]();
     expect(status_code).toBe(200);

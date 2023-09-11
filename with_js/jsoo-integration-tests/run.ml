@@ -150,8 +150,10 @@ let create_test_cases name (module Ex : T) filter =
     |&> snd
 
 let () =
+  Bisect.Runtime.reset_counters();
   all
   |> List.map (fun (name, m) ->
     create_test_cases name m
       (function | _ -> true))
-  |> Alcotest.run "with_js.jsoo_integration"
+  |> Alcotest.run "with_js.jsoo_integration";
+  Bisect.Runtime.write_coverage_data();

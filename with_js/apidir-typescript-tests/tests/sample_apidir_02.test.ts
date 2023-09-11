@@ -17,6 +17,11 @@ const createIntList = (nums: number[]): IntListObjtuple => {
 };
 
 describe("apidir-typescript-tests-sample02", () => {
+  afterAll(() => {
+    b.coverage_helper.write_coverage_data();
+    b.coverage_helper.reset_counters();
+  });
+
   test("get-any-int-list", async () => {
     const { body, status_code } = await mockClient["get-any-int-list"]();
     expect(status_code).toBe(200);

@@ -34,6 +34,7 @@ open Prr
 
 let () =
   Js_of_ocaml.Js.export "jsoo_gen_json" (object%js
+    val coverage_helper_js = coverage_helper_js
     val generator_js = object%js
       val module_names_js = all |> Jv.(of_list (fst &> of_string)) |> cast
       method generate_js name =

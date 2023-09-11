@@ -42,7 +42,9 @@ _coverage:
 	rm -rf _coverage
 	-dune runtest -f --instrument-with bisect_ppx --no-buffer
 	@(mkdir -p _coverage/ocaml/coverage-files && \
-	  find _build/default | grep -E 'bisect.+[.]coverage$$' | xargs -I{} cp {} _coverage/ocaml/coverage-files)
+		find _build/default | grep -E 'bisect.+[.]coverage$$' | tee _coverage/ocaml/coverage-files.lst | xargs -I{} cp {} _coverage/ocaml/coverage-files)
+	@echo "collected coverage files:"
+	@cat _coverage/ocaml/coverage-files.lst
 	@(bisect-ppx-report html -o _coverage/ocaml/doc _coverage/ocaml/coverage-files/*)
 	@echo ">>> OCaml coverage:"
 	@(bisect-ppx-report summary _coverage/ocaml/coverage-files/*)
