@@ -6,13 +6,13 @@
 (license Apache-2.0)
 (maintainers
   "Hirotetsu Hongo <hg@kxc.inc>"
-  "Haochen Xie <hx@kxc.inc>"
+  "Haochen M. Kotoi-Xie <hx@kxc.inc>"
   "Shiya Yamaguchi <wd@kxc.inc>"
   "Yuta Sato <cr@kxc.inc>"
   "KXC Members <info@kxc.inc>")
 (authors
   "Hirotetsu Hongo"
-  "Haochen Xie"
+  "Haochen M. Kotoi-Xie"
   "Shiya Yamaguchi"
   "Yuta Sato"
   "KXC Members and Contributors")
