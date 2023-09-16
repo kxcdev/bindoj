@@ -9,12 +9,14 @@
   "Haochen M. Kotoi-Xie <hx@kxc.inc>"
   "Shiya Yamaguchi <wd@kxc.inc>"
   "Yuta Sato <cr@kxc.inc>"
+  "Wataru Kaji <wk@kxc.inc>"
   "KXC Members <info@kxc.inc>")
 (authors
   "Hirotetsu Hongo"
   "Haochen M. Kotoi-Xie"
   "Shiya Yamaguchi"
   "Yuta Sato"
+  "Wataru Kaji"
   "KXC Members and Contributors")
 
 (source
