@@ -1,6 +1,0 @@
-[
-  { "kind": "anonymous" },
-  { "kind": "with-id", "arg": 1619 },
-  { "kind": "student", "studentId": 451, "name": "Ray Bradbury" },
-  { "kind": "teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" }
-]

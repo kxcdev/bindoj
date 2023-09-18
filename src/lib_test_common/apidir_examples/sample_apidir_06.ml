@@ -28,15 +28,11 @@ open Bindoj_test_common_typedesc_generated_examples
 module Types = struct
   open Bindoj_runtime
 
-  let xy_opt : Ex10.xy_opt typed_type_decl =
-    Typed.mk Ex10.decl Ex10.reflect
+  let xy_opt : Ex_optional.Xy_opt.t typed_type_decl =
+    Typed.mk Ex_optional.Xy_opt.decl Ex_optional.Xy_opt.reflect
 
-  let int_opt : int option typed_type_decl =
-    Coretypes.(Prims.int |> option |> to_typed_type_decl "int_opt")
-
-  let int_opt_to_json : int option -> Json.jv = function
-    | None -> `null
-    | Some n -> `num (float_of_int n)
+  let int_opt : Ex_alias.Int_opt.t typed_type_decl =
+    Ex_alias.Int_opt.(Typed.mk decl reflect)
 end
 
 open struct
@@ -64,12 +60,12 @@ let get_y =
 let () = begin
   get_x
   |> R.register_usage_samples
-    ( Ex10.sample_values
+    ( Ex_optional.Xy_opt.sample_values
       |&> (fun { orig; _ } -> (orig, orig.x_opt, `default), `nodoc));
 
   get_y
   |> R.register_usage_samples
-    ( Ex10.sample_values
+    ( Ex_optional.Xy_opt.sample_values
       |&> (fun { orig; _ } -> (orig, orig.y_opt, `default), `nodoc));
 end
 
@@ -104,27 +100,27 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Sample_value in
+  let open Util.Sample_value in
 
   let () (* get-x *) =
     let invp = get_x in
-    let reg_sample { orig : Ex10.t; jv } =
+    let reg_sample { orig : Ex_optional.Xy_opt.t; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
         ~orig_req:orig ~orig_resp:orig.x_opt
-        ~jv_req:jv ~jv_resp:(orig.x_opt |> T.int_opt_to_json)
+        ~jv_req:jv ~jv_resp:(orig.x_opt |> Ex_alias.Int_opt.to_json)
         ~pp:(Option.pp pp_int) in
     let open Bindoj_test_common_typedesc_generated_examples in
-    List.iter reg_sample Ex10.sample_values;
-    M.register_post_handler invp (fun (t : Ex10.t) -> return (200, t.x_opt )) in
+    List.iter reg_sample Ex_optional.Xy_opt.sample_values;
+    M.register_post_handler invp (fun (t : Ex_optional.Xy_opt.t) -> return (200, t.x_opt )) in
 
   let () (* get-y *) =
     let invp = get_y in
-    let reg_sample { orig : Ex10.t; jv } =
+    let reg_sample { orig : Ex_optional.Xy_opt.t; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
         ~orig_req:orig ~orig_resp:orig.y_opt
-        ~jv_req:jv ~jv_resp:(orig.y_opt |> T.int_opt_to_json)
+        ~jv_req:jv ~jv_resp:(orig.y_opt |> Ex_alias.Int_opt.to_json)
         ~pp:(Option.pp pp_int) in
     let open Bindoj_test_common_typedesc_generated_examples in
-    List.iter reg_sample Ex10.sample_values;
-    M.register_post_handler invp (fun (t : Ex10.t) -> return (200, t.y_opt)) in
+    List.iter reg_sample Ex_optional.Xy_opt.sample_values;
+    M.register_post_handler invp (fun (t : Ex_optional.Xy_opt.t) -> return (200, t.y_opt)) in
   ()

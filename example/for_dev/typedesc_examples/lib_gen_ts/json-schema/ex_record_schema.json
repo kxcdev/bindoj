@@ -1,0 +1,29 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExRecordStudent",
+    "description": "definition of ex_record_student type",
+    "id": "#ExRecordStudent",
+    "type": "object",
+    "properties": {
+      "admissionYear": { "description": "addmission_year field", "type": "integer" },
+      "name": { "description": "name field", "type": "string" }
+    },
+    "required": ["admissionYear", "name"],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExRecordTeacher",
+    "description": "definition of ex_record_teacher type",
+    "id": "#ExRecordTeacher",
+    "type": "object",
+    "properties": {
+      "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+      "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+      "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" }
+    },
+    "required": ["facultyId", "name", "department"],
+    "additionalProperties": false
+  }
+]

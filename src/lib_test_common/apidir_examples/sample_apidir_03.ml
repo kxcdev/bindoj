@@ -28,8 +28,8 @@ open Bindoj_test_common_typedesc_generated_examples
 module Types = struct
   open Bindoj_runtime
 
-  type person = Ex02.person
-  let person : person typed_type_decl = Typed.mk Ex02.decl Ex02.reflect
+  type person = Ex_variant.Person.t
+  let person : person typed_type_decl = Ex_variant.Person.(Typed.mk decl reflect)
 
   let int : int typed_type_decl =
     Coretypes.(Prims.int |> to_typed_type_decl "int")
@@ -42,7 +42,7 @@ module Functions = struct
   let id_of_person =
     let anonymousError = "Cannot get the ID of an anonymous person." in
     let teacherError = "This teacher does not have a personal ID." in
-    Ex02.(function
+    Ex_variant.Person.(function
     | Anonymous -> (403, `Error anonymousError)
     | With_id id -> (200, `Ok id)
     | Student { student_id; _ } -> (200, `Ok student_id)
@@ -76,7 +76,7 @@ let id_of_person =
 let () = begin
     id_of_person
     |-> R.register_usage_samples
-          ( Ex02.sample_values
+          ( Ex_variant.Person.sample_values
             |&> (fun { orig = person; _} ->
               let (code, resp) = Functions.id_of_person person in
               (person, resp, `status_code code), `nodoc))
@@ -114,7 +114,7 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Sample_value in
+  let open Util.Sample_value in
 
   let () (* id-of-person *) =
     let invp = id_of_person in
@@ -133,6 +133,6 @@ let build_mock_server (module M: MockServerBuilder) =
         ~jv_req:jv
         ~pp:pp_result in
 
-    Ex02.sample_values |> List.iter reg_sample;
+    Ex_variant.Person.sample_values |> List.iter reg_sample;
     M.register_post_handler invp (fun x -> return (id_of_person x)) in
   ()

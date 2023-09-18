@@ -1,0 +1,136 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVersionSubstringRecordV3_2_1",
+    "description": "definition of ex_version_substring_v3_2_1 type",
+    "id": "#ExVersionSubstringRecordV3_2_1",
+    "type": "object",
+    "properties": {
+      "v5_3VersionInfo": {
+        "description": "v5_3_version_info field",
+        "enum": ["Case-version-v1", "Case-v2_0-version", "v3_0_1-case-version"],
+        "type": "string"
+      },
+      "versionInfoV2": { "description": "version_info_v2 field", "type": "integer" },
+      "versionInfoV2_0": { "description": "version_info_v2_0 field", "type": "integer" },
+      "versionInfoV2_0_1": { "description": "version_info_v2_0_1 field", "type": "integer" },
+      "versionV3Info": { "description": "version_v3_info field", "type": "integer" },
+      "versionV3_0Info": { "description": "version_v3_0_info field", "type": "integer" },
+      "versionV3_0_1Info": { "description": "version_v3_0_1_info field", "type": "integer" },
+      "v4VersionInfo": { "description": "v4_version_info field", "type": "integer" },
+      "v4_0VersionInfo": { "description": "v4_0_version_info field", "type": "integer" },
+      "v4_0_1VersionInfo": { "description": "v4_0_1_version_info field", "type": "integer" },
+      "noPreservingV12Version": { "type": "integer" }
+    },
+    "required": [
+      "v5_3VersionInfo",
+      "versionInfoV2",
+      "versionInfoV2_0",
+      "versionInfoV2_0_1",
+      "versionV3Info",
+      "versionV3_0Info",
+      "versionV3_0_1Info",
+      "v4VersionInfo",
+      "v4_0VersionInfo",
+      "v4_0_1VersionInfo",
+      "noPreservingV12Version"
+    ],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVersionSubstringVariantV1_0",
+    "description": "definition of type ex_version_substring_variant_v1_0",
+    "id": "#ExVersionSubstringVariantV1_0",
+    "oneOf": [
+      {
+        "title": "version-info-v1_0",
+        "description": "Version_info_v1_0 constructor",
+        "type": "object",
+        "properties": {
+          "versionInfoV1": {
+            "description": "version_info_v1 field in Version_info_v1_0 constructor",
+            "type": "integer"
+          },
+          "versionInfoV1_0": {
+            "description": "version_info_v1_0 field in Version_info_v1_0 constructor",
+            "type": "integer"
+          },
+          "versionInfoV1_0_1": {
+            "description": "version_info_v1_0_1 field in Version_info_v1_0 constructor",
+            "type": "integer"
+          },
+          "kind": { "enum": ["version-info-v1_0"], "type": "string" }
+        },
+        "required": ["versionInfoV1", "versionInfoV1_0", "versionInfoV1_0_1", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "version-v1_0-info",
+        "description": "Version_v1_0_info constructor",
+        "type": "object",
+        "properties": {
+          "versionV1Info": {
+            "description": "version_v1_info field in Version_v1_0_info constructor",
+            "type": "integer"
+          },
+          "versionV1_0Info": {
+            "description": "version_v1_0_info field in Version_v1_0_info constructor",
+            "type": "integer"
+          },
+          "versionV1_0_1Info": {
+            "description": "version_v1_0_1_info field in Version_v1_0_info constructor",
+            "type": "integer"
+          },
+          "kind": { "enum": ["version-v1_0-info"], "type": "string" }
+        },
+        "required": ["versionV1Info", "versionV1_0Info", "versionV1_0_1Info", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "v1_0-version-info",
+        "description": "Version_v1_0_info constructor",
+        "type": "object",
+        "properties": {
+          "v1VersionInfo": {
+            "description": "v1_version_info field in V1_0_version_info constructor",
+            "type": "integer"
+          },
+          "v1_0VersionInfo": {
+            "description": "v1_0_version_info field in V1_0_version_info constructor",
+            "type": "integer"
+          },
+          "v1_0_1VersionInfo": {
+            "description": "v1_0_1_version_info field in V1_0_version_info constructor",
+            "type": "integer"
+          },
+          "kind": { "enum": ["v1_0-version-info"], "type": "string" }
+        },
+        "required": ["v1VersionInfo", "v1_0VersionInfo", "v1_0_1VersionInfo", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "no-preserving-version-substring-v1-0",
+        "description": "No_preserving_version_substring constructor",
+        "type": "object",
+        "properties": {
+          "versionInfoV1": {
+            "description": "version_info_v1 field in No_preserving_version_substring_constructor_v1_0",
+            "type": "integer"
+          },
+          "versionInfoV10": {
+            "description": "version_info_v1_0 field in No_preserving_version_substring_constructor_v1_0",
+            "type": "integer"
+          },
+          "versionInfoV101": {
+            "description": "version_info_v1_0_1 field in No_preserving_version_substring_constructor_v1_0",
+            "type": "integer"
+          },
+          "kind": { "enum": ["no-preserving-version-substring-v1-0"], "type": "string" }
+        },
+        "required": ["versionInfoV1", "versionInfoV10", "versionInfoV101", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  }
+]

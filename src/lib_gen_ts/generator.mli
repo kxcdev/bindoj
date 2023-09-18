@@ -26,26 +26,6 @@ type resolution_strategy = [
   | `no_resolution
 ]
 
-val generate_import :
-  resolution_strategy:(type_decl -> resolution_strategy)
-  -> formatter:ppf
-  -> type_decl list
-  -> unit
-(** Writes import statements for [`reused_inline_record] of the given type declarations. *)
-
-val generate_env :
-  env:tdenv
-  -> formatter:ppf
-  -> type_decl list
-  -> unit
-(** Writes infile type definitions for [env.alias_ident_typemap] of the given tdenv. *)
-
-val generate_decl :
-  formatter:ppf
-  -> type_decl
-  -> unit
-(** Writes type definition of the given type declaration. *)
-
 val generate :
   resolution_strategy:(type_decl -> resolution_strategy)
   -> env:tdenv

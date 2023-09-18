@@ -28,27 +28,29 @@ let () =
     QCheck2.Test.make ~name ~count
   in
   all_generated
-  |&> (fun (module S : SampleGenerated) ->
-    that S.name gen_jv ~print:Kxclib.Json.unparse
-      (fun jv ->
-        let interpreted : S.t OfJsonResult.t =
-          let typed_decl = Typed_type_desc.Typed.mk S.decl S.reflect in
-          Json.of_json' ~env:S.env typed_decl jv
-        in
-        let compiled : S.t OfJsonResult.t = S.of_json' jv in
-        let result = interpreted = compiled in
-        if not result then
-          let print_result label = function
-            | Ok x -> eprintf "%s [%s]: Ok %a\n" S.name label S.pp x
-            | Error ((_, _, shape) as e) ->
-              eprintf "%s [%s]: Error \"%s\" %a\n"
-                S.name label (OfJsonResult.Err.to_string e)
-                Json_shape.pp_shape_explanation shape
+  |&>> (fun (module S : Sample_generated) ->
+    S.descs |&> (fun (module D : Sample_generated_desc) ->
+      let name = sprintf "%s.%s" S.name D.decl.td_name in
+      that name gen_jv ~print:Kxclib.Json.unparse
+        (fun jv ->
+          let interpreted : D.t OfJsonResult.t =
+            let typed_decl = Typed_type_desc.Typed.mk D.decl D.reflect in
+            Json.of_json' ~env:S.env typed_decl jv
           in
-          print_result "interpreted" interpreted;
-          print_result "compiled   " compiled;
-        ;
-        result
-      )
+          let compiled : D.t OfJsonResult.t = D.of_json' jv in
+          let result = interpreted = compiled in
+          if not result then
+            let print_result label = function
+              | Ok x -> eprintf "%s [%s]: Ok %a\n" name label D.pp x
+              | Error ((_, _, shape) as e) ->
+                eprintf "%s [%s]: Error \"%s\" %a\n"
+                  name label (OfJsonResult.Err.to_string e)
+                  Json_shape.pp_shape_explanation shape
+            in
+            print_result "interpreted" interpreted;
+            print_result "compiled   " compiled;
+          ;
+          result
+        ))
   )
   |> QCheck_base_runner.run_tests_main |> exit

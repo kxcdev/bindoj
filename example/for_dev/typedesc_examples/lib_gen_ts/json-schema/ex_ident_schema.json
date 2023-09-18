@@ -1,0 +1,12 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExIdentStudentPair",
+    "description": "definition of student pair",
+    "id": "#ExIdentStudentPair",
+    "type": "object",
+    "properties": { "student1": { "$ref": "#ExRecordStudent" }, "student2": { "$ref": "#ExRecordStudent" } },
+    "required": ["student1", "student2"],
+    "additionalProperties": false
+  }
+]

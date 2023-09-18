@@ -1,0 +1,118 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExCoretypeVariousPrimTypes",
+    "description": "various primitive types",
+    "id": "#ExCoretypeVariousPrimTypes",
+    "type": "object",
+    "properties": {
+      "unit": { "type": "integer", "minimum": 1, "maximum": 1 },
+      "bool": { "type": "boolean" },
+      "int": { "type": "integer" },
+      "float": { "type": "number" },
+      "string": { "type": "string" },
+      "uchar": { "type": "string", "minLength": 1, "maxLength": 1 },
+      "byte": { "type": "integer", "minimum": 0, "maximum": 255 },
+      "bytes": {
+        "type": "string",
+        "pattern": "^(?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z0-9+\\/][AQgw]==|[A-Za-z0-9+\\/]{2}[AEIMQUYcgkosw048]=)?$",
+        "format": "byte"
+      }
+    },
+    "required": ["unit", "bool", "int", "float", "string", "uchar", "byte", "bytes"],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExCoretypeWithInt53p",
+    "description": "record of an int53p value",
+    "id": "#ExCoretypeWithInt53p",
+    "type": "object",
+    "properties": { "value": { "description": "an int53p value", "type": "integer" } },
+    "required": ["value"],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExCoretypeVariousComplexTypes",
+    "description": "various complex types",
+    "id": "#ExCoretypeVariousComplexTypes",
+    "type": "object",
+    "properties": {
+      "option": { "description": "int option", "nullable": true, "type": "integer" },
+      "list": { "description": "int list", "type": "array", "items": { "description": "int list", "type": "integer" } },
+      "map": {
+        "description": "map<string, int>",
+        "type": "object",
+        "additionalProperties": { "description": "map<string, int>", "type": "integer" }
+      }
+    },
+    "required": ["list", "map"],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExCoretypeVariousTupleTypes",
+    "description": "collection of tuple types",
+    "id": "#ExCoretypeVariousTupleTypes",
+    "type": "object",
+    "properties": {
+      "tuple": {
+        "description": "(int * int)",
+        "type": "array",
+        "items": [
+          { "description": "(int * int)", "type": "integer" },
+          { "description": "(int * int)", "type": "integer" }
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "objtuple": {
+        "description": "(int * int) (as object)",
+        "type": "object",
+        "properties": {
+          "_0": { "description": "(int * int) (as object)", "type": "integer" },
+          "_1": { "description": "(int * int) (as object)", "type": "integer" }
+        },
+        "required": ["_0", "_1"],
+        "additionalProperties": false
+      },
+      "nested": {
+        "description": "(int option * int list * (int * int))",
+        "type": "array",
+        "items": [
+          { "description": "(int option * int list * (int * int))", "nullable": true, "type": "integer" },
+          {
+            "description": "(int option * int list * (int * int))",
+            "type": "array",
+            "items": { "description": "(int option * int list * (int * int))", "type": "integer" }
+          },
+          {
+            "description": "(int option * int list * (int * int))",
+            "type": "array",
+            "items": [
+              { "description": "(int option * int list * (int * int))", "type": "integer" },
+              { "description": "(int option * int list * (int * int))", "type": "integer" }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          }
+        ],
+        "minItems": 3,
+        "maxItems": 3
+      }
+    },
+    "required": ["tuple", "objtuple", "nested"],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExCoretypeNamedJson",
+    "description": "record of name and json datum",
+    "id": "#ExCoretypeNamedJson",
+    "type": "object",
+    "properties": { "name": { "description": "a name of datum", "type": "string" }, "json": {} },
+    "required": ["name", "json"],
+    "additionalProperties": false
+  }
+]

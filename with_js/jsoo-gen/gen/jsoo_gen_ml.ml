@@ -19,15 +19,12 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_test_common_jsoo_utils
 open Bindoj_gen
+open Bindoj_gen_test_gen_common
 open Prr
 
-let modules, mapping =
+let modules =
   let open Bindoj_test_common_typedesc_examples.All in
-  all |&> fst,
-  all
-  |> List.concat_map (fun (name, (module Ex : T)) -> [
-    name, (Ex.decl, Ex.example_module_path);
-    name ^ "_docstr", (Ex.decl_with_docstr, Ex.example_module_path) ])
+  all |&> fst
 
 let () =
   Js_of_ocaml.Js.export "jsoo_gen_ml" (object%js
@@ -37,9 +34,10 @@ let () =
       method generate_js name gen_type_decl =
         let name = ostr name in
         let gen_type_decl = Jv.to_bool gen_type_decl in
-        match List.assoc_opt name mapping with
+
+        match List.assoc_opt (name^"_gen.ml") mapping with
         | None -> failwith (sprintf "unknown example %s" name)
-        | Some (decl, example_module_path) ->
+        | Some (_, decls) ->
           let gen_json_shape_explanation = true in
           let discriminator_value_accessor = true in
           let write_to_string (writer : formatter:ppf -> unit) =
@@ -49,25 +47,28 @@ let () =
           in
           object%js
             val structure_js =
-              let type_decl =
-                if gen_type_decl then
-                  `path (example_module_path^".decl") |> some
-                else none
-              in
-              Generator.gen_structure_with_json_codec
-                ~self_contained:true
-                ~gen_json_shape_explanation
-                ~discriminator_value_accessor
-                ?type_decl
-                decl
+              decls |> generate (fun (path, decl) ->
+                  let type_decl =
+                    if gen_type_decl then Some (`path path)
+                    else None
+                  in
+                  Generator.gen_structure_with_json_codec
+                    ~self_contained:true
+                    ~gen_json_shape_explanation
+                    ~discriminator_value_accessor
+                    ?type_decl
+                    decl
+                )
               |> write_to_string |> jstr
 
             val signature_js =
-              Generator.gen_signature_with_json_codec
-                ~gen_json_shape_explanation
-                ~discriminator_value_accessor
-                ~gen_type_decl
-                decl
+              decls |> generate (fun (_, decl) ->
+                  Generator.gen_signature_with_json_codec
+                    ~gen_json_shape_explanation
+                    ~discriminator_value_accessor
+                    ~gen_type_decl
+                    decl
+                )
               |> write_to_string |> jstr
           end
     end

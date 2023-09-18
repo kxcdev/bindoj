@@ -31,15 +31,11 @@ module Types = struct
   let string : string typed_type_decl =
     Coretypes.(Prims.string |> to_typed_type_decl "string")
 
-  let int_opt : int option typed_type_decl =
-    Coretypes.(Prims.int |> option |> to_typed_type_decl "int_opt")
+  let int_opt : Ex_alias.Int_opt.t typed_type_decl =
+    Ex_alias.Int_opt.(Typed.mk decl reflect)
 
-  let int_opt_to_json : int option -> Json.jv = function
-    | None -> `null
-    | Some n -> `num (float_of_int n)
-
-  let complex : Ex05_notuple.t typed_type_decl =
-    Typed.mk Ex05_notuple.decl Ex05_notuple.reflect
+  let complex : Ex_coretype.Various_complex_types.t typed_type_decl =
+    Ex_coretype.Various_complex_types.(Typed.mk decl reflect)
 end
 
 open struct
@@ -74,7 +70,7 @@ let () = begin
 
   option_of_complex
   |> R.register_usage_samples
-    ( Ex05_notuple.sample_values
+    ( Ex_coretype.Various_complex_types.sample_values
       |&> (fun { orig; _ } -> (orig, orig.option, `default), `nodoc));
 end
 
@@ -109,18 +105,18 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Sample_value in
+  let open Util.Sample_value in
 
   let () (* int-of-string *) =
     let invp = int_of_string in
     let reg_sample { orig; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
         ~orig_req:orig ~orig_resp:(int_of_string_opt orig)
-        ~jv_req:jv ~jv_resp:(int_of_string_opt orig |> T.int_opt_to_json)
+        ~jv_req:jv ~jv_resp:(int_of_string_opt orig |> Ex_alias.Int_opt.to_json)
         ~pp:(Option.pp pp_int) in
     let open Bindoj_test_common_typedesc_generated_examples in
     List.iter reg_sample
-      Sample_value.[
+      Util.Sample_value.[
         { orig = ""; jv = `str ""; };
         { orig = "0"; jv = `str "0"; };
         { orig = "2020"; jv = `str "2020"; };
@@ -133,9 +129,9 @@ let build_mock_server (module M: MockServerBuilder) =
     let invp = option_of_complex in
     let reg_sample { orig; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
-        ~orig_req:orig ~orig_resp:Ex05_notuple.(orig.option)
-        ~jv_req:jv ~jv_resp:(Ex05_notuple.(orig.option) |> T.int_opt_to_json)
+        ~orig_req:orig ~orig_resp:Ex_coretype.Various_complex_types.(orig.option)
+        ~jv_req:jv ~jv_resp:(Ex_coretype.Various_complex_types.(orig.option) |> Ex_alias.Int_opt.to_json)
         ~pp:(Option.pp pp_int) in
-    List.iter reg_sample Ex05_notuple.sample_values;
-    M.register_post_handler invp (fun x -> return (200, Ex05_notuple.(x.option))) in
+    List.iter reg_sample Ex_coretype.Various_complex_types.sample_values;
+    M.register_post_handler invp (fun x -> return (200, Ex_coretype.Various_complex_types.(x.option))) in
   ()

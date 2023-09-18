@@ -1,6 +1,6 @@
-{
-  "MyInt": { "title": "MyInt", "description": "definition of my_int type", "type": "integer" },
-  "MyTuple": {
+[
+  { "title": "MyInt", "description": "definition of my_int type", "type": "integer" },
+  {
     "title": "MyTuple",
     "description": "definition of my_tuple type",
     "type": "object",
@@ -11,7 +11,7 @@
     "required": ["_0", "_1"],
     "additionalProperties": false
   },
-  "Student": {
+  {
     "title": "Student",
     "description": "definition of student type",
     "type": "object",
@@ -22,7 +22,7 @@
     "required": ["admissionYear", "name"],
     "additionalProperties": false
   },
-  "Person": {
+  {
     "title": "Person",
     "description": "definition of person type",
     "oneOf": [
@@ -69,4 +69,4 @@
       }
     ]
   }
-}
+]

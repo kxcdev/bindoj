@@ -1,0 +1,227 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVariantPerson",
+    "description": "definition of ex_variant_person type",
+    "id": "#ExVariantPerson",
+    "oneOf": [
+      {
+        "title": "anonymous",
+        "description": "Anonymous constructor",
+        "type": "object",
+        "properties": { "kind": { "enum": ["anonymous"], "type": "string" } },
+        "required": ["kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "with-id",
+        "description": "With_id constructor",
+        "type": "object",
+        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["with-id"], "type": "string" } },
+        "required": ["arg", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "student",
+        "description": "Student constructor",
+        "type": "object",
+        "properties": {
+          "studentId": { "description": "student_id field in Student constructor", "type": "integer" },
+          "name": { "description": "name field in Student constructor", "type": "string" },
+          "kind": { "enum": ["student"], "type": "string" }
+        },
+        "required": ["studentId", "name", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "teacher",
+        "description": "Teacher constructor",
+        "type": "object",
+        "properties": {
+          "facultyId": { "description": "faculty_id field in Teacher constructor", "type": "integer" },
+          "name": { "description": "name field in Teacher constructor", "type": "string" },
+          "department": { "description": "dapartment field in Teacher constructor", "type": "string" },
+          "kind": { "enum": ["teacher"], "type": "string" }
+        },
+        "required": ["facultyId", "name", "department", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVariantPersonReused",
+    "description": "definition of ex_variant_person_reused type",
+    "id": "#ExVariantPersonReused",
+    "oneOf": [
+      {
+        "title": "anonymous",
+        "description": "Anonymous constructor",
+        "type": "object",
+        "properties": { "kind": { "enum": ["anonymous"], "type": "string" } },
+        "required": ["kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "with-id",
+        "description": "With_id constructor",
+        "type": "object",
+        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["with-id"], "type": "string" } },
+        "required": ["arg", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "student",
+        "description": "Student constructor",
+        "type": "object",
+        "properties": {
+          "studentId": { "description": "student_id field in Student constructor", "type": "integer" },
+          "name": { "description": "name field in Student constructor", "type": "string" },
+          "kind": { "enum": ["student"], "type": "string" }
+        },
+        "required": ["studentId", "name", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "teacher",
+        "description": "Teacher constructor",
+        "type": "object",
+        "properties": {
+          "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+          "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+          "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
+          "kind": { "enum": ["teacher"], "type": "string" }
+        },
+        "required": ["facultyId", "name", "department", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVariantIntList",
+    "description": "definition of ex_variant_int_list type",
+    "id": "#ExVariantIntList",
+    "oneOf": [
+      {
+        "title": "intnil",
+        "description": "nil for ex_variant_int_list",
+        "type": "object",
+        "properties": { "kind": { "enum": ["intnil"], "type": "string" } },
+        "required": ["kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "intcons",
+        "description": "cons for ex_variant_int_list",
+        "type": "object",
+        "properties": {
+          "arg": {
+            "type": "array",
+            "items": [{ "type": "integer" }, { "$ref": "#ExVariantIntList" }],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "kind": { "enum": ["intcons"], "type": "string" }
+        },
+        "required": ["arg", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVariantIntListObjtuple",
+    "description": "definition of ex_variant_int_list_objtuple type",
+    "id": "#ExVariantIntListObjtuple",
+    "oneOf": [
+      {
+        "title": "intnil",
+        "description": "nil for ex_variant_int_list_objtuple",
+        "type": "object",
+        "properties": { "kind": { "enum": ["intnil"], "type": "string" } },
+        "required": ["kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "intcons",
+        "description": "cons for ex_variant_int_list_objtuple",
+        "type": "object",
+        "properties": {
+          "_0": { "type": "integer" },
+          "_1": { "$ref": "#ExVariantIntListObjtuple" },
+          "kind": { "enum": ["intcons"], "type": "string" }
+        },
+        "required": ["_0", "_1", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVariantFoo",
+    "description": "polyvariant",
+    "id": "#ExVariantFoo",
+    "oneOf": [
+      {
+        "title": "foo0",
+        "description": "polyvariant case (length=0)",
+        "type": "object",
+        "properties": { "kind": { "enum": ["foo0"], "type": "string" } },
+        "required": ["kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "foo1",
+        "description": "polyvariant case (length=1)",
+        "type": "object",
+        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["foo1"], "type": "string" } },
+        "required": ["arg", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "foo2",
+        "description": "polyvariant case (length=2)",
+        "type": "object",
+        "properties": {
+          "arg": {
+            "type": "array",
+            "items": [{ "type": "integer" }, { "type": "integer" }],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "kind": { "enum": ["foo2"], "type": "string" }
+        },
+        "required": ["arg", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExVariantCustomizedUnion",
+    "description": "variant with customized discriminator and argument names",
+    "id": "#ExVariantCustomizedUnion",
+    "oneOf": [
+      {
+        "title": "case1'",
+        "description": "custom arg name (value)",
+        "type": "object",
+        "properties": { "value": { "type": "integer" }, "tag": { "enum": ["case1'"], "type": "string" } },
+        "required": ["value", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "case2'",
+        "type": "object",
+        "properties": {
+          "x'": { "type": "integer" },
+          "y'": { "type": "integer" },
+          "tag": { "enum": ["case2'"], "type": "string" }
+        },
+        "required": ["x'", "y'", "tag"],
+        "additionalProperties": false
+      }
+    ]
+  }
+]

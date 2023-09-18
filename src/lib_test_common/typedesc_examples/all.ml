@@ -17,49 +17,15 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
-open Bindoj_base.Type_desc
-open Bindoj_base.Runtime
-open Bindoj_gen_ts.Typescript_datatype
-open Bindoj_openapi.V3
-
-(** each example module should have this module type *)
-module type T = sig
-  val decl: type_decl
-  val example_module_path: string
-
-  val decl_with_docstr: type_decl
-  val fwrt: (unit, unit, unit) ts_fwrt_decl
-  val ts_ast: ts_ast option
-  val schema_object: Schema_object.t option
-  val expected_json_shape_explanation : json_shape_explanation option
-end
-
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex01_inherited_mangling", (module Ex01_inherited_mangling);
-  "ex02", (module Ex02);
-  "ex02_reused", (module Ex02_reused);
-  "ex02_no_mangling", (module Ex02_no_mangling);
-  "ex02_inherited_mangling", (module Ex02_inherited_mangling);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-  "ex09", (module Ex09);
-  "ex10", (module Ex10);
-  "ex11", (module Ex11);
-  "ex12", (module Ex12);
-  "ex13", (module Ex13);
-  "ex14", (module Ex14);
-  "ex15", (module Ex15);
-  "ex16", (module Ex16);
-  "ex17", (module Ex17);
-  "ex18", (module Ex18);
-  "ex19", (module Ex19);
-  "ex20", (module Ex20);
+let all : (string * (module Util.Ex)) list = [
+  "ex_coretype", (module Ex_coretype);
+  "ex_alias", (module Ex_alias);
+  "ex_record", (module Ex_record);
+  "ex_variant", (module Ex_variant);
+  "ex_mangling", (module Ex_mangling);
+  "ex_optional", (module Ex_optional);
+  "ex_ident", (module Ex_ident);
+  "ex_nested", (module Ex_nested);
+  "ex_nested_multiply", (module Ex_nested_multiply);
+  "ex_version_substring", (module Ex_version_substring);
 ]

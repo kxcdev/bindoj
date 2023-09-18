@@ -10,7 +10,7 @@
           "description": "the person record to get the id",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/Person" },
+              "schema": { "$ref": "#/components/schemas/ExVariantPerson" },
               "examples": {
                 "example_0": { "value": { "kind": "anonymous" } },
                 "example_1": { "value": { "kind": "with-id", "arg": 1619 } },
@@ -70,9 +70,8 @@
   },
   "components": {
     "schemas": {
-      "Int": { "title": "Int", "type": "integer" },
-      "Person": {
-        "title": "Person",
+      "ExVariantPerson": {
+        "title": "ExVariantPerson",
         "oneOf": [
           {
             "title": "anonymous",
@@ -118,6 +117,7 @@
           }
         ]
       },
+      "Int": { "title": "Int", "type": "integer" },
       "String": { "title": "String", "type": "string" }
     }
   }

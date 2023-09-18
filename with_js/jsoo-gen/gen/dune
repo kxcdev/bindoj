@@ -7,6 +7,7 @@
   bindoj_gen bindoj_runtime
   bindoj_test_common_typedesc_examples
   bindoj_test_common_jsoo_utils
+  bindoj_gen_test_gen_common
   )
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib -w "-32-33")))

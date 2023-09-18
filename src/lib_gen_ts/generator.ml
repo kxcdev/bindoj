@@ -27,38 +27,54 @@ type resolution_strategy = [
   | `no_resolution
 ]
 
-let generate_import ~resolution_strategy ~formatter (decls: type_decl list): unit =
-  let reused_intersection_types : type_decl list =
+let generate_import_and_env ~(env: tdenv) ~resolution_strategy ~formatter (decls: type_decl list): unit =
+  let collect decls : type_decl list =
+    let collect_nested f xs =
+      let ds = xs |&?> (fun x ->
+        match f x with
+        | `nested (d, _) -> Some d
+        | _ -> None)
+      in
+      ds
+    in
     decls |&>> (function
+      | { td_kind = Alias_decl _; _ } -> []
+      | { td_kind = Record_decl fields; _ } -> collect_nested (fun r -> r.rf_type) fields
       | { td_kind = Variant_decl ctors; _ } ->
-        ctors |&?> (function
+        ctors |&>> (function
+          | { vc_param = `no_param; _ } -> []
+          | { vc_param = `tuple_like args; _ } -> collect_nested (fun v -> v.va_type) args
+          | { vc_param = `inline_record fields; _ } -> collect_nested (fun r -> r.rf_type) fields
           | { vc_param = `reused_inline_record d; vc_configs; _ } ->
             begin match Ts_config.get_reused_variant_inline_record_style_opt vc_configs with
-            | Some `intersection_type -> Some d
-            | _ -> None
-            end
-          | _ -> None
-        )
-      | _ -> [])
+            | Some `intersection_type -> [ d ]
+            | _ -> []
+            end))
   in
 
-  reused_intersection_types
+  let types = ref (decls |&> (fun { td_name; _ } -> td_name)) in
+
+  collect decls
   |> List.group_by resolution_strategy
   |> List.iter (function
     | (`import_location loc, tds) ->
-      let tnames =
-        tds
-        |&> (Ts_config.get_mangled_name_of_type &> fst)
-        |> List.sort_uniq compare
-      in
-      sprintf "import { %s } from \"%s\";" (String.concat ", " tnames) loc
-      |> Format.pp_print_string formatter
-      |> Format.pp_print_newline formatter
+      tds
+      |?> (fun td -> List.mem td.td_name !types |> not)
+      |> (function
+      | [] -> ()
+      | tds ->
+        types := tds |> List.foldl (fun ts { td_name; _ } -> td_name :: ts) !types;
+        let tnames =
+          tds
+          |&> (Ts_config.get_mangled_name_of_type &> fst)
+          |> List.sort_uniq compare
+        in
+        sprintf "import { %s } from \"%s\";" (String.concat ", " tnames) loc
+        |> Format.pp_print_string formatter
+        |> Format.pp_print_newline formatter)
     | _ -> ()
-  )
+  );
 
-let generate_env ~(env: tdenv) ~formatter (decls: type_decl list): unit =
-  let types = ref (decls |&> (fun { td_name; _ } -> td_name)) in
   env.alias_ident_typemap
   |> StringMap.iter(fun name boxed ->
     let typed_decl = Typed.unbox boxed in
@@ -85,8 +101,7 @@ let generate_decl ~formatter (decl: type_decl): unit =
   | Record_decl _ | Alias_decl _ -> ()
 
 let generate ~resolution_strategy ~(env: tdenv) ~formatter (decls: type_decl list): unit =
-  generate_import ~resolution_strategy ~formatter decls;
-  generate_env ~env ~formatter decls;
+  generate_import_and_env ~env ~resolution_strategy ~formatter decls;
   let rec loop = function
     | [] -> ()
     | hd :: [] -> generate_decl ~formatter hd

@@ -21,6 +21,7 @@ open Alcotest
 open Kxclib
 open Bindoj_base
 open Bindoj_test_common.Typedesc_generated_examples
+open Bindoj_test_common.Typedesc_generated_examples.Util
 
 module Testables : sig
   val jv : Json.jv testable
@@ -36,10 +37,9 @@ end = struct
   let jv = testable pp_jv ( = )
 end
 
-let create_test_cases (name: string) (module Ex : T) =
+let create_test_cases name env (module Ex : Ex_generated_desc) =
   let open Ex in
   let open Bindoj_codec in
-  let msg msg = sprintf "%s %s" name msg in
   let typed_decl = Typed_type_desc.Typed.mk Ex.decl Ex.reflect in
   let to_json = Json.to_json ~env typed_decl in
   let of_json jv =
@@ -53,6 +53,9 @@ let create_test_cases (name: string) (module Ex : T) =
     check' bool ~msg:"check field name collision" ~expected:true
       ~actual:(Bindoj_codec_config.Json_config.check_field_name_collision Ex.decl)
   in
+
+  let name = sprintf "%s.%s" name Ex.decl.td_name in
+  let msg msg = sprintf "%s %s" name msg in
 
   (* encoding *)
   let check_encoder (value: t Sample_value.t) =
@@ -88,5 +91,6 @@ let create_test_cases (name: string) (module Ex : T) =
 
 let () =
   all
-  |> List.map (fun (name, m) -> create_test_cases name m)
+  |&>> (fun (name, (module E : Ex_generated)) ->
+    E.example_generated_descs |&> create_test_cases name E.env)
   |> Alcotest.run "lib_codec.json"

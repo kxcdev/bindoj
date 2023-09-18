@@ -18,10 +18,9 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_gen_foreign.Foreign_datatype
-open Bindoj_test_common
 
 let testable_fwrt =
-  let pp : (unit, unit, unit, unit*unit*unit) fwrt_decl Fmt.t =
+  let pp : ppf -> (unit, unit, unit, unit*unit*unit) fwrt_decl -> unit =
     let pp_unit fmt () = Format.pp_print_string fmt "()" in
     pp_fwrt_decl pp_unit pp_unit pp_unit pp_unit pp_unit pp_unit
   in
@@ -39,9 +38,12 @@ let fc_annot_to_unit desc : (unit, unit, unit, unit*unit*unit) fwrt_desc =
       | Fwrt_alias a -> Fwrt_alias a
       | Fwrt_object o -> Fwrt_object o }
 
-let create_cases doc (module Ex : Typedesc_examples.T) =
+open Bindoj_test_common.Typedesc_examples
+
+let create_cases name (module Ex : Ex_desc) =
   let open Alcotest in
   let open Kxclib in
+  let doc = sprintf "%s.%s" name Ex.decl.td_name in
   let create_test () =
     Alcotest.check testable_fwrt doc
       (fwrt_decl_of_type_decl Ex.decl) (Ex.fwrt /> FwrtTypeEnv.map fc_annot_to_unit) in
@@ -49,6 +51,7 @@ let create_cases doc (module Ex : Typedesc_examples.T) =
 
 let () =
   let open Alcotest in
-  Typedesc_examples.all
-  |> List.map (fun (name, m) -> create_cases name m)
+  all
+  |&>> (fun (name, (module E : Ex)) ->
+    E.example_descs |&> create_cases name)
   |> run "lib_gen_foreign"

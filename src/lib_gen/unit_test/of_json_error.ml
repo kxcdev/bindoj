@@ -31,33 +31,36 @@ end = struct
   let jvpath = testable Json.pp_jvpath ( = )
 end
 
-let create_test_cases (module S : SampleGenerated) =
-  S.name, (S.samples |&> (fun (name, jv, (msg, path)) ->
-    let msg =
-      if List.empty path then sprintf "%s at root" msg
-      else sprintf "%s at path %s" msg (path |> List.rev |> Json.unparse_jvpath)
-    in
-    test_case name `Quick(fun () ->
-      let res_msg, res_path =
-        S.of_json' jv
-        |> function
-        | Error err ->
-          OfJsonResult.Err.(Some (to_string err), Some(path err))
-        | _ -> None, None
+let create_test_cases (module S : Sample_generated) =
+  S.name, (S.descs |&>> (fun (module D : Sample_generated_desc) ->
+    D.samples |&> (fun (name, jv, (msg, path)) ->
+      let msg =
+        if List.empty path then sprintf "%s at root" msg
+        else sprintf "%s at path %s" msg (path |> List.rev |> Json.unparse_jvpath)
       in
-      check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
-      check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path
-    )) |> fun tests ->
-      tests @ begin match S.expected_json_shape_explanation with
-      | None -> [ test_case "json_shape_explanation(skipped)" `Quick ignore]
-      | Some expected -> [
-        test_case "json_shape_explanation" `Quick(fun () ->
-          check' Testables.json_shape_explanation
-            ~msg:"json_shape_explanation"
-            ~expected
-            ~actual:S.json_shape_explanation
-        )]
-      end)
+      let test_name = sprintf "%s.%s (%s)" S.name D.decl.td_name name in
+      test_case test_name `Quick(fun () ->
+        let res_msg, res_path =
+          D.of_json' jv
+          |> function
+          | Error err ->
+            OfJsonResult.Err.(Some (to_string err), Some(path err))
+          | _ -> None, None
+        in
+        check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
+        check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path
+      )) |> fun tests ->
+        tests @ begin match D.expected_json_shape_explanation with
+        | None -> [ test_case "json_shape_explanation(skipped)" `Quick ignore]
+        | Some expected -> [
+          test_case "json_shape_explanation" `Quick(fun () ->
+            check' Testables.json_shape_explanation
+              ~msg:"json_shape_explanation"
+              ~expected
+              ~actual:D.json_shape_explanation
+          )]
+        end)
+    )
 
 let () =
   all_generated

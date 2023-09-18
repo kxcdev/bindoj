@@ -1,0 +1,460 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExNestedPoint2",
+    "description": "definition of ex_nested_point2 type",
+    "id": "#ExNestedPoint2",
+    "type": "object",
+    "properties": {
+      "x": { "description": "x field", "type": "number" },
+      "y": { "description": "y field", "type": "number" }
+    },
+    "required": ["x", "y"],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExNestedRecord",
+    "description": "definition of ex_nested_record type",
+    "id": "#ExNestedRecord",
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "unit": { "description": "alias of unit type", "type": "integer", "minimum": 1, "maximum": 1 },
+          "point2": {
+            "description": "definition of ex_nested_point2 type",
+            "type": "object",
+            "properties": {
+              "x": { "description": "x field", "type": "number" },
+              "y": { "description": "y field", "type": "number" }
+            },
+            "required": ["x", "y"],
+            "additionalProperties": false
+          },
+          "x": { "description": "x field", "type": "number" },
+          "y": { "description": "y field", "type": "number" },
+          "person": {
+            "description": "definition of ex_mangling_person_inherited type",
+            "oneOf": [
+              {
+                "title": "Anonymous",
+                "description": "Anonymous constructor",
+                "type": "object",
+                "properties": { "kind": { "enum": ["Anonymous"], "type": "string" } },
+                "required": ["kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "With_id",
+                "description": "With_id constructor",
+                "type": "object",
+                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["arg", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "student",
+                "description": "Student constructor",
+                "type": "object",
+                "properties": {
+                  "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+                  "name": { "description": "name field in Student constructor", "type": "string" },
+                  "caseValue": {
+                    "description": "case_value field in Student constructor",
+                    "enum": ["Case_at0", "case-at1"],
+                    "type": "string"
+                  },
+                  "kind": { "enum": ["student"], "type": "string" }
+                },
+                "required": ["student_id", "name", "caseValue", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "Teacher",
+                "description": "Teacher constructor",
+                "type": "object",
+                "properties": {
+                  "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+                  "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+                  "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
+                  "kind": { "enum": ["Teacher"], "type": "string" }
+                },
+                "required": ["facultyId", "name", "department", "kind"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "kind": { "enum": ["Anonymous"], "type": "string" }
+        },
+        "required": ["unit", "point2", "x", "y", "person", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "unit": { "description": "alias of unit type", "type": "integer", "minimum": 1, "maximum": 1 },
+          "point2": {
+            "description": "definition of ex_nested_point2 type",
+            "type": "object",
+            "properties": {
+              "x": { "description": "x field", "type": "number" },
+              "y": { "description": "y field", "type": "number" }
+            },
+            "required": ["x", "y"],
+            "additionalProperties": false
+          },
+          "x": { "description": "x field", "type": "number" },
+          "y": { "description": "y field", "type": "number" },
+          "person": {
+            "description": "definition of ex_mangling_person_inherited type",
+            "oneOf": [
+              {
+                "title": "Anonymous",
+                "description": "Anonymous constructor",
+                "type": "object",
+                "properties": { "kind": { "enum": ["Anonymous"], "type": "string" } },
+                "required": ["kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "With_id",
+                "description": "With_id constructor",
+                "type": "object",
+                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["arg", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "student",
+                "description": "Student constructor",
+                "type": "object",
+                "properties": {
+                  "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+                  "name": { "description": "name field in Student constructor", "type": "string" },
+                  "caseValue": {
+                    "description": "case_value field in Student constructor",
+                    "enum": ["Case_at0", "case-at1"],
+                    "type": "string"
+                  },
+                  "kind": { "enum": ["student"], "type": "string" }
+                },
+                "required": ["student_id", "name", "caseValue", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "Teacher",
+                "description": "Teacher constructor",
+                "type": "object",
+                "properties": {
+                  "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+                  "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+                  "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
+                  "kind": { "enum": ["Teacher"], "type": "string" }
+                },
+                "required": ["facultyId", "name", "department", "kind"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "arg": { "type": "integer" },
+          "kind": { "enum": ["With_id"], "type": "string" }
+        },
+        "required": ["unit", "point2", "x", "y", "person", "arg", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "unit": { "description": "alias of unit type", "type": "integer", "minimum": 1, "maximum": 1 },
+          "point2": {
+            "description": "definition of ex_nested_point2 type",
+            "type": "object",
+            "properties": {
+              "x": { "description": "x field", "type": "number" },
+              "y": { "description": "y field", "type": "number" }
+            },
+            "required": ["x", "y"],
+            "additionalProperties": false
+          },
+          "x": { "description": "x field", "type": "number" },
+          "y": { "description": "y field", "type": "number" },
+          "person": {
+            "description": "definition of ex_mangling_person_inherited type",
+            "oneOf": [
+              {
+                "title": "Anonymous",
+                "description": "Anonymous constructor",
+                "type": "object",
+                "properties": { "kind": { "enum": ["Anonymous"], "type": "string" } },
+                "required": ["kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "With_id",
+                "description": "With_id constructor",
+                "type": "object",
+                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["arg", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "student",
+                "description": "Student constructor",
+                "type": "object",
+                "properties": {
+                  "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+                  "name": { "description": "name field in Student constructor", "type": "string" },
+                  "caseValue": {
+                    "description": "case_value field in Student constructor",
+                    "enum": ["Case_at0", "case-at1"],
+                    "type": "string"
+                  },
+                  "kind": { "enum": ["student"], "type": "string" }
+                },
+                "required": ["student_id", "name", "caseValue", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "Teacher",
+                "description": "Teacher constructor",
+                "type": "object",
+                "properties": {
+                  "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+                  "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+                  "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
+                  "kind": { "enum": ["Teacher"], "type": "string" }
+                },
+                "required": ["facultyId", "name", "department", "kind"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+          "name": { "description": "name field in Student constructor", "type": "string" },
+          "caseValue": {
+            "description": "case_value field in Student constructor",
+            "enum": ["Case_at0", "case-at1"],
+            "type": "string"
+          },
+          "kind": { "enum": ["student"], "type": "string" }
+        },
+        "required": ["unit", "point2", "x", "y", "person", "student_id", "name", "caseValue", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "unit": { "description": "alias of unit type", "type": "integer", "minimum": 1, "maximum": 1 },
+          "point2": {
+            "description": "definition of ex_nested_point2 type",
+            "type": "object",
+            "properties": {
+              "x": { "description": "x field", "type": "number" },
+              "y": { "description": "y field", "type": "number" }
+            },
+            "required": ["x", "y"],
+            "additionalProperties": false
+          },
+          "x": { "description": "x field", "type": "number" },
+          "y": { "description": "y field", "type": "number" },
+          "person": {
+            "description": "definition of ex_mangling_person_inherited type",
+            "oneOf": [
+              {
+                "title": "Anonymous",
+                "description": "Anonymous constructor",
+                "type": "object",
+                "properties": { "kind": { "enum": ["Anonymous"], "type": "string" } },
+                "required": ["kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "With_id",
+                "description": "With_id constructor",
+                "type": "object",
+                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["arg", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "student",
+                "description": "Student constructor",
+                "type": "object",
+                "properties": {
+                  "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+                  "name": { "description": "name field in Student constructor", "type": "string" },
+                  "caseValue": {
+                    "description": "case_value field in Student constructor",
+                    "enum": ["Case_at0", "case-at1"],
+                    "type": "string"
+                  },
+                  "kind": { "enum": ["student"], "type": "string" }
+                },
+                "required": ["student_id", "name", "caseValue", "kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "Teacher",
+                "description": "Teacher constructor",
+                "type": "object",
+                "properties": {
+                  "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+                  "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+                  "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
+                  "kind": { "enum": ["Teacher"], "type": "string" }
+                },
+                "required": ["facultyId", "name", "department", "kind"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+          "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+          "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
+          "kind": { "enum": ["Teacher"], "type": "string" }
+        },
+        "required": ["unit", "point2", "x", "y", "person", "facultyId", "name", "department", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExNestedVariant",
+    "description": "definition of ex_nested_variant type",
+    "id": "#ExNestedVariant",
+    "oneOf": [
+      {
+        "title": "student1",
+        "description": "Student1 constructor",
+        "type": "object",
+        "properties": {
+          "student": {
+            "description": "definition of ex_record_student type",
+            "type": "object",
+            "properties": {
+              "admissionYear": { "description": "addmission_year field", "type": "integer" },
+              "name": { "description": "name field", "type": "string" }
+            },
+            "required": ["admissionYear", "name"],
+            "additionalProperties": false
+          },
+          "tag": { "enum": ["student1"], "type": "string" }
+        },
+        "required": ["student", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "student2",
+        "description": "Student2 constructor",
+        "type": "object",
+        "properties": {
+          "admissionYear": { "description": "addmission_year field", "type": "integer" },
+          "name": { "description": "name field", "type": "string" },
+          "tag": { "enum": ["student2"], "type": "string" }
+        },
+        "required": ["admissionYear", "name", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "student3",
+        "description": "Student3 constructor",
+        "type": "object",
+        "properties": {
+          "value": {
+            "description": "definition of ex_record_student type",
+            "type": "object",
+            "properties": {
+              "admissionYear": { "description": "addmission_year field", "type": "integer" },
+              "name": { "description": "name field", "type": "string" }
+            },
+            "required": ["admissionYear", "name"],
+            "additionalProperties": false
+          },
+          "tag": { "enum": ["student3"], "type": "string" }
+        },
+        "required": ["value", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "student4",
+        "type": "object",
+        "properties": {
+          "admissionYear": { "description": "addmission_year field", "type": "integer" },
+          "name": { "description": "name field", "type": "string" },
+          "tag": { "enum": ["student4"], "type": "string" }
+        },
+        "required": ["admissionYear", "name", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "int-list1",
+        "description": "Int_list1 constructor",
+        "type": "object",
+        "properties": {
+          "value": {
+            "description": "definition of ex_variant_int_list type",
+            "oneOf": [
+              {
+                "title": "intnil",
+                "description": "nil for ex_variant_int_list",
+                "type": "object",
+                "properties": { "kind": { "enum": ["intnil"], "type": "string" } },
+                "required": ["kind"],
+                "additionalProperties": false
+              },
+              {
+                "title": "intcons",
+                "description": "cons for ex_variant_int_list",
+                "type": "object",
+                "properties": {
+                  "arg": {
+                    "type": "array",
+                    "items": [{ "type": "integer" }, { "$ref": "#ExVariantIntList" }],
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "kind": { "enum": ["intcons"], "type": "string" }
+                },
+                "required": ["arg", "kind"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "tag": { "enum": ["int-list1"], "type": "string" }
+        },
+        "required": ["value", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "int-list2_intnil",
+        "description": "nil for ex_variant_int_list",
+        "type": "object",
+        "properties": {
+          "kind": { "enum": ["intnil"], "type": "string" },
+          "tag": { "enum": ["int-list2"], "type": "string" }
+        },
+        "required": ["kind", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "int-list2_intcons",
+        "description": "cons for ex_variant_int_list",
+        "type": "object",
+        "properties": {
+          "arg": {
+            "type": "array",
+            "items": [{ "type": "integer" }, { "$ref": "#ExVariantIntList" }],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "kind": { "enum": ["intcons"], "type": "string" },
+          "tag": { "enum": ["int-list2"], "type": "string" }
+        },
+        "required": ["arg", "kind", "tag"],
+        "additionalProperties": false
+      }
+    ]
+  }
+]

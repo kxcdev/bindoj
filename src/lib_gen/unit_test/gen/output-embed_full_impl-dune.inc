@@ -4,32 +4,16 @@
  (library
   (name bindoj_gen_test_gen_output_embed_full_impl)
   (modules
-   ex01_gen
-   ex01_inherited_mangling_gen
-   ex02_gen
-   ex02_reused_gen
-   ex02_no_mangling_gen
-   ex02_inherited_mangling_gen
-   ex03_gen
-   ex03_objtuple_gen
-   ex04_gen
-   ex05_gen
-   ex05_notuple_gen
-   ex06_gen
-   ex07_gen
-   ex08_gen
-   ex09_gen
-   ex10_gen
-   ex11_gen
-   ex12_gen
-   ex13_gen
-   ex14_gen
-   ex15_gen
-   ex16_gen
-   ex17_gen
-   ex18_gen
-   ex19_gen
-   ex20_gen)
+   ex_coretype_gen
+   ex_alias_gen
+   ex_record_gen
+   ex_variant_gen
+   ex_mangling_gen
+   ex_optional_gen
+   ex_ident_gen
+   ex_nested_gen
+   ex_nested_multiply_gen
+   ex_version_substring_gen)
   (libraries
    bindoj.base
    bindoj.std_runtime
@@ -37,286 +21,110 @@
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex01_gen.ml ex01_gen.mli)
+  (targets ex_coretype_gen.ml ex_coretype_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex01_gen.ml
-     (run %{generator} ex01_gen.ml -gen-type-decl))
-    (with-stdout-to ex01_gen.mli
-     (run %{generator} ex01_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_coretype_gen.ml
+     (run %{generator} ex_coretype_gen.ml -gen-type-decl))
+    (with-stdout-to ex_coretype_gen.mli
+     (run %{generator} ex_coretype_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex01_inherited_mangling_gen.ml ex01_inherited_mangling_gen.mli)
+  (targets ex_alias_gen.ml ex_alias_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex01_inherited_mangling_gen.ml
-     (run %{generator} ex01_inherited_mangling_gen.ml -gen-type-decl))
-    (with-stdout-to ex01_inherited_mangling_gen.mli
-     (run %{generator} ex01_inherited_mangling_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_alias_gen.ml
+     (run %{generator} ex_alias_gen.ml -gen-type-decl))
+    (with-stdout-to ex_alias_gen.mli
+     (run %{generator} ex_alias_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_gen.ml ex02_gen.mli)
+  (targets ex_record_gen.ml ex_record_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex02_gen.ml
-     (run %{generator} ex02_gen.ml -gen-type-decl))
-    (with-stdout-to ex02_gen.mli
-     (run %{generator} ex02_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_record_gen.ml
+     (run %{generator} ex_record_gen.ml -gen-type-decl))
+    (with-stdout-to ex_record_gen.mli
+     (run %{generator} ex_record_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_reused_gen.ml ex02_reused_gen.mli)
+  (targets ex_variant_gen.ml ex_variant_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex02_reused_gen.ml
-     (run %{generator} ex02_reused_gen.ml -gen-type-decl))
-    (with-stdout-to ex02_reused_gen.mli
-     (run %{generator} ex02_reused_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_variant_gen.ml
+     (run %{generator} ex_variant_gen.ml -gen-type-decl))
+    (with-stdout-to ex_variant_gen.mli
+     (run %{generator} ex_variant_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_no_mangling_gen.ml ex02_no_mangling_gen.mli)
+  (targets ex_mangling_gen.ml ex_mangling_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex02_no_mangling_gen.ml
-     (run %{generator} ex02_no_mangling_gen.ml -gen-type-decl))
-    (with-stdout-to ex02_no_mangling_gen.mli
-     (run %{generator} ex02_no_mangling_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_mangling_gen.ml
+     (run %{generator} ex_mangling_gen.ml -gen-type-decl))
+    (with-stdout-to ex_mangling_gen.mli
+     (run %{generator} ex_mangling_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_inherited_mangling_gen.ml ex02_inherited_mangling_gen.mli)
+  (targets ex_optional_gen.ml ex_optional_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex02_inherited_mangling_gen.ml
-     (run %{generator} ex02_inherited_mangling_gen.ml -gen-type-decl))
-    (with-stdout-to ex02_inherited_mangling_gen.mli
-     (run %{generator} ex02_inherited_mangling_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_optional_gen.ml
+     (run %{generator} ex_optional_gen.ml -gen-type-decl))
+    (with-stdout-to ex_optional_gen.mli
+     (run %{generator} ex_optional_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex03_gen.ml ex03_gen.mli)
+  (targets ex_ident_gen.ml ex_ident_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex03_gen.ml
-     (run %{generator} ex03_gen.ml -gen-type-decl))
-    (with-stdout-to ex03_gen.mli
-     (run %{generator} ex03_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_ident_gen.ml
+     (run %{generator} ex_ident_gen.ml -gen-type-decl))
+    (with-stdout-to ex_ident_gen.mli
+     (run %{generator} ex_ident_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex03_objtuple_gen.ml ex03_objtuple_gen.mli)
+  (targets ex_nested_gen.ml ex_nested_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex03_objtuple_gen.ml
-     (run %{generator} ex03_objtuple_gen.ml -gen-type-decl))
-    (with-stdout-to ex03_objtuple_gen.mli
-     (run %{generator} ex03_objtuple_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_nested_gen.ml
+     (run %{generator} ex_nested_gen.ml -gen-type-decl))
+    (with-stdout-to ex_nested_gen.mli
+     (run %{generator} ex_nested_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex04_gen.ml ex04_gen.mli)
+  (targets ex_nested_multiply_gen.ml ex_nested_multiply_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex04_gen.ml
-     (run %{generator} ex04_gen.ml -gen-type-decl))
-    (with-stdout-to ex04_gen.mli
-     (run %{generator} ex04_gen.mli -gen-type-decl)))))
+    (with-stdout-to ex_nested_multiply_gen.ml
+     (run %{generator} ex_nested_multiply_gen.ml -gen-type-decl))
+    (with-stdout-to ex_nested_multiply_gen.mli
+     (run %{generator} ex_nested_multiply_gen.mli -gen-type-decl)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex05_gen.ml ex05_gen.mli)
+  (targets ex_version_substring_gen.ml ex_version_substring_gen.mli)
   (deps (:generator ../gen_embed_full_impl.exe))
   (action
    (progn
-    (with-stdout-to ex05_gen.ml
-     (run %{generator} ex05_gen.ml -gen-type-decl))
-    (with-stdout-to ex05_gen.mli
-     (run %{generator} ex05_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex05_notuple_gen.ml ex05_notuple_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex05_notuple_gen.ml
-     (run %{generator} ex05_notuple_gen.ml -gen-type-decl))
-    (with-stdout-to ex05_notuple_gen.mli
-     (run %{generator} ex05_notuple_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex06_gen.ml ex06_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex06_gen.ml
-     (run %{generator} ex06_gen.ml -gen-type-decl))
-    (with-stdout-to ex06_gen.mli
-     (run %{generator} ex06_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex07_gen.ml ex07_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex07_gen.ml
-     (run %{generator} ex07_gen.ml -gen-type-decl))
-    (with-stdout-to ex07_gen.mli
-     (run %{generator} ex07_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex08_gen.ml ex08_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex08_gen.ml
-     (run %{generator} ex08_gen.ml -gen-type-decl))
-    (with-stdout-to ex08_gen.mli
-     (run %{generator} ex08_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex09_gen.ml ex09_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex09_gen.ml
-     (run %{generator} ex09_gen.ml -gen-type-decl))
-    (with-stdout-to ex09_gen.mli
-     (run %{generator} ex09_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex10_gen.ml ex10_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex10_gen.ml
-     (run %{generator} ex10_gen.ml -gen-type-decl))
-    (with-stdout-to ex10_gen.mli
-     (run %{generator} ex10_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex11_gen.ml ex11_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex11_gen.ml
-     (run %{generator} ex11_gen.ml -gen-type-decl))
-    (with-stdout-to ex11_gen.mli
-     (run %{generator} ex11_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex12_gen.ml ex12_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex12_gen.ml
-     (run %{generator} ex12_gen.ml -gen-type-decl))
-    (with-stdout-to ex12_gen.mli
-     (run %{generator} ex12_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex13_gen.ml ex13_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex13_gen.ml
-     (run %{generator} ex13_gen.ml -gen-type-decl))
-    (with-stdout-to ex13_gen.mli
-     (run %{generator} ex13_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex14_gen.ml ex14_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex14_gen.ml
-     (run %{generator} ex14_gen.ml -gen-type-decl))
-    (with-stdout-to ex14_gen.mli
-     (run %{generator} ex14_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex15_gen.ml ex15_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex15_gen.ml
-     (run %{generator} ex15_gen.ml -gen-type-decl))
-    (with-stdout-to ex15_gen.mli
-     (run %{generator} ex15_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex16_gen.ml ex16_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex16_gen.ml
-     (run %{generator} ex16_gen.ml -gen-type-decl))
-    (with-stdout-to ex16_gen.mli
-     (run %{generator} ex16_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex17_gen.ml ex17_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex17_gen.ml
-     (run %{generator} ex17_gen.ml -gen-type-decl))
-    (with-stdout-to ex17_gen.mli
-     (run %{generator} ex17_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex18_gen.ml ex18_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex18_gen.ml
-     (run %{generator} ex18_gen.ml -gen-type-decl))
-    (with-stdout-to ex18_gen.mli
-     (run %{generator} ex18_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex19_gen.ml ex19_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex19_gen.ml
-     (run %{generator} ex19_gen.ml -gen-type-decl))
-    (with-stdout-to ex19_gen.mli
-     (run %{generator} ex19_gen.mli -gen-type-decl)))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex20_gen.ml ex20_gen.mli)
-  (deps (:generator ../gen_embed_full_impl.exe))
-  (action
-   (progn
-    (with-stdout-to ex20_gen.ml
-     (run %{generator} ex20_gen.ml -gen-type-decl))
-    (with-stdout-to ex20_gen.mli
-     (run %{generator} ex20_gen.mli -gen-type-decl))))))
+    (with-stdout-to ex_version_substring_gen.ml
+     (run %{generator} ex_version_substring_gen.ml -gen-type-decl))
+    (with-stdout-to ex_version_substring_gen.mli
+     (run %{generator} ex_version_substring_gen.mli -gen-type-decl))))))

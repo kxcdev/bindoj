@@ -1,6 +1,6 @@
-{
-  "ProductId": { "title": "ProductId", "type": "integer" },
-  "ProductDetails": {
+[
+  { "title": "ProductId", "type": "integer" },
+  {
     "title": "ProductDetails",
     "description": "Product details",
     "type": "object",
@@ -13,7 +13,7 @@
     "required": ["name", "description", "price", "count"],
     "additionalProperties": false
   },
-  "Product": {
+  {
     "title": "Product",
     "description": "Product",
     "type": "object",
@@ -35,8 +35,8 @@
     "required": ["id", "details"],
     "additionalProperties": false
   },
-  "OrderId": { "title": "OrderId", "type": "integer" },
-  "PaymentMethod": {
+  { "title": "OrderId", "type": "integer" },
+  {
     "title": "PaymentMethod",
     "description": "Payment method of an order",
     "oneOf": [
@@ -78,7 +78,7 @@
       }
     ]
   },
-  "OrderDetails": {
+  {
     "title": "OrderDetails",
     "type": "object",
     "properties": {
@@ -141,13 +141,13 @@
     "required": ["products", "paymentMethod"],
     "additionalProperties": false
   },
-  "OrderStatus": {
+  {
     "title": "OrderStatus",
     "description": "Status of an order",
     "enum": ["Unpaid", "Paid", "Shipped", "Delivered", "Canceled"],
     "type": "string"
   },
-  "Order": {
+  {
     "title": "Order",
     "type": "object",
     "properties": {
@@ -224,7 +224,7 @@
     "required": ["id", "totalPrice", "details", "status"],
     "additionalProperties": false
   },
-  "ProductQuery": {
+  {
     "title": "ProductQuery",
     "description": "Query to search products",
     "type": "object",
@@ -248,7 +248,7 @@
     },
     "additionalProperties": false
   },
-  "OrderQuery": {
+  {
     "title": "OrderQuery",
     "description": "Query to search orders",
     "type": "object",
@@ -279,4 +279,4 @@
     },
     "additionalProperties": false
   }
-}
+]

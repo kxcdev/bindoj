@@ -4,32 +4,16 @@
  (library
   (name dev_example_typedesc_examples_lib_gen)
   (modules
-   ex01_gen
-   ex01_inherited_mangling_gen
-   ex02_gen
-   ex02_reused_gen
-   ex02_no_mangling_gen
-   ex02_inherited_mangling_gen
-   ex03_gen
-   ex03_objtuple_gen
-   ex04_gen
-   ex05_gen
-   ex05_notuple_gen
-   ex06_gen
-   ex07_gen
-   ex08_gen
-   ex09_gen
-   ex10_gen
-   ex11_gen
-   ex12_gen
-   ex13_gen
-   ex14_gen
-   ex15_gen
-   ex16_gen
-   ex17_gen
-   ex18_gen
-   ex19_gen
-   ex20_gen)
+   ex_coretype_gen
+   ex_alias_gen
+   ex_record_gen
+   ex_variant_gen
+   ex_mangling_gen
+   ex_optional_gen
+   ex_ident_gen
+   ex_nested_gen
+   ex_nested_multiply_gen
+   ex_version_substring_gen)
   (libraries
    bindoj.base
    bindoj.std_runtime
@@ -37,397 +21,160 @@
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex01_gen.ml ex01_gen.mli)
+  (targets ex_coretype_gen.ml ex_coretype_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex01_gen.ml
+    (with-stdout-to ex_coretype_gen.ml
      (pipe-stdout
-      (run %{generator} ex01_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex01_gen.ml -)))
-    (with-stdout-to ex01_gen.mli
+      (run %{generator} ex_coretype_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_coretype_gen.ml -)))
+    (with-stdout-to ex_coretype_gen.mli
      (pipe-stdout
-      (run %{generator} ex01_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex01_gen.mli -))))))
+      (run %{generator} ex_coretype_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_coretype_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex01_inherited_mangling_gen.ml ex01_inherited_mangling_gen.mli)
+  (targets ex_alias_gen.ml ex_alias_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex01_inherited_mangling_gen.ml
+    (with-stdout-to ex_alias_gen.ml
      (pipe-stdout
-      (run %{generator} ex01_inherited_mangling_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex01_inherited_mangling_gen.ml -)))
-    (with-stdout-to ex01_inherited_mangling_gen.mli
+      (run %{generator} ex_alias_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_alias_gen.ml -)))
+    (with-stdout-to ex_alias_gen.mli
      (pipe-stdout
-      (run %{generator} ex01_inherited_mangling_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex01_inherited_mangling_gen.mli -))))))
+      (run %{generator} ex_alias_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_alias_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_gen.ml ex02_gen.mli)
+  (targets ex_record_gen.ml ex_record_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex02_gen.ml
+    (with-stdout-to ex_record_gen.ml
      (pipe-stdout
-      (run %{generator} ex02_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_gen.ml -)))
-    (with-stdout-to ex02_gen.mli
+      (run %{generator} ex_record_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_record_gen.ml -)))
+    (with-stdout-to ex_record_gen.mli
      (pipe-stdout
-      (run %{generator} ex02_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_gen.mli -))))))
+      (run %{generator} ex_record_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_record_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_reused_gen.ml ex02_reused_gen.mli)
+  (targets ex_variant_gen.ml ex_variant_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex02_reused_gen.ml
+    (with-stdout-to ex_variant_gen.ml
      (pipe-stdout
-      (run %{generator} ex02_reused_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_reused_gen.ml -)))
-    (with-stdout-to ex02_reused_gen.mli
+      (run %{generator} ex_variant_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_variant_gen.ml -)))
+    (with-stdout-to ex_variant_gen.mli
      (pipe-stdout
-      (run %{generator} ex02_reused_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_reused_gen.mli -))))))
+      (run %{generator} ex_variant_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_variant_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_no_mangling_gen.ml ex02_no_mangling_gen.mli)
+  (targets ex_mangling_gen.ml ex_mangling_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex02_no_mangling_gen.ml
+    (with-stdout-to ex_mangling_gen.ml
      (pipe-stdout
-      (run %{generator} ex02_no_mangling_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_no_mangling_gen.ml -)))
-    (with-stdout-to ex02_no_mangling_gen.mli
+      (run %{generator} ex_mangling_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_mangling_gen.ml -)))
+    (with-stdout-to ex_mangling_gen.mli
      (pipe-stdout
-      (run %{generator} ex02_no_mangling_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_no_mangling_gen.mli -))))))
+      (run %{generator} ex_mangling_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_mangling_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex02_inherited_mangling_gen.ml ex02_inherited_mangling_gen.mli)
+  (targets ex_optional_gen.ml ex_optional_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex02_inherited_mangling_gen.ml
+    (with-stdout-to ex_optional_gen.ml
      (pipe-stdout
-      (run %{generator} ex02_inherited_mangling_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_inherited_mangling_gen.ml -)))
-    (with-stdout-to ex02_inherited_mangling_gen.mli
+      (run %{generator} ex_optional_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_optional_gen.ml -)))
+    (with-stdout-to ex_optional_gen.mli
      (pipe-stdout
-      (run %{generator} ex02_inherited_mangling_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex02_inherited_mangling_gen.mli -))))))
+      (run %{generator} ex_optional_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_optional_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex03_gen.ml ex03_gen.mli)
+  (targets ex_ident_gen.ml ex_ident_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex03_gen.ml
+    (with-stdout-to ex_ident_gen.ml
      (pipe-stdout
-      (run %{generator} ex03_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex03_gen.ml -)))
-    (with-stdout-to ex03_gen.mli
+      (run %{generator} ex_ident_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_ident_gen.ml -)))
+    (with-stdout-to ex_ident_gen.mli
      (pipe-stdout
-      (run %{generator} ex03_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex03_gen.mli -))))))
+      (run %{generator} ex_ident_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_ident_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex03_objtuple_gen.ml ex03_objtuple_gen.mli)
+  (targets ex_nested_gen.ml ex_nested_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex03_objtuple_gen.ml
+    (with-stdout-to ex_nested_gen.ml
      (pipe-stdout
-      (run %{generator} ex03_objtuple_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex03_objtuple_gen.ml -)))
-    (with-stdout-to ex03_objtuple_gen.mli
+      (run %{generator} ex_nested_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_nested_gen.ml -)))
+    (with-stdout-to ex_nested_gen.mli
      (pipe-stdout
-      (run %{generator} ex03_objtuple_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex03_objtuple_gen.mli -))))))
+      (run %{generator} ex_nested_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_nested_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex04_gen.ml ex04_gen.mli)
+  (targets ex_nested_multiply_gen.ml ex_nested_multiply_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex04_gen.ml
+    (with-stdout-to ex_nested_multiply_gen.ml
      (pipe-stdout
-      (run %{generator} ex04_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex04_gen.ml -)))
-    (with-stdout-to ex04_gen.mli
+      (run %{generator} ex_nested_multiply_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_nested_multiply_gen.ml -)))
+    (with-stdout-to ex_nested_multiply_gen.mli
      (pipe-stdout
-      (run %{generator} ex04_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex04_gen.mli -))))))
+      (run %{generator} ex_nested_multiply_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_nested_multiply_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex05_gen.ml ex05_gen.mli)
+  (targets ex_version_substring_gen.ml ex_version_substring_gen.mli)
   (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
   (action
    (progn
-    (with-stdout-to ex05_gen.ml
+    (with-stdout-to ex_version_substring_gen.ml
      (pipe-stdout
-      (run %{generator} ex05_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex05_gen.ml -)))
-    (with-stdout-to ex05_gen.mli
+      (run %{generator} ex_version_substring_gen.ml -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_version_substring_gen.ml -)))
+    (with-stdout-to ex_version_substring_gen.mli
      (pipe-stdout
-      (run %{generator} ex05_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex05_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex05_notuple_gen.ml ex05_notuple_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex05_notuple_gen.ml
-     (pipe-stdout
-      (run %{generator} ex05_notuple_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex05_notuple_gen.ml -)))
-    (with-stdout-to ex05_notuple_gen.mli
-     (pipe-stdout
-      (run %{generator} ex05_notuple_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex05_notuple_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex06_gen.ml ex06_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex06_gen.ml
-     (pipe-stdout
-      (run %{generator} ex06_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex06_gen.ml -)))
-    (with-stdout-to ex06_gen.mli
-     (pipe-stdout
-      (run %{generator} ex06_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex06_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex07_gen.ml ex07_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex07_gen.ml
-     (pipe-stdout
-      (run %{generator} ex07_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex07_gen.ml -)))
-    (with-stdout-to ex07_gen.mli
-     (pipe-stdout
-      (run %{generator} ex07_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex07_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex08_gen.ml ex08_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex08_gen.ml
-     (pipe-stdout
-      (run %{generator} ex08_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex08_gen.ml -)))
-    (with-stdout-to ex08_gen.mli
-     (pipe-stdout
-      (run %{generator} ex08_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex08_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex09_gen.ml ex09_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex09_gen.ml
-     (pipe-stdout
-      (run %{generator} ex09_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex09_gen.ml -)))
-    (with-stdout-to ex09_gen.mli
-     (pipe-stdout
-      (run %{generator} ex09_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex09_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex10_gen.ml ex10_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex10_gen.ml
-     (pipe-stdout
-      (run %{generator} ex10_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex10_gen.ml -)))
-    (with-stdout-to ex10_gen.mli
-     (pipe-stdout
-      (run %{generator} ex10_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex10_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex11_gen.ml ex11_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex11_gen.ml
-     (pipe-stdout
-      (run %{generator} ex11_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex11_gen.ml -)))
-    (with-stdout-to ex11_gen.mli
-     (pipe-stdout
-      (run %{generator} ex11_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex11_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex12_gen.ml ex12_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex12_gen.ml
-     (pipe-stdout
-      (run %{generator} ex12_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex12_gen.ml -)))
-    (with-stdout-to ex12_gen.mli
-     (pipe-stdout
-      (run %{generator} ex12_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex12_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex13_gen.ml ex13_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex13_gen.ml
-     (pipe-stdout
-      (run %{generator} ex13_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex13_gen.ml -)))
-    (with-stdout-to ex13_gen.mli
-     (pipe-stdout
-      (run %{generator} ex13_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex13_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex14_gen.ml ex14_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex14_gen.ml
-     (pipe-stdout
-      (run %{generator} ex14_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex14_gen.ml -)))
-    (with-stdout-to ex14_gen.mli
-     (pipe-stdout
-      (run %{generator} ex14_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex14_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex15_gen.ml ex15_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex15_gen.ml
-     (pipe-stdout
-      (run %{generator} ex15_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex15_gen.ml -)))
-    (with-stdout-to ex15_gen.mli
-     (pipe-stdout
-      (run %{generator} ex15_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex15_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex16_gen.ml ex16_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex16_gen.ml
-     (pipe-stdout
-      (run %{generator} ex16_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex16_gen.ml -)))
-    (with-stdout-to ex16_gen.mli
-     (pipe-stdout
-      (run %{generator} ex16_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex16_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex17_gen.ml ex17_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex17_gen.ml
-     (pipe-stdout
-      (run %{generator} ex17_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex17_gen.ml -)))
-    (with-stdout-to ex17_gen.mli
-     (pipe-stdout
-      (run %{generator} ex17_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex17_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex18_gen.ml ex18_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex18_gen.ml
-     (pipe-stdout
-      (run %{generator} ex18_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex18_gen.ml -)))
-    (with-stdout-to ex18_gen.mli
-     (pipe-stdout
-      (run %{generator} ex18_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex18_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex19_gen.ml ex19_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex19_gen.ml
-     (pipe-stdout
-      (run %{generator} ex19_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex19_gen.ml -)))
-    (with-stdout-to ex19_gen.mli
-     (pipe-stdout
-      (run %{generator} ex19_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex19_gen.mli -))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (targets ex20_gen.ml ex20_gen.mli)
-  (deps (:generator %{workspace_root}/src/lib_gen/unit_test/gen/gen.exe))
-  (action
-   (progn
-    (with-stdout-to ex20_gen.ml
-     (pipe-stdout
-      (run %{generator} ex20_gen.ml -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex20_gen.ml -)))
-    (with-stdout-to ex20_gen.mli
-     (pipe-stdout
-      (run %{generator} ex20_gen.mli -gen-type-decl)
-      (run %{bin:ocamlformat} --name ex20_gen.mli -)))))))
+      (run %{generator} ex_version_substring_gen.mli -gen-type-decl)
+      (run %{bin:ocamlformat} --name ex_version_substring_gen.mli -)))))))
 (subdir typedesc_examples/lib_gen_ts
  (rule
   (alias gen)
-  (targets ex01_gen.ts ex01_examples.json ex01_schema.json)
+  (targets
+   ex_coretype_gen.ts
+   ex_coretype_examples.json
+   ex_coretype_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
    (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
@@ -436,41 +183,161 @@
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
-    (with-stdout-to ex01_gen.ts
+    (with-stdout-to ex_coretype_gen.ts
      (pipe-stdout
-      (run %{ts_gen} ex01_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex01_gen.ts)))
-    (with-stdout-to ex01_examples.json
+      (run %{ts_gen} ex_coretype_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_coretype_gen.ts)))
+    (with-stdout-to ex_coretype_examples.json
      (pipe-stdout
-      (run %{json_gen} ex01_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex01_examples.json)))
-    (with-stdout-to ex01_schema.json
+      (run %{json_gen} ex_coretype_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_coretype_examples.json)))
+    (with-stdout-to ex_coretype_schema.json
      (pipe-stdout
-      (run %{schema_gen} ex01_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex01_schema.json))))))
+      (run %{schema_gen} ex_coretype_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_coretype_schema.json))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (action
-   (copy ex01_gen.ts ex01.ts)))
+   (copy ex_coretype_gen.ts ex_coretype.ts)))
  (subdir json-examples
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex01_examples.json ex01_examples.json))))
+    (copy ../ex_coretype_examples.json ex_coretype_examples.json))))
  (subdir json-schema
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex01_schema.json ex01_schema.json))))
+    (copy ../ex_coretype_schema.json ex_coretype_schema.json))))
+ (rule
+  (alias gen)
+  (targets ex_alias_gen.ts ex_alias_examples.json ex_alias_schema.json)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
+   %{workspace_root}/with_js/node_modules)
+  (action
+   (progn
+    (with-stdout-to ex_alias_gen.ts
+     (pipe-stdout
+      (run %{ts_gen} ex_alias_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_alias_gen.ts)))
+    (with-stdout-to ex_alias_examples.json
+     (pipe-stdout
+      (run %{json_gen} ex_alias_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_alias_examples.json)))
+    (with-stdout-to ex_alias_schema.json
+     (pipe-stdout
+      (run %{schema_gen} ex_alias_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_alias_schema.json))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (action
+   (copy ex_alias_gen.ts ex_alias.ts)))
+ (subdir json-examples
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_alias_examples.json ex_alias_examples.json))))
+ (subdir json-schema
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_alias_schema.json ex_alias_schema.json))))
+ (rule
+  (alias gen)
+  (targets ex_record_gen.ts ex_record_examples.json ex_record_schema.json)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
+   %{workspace_root}/with_js/node_modules)
+  (action
+   (progn
+    (with-stdout-to ex_record_gen.ts
+     (pipe-stdout
+      (run %{ts_gen} ex_record_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_record_gen.ts)))
+    (with-stdout-to ex_record_examples.json
+     (pipe-stdout
+      (run %{json_gen} ex_record_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_record_examples.json)))
+    (with-stdout-to ex_record_schema.json
+     (pipe-stdout
+      (run %{schema_gen} ex_record_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_record_schema.json))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (action
+   (copy ex_record_gen.ts ex_record.ts)))
+ (subdir json-examples
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_record_examples.json ex_record_examples.json))))
+ (subdir json-schema
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_record_schema.json ex_record_schema.json))))
+ (rule
+  (alias gen)
+  (targets ex_variant_gen.ts ex_variant_examples.json ex_variant_schema.json)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
+   %{workspace_root}/with_js/node_modules)
+  (action
+   (progn
+    (with-stdout-to ex_variant_gen.ts
+     (pipe-stdout
+      (run %{ts_gen} ex_variant_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_variant_gen.ts)))
+    (with-stdout-to ex_variant_examples.json
+     (pipe-stdout
+      (run %{json_gen} ex_variant_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_variant_examples.json)))
+    (with-stdout-to ex_variant_schema.json
+     (pipe-stdout
+      (run %{schema_gen} ex_variant_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_variant_schema.json))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (action
+   (copy ex_variant_gen.ts ex_variant.ts)))
+ (subdir json-examples
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_variant_examples.json ex_variant_examples.json))))
+ (subdir json-schema
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_variant_schema.json ex_variant_schema.json))))
  (rule
   (alias gen)
   (targets
-   ex01_inherited_mangling_gen.ts
-   ex01_inherited_mangling_examples.json
-   ex01_inherited_mangling_schema.json)
+   ex_mangling_gen.ts
+   ex_mangling_examples.json
+   ex_mangling_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
    (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
@@ -479,81 +346,41 @@
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
-    (with-stdout-to ex01_inherited_mangling_gen.ts
+    (with-stdout-to ex_mangling_gen.ts
      (pipe-stdout
-      (run %{ts_gen} ex01_inherited_mangling_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex01_inherited_mangling_gen.ts)))
-    (with-stdout-to ex01_inherited_mangling_examples.json
+      (run %{ts_gen} ex_mangling_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_mangling_gen.ts)))
+    (with-stdout-to ex_mangling_examples.json
      (pipe-stdout
-      (run %{json_gen} ex01_inherited_mangling_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex01_inherited_mangling_examples.json)))
-    (with-stdout-to ex01_inherited_mangling_schema.json
+      (run %{json_gen} ex_mangling_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_mangling_examples.json)))
+    (with-stdout-to ex_mangling_schema.json
      (pipe-stdout
-      (run %{schema_gen} ex01_inherited_mangling_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex01_inherited_mangling_schema.json))))))
+      (run %{schema_gen} ex_mangling_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_mangling_schema.json))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (action
-   (copy ex01_inherited_mangling_gen.ts ex01_inherited_mangling.ts)))
+   (copy ex_mangling_gen.ts ex_mangling.ts)))
  (subdir json-examples
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex01_inherited_mangling_examples.json ex01_inherited_mangling_examples.json))))
+    (copy ../ex_mangling_examples.json ex_mangling_examples.json))))
  (subdir json-schema
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex01_inherited_mangling_schema.json ex01_inherited_mangling_schema.json))))
- (rule
-  (alias gen)
-  (targets ex02_gen.ts ex02_examples.json ex02_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex02_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex02_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_gen.ts)))
-    (with-stdout-to ex02_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex02_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_examples.json)))
-    (with-stdout-to ex02_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex02_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex02_gen.ts ex02.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex02_examples.json ex02_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex02_schema.json ex02_schema.json))))
+    (copy ../ex_mangling_schema.json ex_mangling_schema.json))))
  (rule
   (alias gen)
   (targets
-   ex02_reused_gen.ts
-   ex02_reused_examples.json
-   ex02_reused_schema.json)
+   ex_optional_gen.ts
+   ex_optional_examples.json
+   ex_optional_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
    (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
@@ -562,41 +389,121 @@
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
-    (with-stdout-to ex02_reused_gen.ts
+    (with-stdout-to ex_optional_gen.ts
      (pipe-stdout
-      (run %{ts_gen} ex02_reused_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_reused_gen.ts)))
-    (with-stdout-to ex02_reused_examples.json
+      (run %{ts_gen} ex_optional_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_optional_gen.ts)))
+    (with-stdout-to ex_optional_examples.json
      (pipe-stdout
-      (run %{json_gen} ex02_reused_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_reused_examples.json)))
-    (with-stdout-to ex02_reused_schema.json
+      (run %{json_gen} ex_optional_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_optional_examples.json)))
+    (with-stdout-to ex_optional_schema.json
      (pipe-stdout
-      (run %{schema_gen} ex02_reused_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_reused_schema.json))))))
+      (run %{schema_gen} ex_optional_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_optional_schema.json))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (action
-   (copy ex02_reused_gen.ts ex02_reused.ts)))
+   (copy ex_optional_gen.ts ex_optional.ts)))
  (subdir json-examples
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex02_reused_examples.json ex02_reused_examples.json))))
+    (copy ../ex_optional_examples.json ex_optional_examples.json))))
  (subdir json-schema
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex02_reused_schema.json ex02_reused_schema.json))))
+    (copy ../ex_optional_schema.json ex_optional_schema.json))))
+ (rule
+  (alias gen)
+  (targets ex_ident_gen.ts ex_ident_examples.json ex_ident_schema.json)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
+   %{workspace_root}/with_js/node_modules)
+  (action
+   (progn
+    (with-stdout-to ex_ident_gen.ts
+     (pipe-stdout
+      (run %{ts_gen} ex_ident_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_ident_gen.ts)))
+    (with-stdout-to ex_ident_examples.json
+     (pipe-stdout
+      (run %{json_gen} ex_ident_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_ident_examples.json)))
+    (with-stdout-to ex_ident_schema.json
+     (pipe-stdout
+      (run %{schema_gen} ex_ident_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_ident_schema.json))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (action
+   (copy ex_ident_gen.ts ex_ident.ts)))
+ (subdir json-examples
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_ident_examples.json ex_ident_examples.json))))
+ (subdir json-schema
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_ident_schema.json ex_ident_schema.json))))
+ (rule
+  (alias gen)
+  (targets ex_nested_gen.ts ex_nested_examples.json ex_nested_schema.json)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
+   (:schema_gen
+    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
+   %{workspace_root}/with_js/node_modules)
+  (action
+   (progn
+    (with-stdout-to ex_nested_gen.ts
+     (pipe-stdout
+      (run %{ts_gen} ex_nested_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_nested_gen.ts)))
+    (with-stdout-to ex_nested_examples.json
+     (pipe-stdout
+      (run %{json_gen} ex_nested_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_nested_examples.json)))
+    (with-stdout-to ex_nested_schema.json
+     (pipe-stdout
+      (run %{schema_gen} ex_nested_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_nested_schema.json))))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (action
+   (copy ex_nested_gen.ts ex_nested.ts)))
+ (subdir json-examples
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_nested_examples.json ex_nested_examples.json))))
+ (subdir json-schema
+  (rule
+   (alias gen)
+   (mode (promote (until-clean)))
+   (action
+    (copy ../ex_nested_schema.json ex_nested_schema.json))))
  (rule
   (alias gen)
   (targets
-   ex02_no_mangling_gen.ts
-   ex02_no_mangling_examples.json
-   ex02_no_mangling_schema.json)
+   ex_nested_multiply_gen.ts
+   ex_nested_multiply_examples.json
+   ex_nested_multiply_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
    (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
@@ -605,41 +512,41 @@
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
-    (with-stdout-to ex02_no_mangling_gen.ts
+    (with-stdout-to ex_nested_multiply_gen.ts
      (pipe-stdout
-      (run %{ts_gen} ex02_no_mangling_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_no_mangling_gen.ts)))
-    (with-stdout-to ex02_no_mangling_examples.json
+      (run %{ts_gen} ex_nested_multiply_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_nested_multiply_gen.ts)))
+    (with-stdout-to ex_nested_multiply_examples.json
      (pipe-stdout
-      (run %{json_gen} ex02_no_mangling_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_no_mangling_examples.json)))
-    (with-stdout-to ex02_no_mangling_schema.json
+      (run %{json_gen} ex_nested_multiply_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_nested_multiply_examples.json)))
+    (with-stdout-to ex_nested_multiply_schema.json
      (pipe-stdout
-      (run %{schema_gen} ex02_no_mangling_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_no_mangling_schema.json))))))
+      (run %{schema_gen} ex_nested_multiply_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_nested_multiply_schema.json))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (action
-   (copy ex02_no_mangling_gen.ts ex02_no_mangling.ts)))
+   (copy ex_nested_multiply_gen.ts ex_nested_multiply.ts)))
  (subdir json-examples
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex02_no_mangling_examples.json ex02_no_mangling_examples.json))))
+    (copy ../ex_nested_multiply_examples.json ex_nested_multiply_examples.json))))
  (subdir json-schema
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex02_no_mangling_schema.json ex02_no_mangling_schema.json))))
+    (copy ../ex_nested_multiply_schema.json ex_nested_multiply_schema.json))))
  (rule
   (alias gen)
   (targets
-   ex02_inherited_mangling_gen.ts
-   ex02_inherited_mangling_examples.json
-   ex02_inherited_mangling_schema.json)
+   ex_version_substring_gen.ts
+   ex_version_substring_examples.json
+   ex_version_substring_schema.json)
   (deps
    (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
    (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
@@ -648,838 +555,32 @@
    %{workspace_root}/with_js/node_modules)
   (action
    (progn
-    (with-stdout-to ex02_inherited_mangling_gen.ts
+    (with-stdout-to ex_version_substring_gen.ts
      (pipe-stdout
-      (run %{ts_gen} ex02_inherited_mangling_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_inherited_mangling_gen.ts)))
-    (with-stdout-to ex02_inherited_mangling_examples.json
+      (run %{ts_gen} ex_version_substring_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_version_substring_gen.ts)))
+    (with-stdout-to ex_version_substring_examples.json
      (pipe-stdout
-      (run %{json_gen} ex02_inherited_mangling_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_inherited_mangling_examples.json)))
-    (with-stdout-to ex02_inherited_mangling_schema.json
+      (run %{json_gen} ex_version_substring_examples.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_version_substring_examples.json)))
+    (with-stdout-to ex_version_substring_schema.json
      (pipe-stdout
-      (run %{schema_gen} ex02_inherited_mangling_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex02_inherited_mangling_schema.json))))))
+      (run %{schema_gen} ex_version_substring_schema.json)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_version_substring_schema.json))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (action
-   (copy ex02_inherited_mangling_gen.ts ex02_inherited_mangling.ts)))
+   (copy ex_version_substring_gen.ts ex_version_substring.ts)))
  (subdir json-examples
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex02_inherited_mangling_examples.json ex02_inherited_mangling_examples.json))))
+    (copy ../ex_version_substring_examples.json ex_version_substring_examples.json))))
  (subdir json-schema
   (rule
    (alias gen)
    (mode (promote (until-clean)))
    (action
-    (copy ../ex02_inherited_mangling_schema.json ex02_inherited_mangling_schema.json))))
- (rule
-  (alias gen)
-  (targets ex03_gen.ts ex03_examples.json ex03_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex03_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex03_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex03_gen.ts)))
-    (with-stdout-to ex03_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex03_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex03_examples.json)))
-    (with-stdout-to ex03_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex03_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex03_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex03_gen.ts ex03.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex03_examples.json ex03_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex03_schema.json ex03_schema.json))))
- (rule
-  (alias gen)
-  (targets
-   ex03_objtuple_gen.ts
-   ex03_objtuple_examples.json
-   ex03_objtuple_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex03_objtuple_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex03_objtuple_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex03_objtuple_gen.ts)))
-    (with-stdout-to ex03_objtuple_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex03_objtuple_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex03_objtuple_examples.json)))
-    (with-stdout-to ex03_objtuple_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex03_objtuple_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex03_objtuple_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex03_objtuple_gen.ts ex03_objtuple.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex03_objtuple_examples.json ex03_objtuple_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex03_objtuple_schema.json ex03_objtuple_schema.json))))
- (rule
-  (alias gen)
-  (targets ex04_gen.ts ex04_examples.json ex04_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex04_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex04_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex04_gen.ts)))
-    (with-stdout-to ex04_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex04_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex04_examples.json)))
-    (with-stdout-to ex04_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex04_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex04_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex04_gen.ts ex04.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex04_examples.json ex04_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex04_schema.json ex04_schema.json))))
- (rule
-  (alias gen)
-  (targets ex05_gen.ts ex05_examples.json ex05_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex05_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex05_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex05_gen.ts)))
-    (with-stdout-to ex05_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex05_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex05_examples.json)))
-    (with-stdout-to ex05_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex05_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex05_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex05_gen.ts ex05.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex05_examples.json ex05_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex05_schema.json ex05_schema.json))))
- (rule
-  (alias gen)
-  (targets
-   ex05_notuple_gen.ts
-   ex05_notuple_examples.json
-   ex05_notuple_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex05_notuple_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex05_notuple_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex05_notuple_gen.ts)))
-    (with-stdout-to ex05_notuple_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex05_notuple_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex05_notuple_examples.json)))
-    (with-stdout-to ex05_notuple_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex05_notuple_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex05_notuple_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex05_notuple_gen.ts ex05_notuple.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex05_notuple_examples.json ex05_notuple_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex05_notuple_schema.json ex05_notuple_schema.json))))
- (rule
-  (alias gen)
-  (targets ex06_gen.ts ex06_examples.json ex06_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex06_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex06_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex06_gen.ts)))
-    (with-stdout-to ex06_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex06_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex06_examples.json)))
-    (with-stdout-to ex06_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex06_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex06_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex06_gen.ts ex06.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex06_examples.json ex06_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex06_schema.json ex06_schema.json))))
- (rule
-  (alias gen)
-  (targets ex07_gen.ts ex07_examples.json ex07_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex07_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex07_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex07_gen.ts)))
-    (with-stdout-to ex07_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex07_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex07_examples.json)))
-    (with-stdout-to ex07_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex07_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex07_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex07_gen.ts ex07.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex07_examples.json ex07_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex07_schema.json ex07_schema.json))))
- (rule
-  (alias gen)
-  (targets ex08_gen.ts ex08_examples.json ex08_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex08_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex08_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex08_gen.ts)))
-    (with-stdout-to ex08_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex08_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex08_examples.json)))
-    (with-stdout-to ex08_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex08_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex08_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex08_gen.ts ex08.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex08_examples.json ex08_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex08_schema.json ex08_schema.json))))
- (rule
-  (alias gen)
-  (targets ex09_gen.ts ex09_examples.json ex09_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex09_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex09_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex09_gen.ts)))
-    (with-stdout-to ex09_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex09_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex09_examples.json)))
-    (with-stdout-to ex09_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex09_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex09_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex09_gen.ts ex09.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex09_examples.json ex09_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex09_schema.json ex09_schema.json))))
- (rule
-  (alias gen)
-  (targets ex10_gen.ts ex10_examples.json ex10_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex10_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex10_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex10_gen.ts)))
-    (with-stdout-to ex10_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex10_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex10_examples.json)))
-    (with-stdout-to ex10_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex10_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex10_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex10_gen.ts ex10.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex10_examples.json ex10_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex10_schema.json ex10_schema.json))))
- (rule
-  (alias gen)
-  (targets ex11_gen.ts ex11_examples.json ex11_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex11_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex11_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex11_gen.ts)))
-    (with-stdout-to ex11_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex11_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex11_examples.json)))
-    (with-stdout-to ex11_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex11_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex11_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex11_gen.ts ex11.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex11_examples.json ex11_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex11_schema.json ex11_schema.json))))
- (rule
-  (alias gen)
-  (targets ex12_gen.ts ex12_examples.json ex12_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex12_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex12_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex12_gen.ts)))
-    (with-stdout-to ex12_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex12_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex12_examples.json)))
-    (with-stdout-to ex12_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex12_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex12_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex12_gen.ts ex12.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex12_examples.json ex12_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex12_schema.json ex12_schema.json))))
- (rule
-  (alias gen)
-  (targets ex13_gen.ts ex13_examples.json ex13_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex13_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex13_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex13_gen.ts)))
-    (with-stdout-to ex13_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex13_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex13_examples.json)))
-    (with-stdout-to ex13_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex13_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex13_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex13_gen.ts ex13.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex13_examples.json ex13_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex13_schema.json ex13_schema.json))))
- (rule
-  (alias gen)
-  (targets ex14_gen.ts ex14_examples.json ex14_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex14_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex14_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex14_gen.ts)))
-    (with-stdout-to ex14_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex14_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex14_examples.json)))
-    (with-stdout-to ex14_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex14_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex14_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex14_gen.ts ex14.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex14_examples.json ex14_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex14_schema.json ex14_schema.json))))
- (rule
-  (alias gen)
-  (targets ex15_gen.ts ex15_examples.json ex15_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex15_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex15_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex15_gen.ts)))
-    (with-stdout-to ex15_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex15_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex15_examples.json)))
-    (with-stdout-to ex15_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex15_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex15_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex15_gen.ts ex15.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex15_examples.json ex15_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex15_schema.json ex15_schema.json))))
- (rule
-  (alias gen)
-  (targets ex16_gen.ts ex16_examples.json ex16_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex16_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex16_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex16_gen.ts)))
-    (with-stdout-to ex16_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex16_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex16_examples.json)))
-    (with-stdout-to ex16_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex16_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex16_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex16_gen.ts ex16.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex16_examples.json ex16_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex16_schema.json ex16_schema.json))))
- (rule
-  (alias gen)
-  (targets ex17_gen.ts ex17_examples.json ex17_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex17_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex17_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex17_gen.ts)))
-    (with-stdout-to ex17_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex17_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex17_examples.json)))
-    (with-stdout-to ex17_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex17_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex17_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex17_gen.ts ex17.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex17_examples.json ex17_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex17_schema.json ex17_schema.json))))
- (rule
-  (alias gen)
-  (targets ex18_gen.ts ex18_examples.json ex18_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex18_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex18_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex18_gen.ts)))
-    (with-stdout-to ex18_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex18_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex18_examples.json)))
-    (with-stdout-to ex18_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex18_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex18_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex18_gen.ts ex18.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex18_examples.json ex18_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex18_schema.json ex18_schema.json))))
- (rule
-  (alias gen)
-  (targets ex19_gen.ts ex19_examples.json ex19_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex19_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex19_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex19_gen.ts)))
-    (with-stdout-to ex19_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex19_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex19_examples.json)))
-    (with-stdout-to ex19_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex19_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex19_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex19_gen.ts ex19.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex19_examples.json ex19_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex19_schema.json ex19_schema.json))))
- (rule
-  (alias gen)
-  (targets ex20_gen.ts ex20_examples.json ex20_schema.json)
-  (deps
-   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-   (:json_gen %{workspace_root}/with_js/compile-tests/generator/gen_json.exe)
-   (:schema_gen
-    %{workspace_root}/with_js/compile-tests/generator/gen_schema.exe)
-   %{workspace_root}/with_js/node_modules)
-  (action
-   (progn
-    (with-stdout-to ex20_gen.ts
-     (pipe-stdout
-      (run %{ts_gen} ex20_gen.ts)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex20_gen.ts)))
-    (with-stdout-to ex20_examples.json
-     (pipe-stdout
-      (run %{json_gen} ex20_examples.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex20_examples.json)))
-    (with-stdout-to ex20_schema.json
-     (pipe-stdout
-      (run %{schema_gen} ex20_schema.json)
-      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex20_schema.json))))))
- (rule
-  (alias gen)
-  (mode (promote (until-clean)))
-  (action
-   (copy ex20_gen.ts ex20.ts)))
- (subdir json-examples
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex20_examples.json ex20_examples.json))))
- (subdir json-schema
-  (rule
-   (alias gen)
-   (mode (promote (until-clean)))
-   (action
-    (copy ../ex20_schema.json ex20_schema.json)))))
+    (copy ../ex_version_substring_schema.json ex_version_substring_schema.json)))))

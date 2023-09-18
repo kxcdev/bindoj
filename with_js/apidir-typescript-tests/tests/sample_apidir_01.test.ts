@@ -1,6 +1,6 @@
 import { MockServer, createMockClient } from "./lib";
 import { Sample_apidir_01InvpInfo as invpInfo, Sample_apidir_01ClientIntf as clientIntf } from "../sample_apidir_01";
-import { Person } from "../../compile-tests/ex02_gen";
+import { ExVariantPerson } from "../../compile-tests/ex_variant_gen";
 
 const b = require("../sample_apidir_01_server.js").bindoj_jsoo_bridge;
 
@@ -22,7 +22,7 @@ describe("apidir-typescript-tests-sample01", () => {
   });
 
   test("get-student-from-person", async () => {
-    const person: Person = { kind: "student", studentId: 1997, name: "Bruce Sterling" };
+    const person: ExVariantPerson = { kind: "student", studentId: 1997, name: "Bruce Sterling" };
     const { body: student, status_code } = await mockClient["get-student-from-person"](person);
 
     expect(status_code).toBe(200);

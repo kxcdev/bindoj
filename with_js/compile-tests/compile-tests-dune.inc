@@ -3,7 +3,10 @@
 (rule
  (alias gen)
  (mode (promote (until-clean)))
- (targets ex01_gen.ts ex01_examples.json ex01_schema.json)
+ (targets
+  ex_coretype_gen.ts
+  ex_coretype_examples.json
+  ex_coretype_schema.json)
  (deps
   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
   (:json_gen generator/gen_json.exe)
@@ -11,19 +14,70 @@
   ../node_modules)
  (action
   (progn
-   (with-stdout-to ex01_gen.ts
-    (run %{ts_gen} ex01_gen.ts))
-   (with-stdout-to ex01_examples.json
-    (run %{json_gen} ex01_examples.json))
-   (with-stdout-to ex01_schema.json
-    (run %{schema_gen} ex01_schema.json)))))
+   (with-stdout-to ex_coretype_gen.ts
+    (run %{ts_gen} ex_coretype_gen.ts))
+   (with-stdout-to ex_coretype_examples.json
+    (run %{json_gen} ex_coretype_examples.json))
+   (with-stdout-to ex_coretype_schema.json
+    (run %{schema_gen} ex_coretype_schema.json)))))
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (targets ex_alias_gen.ts ex_alias_examples.json ex_alias_schema.json)
+ (deps
+  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+  (:json_gen generator/gen_json.exe)
+  (:schema_gen generator/gen_schema.exe)
+  ../node_modules)
+ (action
+  (progn
+   (with-stdout-to ex_alias_gen.ts
+    (run %{ts_gen} ex_alias_gen.ts))
+   (with-stdout-to ex_alias_examples.json
+    (run %{json_gen} ex_alias_examples.json))
+   (with-stdout-to ex_alias_schema.json
+    (run %{schema_gen} ex_alias_schema.json)))))
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (targets ex_record_gen.ts ex_record_examples.json ex_record_schema.json)
+ (deps
+  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+  (:json_gen generator/gen_json.exe)
+  (:schema_gen generator/gen_schema.exe)
+  ../node_modules)
+ (action
+  (progn
+   (with-stdout-to ex_record_gen.ts
+    (run %{ts_gen} ex_record_gen.ts))
+   (with-stdout-to ex_record_examples.json
+    (run %{json_gen} ex_record_examples.json))
+   (with-stdout-to ex_record_schema.json
+    (run %{schema_gen} ex_record_schema.json)))))
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (targets ex_variant_gen.ts ex_variant_examples.json ex_variant_schema.json)
+ (deps
+  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+  (:json_gen generator/gen_json.exe)
+  (:schema_gen generator/gen_schema.exe)
+  ../node_modules)
+ (action
+  (progn
+   (with-stdout-to ex_variant_gen.ts
+    (run %{ts_gen} ex_variant_gen.ts))
+   (with-stdout-to ex_variant_examples.json
+    (run %{json_gen} ex_variant_examples.json))
+   (with-stdout-to ex_variant_schema.json
+    (run %{schema_gen} ex_variant_schema.json)))))
 (rule
  (alias gen)
  (mode (promote (until-clean)))
  (targets
-  ex01_inherited_mangling_gen.ts
-  ex01_inherited_mangling_examples.json
-  ex01_inherited_mangling_schema.json)
+  ex_mangling_gen.ts
+  ex_mangling_examples.json
+  ex_mangling_schema.json)
  (deps
   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
   (:json_gen generator/gen_json.exe)
@@ -31,36 +85,19 @@
   ../node_modules)
  (action
   (progn
-   (with-stdout-to ex01_inherited_mangling_gen.ts
-    (run %{ts_gen} ex01_inherited_mangling_gen.ts))
-   (with-stdout-to ex01_inherited_mangling_examples.json
-    (run %{json_gen} ex01_inherited_mangling_examples.json))
-   (with-stdout-to ex01_inherited_mangling_schema.json
-    (run %{schema_gen} ex01_inherited_mangling_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex02_gen.ts ex02_examples.json ex02_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex02_gen.ts
-    (run %{ts_gen} ex02_gen.ts))
-   (with-stdout-to ex02_examples.json
-    (run %{json_gen} ex02_examples.json))
-   (with-stdout-to ex02_schema.json
-    (run %{schema_gen} ex02_schema.json)))))
+   (with-stdout-to ex_mangling_gen.ts
+    (run %{ts_gen} ex_mangling_gen.ts))
+   (with-stdout-to ex_mangling_examples.json
+    (run %{json_gen} ex_mangling_examples.json))
+   (with-stdout-to ex_mangling_schema.json
+    (run %{schema_gen} ex_mangling_schema.json)))))
 (rule
  (alias gen)
  (mode (promote (until-clean)))
  (targets
-  ex02_reused_gen.ts
-  ex02_reused_examples.json
-  ex02_reused_schema.json)
+  ex_optional_gen.ts
+  ex_optional_examples.json
+  ex_optional_schema.json)
  (deps
   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
   (:json_gen generator/gen_json.exe)
@@ -68,19 +105,53 @@
   ../node_modules)
  (action
   (progn
-   (with-stdout-to ex02_reused_gen.ts
-    (run %{ts_gen} ex02_reused_gen.ts))
-   (with-stdout-to ex02_reused_examples.json
-    (run %{json_gen} ex02_reused_examples.json))
-   (with-stdout-to ex02_reused_schema.json
-    (run %{schema_gen} ex02_reused_schema.json)))))
+   (with-stdout-to ex_optional_gen.ts
+    (run %{ts_gen} ex_optional_gen.ts))
+   (with-stdout-to ex_optional_examples.json
+    (run %{json_gen} ex_optional_examples.json))
+   (with-stdout-to ex_optional_schema.json
+    (run %{schema_gen} ex_optional_schema.json)))))
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (targets ex_ident_gen.ts ex_ident_examples.json ex_ident_schema.json)
+ (deps
+  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+  (:json_gen generator/gen_json.exe)
+  (:schema_gen generator/gen_schema.exe)
+  ../node_modules)
+ (action
+  (progn
+   (with-stdout-to ex_ident_gen.ts
+    (run %{ts_gen} ex_ident_gen.ts))
+   (with-stdout-to ex_ident_examples.json
+    (run %{json_gen} ex_ident_examples.json))
+   (with-stdout-to ex_ident_schema.json
+    (run %{schema_gen} ex_ident_schema.json)))))
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (targets ex_nested_gen.ts ex_nested_examples.json ex_nested_schema.json)
+ (deps
+  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
+  (:json_gen generator/gen_json.exe)
+  (:schema_gen generator/gen_schema.exe)
+  ../node_modules)
+ (action
+  (progn
+   (with-stdout-to ex_nested_gen.ts
+    (run %{ts_gen} ex_nested_gen.ts))
+   (with-stdout-to ex_nested_examples.json
+    (run %{json_gen} ex_nested_examples.json))
+   (with-stdout-to ex_nested_schema.json
+    (run %{schema_gen} ex_nested_schema.json)))))
 (rule
  (alias gen)
  (mode (promote (until-clean)))
  (targets
-  ex02_no_mangling_gen.ts
-  ex02_no_mangling_examples.json
-  ex02_no_mangling_schema.json)
+  ex_nested_multiply_gen.ts
+  ex_nested_multiply_examples.json
+  ex_nested_multiply_schema.json)
  (deps
   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
   (:json_gen generator/gen_json.exe)
@@ -88,19 +159,19 @@
   ../node_modules)
  (action
   (progn
-   (with-stdout-to ex02_no_mangling_gen.ts
-    (run %{ts_gen} ex02_no_mangling_gen.ts))
-   (with-stdout-to ex02_no_mangling_examples.json
-    (run %{json_gen} ex02_no_mangling_examples.json))
-   (with-stdout-to ex02_no_mangling_schema.json
-    (run %{schema_gen} ex02_no_mangling_schema.json)))))
+   (with-stdout-to ex_nested_multiply_gen.ts
+    (run %{ts_gen} ex_nested_multiply_gen.ts))
+   (with-stdout-to ex_nested_multiply_examples.json
+    (run %{json_gen} ex_nested_multiply_examples.json))
+   (with-stdout-to ex_nested_multiply_schema.json
+    (run %{schema_gen} ex_nested_multiply_schema.json)))))
 (rule
  (alias gen)
  (mode (promote (until-clean)))
  (targets
-  ex02_inherited_mangling_gen.ts
-  ex02_inherited_mangling_examples.json
-  ex02_inherited_mangling_schema.json)
+  ex_version_substring_gen.ts
+  ex_version_substring_examples.json
+  ex_version_substring_schema.json)
  (deps
   (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
   (:json_gen generator/gen_json.exe)
@@ -108,355 +179,9 @@
   ../node_modules)
  (action
   (progn
-   (with-stdout-to ex02_inherited_mangling_gen.ts
-    (run %{ts_gen} ex02_inherited_mangling_gen.ts))
-   (with-stdout-to ex02_inherited_mangling_examples.json
-    (run %{json_gen} ex02_inherited_mangling_examples.json))
-   (with-stdout-to ex02_inherited_mangling_schema.json
-    (run %{schema_gen} ex02_inherited_mangling_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex03_gen.ts ex03_examples.json ex03_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex03_gen.ts
-    (run %{ts_gen} ex03_gen.ts))
-   (with-stdout-to ex03_examples.json
-    (run %{json_gen} ex03_examples.json))
-   (with-stdout-to ex03_schema.json
-    (run %{schema_gen} ex03_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets
-  ex03_objtuple_gen.ts
-  ex03_objtuple_examples.json
-  ex03_objtuple_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex03_objtuple_gen.ts
-    (run %{ts_gen} ex03_objtuple_gen.ts))
-   (with-stdout-to ex03_objtuple_examples.json
-    (run %{json_gen} ex03_objtuple_examples.json))
-   (with-stdout-to ex03_objtuple_schema.json
-    (run %{schema_gen} ex03_objtuple_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex04_gen.ts ex04_examples.json ex04_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex04_gen.ts
-    (run %{ts_gen} ex04_gen.ts))
-   (with-stdout-to ex04_examples.json
-    (run %{json_gen} ex04_examples.json))
-   (with-stdout-to ex04_schema.json
-    (run %{schema_gen} ex04_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex05_gen.ts ex05_examples.json ex05_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex05_gen.ts
-    (run %{ts_gen} ex05_gen.ts))
-   (with-stdout-to ex05_examples.json
-    (run %{json_gen} ex05_examples.json))
-   (with-stdout-to ex05_schema.json
-    (run %{schema_gen} ex05_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets
-  ex05_notuple_gen.ts
-  ex05_notuple_examples.json
-  ex05_notuple_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex05_notuple_gen.ts
-    (run %{ts_gen} ex05_notuple_gen.ts))
-   (with-stdout-to ex05_notuple_examples.json
-    (run %{json_gen} ex05_notuple_examples.json))
-   (with-stdout-to ex05_notuple_schema.json
-    (run %{schema_gen} ex05_notuple_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex06_gen.ts ex06_examples.json ex06_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex06_gen.ts
-    (run %{ts_gen} ex06_gen.ts))
-   (with-stdout-to ex06_examples.json
-    (run %{json_gen} ex06_examples.json))
-   (with-stdout-to ex06_schema.json
-    (run %{schema_gen} ex06_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex07_gen.ts ex07_examples.json ex07_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex07_gen.ts
-    (run %{ts_gen} ex07_gen.ts))
-   (with-stdout-to ex07_examples.json
-    (run %{json_gen} ex07_examples.json))
-   (with-stdout-to ex07_schema.json
-    (run %{schema_gen} ex07_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex08_gen.ts ex08_examples.json ex08_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex08_gen.ts
-    (run %{ts_gen} ex08_gen.ts))
-   (with-stdout-to ex08_examples.json
-    (run %{json_gen} ex08_examples.json))
-   (with-stdout-to ex08_schema.json
-    (run %{schema_gen} ex08_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex09_gen.ts ex09_examples.json ex09_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex09_gen.ts
-    (run %{ts_gen} ex09_gen.ts))
-   (with-stdout-to ex09_examples.json
-    (run %{json_gen} ex09_examples.json))
-   (with-stdout-to ex09_schema.json
-    (run %{schema_gen} ex09_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex10_gen.ts ex10_examples.json ex10_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex10_gen.ts
-    (run %{ts_gen} ex10_gen.ts))
-   (with-stdout-to ex10_examples.json
-    (run %{json_gen} ex10_examples.json))
-   (with-stdout-to ex10_schema.json
-    (run %{schema_gen} ex10_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex11_gen.ts ex11_examples.json ex11_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex11_gen.ts
-    (run %{ts_gen} ex11_gen.ts))
-   (with-stdout-to ex11_examples.json
-    (run %{json_gen} ex11_examples.json))
-   (with-stdout-to ex11_schema.json
-    (run %{schema_gen} ex11_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex12_gen.ts ex12_examples.json ex12_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex12_gen.ts
-    (run %{ts_gen} ex12_gen.ts))
-   (with-stdout-to ex12_examples.json
-    (run %{json_gen} ex12_examples.json))
-   (with-stdout-to ex12_schema.json
-    (run %{schema_gen} ex12_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex13_gen.ts ex13_examples.json ex13_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex13_gen.ts
-    (run %{ts_gen} ex13_gen.ts))
-   (with-stdout-to ex13_examples.json
-    (run %{json_gen} ex13_examples.json))
-   (with-stdout-to ex13_schema.json
-    (run %{schema_gen} ex13_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex14_gen.ts ex14_examples.json ex14_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex14_gen.ts
-    (run %{ts_gen} ex14_gen.ts))
-   (with-stdout-to ex14_examples.json
-    (run %{json_gen} ex14_examples.json))
-   (with-stdout-to ex14_schema.json
-    (run %{schema_gen} ex14_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex15_gen.ts ex15_examples.json ex15_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex15_gen.ts
-    (run %{ts_gen} ex15_gen.ts))
-   (with-stdout-to ex15_examples.json
-    (run %{json_gen} ex15_examples.json))
-   (with-stdout-to ex15_schema.json
-    (run %{schema_gen} ex15_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex16_gen.ts ex16_examples.json ex16_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex16_gen.ts
-    (run %{ts_gen} ex16_gen.ts))
-   (with-stdout-to ex16_examples.json
-    (run %{json_gen} ex16_examples.json))
-   (with-stdout-to ex16_schema.json
-    (run %{schema_gen} ex16_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex17_gen.ts ex17_examples.json ex17_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex17_gen.ts
-    (run %{ts_gen} ex17_gen.ts))
-   (with-stdout-to ex17_examples.json
-    (run %{json_gen} ex17_examples.json))
-   (with-stdout-to ex17_schema.json
-    (run %{schema_gen} ex17_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex18_gen.ts ex18_examples.json ex18_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex18_gen.ts
-    (run %{ts_gen} ex18_gen.ts))
-   (with-stdout-to ex18_examples.json
-    (run %{json_gen} ex18_examples.json))
-   (with-stdout-to ex18_schema.json
-    (run %{schema_gen} ex18_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex19_gen.ts ex19_examples.json ex19_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex19_gen.ts
-    (run %{ts_gen} ex19_gen.ts))
-   (with-stdout-to ex19_examples.json
-    (run %{json_gen} ex19_examples.json))
-   (with-stdout-to ex19_schema.json
-    (run %{schema_gen} ex19_schema.json)))))
-(rule
- (alias gen)
- (mode (promote (until-clean)))
- (targets ex20_gen.ts ex20_examples.json ex20_schema.json)
- (deps
-  (:ts_gen %{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe)
-  (:json_gen generator/gen_json.exe)
-  (:schema_gen generator/gen_schema.exe)
-  ../node_modules)
- (action
-  (progn
-   (with-stdout-to ex20_gen.ts
-    (run %{ts_gen} ex20_gen.ts))
-   (with-stdout-to ex20_examples.json
-    (run %{json_gen} ex20_examples.json))
-   (with-stdout-to ex20_schema.json
-    (run %{schema_gen} ex20_schema.json)))))
+   (with-stdout-to ex_version_substring_gen.ts
+    (run %{ts_gen} ex_version_substring_gen.ts))
+   (with-stdout-to ex_version_substring_examples.json
+    (run %{json_gen} ex_version_substring_examples.json))
+   (with-stdout-to ex_version_substring_schema.json
+    (run %{schema_gen} ex_version_substring_schema.json)))))

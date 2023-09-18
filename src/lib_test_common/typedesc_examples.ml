@@ -20,3 +20,6 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 include Bindoj_test_common_typedesc_examples
 
 include All
+
+module type Ex = Util.Ex
+module type Ex_desc = Util.Ex_desc

@@ -1,6 +1,6 @@
 import { apidir as bindoj } from "../public-packages/runtime/index";
-import { ComplexTypesNotuple } from "../compile-tests/ex05_notuple_gen";
-
+import { ExCoretypeVariousComplexTypes } from "../compile-tests/ex_coretype_gen";
+type String = string;
 export const Sample_apidir_05InvpInfo = {
   "int-of-string": {
     name: "int-of-string",
@@ -13,7 +13,7 @@ export const Sample_apidir_05InvpInfo = {
     name: "option-of-complex",
     method: "POST",
     urlpath: "/option/of-complex",
-    requestType: undefined as unknown as ComplexTypesNotuple,
+    requestType: undefined as unknown as ExCoretypeVariousComplexTypes,
     responseType: undefined as unknown as number | null | undefined,
   },
 } as const;

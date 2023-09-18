@@ -231,11 +231,11 @@ module FwrtTypeEnv = struct
     in
     bind ?doc ?parent ~annot_d:(annot_d kind) name kind env
 
-  let lookup : string -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) t -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) fwrt_desc =
-    StringMap.find
-
   let lookup_opt : string -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) t -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) fwrt_desc option  =
-    StringMap.find_opt
+  StringMap.find_opt
+
+  let lookup : string -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) t -> ('ann_d, 'ann_f, 'ann_va, 'ann_k) fwrt_desc =
+    fun name env -> lookup_opt name env |?! (fun () -> failwith' "'%s' is not found in the givenFwrtTypeEnv." name)
 
   let bindings = StringMap.bindings
 

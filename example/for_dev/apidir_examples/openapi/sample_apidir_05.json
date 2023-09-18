@@ -25,10 +25,10 @@
         },
         "responses": {
           "default": {
-            "description": "int_opt",
+            "description": "ex_alias_int_opt",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "schema": { "$ref": "#/components/schemas/ExAliasIntOpt" },
                 "examples": {
                   "example_0": { "value": null },
                   "example_1": { "value": 0 },
@@ -48,11 +48,11 @@
       "post": {
         "summary": "option-of-complex",
         "requestBody": {
-          "description": "complex_types",
+          "description": "ex_coretype_various_complex_types",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ComplexTypesNotuple"
+                "$ref": "#/components/schemas/ExCoretypeVariousComplexTypes"
               },
               "examples": {
                 "example_0": {
@@ -70,10 +70,10 @@
         },
         "responses": {
           "default": {
-            "description": "int_opt",
+            "description": "ex_alias_int_opt",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "schema": { "$ref": "#/components/schemas/ExAliasIntOpt" },
                 "examples": {
                   "example_0": { "value": 42 },
                   "example_1": { "value": null }
@@ -88,8 +88,13 @@
   },
   "components": {
     "schemas": {
-      "ComplexTypesNotuple": {
-        "title": "ComplexTypesNotuple",
+      "ExAliasIntOpt": {
+        "title": "ExAliasIntOpt",
+        "nullable": true,
+        "type": "integer"
+      },
+      "ExCoretypeVariousComplexTypes": {
+        "title": "ExCoretypeVariousComplexTypes",
         "type": "object",
         "properties": {
           "option": { "nullable": true, "type": "integer" },
@@ -102,7 +107,6 @@
         "required": ["list", "map"],
         "additionalProperties": false
       },
-      "IntOpt": { "title": "IntOpt", "nullable": true, "type": "integer" },
       "String": { "title": "String", "type": "string" }
     }
   }

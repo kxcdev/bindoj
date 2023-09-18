@@ -18,13 +18,17 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_test_common.Typedesc_examples
+open Bindoj_test_common.Typedesc_examples.Util
 open Bindoj_gen
 open Bindoj_openapi.V3
 
-let print_json (module Ex : T) =
-  Ex.decl_with_docstr
-  |> Json_codec.gen_json_schema
-  |> Schema_object.to_json
+let print_json (module E : Ex) =
+  E.example_descs
+  |&> (fun (module D : Ex_desc) ->
+    D.decl_with_docstr
+    |> Json_codec.gen_json_schema
+    |> Schema_object.to_json)
+  |> fun jv -> `arr jv
   |> Json.to_yojson
   |> Yojson.Safe.to_string
   |> print_endline

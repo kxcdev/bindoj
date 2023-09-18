@@ -28,19 +28,19 @@ open Bindoj_test_common_typedesc_generated_examples
 module Types = struct
   open Bindoj_runtime
 
-  type int_list = Ex03_objtuple.int_list
-  let int_list : int_list typed_type_decl = Typed.mk Ex03_objtuple.decl Ex03_objtuple.reflect
+  type int_list = Ex_variant.Int_list_objtuple.t
+  let int_list : int_list typed_type_decl = Ex_variant.Int_list_objtuple.(Typed.mk decl reflect)
 
   let int : int typed_type_decl =
     Coretypes.(Prims.int |> to_typed_type_decl "int")
 end
 
 module Functions = struct
-  let rec inc_int_list = Ex03_objtuple.(function
+  let rec inc_int_list = Ex_variant.Int_list_objtuple.(function
   | IntNil -> IntNil
   | IntCons (n, ns) -> IntCons (n+1, inc_int_list ns))
 
-  let rec sum_of_int_list = Ex03_objtuple.(function
+  let rec sum_of_int_list = Ex_variant.Int_list_objtuple.(function
   | IntNil -> 0
   | IntCons (n, ns) -> n + sum_of_int_list ns)
 end
@@ -78,7 +78,7 @@ let sum_of_int_list =
     ~resp_doc:"sum of the supplied int list"
 
 let () = begin
-  let samples = Ex03_objtuple.[ sample_value01.orig; sample_value03.orig ] in
+  let samples = Ex_variant.Int_list_objtuple.[ sample_value01.orig; sample_value03.orig ] in
   get_any_int_list
   |> R.register_response_samples
     (samples |&> (fun s -> ((s, `default), `nodoc)));
@@ -132,13 +132,13 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Sample_value in
+  let open Util.Sample_value in
 
   let () (* get-any-int-list *) =
     let invp = get_any_int_list in
-    let { orig; jv } = Ex03_objtuple.sample_value03 in
+    let { orig; jv } = Ex_variant.Int_list_objtuple.sample_value03 in
     M.register_get_example invp.ip_urlpath (Invp invp)
-      ~orig ~jv ~pp:Ex03_objtuple.pp;
+      ~orig ~jv ~pp:Ex_variant.Int_list_objtuple.pp;
     M.register_get_handler invp
       (fun () -> return (200, orig)) in
 
@@ -148,11 +148,11 @@ let build_mock_server (module M: MockServerBuilder) =
     let reg_sample { orig; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
         ~orig_resp:(inc_int_list orig) ~orig_req:orig
-        ~jv_resp:(inc_int_list orig |> Ex03_objtuple.int_list_to_json) ~jv_req:jv
-        ~pp:Ex03_objtuple.pp in
+        ~jv_resp:(inc_int_list orig |> Ex_variant.Int_list_objtuple.to_json) ~jv_req:jv
+        ~pp:Ex_variant.Int_list_objtuple.pp in
 
-    reg_sample Ex03_objtuple.sample_value01;
-    reg_sample Ex03_objtuple.sample_value03;
+    reg_sample Ex_variant.Int_list_objtuple.sample_value01;
+    reg_sample Ex_variant.Int_list_objtuple.sample_value03;
     M.register_post_handler invp (fun x -> return (200, inc_int_list x)) in
 
   let () (* sum-of-int-list *) =
@@ -165,8 +165,8 @@ let build_mock_server (module M: MockServerBuilder) =
         ~jv_resp:(`num (sum_of_int_list orig |> float_of_int)) ~jv_req:jv
         ~pp:pp_int in
 
-    reg_sample Ex03_objtuple.sample_value01;
-    reg_sample Ex03_objtuple.sample_value03;
+    reg_sample Ex_variant.Int_list_objtuple.sample_value01;
+    reg_sample Ex_variant.Int_list_objtuple.sample_value03;
     M.register_post_handler invp (fun x -> return (200, sum_of_int_list x)) in
 
   ()

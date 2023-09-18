@@ -1,8 +1,0 @@
-{
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "Cases",
-  "description": "alias of string cases",
-  "enum": ["Case_at0", "case-at1", "Case-at2", "Case-third"],
-  "id": "#Cases",
-  "type": "string"
-}

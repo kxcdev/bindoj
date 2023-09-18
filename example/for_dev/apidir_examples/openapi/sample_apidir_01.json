@@ -11,7 +11,7 @@
             "description": "a student record (could be anyone) in the database",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Student" },
+                "schema": { "$ref": "#/components/schemas/ExRecordStudent" },
                 "examples": {
                   "example_0": {
                     "value": {
@@ -35,7 +35,7 @@
           "description": "a person record identifying a student",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/Person" },
+              "schema": { "$ref": "#/components/schemas/ExVariantPerson" },
               "examples": {
                 "example_0": {
                   "value": {
@@ -54,7 +54,7 @@
             "description": "the student record corresponding to the supplied person",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Student" },
+                "schema": { "$ref": "#/components/schemas/ExRecordStudent" },
                 "examples": {
                   "example_0": {
                     "value": { "admissionYear": 451, "name": "Ray Bradbury" }
@@ -70,8 +70,18 @@
   },
   "components": {
     "schemas": {
-      "Person": {
-        "title": "Person",
+      "ExRecordStudent": {
+        "title": "ExRecordStudent",
+        "type": "object",
+        "properties": {
+          "admissionYear": { "type": "integer" },
+          "name": { "type": "string" }
+        },
+        "required": ["admissionYear", "name"],
+        "additionalProperties": false
+      },
+      "ExVariantPerson": {
+        "title": "ExVariantPerson",
         "oneOf": [
           {
             "title": "anonymous",
@@ -116,16 +126,6 @@
             "additionalProperties": false
           }
         ]
-      },
-      "Student": {
-        "title": "Student",
-        "type": "object",
-        "properties": {
-          "admissionYear": { "type": "integer" },
-          "name": { "type": "string" }
-        },
-        "required": ["admissionYear", "name"],
-        "additionalProperties": false
       }
     }
   }

@@ -24,20 +24,18 @@ open Bindoj_typedesc
 open Bindoj_runtime
 open Bindoj_test_common.Typedesc_generated_examples
 
-module type SampleVariantDecl = sig
+module type Sample_variant = sig
   type t
   val decl : Type_desc.type_decl
   val reflect : t Refl.t
   val json_discriminator_value : t -> string
-  val sample_values : t Sample_value.t list
+  val sample_values : t Util.Sample_value.t list
 
-  val name : string
   val expected : t -> string
 end
 
-module Ex02 = struct
-  include Ex02
-  let name = "Ex02"
+module Ex_variant_person = struct
+  include Ex_variant.Person
   let expected = function
     | Anonymous -> "anonymous"
     | With_id _ -> "with-id"
@@ -45,9 +43,8 @@ module Ex02 = struct
     | Teacher _ -> "teacher"
 end
 
-module Ex02_no_mangling = struct
-  include Ex02_no_mangling
-  let name = "Ex02_no_mangling"
+module Ex_mangling_person_no_mangling = struct
+  include Ex_mangling.Person_no_mangling
   let expected = function
     | Anonymous -> "Anonymous"
     | With_id _ -> "With_id"
@@ -55,41 +52,38 @@ module Ex02_no_mangling = struct
     | Teacher _ -> "Teacher"
 end
 
-module Ex03 = struct
-  include Ex03
-  let name = "Ex03"
+module Ex_variant_int_list = struct
+  include Ex_variant.Int_list
   let expected = function
     | IntNil -> "intnil"
     | IntCons _ -> "intcons"
 end
 
-module Ex04 = struct
-  include Ex04
-  let name = "Ex04"
+module Ex_variant_polymorphic = struct
+  include Ex_variant.Polymorphic
   let expected = function
     | `Foo0 -> "foo0"
     | `Foo1 _ -> "foo1"
     | `Foo2 _ -> "foo2"
 end
 
-module Ex07 = struct
-  include Ex07
-  let name = "Ex07"
+module Ex_variant_customized_union = struct
+  include Ex_variant.Customized_union
   let expected = function
     | Case1 _ -> "case1'"
     | Case2 _ -> "case2'"
 end
 
-let all_generated_variant_decl : (module SampleVariantDecl) list =
-  [ (module Ex02);
-    (module Ex02_no_mangling);
-    (module Ex03);
-    (module Ex04);
-    (module Ex07); ]
+let all_generated_variant_decl : (module Sample_variant) list =
+  [ (module Ex_variant_person);
+    (module Ex_mangling_person_no_mangling);
+    (module Ex_variant_int_list);
+    (module Ex_variant_polymorphic);
+    (module Ex_variant_customized_union); ]
 
-let create_test_cases (module S : SampleVariantDecl) =
+let create_test_cases (module S : Sample_variant) =
   S.sample_values
-  |> List.mapi (fun i Sample_value.{ orig; _ } ->
+  |> List.mapi (fun i Util.Sample_value.{ orig; _ } ->
     let test_name s = sprintf "[%s] sample_value%02d" s i in
     let expected = S.expected orig in
     [ test_case (test_name "interpreted") `Quick (fun () ->
@@ -105,7 +99,7 @@ let create_test_cases (module S : SampleVariantDecl) =
       );
     ])
   |> List.concat
-  |> fun cases -> (S.name, cases)
+  |> fun cases -> (S.decl.td_name, cases)
 
 let () =
   all_generated_variant_decl |&> create_test_cases

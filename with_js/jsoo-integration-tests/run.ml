@@ -24,7 +24,16 @@ module Faker = Json_schema_faker
 
 open Bindoj_base
 open Bindoj_base.Runtime
+open Bindoj_codec_config
 open Bindoj_test_common.Typedesc_generated_examples
+
+let list_find_remove_opt f =
+  let rec go others = function
+    | h :: _ when f h -> Some (h, List.rev others)
+    | h :: t -> go (h :: others) t
+    | [] -> None
+  in
+  go []
 
 let notNone (_: 'a Alcotest.testable) : 'a option Alcotest.testable =
   Alcotest.testable
@@ -33,16 +42,22 @@ let notNone (_: 'a Alcotest.testable) : 'a option Alcotest.testable =
       | Some _ -> Format.pp_print_string ppf "Some _")
     (fun x y -> match x, y with | (Some _, Some _) -> true | _ -> false)
 
+let all_schema : Ojs.t list =
+  all |&>> (fun (name, _) ->
+    Js.require (sprintf "../compile-tests/%s_schema.json" name) |> Ojs.list_of_js identity)
 
-let all_schema = all |&> (fun (name, _) ->
-  name, Js.require (sprintf "../compile-tests/%s_schema.json" name))
-
-let create_test_cases name (module Ex : T) filter =
+let create_test_cases name env filter (module D : Ex_generated_desc) =
   let open Alcotest in
 
+  let self_type_name = Json_config.get_mangled_name_of_type D.decl |> fst in
+  let self_schema_id = "#"^self_type_name in
+
   (* let gen  = Js.require (sprintf "../compile-tests/%s_gen" name) in *)
-  let json = Js.require (sprintf "../compile-tests/%s_examples.json" name) in
-  let schema = all_schema |> List.assoc name in
+  let json =
+    Js.require (sprintf "../compile-tests/%s_examples.json" name)
+    |> Fn.flip Ojs.get_prop_ascii self_type_name
+    |> Obj.magic
+  in
 
   let test_decode_json of_json () =
     let json_samples =
@@ -56,24 +71,25 @@ let create_test_cases name (module Ex : T) filter =
         |> Json.of_yojson
         |> of_json)
     in
-    let values = Ex.sample_values |> List.map Sample_value.orig in
-    check (list Ex.t) "same value(s)" values json_samples
+    let values = D.sample_values |> List.map Util.Sample_value.orig in
+    check (list D.t) "same value(s)" values json_samples
   in
 
+
+  let get_id o = Ojs.(get_prop_ascii o "id" |> string_of_js) in
+  let schema, all_schema =
+      list_find_remove_opt (fun sc -> get_id sc = self_schema_id) all_schema
+      |?! (fun () -> failwith "schema not found")
+      |> Obj.magic
+    in
   let test_schema_generate of_json () =
     let module F = Faker.JSONSchemaFaker in
     let open Bindoj_withjs_import.Jsonschema in
 
     let validator = Validator.create () in
     let () =
-      let get_id o = Ojs.(get_prop_ascii o "id" |> string_of_js) in
-      let schema_id = get_id schema in
       all_schema
-      |&?> (fun (_, sc) ->
-        let id = get_id sc in
-        if schema_id = id then None
-        else Some ("/" ^ id, sc)
-      )
+      |&> (fun sc -> let id = get_id sc in ("/" ^ id, sc))
       |> Array.of_list
       |> Ojs.obj
       |> Validator.AnonymousInterface2.t_of_js
@@ -95,7 +111,7 @@ let create_test_cases name (module Ex : T) filter =
       let instance =
         (* clone because faker pollutes the schema object *)
         let schema = Js.clone schema in
-        let refs = all_schema |> List.map (snd &> Js.clone) |> Ts.Union.inject_1 in
+        let refs = all_schema |> List.map Js.clone |> Ts.Union.inject_1 in
         F.generate ~schema ~refs ()
       in
       let result =
@@ -112,7 +128,7 @@ let create_test_cases name (module Ex : T) filter =
         let result =
           json |> Json.of_yojson |> of_json
         in
-        check (notNone Ex.t)
+        check (notNone D.t)
           (sprintf "random example #%d can be parsed: %s" i json_str)
           (Some (Obj.magic ())) result
       end
@@ -127,14 +143,13 @@ let create_test_cases name (module Ex : T) filter =
 
   let interpreted jv =
     let open Typed_type_desc in
-    let env = Ex.env in
-    let typed_decl = Typed.mk Ex.decl Ex.reflect in
+    let typed_decl = Typed.mk D.decl D.reflect in
     Bindoj_codec.Json.of_json' ~env typed_decl jv
     |> handle_error
   in
-  let compiled = Ex.of_json' &> handle_error in
+  let compiled = D.of_json' &> handle_error in
 
-  name, [
+  sprintf "%s.%s" name D.decl.td_name, [
     (`interpreted, `examples),
     test_case "[interpreted] can decode example JSONs" `Quick (test_decode_json interpreted);
 
@@ -146,14 +161,13 @@ let create_test_cases name (module Ex : T) filter =
 
     (`compiled, `random),
     test_case "[compiled] can decode random JSONs" `Quick (test_schema_generate compiled);
-  ] |> List.filter (fun (variant, _) -> filter (name, variant))
+  ] |> List.filter (fun (variant, _) -> filter (name, D.decl.td_name, variant))
     |&> snd
 
 let () =
   Bisect.Runtime.reset_counters();
   all
-  |> List.map (fun (name, m) ->
-    create_test_cases name m
-      (function | _ -> true))
+  |&>> (fun (name, (module E : Ex_generated)) ->
+    E.example_generated_descs |&> (create_test_cases name E.env (function | _ -> true)))
   |> Alcotest.run "with_js.jsoo_integration";
   Bisect.Runtime.write_coverage_data();

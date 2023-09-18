@@ -1,0 +1,127 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ex_mangling_student_inherited",
+    "description": "definition of ex_mangling_student_inherited type",
+    "id": "#ex_mangling_student_inherited",
+    "type": "object",
+    "properties": {
+      "admission_year": { "description": "addmission_year field", "type": "integer" },
+      "name": { "description": "name field", "type": "string" },
+      "caseValue": { "description": "case_value field", "enum": ["Case-at0", "case_at1"], "type": "string" }
+    },
+    "required": ["admission_year", "name", "caseValue"],
+    "additionalProperties": false
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ex_mangling_person_no_mangling",
+    "description": "definition of ex_mangling_person_no_mangling type",
+    "id": "#ex_mangling_person_no_mangling",
+    "oneOf": [
+      {
+        "title": "Anonymous",
+        "description": "Anonymous constructor",
+        "type": "object",
+        "properties": { "kind": { "enum": ["Anonymous"], "type": "string" } },
+        "required": ["kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "With_id",
+        "description": "With_id constructor",
+        "type": "object",
+        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+        "required": ["arg", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "Student",
+        "description": "Student constructor",
+        "type": "object",
+        "properties": {
+          "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+          "name": { "description": "name field in Student constructor", "type": "string" },
+          "kind": { "enum": ["Student"], "type": "string" }
+        },
+        "required": ["student_id", "name", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "Teacher",
+        "description": "Teacher constructor",
+        "type": "object",
+        "properties": {
+          "faculty_id": { "description": "faculty_id field in Teacher constructor", "type": "integer" },
+          "name": { "description": "name field in Teacher constructor", "type": "string" },
+          "department": { "description": "dapartment field in Teacher constructor", "type": "string" },
+          "kind": { "enum": ["Teacher"], "type": "string" }
+        },
+        "required": ["faculty_id", "name", "department", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ex_mangling_person_inherited",
+    "description": "definition of ex_mangling_person_inherited type",
+    "id": "#ex_mangling_person_inherited",
+    "oneOf": [
+      {
+        "title": "Anonymous",
+        "description": "Anonymous constructor",
+        "type": "object",
+        "properties": { "kind": { "enum": ["Anonymous"], "type": "string" } },
+        "required": ["kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "With_id",
+        "description": "With_id constructor",
+        "type": "object",
+        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+        "required": ["arg", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "student",
+        "description": "Student constructor",
+        "type": "object",
+        "properties": {
+          "student_id": { "description": "student_id field in Student constructor", "type": "integer" },
+          "name": { "description": "name field in Student constructor", "type": "string" },
+          "caseValue": {
+            "description": "case_value field in Student constructor",
+            "enum": ["Case_at0", "case-at1"],
+            "type": "string"
+          },
+          "kind": { "enum": ["student"], "type": "string" }
+        },
+        "required": ["student_id", "name", "caseValue", "kind"],
+        "additionalProperties": false
+      },
+      {
+        "title": "Teacher",
+        "description": "Teacher constructor",
+        "type": "object",
+        "properties": {
+          "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
+          "name": { "description": "name field of ex_record_teacher type", "type": "string" },
+          "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
+          "kind": { "enum": ["Teacher"], "type": "string" }
+        },
+        "required": ["facultyId", "name", "department", "kind"],
+        "additionalProperties": false
+      }
+    ]
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExManglingEnum",
+    "description": "alias of string cases",
+    "enum": ["Case_at0", "case-at1", "Case-at2", "Case-third"],
+    "id": "#ExManglingEnum",
+    "type": "string"
+  }
+]

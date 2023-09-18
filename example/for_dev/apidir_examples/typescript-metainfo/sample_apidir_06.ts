@@ -1,19 +1,19 @@
 import { apidir as bindoj } from "../public-packages/runtime/index";
-import { XyOpt } from "../compile-tests/ex10_gen";
+import { ExOptionalXyOpt } from "../compile-tests/ex_optional_gen";
 
 export const Sample_apidir_06InvpInfo = {
   "get-x": {
     name: "get-x",
     method: "POST",
     urlpath: "/xy-opt/x",
-    requestType: undefined as unknown as XyOpt,
+    requestType: undefined as unknown as ExOptionalXyOpt,
     responseType: undefined as unknown as number | null | undefined,
   },
   "get-y": {
     name: "get-y",
     method: "POST",
     urlpath: "/xy-opt/y",
-    requestType: undefined as unknown as XyOpt,
+    requestType: undefined as unknown as ExOptionalXyOpt,
     responseType: undefined as unknown as number | null | undefined,
   },
 } as const;

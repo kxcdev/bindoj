@@ -19,18 +19,16 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base.Type_desc
 open Bindoj_gen
-open Bindoj_gen_config
 open Bindoj_openapi.V3
 
 let () =
   let module Ex = Bindoj_example_ex01_typedesc.Typedesc in
   Ex.decls
   |&> (fun (_, decl) ->
-      decl |> Json_config.get_mangled_name_of_type |> fst,
-      decl
-      |> Json_codec.gen_openapi_schema
-      |> Schema_object.to_json)
-  |> fun jv -> `obj jv
+    decl
+    |> Json_codec.gen_openapi_schema
+    |> Schema_object.to_json)
+  |> fun jv -> `arr jv
   |> Json.to_yojson
   |> Yojson.Safe.to_string
   |> print_endline

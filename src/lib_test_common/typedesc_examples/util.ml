@@ -17,8 +17,50 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Bindoj_base.Type_desc
+open Bindoj_base.Runtime
 open Bindoj_gen_ts.Typescript_datatype
 open Bindoj_gen_foreign.Foreign_datatype
+open Bindoj_openapi.V3
+
+module type Ex_desc = sig
+  val module_name: string
+  val decl: type_decl
+  val decl_with_docstr: type_decl
+  val fwrt: (unit, unit, unit) ts_fwrt_decl
+  val ts_ast: ts_ast option
+  val schema_object: Schema_object.t option
+  val expected_json_shape_explanation : json_shape_explanation option
+end
+
+(** each example module should have this module type *)
+module type Ex = sig
+  val example_module_path: string
+  val example_descs : (module Ex_desc) list
+end
+
+module type With_docstr = sig
+  val doc : string -> doc
+  val decl : (module Ex_desc) -> type_decl
+  val open_ : string -> Coretype.codec
+end
+
+module Make_ex_decls(M: sig
+  val make_decl : (module With_docstr) -> type_decl
+end) = struct
+  include M
+  let decl = M.make_decl (module struct
+    let doc _ = `nodoc
+    let decl (module E: Ex_desc) = E.decl
+    let open_ s = `open_ (s ^ "_gen")
+  end)
+
+  let decl_with_docstr = M.make_decl (module struct
+    let doc s = `docstr s
+    let decl (module E: Ex_desc) = E.decl_with_docstr
+    let open_ s = `open_ (s ^ "_docstr_gen")
+  end)
+end
 
 module Ts_ast = struct
   type options =
@@ -129,22 +171,35 @@ module Ts_ast = struct
           case_analyzer_body name func_name options cstrs; }
 end
 
-module FwrtTypeEnv =
-  FwrtTypeEnv'(struct
-    type annot_d = unit
-    type annot_f = unit
-    type annot_va = unit
-    type annot_ko = unit
-    type annot_ka = unit
-    type annot_kc = ts_fwrt_constructor_kind_annot
-    let default_annot_d = ()
-    let default_annot_f = ()
-    let default_annot_va = ()
-    let default_annot_ko = ()
-    let default_annot_ka = ()
-    let default_annot_kc = None
-    let default_annot_d_f = constant ()
-  end)
+module FwrtTypeEnv = struct
+  open struct
+    module D = struct
+      type annot_d = unit
+      type annot_f = unit
+      type annot_va = unit
+      type annot_ko = unit
+      type annot_ka = unit
+      type annot_kc = ts_fwrt_constructor_kind_annot
+      let default_annot_d = ()
+      let default_annot_f = ()
+      let default_annot_va = ()
+      let default_annot_ko = ()
+      let default_annot_ka = ()
+      let default_annot_kc = None
+      let default_annot_d_f = constant ()
+    end
+    type fwrt_desc_map = (D.annot_d, D.annot_f, D.annot_va, D.annot_ko*D.annot_ka*D.annot_kc) fwrt_desc StringMap.t
+  end
+
+  include FwrtTypeEnv'(D)
+
+  let union : t -> t -> t =
+    fun a b ->
+      StringMap.union
+        (fun _ _ _ -> failwith "Envs with the same name type cannot be united.")
+        (Obj.magic a : fwrt_desc_map) (Obj.magic b : fwrt_desc_map)
+      |> Obj.magic
+end
 
 module Schema_object = struct
   open Bindoj_openapi.V3.Schema_object

@@ -7,10 +7,12 @@
       "post": {
         "summary": "name-of-named_json",
         "requestBody": {
-          "description": "named_json",
+          "description": "ex_coretype_named_json",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/NamedJson" },
+              "schema": {
+                "$ref": "#/components/schemas/ExCoretypeNamedJson"
+              },
               "examples": {
                 "example_0": {
                   "value": {
@@ -58,10 +60,12 @@
       "post": {
         "summary": "json-of-named_json",
         "requestBody": {
-          "description": "named_json",
+          "description": "ex_coretype_named_json",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/NamedJson" },
+              "schema": {
+                "$ref": "#/components/schemas/ExCoretypeNamedJson"
+              },
               "examples": {
                 "example_0": {
                   "value": {
@@ -107,8 +111,8 @@
   },
   "components": {
     "schemas": {
-      "NamedJson": {
-        "title": "NamedJson",
+      "ExCoretypeNamedJson": {
+        "title": "ExCoretypeNamedJson",
         "type": "object",
         "properties": { "name": { "type": "string" }, "json": {} },
         "required": ["name", "json"],

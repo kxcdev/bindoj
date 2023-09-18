@@ -28,18 +28,21 @@ end = struct
   let schema_object = testable V3.Schema_object.pp (=)
 end
 
-let create_test_cases (module Ex : Typedesc_examples.T) =
-  match Ex.schema_object with
-  | Some expected ->
-    [ test_case "json schema" `Quick (fun () ->
-        let actual = Json_codec.gen_json_schema Ex.decl in
-        check' Testables.schema_object
-          ~msg:"the generated schema is expected"
-          ~expected
-          ~actual
-      )]
-  | None ->
-    [ test_case "(skipped)" `Quick ignore ]
+let create_test_cases (module E : Typedesc_examples.Ex) =
+  E.example_descs
+  |&> (fun (module D : Typedesc_examples.Ex_desc) ->
+    match D.schema_object with
+    | Some expected ->
+      test_case (D.module_name^" json schema") `Quick (fun () ->
+          let actual = Json_codec.gen_json_schema D.decl in
+          check' Testables.schema_object
+            ~msg:"the generated schema is expected"
+            ~expected
+            ~actual
+        )
+    | None ->
+      test_case (D.module_name^" (skipped)") `Quick ignore
+    )
 
 let () =
   Typedesc_examples.all

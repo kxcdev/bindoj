@@ -28,43 +28,46 @@ module Testables : sig
   val jvpath : Json.jvpath testable
 end = struct
   let json_shape_explanation = testable Json_shape.pp_shape_explanation ( = )
-
   let jvpath = testable Json.pp_jvpath ( = )
 end
 
-let create_test_cases (module S : Sample) =
-  let typed_decl = Typed_type_desc.Typed.mk S.decl S.reflect in
-  S.name, (S.samples |&> (fun (name, jv, (msg, path)) ->
-    let msg =
-      if List.empty path then sprintf "%s at root" msg
-      else sprintf "%s at path %s" msg (path |> List.rev |> Json.unparse_jvpath)
-    in
-    test_case name `Quick(fun () ->
-      let res_msg, res_path =
-        Bindoj_codec.Json.of_json' ~env:S.env typed_decl jv
-        |> function
-        | Error err ->
-          OfJsonResult.Err.(Some (to_string err), Some(path err))
-        | _ -> None, None
+
+let create_test_cases sample_name env descs =
+  sample_name, (descs |&>> (fun (module D : Sample_dynamic_desc) ->
+    let typed_decl = Typed_type_desc.Typed.mk D.decl D.reflect in
+      D.samples |&> (fun (name, jv, (msg, path)) ->
+      let msg =
+        if List.empty path then sprintf "%s at root" msg
+        else sprintf "%s at path %s" msg (path |> List.rev |> Json.unparse_jvpath)
       in
-      check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
-      check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path;
-    )) |> fun tests ->
-      tests @ begin match S.expected_json_shape_explanation with
-      | None -> [ test_case "json_shape_explanation(skipped)" `Quick ignore]
-      | Some expected -> [
-          test_case "json_shape_explanation" `Quick(fun () ->
-            let actual_json_shape_explanation =
-              Bindoj_codec.Json.explain_encoded_json_shape ~env:S.env typed_decl
-            in
-            check' Testables.json_shape_explanation
-              ~msg:"json_shape_explanation"
-              ~expected
-              ~actual:actual_json_shape_explanation
-          )]
-      end)
+      let test_name = sprintf "%s.%s (%s)" sample_name D.decl.td_name name in
+      test_case test_name `Quick(fun () ->
+        let res_msg, res_path =
+          Bindoj_codec.Json.of_json' ~env typed_decl jv
+          |> function
+          | Error err ->
+            OfJsonResult.Err.(Some (to_string err), Some(path err))
+          | _ -> None, None
+        in
+        check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
+        check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path;
+      )) |> fun tests ->
+        tests @ begin match D.expected_json_shape_explanation with
+        | None -> [ test_case "json_shape_explanation(skipped)" `Quick ignore]
+        | Some expected -> [
+            test_case "json_shape_explanation" `Quick(fun () ->
+              let actual_json_shape_explanation =
+                Bindoj_codec.Json.explain_encoded_json_shape ~env typed_decl
+              in
+              check' Testables.json_shape_explanation
+                ~msg:"json_shape_explanation"
+                ~expected
+                ~actual:actual_json_shape_explanation
+            )]
+        end
+    ))
 
 let () =
-  all
-  |&> create_test_cases
+  all |&> (fun (module S : Sample_dynamic) ->
+    create_test_cases S.name S.env S.descs)
   |> Alcotest.run "lib_codec.of_json'"

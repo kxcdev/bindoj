@@ -25,17 +25,18 @@ open Bindoj_typedesc.Typed_type_desc
 open Bindoj_test_common_typedesc_generated_examples
 
 module Types = struct
-  type student = Ex01.student
-  let student : student typed_type_decl = Typed.mk Ex01.decl Ex01.reflect
+  type student = Ex_record.Student.t
+  let student : student typed_type_decl = Ex_record.Student.(Typed.mk decl reflect)
 
-  type person = Ex02_no_mangling.person
-  let person : person typed_type_decl = Typed.mk Ex02_no_mangling.decl Ex02_no_mangling.reflect
+  type person = Ex_mangling.Person_no_mangling.t
+  let person : person typed_type_decl = Ex_mangling.Person_no_mangling.(Typed.mk decl reflect)
 end
 
 module Functions = struct
   let student_of_person = function
     (** returns ``response'' from ``request'' *)
-    | Ex02_no_mangling.Student { student_id; name; } -> Ex01.{ admission_year = student_id; name; }
+    | Ex_mangling.Person_no_mangling.Student { student_id; name; } ->
+      Ex_record.Student.{ admission_year = student_id; name; }
     | Anonymous -> failwith "anonymous, not student"
     | With_id _ -> failwith "with_id, not student"
     | Teacher _ -> failwith "teacher, not student"
@@ -67,13 +68,13 @@ let () = begin
   get_any_student
   |> R.register_response_sample
     ~status:`default
-    (Ex01.sample_value01.orig);
+    (Ex_record.Student.sample_value01.orig);
 
   get_student_from_person
   |> R.register_usage_sample
     ~status:`default
-    ~req:(Ex02_no_mangling.sample_value03.orig)
-    ~resp:(Functions.student_of_person Ex02_no_mangling.sample_value03.orig)
+    ~req:(Ex_mangling.Person_no_mangling.sample_value03.orig)
+    ~resp:(Functions.student_of_person Ex_mangling.Person_no_mangling.sample_value03.orig)
 end
 
 include R.Public
@@ -111,13 +112,13 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Sample_value in
+  let open Util.Sample_value in
 
   let () (* get-any-student *) =
     let invp = get_any_student in
-    let { orig; jv } = Ex01.sample_value01 in
+    let { orig; jv } = Ex_record.Student.sample_value01 in
     M.register_get_handler invp (fun () -> return (200, orig));
-    M.register_get_example invp.ip_urlpath (Invp invp) ~orig ~jv ~pp:Ex01.pp
+    M.register_get_example invp.ip_urlpath (Invp invp) ~orig ~jv ~pp:Ex_record.Student.pp
   in
 
   let () (* get-student-from-person *) =
@@ -127,13 +128,13 @@ let build_mock_server (module M: MockServerBuilder) =
     let reg_sample { orig; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
         ~orig_resp:(student_of_person orig) ~orig_req:orig
-        ~jv_resp:(student_of_person orig |> Ex01.student_to_json) ~jv_req:jv
-        ~pp:Ex01.pp in
+        ~jv_resp:(student_of_person orig |> Ex_record.Student.to_json) ~jv_req:jv
+        ~pp:Ex_record.Student.pp in
 
-    reg_sample Ex02_no_mangling.sample_value03;
+    reg_sample Ex_mangling.Person_no_mangling.sample_value03;
     let sample =
       let orig =
-        Ex02_no_mangling.(Student {
+        Ex_mangling.Person_no_mangling.(Student {
             student_id = 1984;
             name = "William Gibson";
           }) in

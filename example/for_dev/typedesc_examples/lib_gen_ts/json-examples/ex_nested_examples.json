@@ -1,0 +1,48 @@
+{
+  "ExNestedPoint2": [{ "x": 1, "y": 2 }],
+  "ExNestedRecord": [
+    { "unit": 1, "point2": { "x": 1, "y": 2 }, "x": 1, "y": 2, "person": { "kind": "Anonymous" }, "kind": "Anonymous" },
+    {
+      "unit": 1,
+      "point2": { "x": 1, "y": 2 },
+      "x": 1,
+      "y": 2,
+      "person": { "kind": "With_id", "arg": 1619 },
+      "kind": "With_id",
+      "arg": 1619
+    },
+    {
+      "unit": 1,
+      "point2": { "x": 1, "y": 2 },
+      "x": 1,
+      "y": 2,
+      "person": { "kind": "student", "student_id": 451, "name": "Ray Bradbury", "caseValue": "Case_at0" },
+      "kind": "student",
+      "student_id": 451,
+      "name": "Ray Bradbury",
+      "caseValue": "Case_at0"
+    },
+    {
+      "unit": 1,
+      "point2": { "x": 1, "y": 2 },
+      "x": 1,
+      "y": 2,
+      "person": { "kind": "Teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" },
+      "kind": "Teacher",
+      "facultyId": 2001,
+      "name": "Arthur C. Clark",
+      "department": "Space"
+    }
+  ],
+  "ExNestedVariant": [
+    { "tag": "student1", "student": { "admissionYear": 1984, "name": "William Gibson" } },
+    { "tag": "student2", "admissionYear": 1984, "name": "William Gibson" },
+    { "tag": "student3", "value": { "admissionYear": 1984, "name": "William Gibson" } },
+    { "tag": "student4", "admissionYear": 1984, "name": "William Gibson" },
+    {
+      "tag": "int-list1",
+      "value": { "kind": "intcons", "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }] }
+    },
+    { "tag": "int-list2", "kind": "intcons", "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }] }
+  ]
+}

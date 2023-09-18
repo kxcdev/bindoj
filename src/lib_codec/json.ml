@@ -542,7 +542,10 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
                           let xs_len = List.length xs in
                           let msg = sprintf "expecting an array of length %d, but the given has a length of %d" ts_len xs_len in
                           Result.error (msg, arg_path))
-                  | _, Some jv -> Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
+                  | _, Some jv ->
+                    Result.error (
+                      sprintf "an array is expected for a tuple value, but the given is of type '%s'"
+                        (jv |> classify_jv |> string_of_jv_kind), arg_path)
                   | _, None -> Result.error (sprintf "mandatory field '%s' does not exist" arg_fname, path)
                 )
               end

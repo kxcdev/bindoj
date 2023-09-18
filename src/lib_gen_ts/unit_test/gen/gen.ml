@@ -30,11 +30,13 @@ let () =
   | [name] ->
     match List.assoc_opt name mapping with
     | None -> failwith (sprintf "unknown example %s" name)
-    | Some (module G : T) ->
+    | Some (module E : Ex_generated) ->
       Generator.generate
-        ~resolution_strategy:(function
-          | { td_name = "teacher"; _ } -> `import_location "./reused_types/teacher"
-          | _ -> `no_resolution)
-        ~env:G.env
+        ~resolution_strategy:(fun decl ->
+          begin match decl.td_name |> String.split_on_char '_' with
+          | "ex" :: ex_name :: _ -> `import_location (sprintf "./ex_%s_gen" ex_name)
+          | _ -> `no_resolution
+          end)
+        ~env:E.env
         ~formatter:Format.std_formatter
-        [ G.decl ]
+        (E.example_generated_descs |&> (fun (module D : Ex_generated_desc) -> D.decl))

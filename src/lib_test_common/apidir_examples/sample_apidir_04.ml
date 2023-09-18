@@ -28,8 +28,7 @@ open Bindoj_test_common_typedesc_generated_examples
 module Types = struct
   open Bindoj_runtime
 
-  let named_json : Ex08.named_json typed_type_decl =
-    Typed.mk Ex08.decl Ex08.reflect
+  let named_json : Ex_coretype.Named_json.t typed_type_decl = Ex_coretype.Named_json.(Typed.mk decl reflect)
 
   let json = Bindoj_std.Json_value.Type_decl.typed
 
@@ -62,12 +61,12 @@ let json_of_named_json =
 let () = begin
   name_of_named_json
   |> R.register_usage_samples
-    ( Ex08.sample_values
+    ( Ex_coretype.Named_json.sample_values
       |&> (fun { orig; _ } -> (orig, orig.name, `default), `nodoc));
 
   json_of_named_json
   |> R.register_usage_samples
-    ( Ex08.sample_values
+    ( Ex_coretype.Named_json.sample_values
       |&> (fun { orig; _ } -> (orig, orig.json, `default), `nodoc));
 end
 
@@ -102,22 +101,22 @@ let tests =  [
 
 let build_mock_server (module M: MockServerBuilder) =
   let open M.Io in
-  let open Sample_value in
+  let open Util.Sample_value in
 
   let () (* name-of-named_json*) =
     let invp = name_of_named_json in
-    let name_of_named_json Ex08.{ name; _ } = name in
+    let name_of_named_json Ex_coretype.Named_json.{ name; _ } = name in
     let reg_sample { orig; jv } =
       M.register_post_example invp.ip_urlpath (Invp invp)
         ~orig_req:orig ~orig_resp:(name_of_named_json orig)
         ~jv_req:jv ~jv_resp:(name_of_named_json orig |> fun x -> `str x)
         ~pp:pp_string in
-    List.iter reg_sample Ex08.sample_values;
+    List.iter reg_sample Ex_coretype.Named_json.sample_values;
     M.register_post_handler invp (fun x -> return (200, name_of_named_json x)) in
 
   let () (* json-of-named_json *) =
     let invp = json_of_named_json in
-    let json_of_named_json Ex08.{ json; _ } = json in
+    let json_of_named_json Ex_coretype.Named_json.{ json; _ } = json in
     let rec pp_json ppf = function
       | `null -> Format.fprintf ppf "null"
       | `bool b -> Format.fprintf ppf "%B" b
@@ -135,6 +134,6 @@ let build_mock_server (module M: MockServerBuilder) =
         ~orig_req:orig ~orig_resp:(json_of_named_json orig)
         ~jv_req:jv ~jv_resp:(json_of_named_json orig)
         ~pp:pp_json in
-    List.iter reg_sample Ex08.sample_values;
+    List.iter reg_sample Ex_coretype.Named_json.sample_values;
     M.register_post_handler invp (fun x -> return (200, json_of_named_json x)) in
   ()

@@ -22,8 +22,7 @@ open Bindoj_typedesc.Typed_type_desc
 open Bindoj_apidir_generative
 open Bindoj_apidir_generative.Internals
 open Bindoj_apidir_shared
-module ExD = Bindoj_test_common.Typedesc_examples
-module ExG = Bindoj_test_common.Typedesc_generated_examples
+open Bindoj_test_common.Typedesc_generated_examples
 module OpenApi = Bindoj_openapi.V3
 
 let testable_openapi_document_object =
@@ -61,26 +60,24 @@ module type Ex = sig
 end
 
 let all =
-  List.map2 (fun (name, d) (name', g) ->
-      assert (name = name');
-      let module D = (val d : ExD.T) in
-      let module G = (val g : ExG.T) in
+  all |&>> (fun (name, (module E : Ex_generated)) ->
+    E.example_generated_descs
+    |&> (fun (module D : Ex_generated_desc) ->
       (module struct
-        let name = name
+        let name = sprintf "%s.%s" name D.decl.td_name
         let decl = D.decl
-        type typ = G.t
-        let typed = Typed.mk decl G.reflect
-        let env = G.env
+        type typ = D.t
+        let typed = Typed.mk decl D.reflect
+        let env = E.env
         let sample_values =
-          List.mapi (fun i ExG.Sample_value.{ orig; _; } ->
+          List.mapi (fun i Util.Sample_value.{ orig; _; } ->
               (orig, `docstr ("ex" ^ string_of_int i)))
-            G.sample_values
+            D.sample_values
         let sample_jsons =
-          List.mapi (fun i ExG.Sample_value.{ jv; _; } ->
+          List.mapi (fun i Util.Sample_value.{ jv; _; } ->
               ("ex" ^ string_of_int i, jv))
-          G.sample_values
-      end : Ex))
-    ExD.all ExG.all
+          D.sample_values
+        end : Ex)))
 
 let content_type = "application/json"
 

@@ -7,10 +7,10 @@
       "post": {
         "summary": "get-x",
         "requestBody": {
-          "description": "xy_opt",
+          "description": "ex_optional_xy_opt",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/XyOpt" },
+              "schema": { "$ref": "#/components/schemas/ExOptionalXyOpt" },
               "examples": {
                 "example_0": { "value": {} },
                 "example_1": { "value": { "yOpt": 42 } },
@@ -23,10 +23,10 @@
         },
         "responses": {
           "default": {
-            "description": "int_opt",
+            "description": "ex_alias_int_opt",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "schema": { "$ref": "#/components/schemas/ExAliasIntOpt" },
                 "examples": {
                   "example_0": { "value": null },
                   "example_1": { "value": null },
@@ -45,10 +45,10 @@
       "post": {
         "summary": "get-y",
         "requestBody": {
-          "description": "xy_opt",
+          "description": "ex_optional_xy_opt",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/XyOpt" },
+              "schema": { "$ref": "#/components/schemas/ExOptionalXyOpt" },
               "examples": {
                 "example_0": { "value": {} },
                 "example_1": { "value": { "yOpt": 42 } },
@@ -61,10 +61,10 @@
         },
         "responses": {
           "default": {
-            "description": "int_opt",
+            "description": "ex_alias_int_opt",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/IntOpt" },
+                "schema": { "$ref": "#/components/schemas/ExAliasIntOpt" },
                 "examples": {
                   "example_0": { "value": null },
                   "example_1": { "value": 42 },
@@ -81,9 +81,13 @@
   },
   "components": {
     "schemas": {
-      "IntOpt": { "title": "IntOpt", "nullable": true, "type": "integer" },
-      "XyOpt": {
-        "title": "XyOpt",
+      "ExAliasIntOpt": {
+        "title": "ExAliasIntOpt",
+        "nullable": true,
+        "type": "integer"
+      },
+      "ExOptionalXyOpt": {
+        "title": "ExOptionalXyOpt",
         "type": "object",
         "properties": {
           "xOpt": { "nullable": true, "type": "integer" },

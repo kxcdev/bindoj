@@ -19,32 +19,19 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_typedesc.Typed_type_desc
 open Bindoj_test_common.Apidir_examples
-open Bindoj_codec.Json
 
 let print_typescript name (module Dir : T) =
   let reg_info = Dir.registry_info () in
   let namespace = "bindoj" in
   Bindoj_apidir_typescript.gen_raw
     ~resolution_strategy:(Typed.unbox &> Typed.decl &> function
-      | { td_name = "student"; _ } -> `import_location "../compile-tests/ex01_gen"
-      | { td_name = "person"; td_configs; _ } ->
-        begin match Json_config.(get_mangling_style_opt td_configs |? default_mangling_style) with
-        | `no_mangling ->
-          `import_location "../compile-tests/ex02_no_mangling_gen"
-        | _ ->
-          `import_location "../compile-tests/ex02_gen"
-        end
-      | { td_name = "int_list"; _ } -> `import_location "../compile-tests/ex03_objtuple_gen"
-      | { td_name = "foo"; _ } -> `import_location "../compile-tests/ex04_gen"
-      | { td_name = "complex_types"; _ } -> `import_location "../compile-tests/ex05_notuple_gen"
-      | { td_name = "various_prim_types"; _ } -> `import_location "../compile-tests/ex06_gen"
-      | { td_name = "customized_union"; _ } -> `import_location "../compile-tests/ex07_gen"
-      | { td_name = "named_json"; _ } -> `import_location "../compile-tests/ex08_gen"
-      | { td_name = "with_int53p"; _ } -> `import_location "../compile-tests/ex09_gen"
-      | { td_name = "xy_opt"; _ } -> `import_location "../compile-tests/ex10_gen"
-      | { td_name = "int"; _ } -> `infile_type_definition `no_export
-      | { td_name = "int_opt" | "json_value"; _ } -> `inline_type_definition
-      | _ -> `no_resolution)
+      | { td_kind = Alias_decl { ct_desc = Prim _; _ }; _ } -> `infile_type_definition `no_export
+      | { td_kind = Alias_decl _; _ } -> `inline_type_definition
+      | decl ->
+        begin match decl.td_name |> String.split_on_char '_' with
+        | "ex" :: ex_name :: _ -> `import_location (sprintf "../compile-tests/ex_%s_gen" ex_name)
+        | _ -> `no_resolution
+        end)
     ~bindoj_namespace:namespace
     ~mod_name:name
     reg_info

@@ -20,6 +20,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Alcotest
 open Kxclib
 open Bindoj_test_common.Typedesc_generated_examples
+open Bindoj_test_common.Typedesc_generated_examples.Util
 
 module Testables : sig
   val jv : Json.jv testable
@@ -35,7 +36,7 @@ end = struct
   let jv = testable pp_jv ( = )
 end
 
-let create_test_cases (name: string) (module Ex : T) =
+let create_test_cases (name: string) (module Ex : Ex_generated_desc) =
   let open Ex in
   let msg msg = sprintf "%s %s" name msg in
 
@@ -78,5 +79,9 @@ let create_test_cases (name: string) (module Ex : T) =
 
 let () =
   all
-  |> List.map (fun (name, m) -> create_test_cases name m)
+  |&>> (fun (name, (module E : Ex_generated)) ->
+    E.example_generated_descs
+    |&> (fun ((module D : Ex_generated_desc) as d) ->
+      let name = sprintf "%s.%s" name D.decl.td_name in
+      create_test_cases name d))
   |> Alcotest.run "lib_gen.json_codec"

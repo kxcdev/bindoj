@@ -1,0 +1,48 @@
+{
+  "ExVariantPerson": [
+    { "kind": "anonymous" },
+    { "kind": "with-id", "arg": 1619 },
+    { "kind": "student", "studentId": 451, "name": "Ray Bradbury" },
+    { "kind": "teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" }
+  ],
+  "ExVariantPersonReused": [
+    { "kind": "anonymous" },
+    { "kind": "with-id", "arg": 1619 },
+    { "kind": "student", "studentId": 451, "name": "Ray Bradbury" },
+    { "kind": "teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" }
+  ],
+  "ExVariantIntList": [
+    { "kind": "intnil" },
+    { "kind": "intcons", "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }] },
+    {
+      "kind": "intcons",
+      "arg": [
+        1,
+        {
+          "kind": "intcons",
+          "arg": [2, { "kind": "intcons", "arg": [3, { "kind": "intcons", "arg": [4, { "kind": "intnil" }] }] }]
+        }
+      ]
+    },
+    { "kind": "intcons", "arg": [26335605, { "kind": "intcons", "arg": [35460072, { "kind": "intnil" }] }] }
+  ],
+  "ExVariantIntListObjtuple": [
+    { "kind": "intnil" },
+    { "kind": "intcons", "_0": 1, "_1": { "kind": "intcons", "_0": 2, "_1": { "kind": "intnil" } } },
+    {
+      "kind": "intcons",
+      "_0": 1,
+      "_1": {
+        "kind": "intcons",
+        "_0": 2,
+        "_1": { "kind": "intcons", "_0": 3, "_1": { "kind": "intcons", "_0": 4, "_1": { "kind": "intnil" } } }
+      }
+    },
+    { "kind": "intcons", "_0": 26335605, "_1": { "kind": "intcons", "_0": 35460072, "_1": { "kind": "intnil" } } }
+  ],
+  "ExVariantFoo": [{ "kind": "foo0" }, { "kind": "foo1", "arg": 1 }, { "kind": "foo2", "arg": [1, 2] }],
+  "ExVariantCustomizedUnion": [
+    { "tag": "case1'", "value": 42 },
+    { "tag": "case2'", "x'": 4, "y'": 2 }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "ExCoretypeVariousPrimTypes": [
+    {
+      "unit": 1,
+      "bool": true,
+      "int": 42,
+      "float": 4.2,
+      "string": "foo",
+      "uchar": "a",
+      "byte": 98,
+      "bytes": "SGVsbG8sIHdvcmxkIQ=="
+    }
+  ],
+  "ExCoretypeWithInt53p": [
+    { "value": 0 },
+    { "value": 1 },
+    { "value": -1 },
+    { "value": 102 },
+    { "value": 1099511627776 },
+    { "value": -2199023255552 }
+  ],
+  "ExCoretypeVariousComplexTypes": [
+    { "option": 42, "list": [1, 2, 3, 4], "map": { "foo": 4, "bar": 2 } },
+    { "list": [], "map": {} }
+  ],
+  "ExCoretypeVariousTupleTypes": [
+    { "tuple": [4, 2], "objtuple": { "_0": 4, "_1": 2 }, "nested": [42, [4, 2], [4, 2]] },
+    { "tuple": [0, 0], "objtuple": { "_0": 0, "_1": 0 }, "nested": [null, [], [0, 0]] }
+  ],
+  "ExCoretypeNamedJson": [
+    { "name": "position", "json": { "x": 2, "y": -5 } },
+    { "name": "greeting", "json": "hello?" },
+    { "name": "tup_pos", "json": ["x", 2, "y", -5] },
+    { "name": "flag", "json": true },
+    { "name": "null_val", "json": null }
+  ]
+}

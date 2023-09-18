@@ -18,12 +18,15 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_test_common.Typedesc_generated_examples
+open Bindoj_test_common.Typedesc_generated_examples.Util
+open Bindoj_codec_config
 
-let print_json (module Ex : T) =
-  Ex.sample_values
-  |> List.map Sample_value.orig
-  |> List.map Ex.to_json
-  |> (fun x -> `arr x)
+let print_json (module E : Ex_generated) =
+  E.example_generated_descs
+  |&> (fun (module D : Ex_generated_desc) ->
+    D.decl |> Json_config.get_mangled_name_of_type |> fst,
+    D.sample_values |&> (Sample_value.orig &> D.to_json) |> fun x -> `arr x)
+  |> fun (x : (string * Json.jv) list) -> `obj x
   |> Json.to_yojson
   |> Yojson.Safe.to_string
   |> print_endline

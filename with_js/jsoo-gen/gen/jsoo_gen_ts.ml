@@ -32,15 +32,17 @@ let () =
         let name = ostr name in
         match List.assoc_opt name all with
         | None -> failwith (sprintf "unknown example %s" name)
-        | Some (module G : T) ->
+        | Some (module G : Ex_generated) ->
           ignore (Format.flush_str_formatter());
           Generator.generate
-            ~resolution_strategy:(function
-              | { td_name = "teacher"; _ } -> `import_location "./reused_types/teacher"
-              | _ -> `no_resolution)
+            ~resolution_strategy:(fun decl ->
+              begin match decl.td_name |> String.split_on_char '_' with
+              | "ex" :: ex_name :: _ -> `import_location (sprintf "./ex_%s_gen" ex_name)
+              | _ -> `no_resolution
+              end)
             ~env:G.env
             ~formatter:Format.str_formatter
-            [ G.decl ];
+            (G.example_generated_descs |&> (fun (module D : Ex_generated_desc) -> D.decl));
           Format.flush_str_formatter() |> jstr
     end
   end)

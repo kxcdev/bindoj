@@ -1,3 +1,4 @@
 (test
  (name lib_gen_foreign_test)
- (libraries alcotest bindoj_test_common bindoj_base bindoj_gen_foreign))
+ (libraries alcotest bindoj_test_common bindoj_base bindoj_gen_foreign)
+ (flags (:standard -open Kxclib)))

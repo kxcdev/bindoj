@@ -1,6 +1,0 @@
-[
-  { "kind": "version-info-v1_0", "versionInfoV1": 1, "versionInfoV1_0": 2, "versionInfoV1_0_1": 3 },
-  { "kind": "version-v1_0-info", "versionV1Info": 1, "versionV1_0Info": 2, "versionV1_0_1Info": 3 },
-  { "kind": "v1_0-version-info", "v1VersionInfo": 1, "v1_0VersionInfo": 2, "v1_0_1VersionInfo": 3 },
-  { "kind": "no-preserving-version-substring-v1-0", "versionInfoV1": 1, "versionInfoV10": 2, "versionInfoV101": 3 }
-]

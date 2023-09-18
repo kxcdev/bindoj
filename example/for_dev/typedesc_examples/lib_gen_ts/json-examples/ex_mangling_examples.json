@@ -1,0 +1,20 @@
+{
+  "ex_mangling_student_inherited": [
+    { "admission_year": 1984, "name": "William Gibson", "caseValue": "Case-at0" },
+    { "admission_year": 2001, "name": "Arthur C. Clark", "caseValue": "case_at1" }
+  ],
+  "ex_mangling_person_no_mangling": [
+    { "kind": "Anonymous" },
+    { "kind": "With_id", "arg": 1619 },
+    { "kind": "Student", "student_id": 451, "name": "Ray Bradbury" },
+    { "kind": "Teacher", "faculty_id": 2001, "name": "Arthur C. Clark", "department": "Space" }
+  ],
+  "ex_mangling_person_inherited": [
+    { "kind": "Anonymous" },
+    { "kind": "With_id", "arg": 1619 },
+    { "kind": "student", "student_id": 451, "name": "Ray Bradbury", "caseValue": "Case_at0" },
+    { "kind": "student", "student_id": 451, "name": "Ray Bradbury", "caseValue": "case-at1" },
+    { "kind": "Teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" }
+  ],
+  "ExManglingEnum": ["Case_at0", "case-at1", "Case-at2", "Case-third"]
+}

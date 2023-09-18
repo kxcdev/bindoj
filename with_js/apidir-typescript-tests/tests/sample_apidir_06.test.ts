@@ -1,6 +1,6 @@
 import { MockServer, createMockClient } from "./lib";
 import { Sample_apidir_06InvpInfo as invpInfo, Sample_apidir_06ClientIntf as clientIntf } from "../sample_apidir_06";
-import { XyOpt } from "../../compile-tests/ex10_gen";
+import { ExOptionalXyOpt } from "../../compile-tests/ex_optional_gen";
 
 const b = require("../sample_apidir_06_server.js").bindoj_jsoo_bridge;
 
@@ -14,12 +14,7 @@ describe("apidir-typescript-tests-sample06", () => {
     b.coverage_helper.reset_counters();
   });
 
-  const sample_values: XyOpt[] = [
-    { },
-    { yOpt: 42 },
-    { xOpt: -25 },
-    { xOpt: 512, yOpt: -119 },
-  ];
+  const sample_values: ExOptionalXyOpt[] = [{}, { yOpt: 42 }, { xOpt: -25 }, { xOpt: 512, yOpt: -119 }];
 
   describe("get-x", () => {
     sample_values.forEach((samle, i) => {

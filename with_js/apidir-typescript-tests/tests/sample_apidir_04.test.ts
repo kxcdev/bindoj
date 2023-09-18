@@ -1,6 +1,6 @@
 import { MockServer, createMockClient } from "./lib";
 import { Sample_apidir_04InvpInfo as invpInfo, Sample_apidir_04ClientIntf as clientIntf } from "../sample_apidir_04";
-import { NamedJson } from "../../compile-tests/ex08_gen";
+import { ExCoretypeNamedJson } from "../../compile-tests/ex_coretype_gen";
 
 const b = require("../sample_apidir_04_server.js").bindoj_jsoo_bridge;
 
@@ -14,12 +14,12 @@ describe("apidir-typescript-tests-sample04", () => {
     b.coverage_helper.reset_counters();
   });
 
-  const sample_values: NamedJson[] = [
-    { name: "position", json: { x: 2, y: -5} },
+  const sample_values: ExCoretypeNamedJson[] = [
+    { name: "position", json: { x: 2, y: -5 } },
     { name: "greeting", json: "hello?" },
-    { name: "tup_pos", json: [ "x", 2, "y", -5 ] },
+    { name: "tup_pos", json: ["x", 2, "y", -5] },
     { name: "flag", json: true },
-    { name: "null_val", json: null }
+    { name: "null_val", json: null },
   ];
   describe("name-of-named_json", () => {
     sample_values.forEach((named_json) => {

@@ -19,51 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_test_common_typedesc_generated_examples
 
-open Kxclib.Json
-open Bindoj_base
-open Bindoj_runtime
+include All
 
-(** each example module should have this module type *)
-module type T = sig
-  type t
-  include Runtime.Generic_typed_type_decl
-          with type type_decl := Type_desc.type_decl
-           and type t := t
-  val pp : ppf -> t -> unit
-  val t : t Alcotest.testable
-  val sample_values : t Sample_value.t list
-  val json_shape_explanation : json_shape_explanation
-  val to_json : t -> jv
-  val of_json' : ?path:jvpath -> jv -> t OfJsonResult.t
-  val env : tdenv
-end
-
-(** this should contain all the example modules. *)
-let all : (string * (module T)) list = [
-  "ex01", (module Ex01);
-  "ex01_inherited_mangling", (module Ex01_inherited_mangling);
-  "ex02", (module Ex02);
-  "ex02_reused", (module Ex02_reused);
-  "ex02_no_mangling", (module Ex02_no_mangling);
-  "ex02_inherited_mangling", (module Ex02_inherited_mangling);
-  "ex03", (module Ex03);
-  "ex03_objtuple", (module Ex03_objtuple);
-  "ex04", (module Ex04);
-  "ex05", (module Ex05);
-  "ex05_notuple", (module Ex05_notuple);
-  "ex06", (module Ex06);
-  "ex07", (module Ex07);
-  "ex08", (module Ex08);
-  "ex09", (module Ex09);
-  "ex10", (module Ex10);
-  "ex11", (module Ex11);
-  "ex12", (module Ex12);
-  "ex13", (module Ex13);
-  "ex14", (module Ex14);
-  "ex15", (module Ex15);
-  "ex16", (module Ex16);
-  "ex17", (module Ex17);
-  "ex18", (module Ex18);
-  "ex19", (module Ex19);
-  "ex20", (module Ex20);
-]
+module type Ex_generated = Util.Ex_generated
+module type Ex_generated_desc = Util.Ex_generated_desc

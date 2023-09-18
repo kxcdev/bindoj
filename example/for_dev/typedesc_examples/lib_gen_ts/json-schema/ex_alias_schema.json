@@ -1,0 +1,32 @@
+[
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExAliasUnit",
+    "description": "alias of unit type",
+    "id": "#ExAliasUnit",
+    "type": "integer",
+    "minimum": 1,
+    "maximum": 1
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExAliasIntOpt",
+    "description": "alias of int option type",
+    "nullable": true,
+    "id": "#ExAliasIntOpt",
+    "type": "integer"
+  },
+  {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "ExAliasObjtuple",
+    "description": "alias of objtuple type",
+    "id": "#ExAliasObjtuple",
+    "type": "object",
+    "properties": {
+      "_0": { "description": "alias of objtuple type", "type": "number" },
+      "_1": { "description": "alias of objtuple type", "type": "string" }
+    },
+    "required": ["_0", "_1"],
+    "additionalProperties": false
+  }
+]

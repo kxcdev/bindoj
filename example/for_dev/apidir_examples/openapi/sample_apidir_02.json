@@ -11,7 +11,9 @@
             "description": "a int-list record (could be anyone) in the database",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+                "schema": {
+                  "$ref": "#/components/schemas/ExVariantIntListObjtuple"
+                },
                 "examples": {
                   "example_0": { "value": { "kind": "intnil" } },
                   "example_1": {
@@ -49,7 +51,9 @@
           "description": "an int list",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+              "schema": {
+                "$ref": "#/components/schemas/ExVariantIntListObjtuple"
+              },
               "examples": {
                 "example_0": { "value": { "kind": "intnil" } },
                 "example_1": {
@@ -81,7 +85,9 @@
             "description": "an int list with all elements of the supplied int list inclimented",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+                "schema": {
+                  "$ref": "#/components/schemas/ExVariantIntListObjtuple"
+                },
                 "examples": {
                   "example_0": { "value": { "kind": "intnil" } },
                   "example_1": {
@@ -119,7 +125,9 @@
           "description": "an int-list",
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/IntListObjtuple" },
+              "schema": {
+                "$ref": "#/components/schemas/ExVariantIntListObjtuple"
+              },
               "examples": {
                 "example_0": { "value": { "kind": "intnil" } },
                 "example_1": {
@@ -166,9 +174,8 @@
   },
   "components": {
     "schemas": {
-      "Int": { "title": "Int", "type": "integer" },
-      "IntListObjtuple": {
-        "title": "IntListObjtuple",
+      "ExVariantIntListObjtuple": {
+        "title": "ExVariantIntListObjtuple",
         "oneOf": [
           {
             "title": "intnil",
@@ -184,14 +191,17 @@
             "type": "object",
             "properties": {
               "_0": { "type": "integer" },
-              "_1": { "$ref": "#/components/schemas/IntListObjtuple" },
+              "_1": {
+                "$ref": "#/components/schemas/ExVariantIntListObjtuple"
+              },
               "kind": { "enum": ["intcons"], "type": "string" }
             },
             "required": ["_0", "_1", "kind"],
             "additionalProperties": false
           }
         ]
-      }
+      },
+      "Int": { "title": "Int", "type": "integer" }
     }
   }
 }

@@ -19,7 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_gen_ts.Typescript_datatype
 open Bindoj_gen_ts.Typescript_datatype.Internals
-open Bindoj_test_common
+open Bindoj_test_common.Typedesc_examples
 open Bindoj_gen_foreign
 
 module Ast = struct
@@ -36,7 +36,7 @@ module Ast = struct
         (if readonly then ([`readonly], []) else ([], []))
         env)
 
-  let create_cases doc (module Ex : Typedesc_examples.T) =
+  let create_cases doc (module Ex : Ex_desc) =
     let open Alcotest in
     let ast_test_cases =
       let check a b () = Alcotest.check testable_ts_ast doc a b in
@@ -46,7 +46,8 @@ module Ast = struct
           check (ts_ast_of_fwrt_decl (annotate_fwrt_decl true false Ex.fwrt)) ts_ast in
         [test_case "ts_ast_of_fwrt_decl and annotate_fwrt_decl work" `Quick create_test]
       | None ->
-        [test_case "(skipped)" `Quick (fun () -> ())] in
+        [test_case "(skipped)" `Quick (fun () -> ())]
+    in
     (doc, ast_test_cases)
 end
 
@@ -629,7 +630,10 @@ end
 let () =
   let open Alcotest in
   let open Kxclib in
-  (Typedesc_examples.all
-   |&> (fun (name, m) -> Ast.create_cases name m))
+  (all
+   |&>> (fun (name, (module E : Ex)) ->
+    E.example_descs |&> (fun ((module D : Ex_desc) as d) ->
+      let name = sprintf "%s.%s" name D.decl.td_name in
+      Ast.create_cases name d)))
   @ Code.cases
   |> run "lib_gen_ts"

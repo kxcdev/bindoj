@@ -1,6 +1,6 @@
 import { MockServer, createMockClient } from "./lib";
 import { Sample_apidir_05InvpInfo as invpInfo, Sample_apidir_05ClientIntf as clientIntf } from "../sample_apidir_05";
-import { ComplexTypesNotuple } from "../../compile-tests/ex05_notuple_gen";
+import { ExCoretypeVariousComplexTypes } from "../../compile-tests/ex_coretype_gen";
 
 const b = require("../sample_apidir_05_server.js").bindoj_jsoo_bridge;
 
@@ -31,7 +31,7 @@ describe("apidir-typescript-tests-sample05", () => {
   });
 
   describe("option-of-string", () => {
-    const sample_values: ComplexTypesNotuple[] = [
+    const sample_values: ExCoretypeVariousComplexTypes[] = [
       {
         option: 42,
         list: [1, 2, 3, 4],
