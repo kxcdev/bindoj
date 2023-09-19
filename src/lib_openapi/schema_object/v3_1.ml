@@ -17,6 +17,8 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+open Ppx_yojson_conv_lib.Yojson_conv
+
 let schema = "https://json-schema.org/draft/2020-12/schema"
 
 type yojson = Kxclib.Json.yojson

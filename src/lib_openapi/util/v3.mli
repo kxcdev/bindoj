@@ -36,3 +36,5 @@ type 'a assoc = (string * 'a) list
 val pp_assoc: (ppf -> 'a -> unit) -> ppf -> 'a assoc -> unit
 
 val yojson_of_assoc: ('a -> yojson) -> 'a assoc -> yojson
+
+include module type of Ppx_yojson_conv_lib.Yojson_conv

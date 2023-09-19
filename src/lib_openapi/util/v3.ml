@@ -45,3 +45,5 @@ let yojson_of_either : ('a -> yojson) -> ('b -> yojson) -> ('a, 'b) either -> yo
 type 'a assoc = (string * 'a) list [@@deriving show]
 let yojson_of_assoc yojson_of_a fields : yojson =
   `Assoc (fields |&> fun (k, v) -> (k, yojson_of_a v))
+
+include Ppx_yojson_conv_lib.Yojson_conv
