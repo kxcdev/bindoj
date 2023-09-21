@@ -94,9 +94,10 @@ and openapi_path_item_object_of_invocation_point_info :
   fun reg_info invp ->
   let { ip_name; ip_urlpath; ip_method;
         ip_request_body; ip_responses; ip_deprecated;
-        ip_summary = summary; ip_description = description;
+        ip_summary = summary; ip_description = description; ip_tags;
         ip_external_doc; ip_usage_samples } = invp in
   let summary = summary |? ip_name in
+  let tags = match ip_tags with [] -> None | xs -> Some xs in
   let req_samples =
     ip_usage_samples
     |> List.filter_map (function
@@ -126,7 +127,7 @@ and openapi_path_item_object_of_invocation_point_info :
     let requestBody = request_body |> Option.map Either.left in
     OpenApi.Path_item_object.operation
       ~deprecated:ip_deprecated
-      ~summary ?description ?externalDocs ?requestBody
+      ~summary ?description ?tags ?externalDocs ?requestBody
       responses
   in
   let request_body =

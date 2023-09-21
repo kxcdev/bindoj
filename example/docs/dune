@@ -5,7 +5,7 @@
     ../../with_js/node_modules)
   (action
     (with-accepted-exit-codes 0
-      (run %{bin:npx} --prefix ../../with_js redocly build-docs ../ex01/generated/ex01_apidir.json --output %{target}))))
+      (run %{bin:npx} --prefix ../../with_js redocly build-docs --title ex01 ../ex01/generated/ex01_apidir.json --output %{target}))))
 
 (rule
   (target ex02.html)
@@ -14,4 +14,4 @@
     ../../with_js/node_modules)
   (action
     (with-accepted-exit-codes 0
-      (run %{bin:npx} --prefix ../../with_js redocly build-docs ../ex02/generated/ex02_apidir.json --output %{target}))))
+      (run %{bin:npx} --prefix ../../with_js redocly build-docs --title ex02 ../ex02/generated/ex02_apidir.json --output %{target}))))

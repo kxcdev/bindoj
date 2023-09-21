@@ -53,12 +53,14 @@ let int_of_string =
     ~urlpath:"/option/int-of-string"
     ~req_type:T.string
     ~resp_type:T.int_opt
+    ~tags:[ "option" ]
 
 let option_of_complex =
   R.register_post "option-of-complex"
     ~urlpath:"/option/of-complex"
     ~req_type:T.complex
     ~resp_type:T.int_opt
+    ~tags:[ "option"; "complex" ]
 
 let () = begin
   int_of_string

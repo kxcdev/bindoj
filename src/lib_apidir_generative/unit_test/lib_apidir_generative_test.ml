@@ -210,6 +210,7 @@ let create_cases ex =
         ip_deprecated = false;
         ip_summary = None;
         ip_description = None;
+        ip_tags = [];
         ip_external_doc = None;
         ip_usage_samples = [] } in
     let path_item_object =

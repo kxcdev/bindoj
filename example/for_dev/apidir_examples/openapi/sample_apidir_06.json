@@ -5,6 +5,7 @@
     "/xy-opt/x": {
       "summary": "get-x",
       "post": {
+        "tags": ["x"],
         "summary": "get-x",
         "requestBody": {
           "description": "ex_optional_xy_opt",
@@ -43,6 +44,7 @@
     "/xy-opt/y": {
       "summary": "get-y",
       "post": {
+        "tags": ["y"],
         "summary": "get-y",
         "requestBody": {
           "description": "ex_optional_xy_opt",

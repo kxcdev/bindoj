@@ -43,13 +43,13 @@ module Make :
       include module type of Apidir_base.Make(Dir)(IoStyle)
 
       type handler =
-        | Handler : ('reqty, 'respty) invocation_point_additional_info
+        | Handler : ('reqty, 'respty) invocation_point_info
                   * ('reqty -> (int * 'respty) io) -> handler
 
       val handler_registry_get :
-        (invocation_point_meta, handler) Hashtbl.t
+        (invocation_point_key, handler) Hashtbl.t
       val handler_registry_post :
-        (invocation_point_meta, handler) Hashtbl.t
+        (invocation_point_key, handler) Hashtbl.t
 
       include T with type 'resp io = 'resp IoStyle.t
     end with module IoStyle = IoStyle

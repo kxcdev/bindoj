@@ -58,6 +58,7 @@ type ('reqty, 'respty) invocation_point_info = {
   ip_deprecated : bool;
   ip_summary : string option;
   ip_description : string option;
+  ip_tags : string list;
   ip_external_doc : external_doc option;
   ip_usage_samples : ('reqty, 'respty) invp_usage_sample list;
 }
@@ -140,33 +141,15 @@ val make_response_case :
   -> 'a typed_type_decl
   -> 'respty response_case
 
-type invocation_point_meta = {
-  ipm_urlpath : string;
-  ipm_method : [ `get | `post ];
-}
-
-type ('reqty, 'respty) invocation_point_additional_info = {
-  ipa_name : string;
-  ipa_request_body : 'reqty request_body option;
-  ipa_responses : 'respty response_case list;
-  ipa_deprecated : bool;
-  ipa_summary : string option;
-  ipa_description : string option;
-  ipa_external_doc : external_doc option;
-  ipa_usage_samples : ('reqty, 'respty) invp_usage_sample list;
-}
-
 type untyped_invocation_point_info =
   | Invp : (_, _) invocation_point_info -> untyped_invocation_point_info
 
-type untyped_invocation_point_additional_info =
-  | InvpAdditionalInfo : (_, _) invocation_point_additional_info -> untyped_invocation_point_additional_info
+type invocation_point_key = {
+  ipk_urlpath : string;
+  ipk_method : [ `get | `post ];
+}
 
-val to_invocation_point_info_meta : (_, _) invocation_point_info -> invocation_point_meta
-
-val to_invocation_point_additional_info : ('reqty, 'respty) invocation_point_info -> ('reqty, 'respty) invocation_point_additional_info
-
-val to_invocation_point_info : invocation_point_meta -> ('reqty, 'respty) invocation_point_additional_info -> ('reqty, 'respty) invocation_point_info
+val to_invocation_point_key : (_, _) invocation_point_info -> invocation_point_key
 
 type invocation_point_collection = untyped_invocation_point_info list
 
@@ -200,6 +183,7 @@ module type MakeRegistryS = sig
   val register_get :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?resp_name:string
     -> ?resp_doc:string
     -> ?resp_samples:(('respty * http_status) with_doc list)
@@ -211,6 +195,7 @@ module type MakeRegistryS = sig
   val register_get' :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?resp_samples:(('respty * http_status) with_doc list)
     -> urlpath:string
     -> string (** name of the invocation point *)
@@ -220,6 +205,7 @@ module type MakeRegistryS = sig
   val register_post :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?req_name:string
     -> ?req_doc:string
     -> ?req_samples:('reqty with_doc list)
@@ -236,6 +222,7 @@ module type MakeRegistryS = sig
   val register_post' :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?req_name:string
     -> ?req_doc:string
     -> ?req_samples:('reqty with_doc list)

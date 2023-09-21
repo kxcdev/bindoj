@@ -94,6 +94,7 @@ type ('reqty, 'respty) invocation_point_info = {
   ip_deprecated : bool;
   ip_summary : string option;
   ip_description : string option;
+  ip_tags : string list;
   ip_external_doc : external_doc option;
   ip_usage_samples : ('reqty, 'respty) invp_usage_sample list;
 }
@@ -193,53 +194,17 @@ let make_response_case ?(status=`default) ?name ?doc ?(samples=[]) ~pack ~unpack
     status; response; pack; unpack
   }
 
-type invocation_point_meta = {
-  ipm_urlpath : string;
-  ipm_method : [ `get | `post ];
-}
-
-type ('reqty, 'respty) invocation_point_additional_info = {
-  ipa_name : string;
-  ipa_request_body : 'reqty request_body option;
-  ipa_responses : 'respty response_case list;
-  ipa_deprecated : bool;
-  ipa_summary : string option;
-  ipa_description : string option;
-  ipa_external_doc : external_doc option;
-  ipa_usage_samples : ('reqty, 'respty) invp_usage_sample list;
-}
-
 type untyped_invocation_point_info =
 | Invp : (_, _) invocation_point_info -> untyped_invocation_point_info
 
-type untyped_invocation_point_additional_info =
-  | InvpAdditionalInfo : (_, _) invocation_point_additional_info -> untyped_invocation_point_additional_info
+type invocation_point_key = {
+  ipk_urlpath : string;
+  ipk_method : [ `get | `post ];
+}
 
-let to_invocation_point_info_meta invp =
-  { ipm_urlpath = invp.ip_urlpath;
-    ipm_method = invp.ip_method }
-
-let to_invocation_point_additional_info invp =
-  { ipa_name = invp.ip_name;
-    ipa_request_body = invp.ip_request_body;
-    ipa_responses = invp.ip_responses;
-    ipa_deprecated = invp.ip_deprecated;
-    ipa_summary = invp.ip_summary;
-    ipa_description = invp.ip_description;
-    ipa_external_doc = invp.ip_external_doc;
-    ipa_usage_samples = invp.ip_usage_samples }
-
-let to_invocation_point_info invp_meta invpa =
-  { ip_name = invpa.ipa_name;
-    ip_urlpath = invp_meta.ipm_urlpath;
-    ip_method = invp_meta.ipm_method;
-    ip_request_body = invpa.ipa_request_body;
-    ip_responses = invpa.ipa_responses;
-    ip_deprecated = invpa.ipa_deprecated;
-    ip_summary = invpa.ipa_summary;
-    ip_description = invpa.ipa_description;
-    ip_external_doc = invpa.ipa_external_doc;
-    ip_usage_samples = invpa.ipa_usage_samples }
+let to_invocation_point_key invp =
+  { ipk_urlpath = invp.ip_urlpath;
+    ipk_method = invp.ip_method }
 
 type invocation_point_collection = untyped_invocation_point_info list
 
@@ -302,6 +267,7 @@ module type MakeRegistryS = sig
   val register_get :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?resp_name:string
     -> ?resp_doc:string
     -> ?resp_samples : (('respty * http_status) with_doc list)
@@ -313,6 +279,7 @@ module type MakeRegistryS = sig
   val register_get' :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?resp_samples:(('respty * http_status) with_doc list)
     -> urlpath:string
     -> string (** name of the invocation point *)
@@ -322,6 +289,7 @@ module type MakeRegistryS = sig
   val register_post :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?req_name:string
     -> ?req_doc:string
     -> ?req_samples:('reqty with_doc list)
@@ -338,6 +306,7 @@ module type MakeRegistryS = sig
   val register_post' :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?req_name:string
     -> ?req_doc:string
     -> ?req_samples:('reqty with_doc list)
@@ -396,8 +365,8 @@ module type MakeRegistryS = sig
 end
 
 module MakeRegistry () : MakeRegistryS = struct
-  let invp_meta_registry : invocation_point_meta list ref = ref []
-  let invp_registry : (invocation_point_meta, untyped_invocation_point_additional_info) Hashtbl.t = Hashtbl.create 0
+  let invp_key_registry : invocation_point_key list ref = ref []
+  let invp_registry : (invocation_point_key, untyped_invocation_point_info) Hashtbl.t = Hashtbl.create 0
   let type_registry : type_decl_info StringMap.t ref = ref StringMap.empty
   let tdenv_wrappers : tdenv endo list ref = ref []
 
@@ -416,9 +385,9 @@ module MakeRegistry () : MakeRegistryS = struct
     -> ('reqty, 'respty) invocation_point_info
     -> unit =
     fun typs invp ->
-    let invp_meta = { ipm_urlpath = invp.ip_urlpath; ipm_method = invp.ip_method } in
-    Hashtbl.replace invp_registry invp_meta (InvpAdditionalInfo (to_invocation_point_additional_info invp));
-    refappend invp_meta_registry invp_meta;
+    let invp_key = { ipk_urlpath = invp.ip_urlpath; ipk_method = invp.ip_method } in
+    Hashtbl.replace invp_registry invp_key (Invp invp);
+    refappend invp_key_registry invp_key;
     typs |!> append_to_type_registry
 
   let register_type_decl_info ?name ?doc ttd =
@@ -435,12 +404,13 @@ module MakeRegistry () : MakeRegistryS = struct
   let register_get' :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?resp_samples:(('respty * http_status) with_doc list)
     -> urlpath:string
     -> string (* name *)
     -> 'respty response_case list
     -> (unit, 'respty) invocation_point_info =
-    fun ?summary ?description ?(resp_samples = []) ~urlpath name responses ->
+    fun ?summary ?description ?(tags = []) ?(resp_samples = []) ~urlpath name responses ->
     let invp = {
       ip_name = name;
       ip_urlpath = Utils.PathComps.remake_url_path ~leading_slash:true urlpath;
@@ -450,6 +420,7 @@ module MakeRegistry () : MakeRegistryS = struct
       ip_deprecated = false;
       ip_summary = summary;
       ip_description = description;
+      ip_tags = tags;
       ip_external_doc = None;
       ip_usage_samples = resp_samples |&> InvpUsageSamples.resp_sample
     } in
@@ -460,16 +431,17 @@ module MakeRegistry () : MakeRegistryS = struct
     in
     register decls invp; invp
 
-  let register_get ?summary ?description ?resp_name ?resp_doc ?resp_samples ~urlpath ~resp_type name =
+  let register_get ?summary ?description ?tags ?resp_name ?resp_doc ?resp_samples ~urlpath ~resp_type name =
     let resp_case =
       make_response_case ?name:resp_name ?doc:resp_doc
         ~pack:(fun x -> x) ~unpack:(fun x -> Some x) resp_type
     in
-    register_get' ?summary ?description ?resp_samples ~urlpath name [resp_case]
+    register_get' ?summary ?description ?tags ?resp_samples ~urlpath name [resp_case]
 
   let register_post' :
     ?summary:string
     -> ?description:string
+    -> ?tags:string list
     -> ?req_name:string
     -> ?req_doc:string
     -> ?req_samples:('reqty with_doc list)
@@ -480,7 +452,7 @@ module MakeRegistry () : MakeRegistryS = struct
     -> string (* name *)
     -> 'respty response_case list
     -> ('reqty, 'respty) invocation_point_info =
-    fun ?summary ?description ?req_name ?req_doc
+    fun ?summary ?description ?(tags=[]) ?req_name ?req_doc
       ?(req_samples=[]) ?(resp_samples=[]) ?(usage_samples = [])
       ~urlpath ~req_type name responses ->
     let req_name =
@@ -508,6 +480,7 @@ module MakeRegistry () : MakeRegistryS = struct
       ip_deprecated = false;
       ip_summary = summary;
       ip_description = description;
+      ip_tags = tags;
       ip_external_doc = None;
       ip_usage_samples =
         (req_samples |&> InvpUsageSamples.req_sample)
@@ -522,26 +495,26 @@ module MakeRegistry () : MakeRegistryS = struct
     register (type_decl_info_of_typed_decl req_name req_doc req_type :: decls) invp;
     invp
 
-  let register_post ?summary ?description ?req_name ?req_doc ?req_samples ?resp_name ?resp_doc ?resp_samples ?usage_samples ~urlpath ~req_type ~resp_type name =
+  let register_post ?summary ?description ?tags ?req_name ?req_doc ?req_samples ?resp_name ?resp_doc ?resp_samples ?usage_samples ~urlpath ~req_type ~resp_type name =
     let resp_case =
       make_response_case ?name:resp_name ?doc:resp_doc
         ~pack:(fun x -> x) ~unpack:(fun x -> Some x) resp_type
     in
-    register_post' ?summary ?description ?req_name ?req_doc ?req_samples ?resp_samples ?usage_samples ~urlpath ~req_type name [resp_case]
+    register_post' ?summary ?description ?tags ?req_name ?req_doc ?req_samples ?resp_samples ?usage_samples ~urlpath ~req_type name [resp_case]
 
   let update_usage_samples :
     ('reqty, 'respty) invp_usage_sample list
     -> ('reqty, 'respty) invocation_point_info
     -> unit =
     fun samples invp ->
-    let invpm = to_invocation_point_info_meta invp in
+    let invpm = to_invocation_point_key invp in
     Hashtbl.find_opt invp_registry invpm
     |> function
     | None ->
       invalid_arg' "The given invocation_point_info of name '%s' is not registered." invp.ip_name
-    | Some (InvpAdditionalInfo invpa) ->
-      let invpa = (Obj.magic invpa : ('reqty, 'respty) invocation_point_additional_info) in
-      (InvpAdditionalInfo { invpa with ipa_usage_samples = samples @ invpa.ipa_usage_samples })
+    | Some (Invp invp) ->
+      let invp = (Obj.magic invp : ('reqty, 'respty) invocation_point_info) in
+      (Invp { invp with ip_usage_samples = samples @ invp.ip_usage_samples })
       |> Hashtbl.replace invp_registry invpm
 
   let register_response_samples resp_samples =
@@ -573,10 +546,8 @@ module MakeRegistry () : MakeRegistryS = struct
           type_decl_environment_wrappers = !tdenv_wrappers;
         } in
       let invp_collection : invocation_point_collection =
-        !invp_meta_registry
-        |> List.rev_map (fun invp_meta ->
-          let InvpAdditionalInfo(invp_additional) = Hashtbl.find invp_registry invp_meta in
-          Invp (to_invocation_point_info invp_meta invp_additional))
+        !invp_key_registry
+        |> List.rev_map (Hashtbl.find invp_registry)
       in
       (invp_collection, tdcoll)
   end

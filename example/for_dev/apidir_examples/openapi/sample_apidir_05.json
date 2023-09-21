@@ -5,6 +5,7 @@
     "/option/int-of-string": {
       "summary": "int-of-string",
       "post": {
+        "tags": ["option"],
         "summary": "int-of-string",
         "requestBody": {
           "description": "string",
@@ -46,6 +47,7 @@
     "/option/of-complex": {
       "summary": "option-of-complex",
       "post": {
+        "tags": ["option", "complex"],
         "summary": "option-of-complex",
         "requestBody": {
           "description": "ex_coretype_various_complex_types",

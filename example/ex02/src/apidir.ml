@@ -73,6 +73,7 @@ let get_products =
     ~resp_type:T.product_list
     ~resp_name:"products"
     ~resp_doc:"Products matching the given query in the database"
+    ~tags:[ "get"; "product"; "products" ]
 
 let get_orders =
   R.register_post "get-orders"
@@ -83,6 +84,7 @@ let get_orders =
     ~resp_type:T.order_list
     ~resp_name:"orders"
     ~resp_doc:"Orders matching the given query in the database"
+    ~tags:[ "get"; "order"; "orders" ]
 
 let get_product =
   R.register_post' "get-product"
@@ -90,6 +92,7 @@ let get_product =
   ~req_type:T.product_id
   ~req_name:"product_id"
   ~req_doc:"Product ID"
+  ~tags:[ "get"; "product" ]
   [ make_response_case ~status:(`status_code 200)
       ~name:"product"
       ~doc:"Product of the ID"
@@ -105,6 +108,7 @@ let get_order =
   ~req_type:T.order_id
   ~req_name:"order_id"
   ~req_doc:"Rrder ID"
+  ~tags:[ "get"; "order" ]
   [ make_response_case ~status:(`status_code 200)
       ~name:"order"
       ~doc:"order of the ID"
@@ -123,6 +127,7 @@ let register_product =
     ~resp_type:T.product_id
     ~resp_name:"product_id"
     ~resp_doc:"Product ID added to the database"
+    ~tags:[ "register"; "product" ]
 
 let register_order =
   R.register_post' "register-order"
@@ -130,6 +135,7 @@ let register_order =
     ~req_type:T.order_details
     ~req_name:"order_details"
     ~req_doc:"order details to be registered to the database"
+    ~tags:[ "register"; "order" ]
     [ make_response_case ~status:(`status_code 200)
         ~name:"order_id"
         ~doc:"ID of the order"
@@ -151,6 +157,7 @@ let update_product_details =
     ~req_type:T.product_details_with_id
     ~req_name:"product_details_with_id"
     ~req_doc:"product details to be updated"
+    ~tags:[ "update"; "product" ]
     [ make_response_case ~status:(`status_code 200)
         ~name:"order_id"
         ~doc:"ID of the order"
@@ -166,6 +173,7 @@ let update_order_status =
     ~req_type:T.order_status_with_id
     ~req_name:"order_status"
     ~req_doc:"order status to be updated"
+    ~tags:[ "update"; "order" ]
     [ make_response_case ~status:(`status_code 200)
         ~name:"order_id"
         ~doc:"ID of the order"

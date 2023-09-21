@@ -50,12 +50,14 @@ let get_x =
     ~urlpath:"/xy-opt/x"
     ~req_type:T.xy_opt
     ~resp_type:T.int_opt
+    ~tags:[ "x" ]
 
 let get_y =
   R.register_post "get-y"
     ~urlpath:"/xy-opt/y"
     ~req_type:T.xy_opt
     ~resp_type:T.int_opt
+    ~tags:[ "y" ]
 
 let () = begin
   get_x

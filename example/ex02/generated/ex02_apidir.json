@@ -5,6 +5,7 @@
     "/products/get": {
       "summary": "get-products",
       "post": {
+        "tags": ["get", "product", "products"],
         "summary": "get-products",
         "requestBody": {
           "description": "query to filter products",
@@ -117,6 +118,7 @@
     "/orders/get": {
       "summary": "get-orders",
       "post": {
+        "tags": ["get", "order", "orders"],
         "summary": "get-orders",
         "requestBody": {
           "description": "query to filter orders",
@@ -303,6 +305,7 @@
     "/product/get": {
       "summary": "get-product",
       "post": {
+        "tags": ["get", "product"],
         "summary": "get-product",
         "requestBody": {
           "description": "Product ID",
@@ -371,6 +374,7 @@
     "/order/get": {
       "summary": "get-order",
       "post": {
+        "tags": ["get", "order"],
         "summary": "get-order",
         "requestBody": {
           "description": "Rrder ID",
@@ -457,6 +461,7 @@
     "/product/register": {
       "summary": "register-product",
       "post": {
+        "tags": ["register", "product"],
         "summary": "register-product",
         "requestBody": {
           "description": "Product details to be registered to the database",
@@ -494,6 +499,7 @@
     "/order/register": {
       "summary": "register-order",
       "post": {
+        "tags": ["register", "order"],
         "summary": "register-order",
         "requestBody": {
           "description": "order details to be registered to the database",
@@ -584,6 +590,7 @@
     "/product/details/update": {
       "summary": "update-product-details",
       "post": {
+        "tags": ["update", "product"],
         "summary": "update-product-details",
         "requestBody": {
           "description": "product details to be updated",
@@ -650,6 +657,7 @@
     "/order/status/update": {
       "summary": "update-order-status",
       "post": {
+        "tags": ["update", "order"],
         "summary": "update-order-status",
         "requestBody": {
           "description": "order status to be updated",
