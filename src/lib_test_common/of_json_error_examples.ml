@@ -252,10 +252,10 @@ module Sample_ex_variant = struct
       ("given discriminator field value 'FooBar' is not one of [ 'anonymous', 'with-id', 'student', 'teacher' ]", [ `f "kind" ]);
 
       "with-id: missing field", ctor0 "with-id",
-      (field_not_found "arg", []);
+      (field_not_found "value", []);
 
-      "with-id: not integer", ctor_record "with-id" [ ("arg", `num 1.2) ],
-      (not_integer 1.2, [ `f "arg" ]);
+      "with-id: not integer", ctor_record "with-id" [ ("value", `num 1.2) ],
+      (not_integer 1.2, [ `f "value" ]);
 
       "student: inline record", ctor0 "student",
       (field_not_found "studentId", []);
@@ -282,34 +282,34 @@ module Sample_ex_variant = struct
         (discriminator_not_string "null", [ `f "kind" ]);
 
         "missing discriminator (nested 1)", `obj [ ] |> intCons 1 ,
-        (discriminator_not_found "kind", [ `i 1; `f "arg" ]);
+        (discriminator_not_found "kind", [ `i 1; `f "value" ]);
 
         "missing discriminator (nested 2)", `obj [ ] |> intCons 1 |> intCons 2,
-        (discriminator_not_found "kind", [ `i 1; `f "arg"; `i 1; `f "arg" ]);
+        (discriminator_not_found "kind", [ `i 1; `f "value"; `i 1; `f "value" ]);
 
         "missing field", ctor0 "intcons",
-        (field_not_found "arg", []);
+        (field_not_found "value", []);
 
         "missing field (nested 1)", ctor0 "intcons" |> intCons 1 ,
-        (field_not_found "arg", [ `i 1; `f "arg" ]);
+        (field_not_found "value", [ `i 1; `f "value" ]);
 
         "missing field (nested 2)", ctor0 "intcons" |> intCons 1 |> intCons 2,
-        (field_not_found "arg", [ `i 1; `f "arg"; `i 1; `f "arg" ]);
+        (field_not_found "value", [ `i 1; `f "value"; `i 1; `f "value" ]);
 
         "type mismatch", intCons_null intNil,
-        (type_mismatch "int" "null" , [ `i 0; `f "arg" ]);
+        (type_mismatch "int" "null" , [ `i 0; `f "value" ]);
 
         "type mismatch (nested 1)", intCons_null intNil |> intCons 1 ,
-        (type_mismatch "int" "null", [ `i 0; `f "arg"; `i 1; `f "arg" ]);
+        (type_mismatch "int" "null", [ `i 0; `f "value"; `i 1; `f "value" ]);
 
         "type mismatch (nested 2)", intCons_null intNil |> intCons 1 |> intCons 2,
-        (type_mismatch "int" "null", [ `i 0; `f "arg"; `i 1; `f "arg"; `i 1; `f "arg" ]);
+        (type_mismatch "int" "null", [ `i 0; `f "value"; `i 1; `f "value"; `i 1; `f "value" ]);
 
         "arg is not array", `obj [
           "kind", `str "intcons";
-          "arg", `str "invalid"
+          "value", `str "invalid"
         ],
-        ("an array is expected for a tuple value, but the given is of type 'string'", [ `f "arg" ]);
+        ("an array is expected for a tuple value, but the given is of type 'string'", [ `f "value" ]);
       ]
   end
 
@@ -318,29 +318,34 @@ module Sample_ex_variant = struct
     let expected_json_shape_explanation =
       Typedesc_examples.Ex_variant.Customized_union.expected_json_shape_explanation
 
-    let samples = [
+    let samples =
+      ( [ "case-tuple-like-arg'", "arg";
+          "case-tuple-like-exactly'", "Argument";
+          "case-tuple-like-kind-name'", "case-tuple-like-kind-name'";
+          "case-tuple-like-kind-name-no-mangling", "Case_tuple_like_kind_name_no_mangling";
+          "case-tuple-like-kind-name-no-mangling-with-ctor-name", "case-tuple-like-kind-name-no-mangling-with-ctor-name";
+        ] |&>> (fun (discriminator_value, arg_fname) ->
+          [ sprintf "%s: missing field" discriminator_value, ctor1 ~discriminator:"tag" discriminator_value (`num 42.),
+            (field_not_found arg_fname, []);
+            sprintf "%s: not integer" discriminator_value, ctor1 ~discriminator:"tag" discriminator_value (`num 43.21),
+            (not_integer 43.21, [ `f arg_fname ]); ])
+      ) @ [
       "missing discriminator", `obj [ ],
       (discriminator_not_found "tag", []);
 
       "discriminator not string", `obj [ ("tag", `null)],
       (discriminator_not_string "null", [ `f "tag" ]);
 
-      "missing field", ctor0 ~discriminator:"tag" "case1'",
-      (field_not_found "value", []);
+      "Case_inline_record: missing field", ctor_record ~discriminator:"tag" "case-inline-record'" [ "x", `num 4.; "y", `num 2.1 ],
+      (field_not_found "x", []);
 
-      "Case1: not integer", ctor_record ~discriminator:"tag" "case1'" [ ("value", `num 1.2) ],
-      (not_integer 1.2, [ `f "value" ]);
-
-      "missing field", ctor0 ~discriminator:"tag" "case2'",
-      (field_not_found "x'", []);
-
-      "missing field", ctor_record ~discriminator:"tag" "case2'" [ "x'", `num 4. ],
+      "Case_inline_record: missing field", ctor_record ~discriminator:"tag" "case-inline-record'" [ "x'", `num 4. ],
       (field_not_found "y'", [ ]);
 
-      "Case2: not integer", ctor_record ~discriminator:"tag" "case2'" [ "x'", `str "fooBar"; "y'", `num 2. ],
+      "Case_inline_record: not integer", ctor_record ~discriminator:"tag" "case-inline-record'" [ "x'", `str "fooBar"; "y'", `num 2. ],
       (type_mismatch "int" "string", [ `f "x'" ]);
 
-      "Case2: not integer", ctor_record ~discriminator:"tag" "case2'" [ "x'", `num 4.; "y'", `num 2.1 ],
+      "Case_inline_record: not integer", ctor_record ~discriminator:"tag" "case-inline-record'" [ "x'", `num 4.; "y'", `num 2.1 ],
       (not_integer 2.1, [ `f "y'" ]);
     ]
   end
@@ -353,7 +358,7 @@ module Sample_ex_variant = struct
 
     let samples = [
       "foo2: incorrect list length", ctorN "foo2" [ `num 1. ],
-      (incorrect_list_length 2 1, [ `f "arg" ])
+      (incorrect_list_length 2 1, [ `f "value" ])
     ]
   end
 
@@ -406,10 +411,10 @@ module Sample_ex_mangling = struct
       ("given discriminator field value 'FooBar' is not one of [ 'Anonymous', 'With_id', 'Student', 'Teacher' ]", [ `f "kind" ]);
 
       "With_id: missing field", ctor0 "With_id",
-      (field_not_found "arg", []);
+      (field_not_found "value", []);
 
-      "With_id: not integer", ctor_record "With_id" [ ("arg", `num 1.2) ],
-      (not_integer 1.2, [ `f "arg" ]);
+      "With_id: not integer", ctor_record "With_id" [ ("value", `num 1.2) ],
+      (not_integer 1.2, [ `f "value" ]);
 
       "Student: inline record", ctor0 "Student",
       (field_not_found "student_id", []);
@@ -437,10 +442,10 @@ module Sample_ex_mangling = struct
       ("given discriminator field value 'FooBar' is not one of [ 'Anonymous', 'With_id', 'student', 'Teacher' ]", [ `f "kind" ]);
 
       "With_id: missing field", ctor0 "With_id",
-      (field_not_found "arg", []);
+      (field_not_found "value", []);
 
-      "With_id: not integer", ctor_record "With_id" [ ("arg", `num 1.2) ],
-      (not_integer 1.2, [ `f "arg" ]);
+      "With_id: not integer", ctor_record "With_id" [ ("value", `num 1.2) ],
+      (not_integer 1.2, [ `f "value" ]);
 
       "student: inline record", ctor0 "student",
       (field_not_found "student_id", []);
@@ -504,17 +509,17 @@ module Sample_ex_optional = struct
       "invalid constructor", ctor0 ~discriminator:"tag" "Tuple_like",
       ("given discriminator field value 'Tuple_like' is not one of [ 'tuple-like', 'tuple-like-alias', 'tuple-like-obj', 'tuple-like-spreading', 'inline-record', 'inline-record-spreading', 'reused-inline-record' ]", [ `f "tag" ]);
 
-      "type mismatch", `obj [ ("tag", `str "tuple-like"); ("value", `obj []); ],
-      (type_mismatch "int" "object", [ `f "value" ]);
+      "type mismatch", `obj [ ("tag", `str "tuple-like"); ("arg", `obj []); ],
+      (type_mismatch "int" "object", [ `f "arg" ]);
 
-      "not integer", `obj [ ("tag", `str "tuple-like"); ("value", `num 12.3); ],
-      (not_integer 12.3, [ `f "value" ]);
+      "not integer", `obj [ ("tag", `str "tuple-like"); ("arg", `num 12.3); ],
+      (not_integer 12.3, [ `f "arg" ]);
 
-      "type mismatch", `obj [ ("tag", `str "tuple-like-alias"); ("value", `arr [ `null; `num 1. ]); ],
-      (type_mismatch "int" "array", [ `f "value" ]);
+      "type mismatch", `obj [ ("tag", `str "tuple-like-alias"); ("arg", `arr [ `null; `num 1. ]); ],
+      (type_mismatch "int" "array", [ `f "arg" ]);
 
-      "not integer", `obj [ ("tag", `str "tuple-like-alias"); ("value", `num 12.3); ],
-      (not_integer 12.3, [ `f "value" ]);
+      "not integer", `obj [ ("tag", `str "tuple-like-alias"); ("arg", `num 12.3); ],
+      (not_integer 12.3, [ `f "arg" ]);
 
       "type mismatch", `obj [ ("tag", `str "tuple-like-spreading"); ("xOpt", `bool false) ],
       (type_mismatch "int" "bool", [ `f "xOpt" ]);
@@ -601,7 +606,7 @@ module Sample_ex_nested = struct
         "y", `num 2.;
         "person", `obj [];
         "kind", `str "With_id";
-        "arg", `num 123.
+        "value", `num 123.
       ],
       (discriminator_not_found "kind", [ `f "person" ]);
 
@@ -612,9 +617,9 @@ module Sample_ex_nested = struct
         "y", `num 2.;
         "person", ctor0 "Anonymous";
         "kind", `str "With_id";
-        "arg", `num 123.5
+        "value", `num 123.5
       ],
-      (not_integer 123.5, [ `f "arg" ]);
+      (not_integer 123.5, [ `f "value" ]);
     ]
   end
 
@@ -624,7 +629,7 @@ module Sample_ex_nested = struct
       Typedesc_examples.Ex_nested.Variant.expected_json_shape_explanation
     let samples =
       let discriminator = "tag" in
-      let arg = "value" in
+      let arg = "arg" in
       [
         "null", `null, (not_obj "variant" "null", []);
 
@@ -682,7 +687,7 @@ module Sample_ex_nested_multiply = struct
           "y", `num 2.;
           "person", ctor0 "Anonymous";
           "kind", `str "With_id";
-          "arg", `num 123.
+          "value", `num 123.
         ]
       ],
       (type_mismatch "float" "string", [ `f "x"; `f "point2"; `f "nestedRecord" ]);
@@ -698,9 +703,9 @@ module Sample_ex_nested_multiply = struct
           "kind", `str "With_id";
         ]
       ],
-      (field_not_found "arg", [ `f "nestedRecord" ]);
+      (field_not_found "value", [ `f "nestedRecord" ]);
 
-      "field not found (.nestedRecord.arg)",
+      "field not found (.nestedRecord.value)",
       `obj [
         "nestedRecord", `obj [
           "unit", `num 1.;
@@ -709,7 +714,7 @@ module Sample_ex_nested_multiply = struct
           "y", `num 2.;
           "person", ctor0 "Anonymous";
           "kind", `str "With_id";
-          "arg", `num 123.
+          "value", `num 123.
         ];
         "unit", `num 1.;
           "point2", `obj [ "x", `num 1.; "y", `num 2. ];
@@ -717,7 +722,7 @@ module Sample_ex_nested_multiply = struct
           "y", `num 2.;
           "person", ctor0 "With_id";
       ],
-      (field_not_found "arg", [ `f "person" ]);
+      (field_not_found "value", [ `f "person" ]);
     ]
   end
 
@@ -743,7 +748,7 @@ module Sample_ex_nested_multiply = struct
       ],
       (type_mismatch "float" "string", [ `f "x"; `f "point2"; `f "nestedRecord" ]);
 
-      "missing discriminator (.nestedRecord.arg)",
+      "missing discriminator (.nestedRecord.value)",
       `obj [
         "label", `str "nested-record";
         "nestedRecord", `obj [
@@ -755,7 +760,7 @@ module Sample_ex_nested_multiply = struct
           "kind", `str "With_id";
         ]
       ],
-      (field_not_found "arg", [ `f "nestedRecord" ]);
+      (field_not_found "value", [ `f "nestedRecord" ]);
 
       "missing discriminator (.nestedVariant.tag)",
       `obj [
@@ -775,7 +780,7 @@ module Sample_ex_nested_multiply = struct
       ],
       (type_mismatch "string" "number", [ `f "name"; `f "nestedVariant" ]);
 
-      "not array (.arg.[1].arg)",
+      "not array (.value.[1].value)",
       `obj [
         "label", `str "nested-variant";
         "nestedVariant", `obj [
@@ -785,11 +790,11 @@ module Sample_ex_nested_multiply = struct
         ];
         "tag", `str "int-list2";
         "kind", `str "intcons";
-        "arg", `arr [
-          `num 1.; `obj [ "kind", `str "intcons"; "arg", `str "invalid" ]
+        "value", `arr [
+          `num 1.; `obj [ "kind", `str "intcons"; "value", `str "invalid" ]
         ]
       ],
-      ("an array is expected for a tuple value, but the given is of type 'string'", [ `f "arg"; `i 1; `f "arg" ]);
+      ("an array is expected for a tuple value, but the given is of type 'string'", [ `f "value"; `i 1; `f "value" ]);
     ]
   end
 

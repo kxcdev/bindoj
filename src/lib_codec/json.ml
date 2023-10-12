@@ -88,7 +88,7 @@ let explain_encoded_json_shape'
   let rec process_td ~base_ident_codec ?base_mangling_style td: shape =
     let (json_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type ?inherited:base_mangling_style td in
     named (json_type_name, process_kind ~base_ident_codec base_mangling_style td)
-  and process_kind ~base_ident_codec base_mangling_style ({ td_kind; _} as td): shape =
+  and process_kind ~base_ident_codec base_mangling_style ({ td_kind; td_configs; _} as td): shape =
     match td_kind with
     | Alias_decl ct -> process_coretype' ~base_ident_codec base_mangling_style ct
     | Record_decl fields ->
@@ -96,7 +96,7 @@ let explain_encoded_json_shape'
       |> process_object
     | Variant_decl branches ->
       let discriminator_fname = Json_config.get_mangled_name_of_discriminator_field ~inherited:base_mangling_style td in
-      branches |&>> (process_constructor ~base_ident_codec base_mangling_style discriminator_fname)
+      branches |&>> (process_constructor ~base_ident_codec base_mangling_style discriminator_fname td_configs)
       |> process_object
   and process_non_spread_variant_argument ~base_ident_codec base_mangling_style va: shape =
     if Json_config.get_nested_field_style va.va_configs = `spreading then
@@ -128,7 +128,7 @@ let explain_encoded_json_shape'
         Json_config.(get_variant_discriminator td.td_configs
         |> mangled `field_name base_mangling_style)
       in
-      ctors |&>> (process_constructor ~base_ident_codec:(inherit_codec base_ident_codec codec) base_mangling_style discriminator_fname)
+      ctors |&>> (process_constructor ~base_ident_codec:(inherit_codec base_ident_codec codec) base_mangling_style discriminator_fname td.td_configs)
     end
   and process_fields ~base_ident_codec base_mangling_style fields: field_shape list list =
     fields |&> (fun ({ rf_type; rf_configs; _ } as field) ->
@@ -170,14 +170,14 @@ let explain_encoded_json_shape'
         | `variant_decl (td, ctors, codec) ->
           let base_mangling_style = Json_config.(get_mangling_style_opt td.td_configs |? default_mangling_style) in
           let discriminator_fname = Json_config.get_mangled_name_of_discriminator_field ~inherited:base_mangling_style td in
-          ctors |&>> (process_constructor ~base_ident_codec:(inherit_codec base_ident_codec codec) base_mangling_style discriminator_fname)
+          ctors |&>> (process_constructor ~base_ident_codec:(inherit_codec base_ident_codec codec) base_mangling_style discriminator_fname td.td_configs)
       end
     )
     |> List.fold_left (fun result ->
       List.fmap (fun fields -> result |&> List.rev_append fields)
     ) [ [] ]
     |&> List.rev
-  and process_constructor ~base_ident_codec base_mangling_style discriminator_fname ({ vc_name; vc_param; vc_configs; _ } as ctor) =
+  and process_constructor ~base_ident_codec base_mangling_style discriminator_fname td_configs ({ vc_name; vc_param; vc_configs; _ } as ctor) =
     let (discriminator_value, base_mangling_style) =
       Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
     in
@@ -187,7 +187,7 @@ let explain_encoded_json_shape'
     | `tuple_like [ va ] when Json_config.get_nested_field_style va.va_configs = `spreading ->
       process_spread_variant_argument ~base_ident_codec va
     | `tuple_like vas ->
-      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style ctor in
+      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style td_configs ctor in
       let tuple_style = Json_config.get_tuple_style vc_configs in
       begin match tuple_style, vas with
       | `obj `default, vas ->
@@ -482,7 +482,7 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
             Json_config.get_mangling_style_opt ctor.vc_configs |? base_mangling_style
           in
           let ref_ctor = ref_ctors |> StringMap.find_opt ctor.vc_name |> Option.v' (fun () -> fail @@ sprintf "refl of constructor '%s' not found" ctor.vc_name) in
-          let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style ctor in
+          let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style td_configs ctor in
           let mk_result label mk (path : jvpath) x =
             mk x |> opt_to_result (sprintf "panic - failed to make %s for variant_constructor '%s'" label discriminator_value, path)
           in
@@ -671,7 +671,7 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
     let discriminator_fname = Json_config.get_mangled_name_of_discriminator_field ~inherited:base_mangling_style td in
     let (discriminator_value, base_mangling_style) = Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor in
     let discriminator_field = [ discriminator_fname, `str discriminator_value ] in
-    let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style ctor in
+    let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style td_configs ctor in
     match Json_config.get_variant_style ctor.vc_configs with
     | `flatten ->
       begin match ctor.vc_param, expr with

@@ -5,8 +5,8 @@ export type ExOptionalVariant =
   | { tag: "inline-record"; intOpt?: number; objtuple: { _0?: number; _1?: number }; xOpt?: number; yOpt?: number }
   | ({ tag: "inline-record-spreading"; intOpt?: number } & ExOptionalXyOpt)
   | ({ tag: "reused-inline-record" } & ExOptionalXyOpt)
-  | { tag: "tuple-like"; value?: number }
-  | { tag: "tuple-like-alias"; value?: number }
+  | { tag: "tuple-like"; arg?: number }
+  | { tag: "tuple-like-alias"; arg?: number }
   | { tag: "tuple-like-obj"; _0?: number; _1?: number }
   | ({ tag: "tuple-like-spreading" } & ExOptionalXyOpt);
 export function analyzeExOptionalVariant<__bindoj_ret>(__bindoj_fns: {
@@ -21,8 +21,8 @@ export function analyzeExOptionalVariant<__bindoj_ret>(__bindoj_fns: {
     __bindoj_v: { tag: "inline-record-spreading"; intOpt?: number } & ExOptionalXyOpt
   ) => __bindoj_ret;
   "reused-inline-record": (__bindoj_v: { tag: "reused-inline-record" } & ExOptionalXyOpt) => __bindoj_ret;
-  "tuple-like": (__bindoj_v: { tag: "tuple-like"; value?: number }) => __bindoj_ret;
-  "tuple-like-alias": (__bindoj_v: { tag: "tuple-like-alias"; value?: number }) => __bindoj_ret;
+  "tuple-like": (__bindoj_v: { tag: "tuple-like"; arg?: number }) => __bindoj_ret;
+  "tuple-like-alias": (__bindoj_v: { tag: "tuple-like-alias"; arg?: number }) => __bindoj_ret;
   "tuple-like-obj": (__bindoj_v: { tag: "tuple-like-obj"; _0?: number; _1?: number }) => __bindoj_ret;
   "tuple-like-spreading": (__bindoj_v: { tag: "tuple-like-spreading" } & ExOptionalXyOpt) => __bindoj_ret;
 }): (__bindoj_x: ExOptionalVariant) => __bindoj_ret {

@@ -272,7 +272,7 @@ let ex_mangling_person_no_mangling_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "With_id"));
-                   `mandatory_field ("arg", `integral);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
@@ -296,7 +296,7 @@ let rec ex_mangling_person_no_mangling_to_json =
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    function
    | Anonymous -> `obj [ ("kind", `str "Anonymous") ]
-   | With_id x0 -> `obj [ ("kind", `str "With_id"); ("arg", int_to_json x0) ]
+   | With_id x0 -> `obj [ ("kind", `str "With_id"); ("value", int_to_json x0) ]
    | Student { student_id = x0; name = x1 } ->
        `obj
          [
@@ -346,12 +346,12 @@ and ex_mangling_person_no_mangling_of_json' =
           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
           | `obj (("kind", `str "Anonymous") :: _) -> Ok Anonymous
           | `obj (("kind", `str "With_id") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
                   Ok (With_id x0)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str "Student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "student_id" param
@@ -550,7 +550,7 @@ let ex_mangling_person_inherited_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "With_id"));
-                   `mandatory_field ("arg", `integral);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
@@ -576,7 +576,7 @@ let rec ex_mangling_person_inherited_to_json =
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    function
    | Anonymous -> `obj [ ("kind", `str "Anonymous") ]
-   | With_id x0 -> `obj [ ("kind", `str "With_id"); ("arg", int_to_json x0) ]
+   | With_id x0 -> `obj [ ("kind", `str "With_id"); ("value", int_to_json x0) ]
    | Student { student_id = x0; name = x1; case_value = x2 } ->
        `obj
          [
@@ -630,12 +630,12 @@ and ex_mangling_person_inherited_of_json' =
           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
           | `obj (("kind", `str "Anonymous") :: _) -> Ok Anonymous
           | `obj (("kind", `str "With_id") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
                   Ok (With_id x0)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str "student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "student_id" param

@@ -106,7 +106,7 @@ let ex_variant_person_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "with-id"));
-                   `mandatory_field ("arg", `integral);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
@@ -130,7 +130,7 @@ let rec ex_variant_person_to_json =
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    function
    | Anonymous -> `obj [ ("kind", `str "anonymous") ]
-   | With_id x0 -> `obj [ ("kind", `str "with-id"); ("arg", int_to_json x0) ]
+   | With_id x0 -> `obj [ ("kind", `str "with-id"); ("value", int_to_json x0) ]
    | Student { student_id = x0; name = x1 } ->
        `obj
          [
@@ -180,12 +180,12 @@ and ex_variant_person_of_json' =
           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
           | `obj (("kind", `str "anonymous") :: _) -> Ok Anonymous
           | `obj (("kind", `str "with-id") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
                   Ok (With_id x0)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str "student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "studentId" param
@@ -369,7 +369,7 @@ let ex_variant_person_reused_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "with-id"));
-                   `mandatory_field ("arg", `integral);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
@@ -393,7 +393,7 @@ let rec ex_variant_person_reused_to_json =
    and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    function
    | Anonymous -> `obj [ ("kind", `str "anonymous") ]
-   | With_id x0 -> `obj [ ("kind", `str "with-id"); ("arg", int_to_json x0) ]
+   | With_id x0 -> `obj [ ("kind", `str "with-id"); ("value", int_to_json x0) ]
    | Student { student_id = x0; name = x1 } ->
        `obj
          [
@@ -443,12 +443,12 @@ and ex_variant_person_reused_of_json' =
           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
           | `obj (("kind", `str "anonymous") :: _) -> Ok Anonymous
           | `obj (("kind", `str "with-id") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
                   Ok (With_id x0)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str "student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "studentId" param
@@ -579,7 +579,7 @@ let ex_variant_int_list_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "intcons"));
-                   `mandatory_field ("arg", `tuple_of [ `integral; `self ]);
+                   `mandatory_field ("value", `tuple_of [ `integral; `self ]);
                  ];
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
@@ -593,7 +593,7 @@ let rec ex_variant_int_list_to_json =
        `obj
          [
            ("kind", `str "intcons");
-           ("arg", `arr [ int_to_json x0; ex_variant_int_list_to_json x1 ]);
+           ("value", `arr [ int_to_json x0; ex_variant_int_list_to_json x1 ]);
          ]
     : ex_variant_int_list -> Kxclib.Json.jv)
 [@@warning "-39"]
@@ -620,11 +620,11 @@ and ex_variant_int_list_of_json' =
           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
           | `obj (("kind", `str "intnil") :: _) -> Ok IntNil
           | `obj (("kind", `str "intcons") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some (`arr [ x0; x1 ]) ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`i 0 :: `f "arg" :: path) x0 >>= fun x0 ->
-                  of_json_impl (`i 1 :: `f "arg" :: path) x1 >>= fun x1 ->
+                  int_of_json' (`i 0 :: `f "value" :: path) x0 >>= fun x0 ->
+                  of_json_impl (`i 1 :: `f "value" :: path) x1 >>= fun x1 ->
                   Ok (IntCons (x0, x1))
               | Some (`arr xs) ->
                   Error
@@ -632,7 +632,7 @@ and ex_variant_int_list_of_json' =
                         "expecting an array of length 2, but the given has a \
                          length of %d"
                         (List.length xs),
-                      `f "arg" :: path )
+                      `f "value" :: path )
               | Some jv ->
                   Error
                     ( Printf.sprintf
@@ -640,8 +640,8 @@ and ex_variant_int_list_of_json' =
                          is of type '%s'"
                         (let open Kxclib.Json in
                          string_of_jv_kind (classify_jv jv)),
-                      `f "arg" :: path )
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+                      `f "value" :: path )
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str discriminator_value) :: _) ->
               Error
                 ( Printf.sprintf
@@ -908,12 +908,12 @@ let ex_variant_foo_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "foo1"));
-                   `mandatory_field ("arg", `integral);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
                    `mandatory_field ("kind", `exactly (`str "foo2"));
-                   `mandatory_field ("arg", `tuple_of [ `integral; `integral ]);
+                   `mandatory_field ("value", `tuple_of [ `integral; `integral ]);
                  ];
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
@@ -923,12 +923,12 @@ let rec ex_variant_foo_to_json =
   (let int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    function
    | `Foo0 -> `obj [ ("kind", `str "foo0") ]
-   | `Foo1 x0 -> `obj [ ("kind", `str "foo1"); ("arg", int_to_json x0) ]
+   | `Foo1 x0 -> `obj [ ("kind", `str "foo1"); ("value", int_to_json x0) ]
    | `Foo2 (x0, x1) ->
        `obj
          [
            ("kind", `str "foo2");
-           ("arg", `arr [ int_to_json x0; int_to_json x1 ]);
+           ("value", `arr [ int_to_json x0; int_to_json x1 ]);
          ]
     : ex_variant_foo -> Kxclib.Json.jv)
 [@@warning "-39"]
@@ -955,18 +955,18 @@ and ex_variant_foo_of_json' =
           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
           | `obj (("kind", `str "foo0") :: _) -> Ok `Foo0
           | `obj (("kind", `str "foo1") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
                   Ok (`Foo1 x0)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str "foo2") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some (`arr [ x0; x1 ]) ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`i 0 :: `f "arg" :: path) x0 >>= fun x0 ->
-                  int_of_json' (`i 1 :: `f "arg" :: path) x1 >>= fun x1 ->
+                  int_of_json' (`i 0 :: `f "value" :: path) x0 >>= fun x0 ->
+                  int_of_json' (`i 1 :: `f "value" :: path) x1 >>= fun x1 ->
                   Ok (`Foo2 (x0, x1))
               | Some (`arr xs) ->
                   Error
@@ -974,7 +974,7 @@ and ex_variant_foo_of_json' =
                         "expecting an array of length 2, but the given has a \
                          length of %d"
                         (List.length xs),
-                      `f "arg" :: path )
+                      `f "value" :: path )
               | Some jv ->
                   Error
                     ( Printf.sprintf
@@ -982,8 +982,8 @@ and ex_variant_foo_of_json' =
                          is of type '%s'"
                         (let open Kxclib.Json in
                          string_of_jv_kind (classify_jv jv)),
-                      `f "arg" :: path )
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+                      `f "value" :: path )
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str discriminator_value) :: _) ->
               Error
                 ( Printf.sprintf
@@ -1030,54 +1030,157 @@ let ex_variant_foo_typed_decl =
     ex_variant_foo_reflect
 
 type ex_variant_customized_union =
-  | Case1 of int
-  | Case2 of { x : int; y : int }
+  | Case_tuple_like_arg of int
+  | Case_tuple_like_exactly of int
+  | Case_tuple_like_kind_name of int
+  | Case_tuple_like_kind_name_no_mangling of int
+  | Case_tuple_like_kind_name_no_mangling_with_ctor_name of int
+  | Case_inline_record of { x : int; y : int }
 
 let rec (ex_variant_customized_union_reflect : _ Bindoj_runtime.Refl.t) =
   lazy
     (let open Bindoj_runtime in
      let open Kxclib.Option.Ops_monad in
-     let ctor_Case1 =
+     let ctor_Case_tuple_like_arg =
        Refl.TupleLike
          {
            get =
              (function
-             | Case1 x -> [ Expr.of_int x ]
-             | _ -> invalid_arg "Case1 is expected");
+             | Case_tuple_like_arg x -> [ Expr.of_int x ]
+             | _ -> invalid_arg "Case_tuple_like_arg is expected");
            mk =
              (function
-             | x :: [] -> Expr.to_int x |> Option.map (fun x -> Case1 x)
+             | x :: [] ->
+                 Expr.to_int x |> Option.map (fun x -> Case_tuple_like_arg x)
              | _ -> None);
          }
      in
-     let ctor_Case2 =
+     let ctor_Case_tuple_like_exactly =
+       Refl.TupleLike
+         {
+           get =
+             (function
+             | Case_tuple_like_exactly x -> [ Expr.of_int x ]
+             | _ -> invalid_arg "Case_tuple_like_exactly is expected");
+           mk =
+             (function
+             | x :: [] ->
+                 Expr.to_int x
+                 |> Option.map (fun x -> Case_tuple_like_exactly x)
+             | _ -> None);
+         }
+     in
+     let ctor_Case_tuple_like_kind_name =
+       Refl.TupleLike
+         {
+           get =
+             (function
+             | Case_tuple_like_kind_name x -> [ Expr.of_int x ]
+             | _ -> invalid_arg "Case_tuple_like_kind_name is expected");
+           mk =
+             (function
+             | x :: [] ->
+                 Expr.to_int x
+                 |> Option.map (fun x -> Case_tuple_like_kind_name x)
+             | _ -> None);
+         }
+     in
+     let ctor_Case_tuple_like_kind_name_no_mangling =
+       Refl.TupleLike
+         {
+           get =
+             (function
+             | Case_tuple_like_kind_name_no_mangling x -> [ Expr.of_int x ]
+             | _ ->
+                 invalid_arg "Case_tuple_like_kind_name_no_mangling is expected");
+           mk =
+             (function
+             | x :: [] ->
+                 Expr.to_int x
+                 |> Option.map (fun x ->
+                        Case_tuple_like_kind_name_no_mangling x)
+             | _ -> None);
+         }
+     in
+     let ctor_Case_tuple_like_kind_name_no_mangling_with_ctor_name =
+       Refl.TupleLike
+         {
+           get =
+             (function
+             | Case_tuple_like_kind_name_no_mangling_with_ctor_name x ->
+                 [ Expr.of_int x ]
+             | _ ->
+                 invalid_arg
+                   "Case_tuple_like_kind_name_no_mangling_with_ctor_name is \
+                    expected");
+           mk =
+             (function
+             | x :: [] ->
+                 Expr.to_int x
+                 |> Option.map (fun x ->
+                        Case_tuple_like_kind_name_no_mangling_with_ctor_name x)
+             | _ -> None);
+         }
+     in
+     let ctor_Case_inline_record =
        Refl.InlineRecord
          {
            get =
              (function
-             | Case2 { x; y } ->
+             | Case_inline_record { x; y } ->
                  StringMap.of_list
                    [ ("x", Expr.of_int x); ("y", Expr.of_int y) ]
-             | _ -> invalid_arg "Case2 is expected");
+             | _ -> invalid_arg "Case_inline_record is expected");
            mk =
              (fun xs ->
                xs |> StringMap.find_opt "x" >>= Expr.to_int >>= fun x ->
                xs |> StringMap.find_opt "y" >>= Expr.to_int >>= fun y ->
-               Some (Case2 { x; y }));
+               Some (Case_inline_record { x; y }));
          }
      in
      Refl.Variant
        {
          constructors =
-           StringMap.of_list [ ("Case1", ctor_Case1); ("Case2", ctor_Case2) ];
+           StringMap.of_list
+             [
+               ("Case_tuple_like_arg", ctor_Case_tuple_like_arg);
+               ("Case_tuple_like_exactly", ctor_Case_tuple_like_exactly);
+               ("Case_tuple_like_kind_name", ctor_Case_tuple_like_kind_name);
+               ( "Case_tuple_like_kind_name_no_mangling",
+                 ctor_Case_tuple_like_kind_name_no_mangling );
+               ( "Case_tuple_like_kind_name_no_mangling_with_ctor_name",
+                 ctor_Case_tuple_like_kind_name_no_mangling_with_ctor_name );
+               ("Case_inline_record", ctor_Case_inline_record);
+             ];
          classify =
            (function
-           | Case1 _ -> ("Case1", ctor_Case1) | Case2 _ -> ("Case2", ctor_Case2));
+           | Case_tuple_like_arg _ ->
+               ("Case_tuple_like_arg", ctor_Case_tuple_like_arg)
+           | Case_tuple_like_exactly _ ->
+               ("Case_tuple_like_exactly", ctor_Case_tuple_like_exactly)
+           | Case_tuple_like_kind_name _ ->
+               ("Case_tuple_like_kind_name", ctor_Case_tuple_like_kind_name)
+           | Case_tuple_like_kind_name_no_mangling _ ->
+               ( "Case_tuple_like_kind_name_no_mangling",
+                 ctor_Case_tuple_like_kind_name_no_mangling )
+           | Case_tuple_like_kind_name_no_mangling_with_ctor_name _ ->
+               ( "Case_tuple_like_kind_name_no_mangling_with_ctor_name",
+                 ctor_Case_tuple_like_kind_name_no_mangling_with_ctor_name )
+           | Case_inline_record _ ->
+               ("Case_inline_record", ctor_Case_inline_record));
        })
 [@@warning "-33-39"]
 
 let ex_variant_customized_union_json_discriminator_value =
-  (function Case1 _ -> "case1'" | Case2 _ -> "case2'"
+  (function
+   | Case_tuple_like_arg _ -> "case-tuple-like-arg'"
+   | Case_tuple_like_exactly _ -> "case-tuple-like-exactly'"
+   | Case_tuple_like_kind_name _ -> "case-tuple-like-kind-name'"
+   | Case_tuple_like_kind_name_no_mangling _ ->
+       "case-tuple-like-kind-name-no-mangling"
+   | Case_tuple_like_kind_name_no_mangling_with_ctor_name _ ->
+       "case-tuple-like-kind-name-no-mangling-with-ctor-name"
+   | Case_inline_record _ -> "case-inline-record'"
     : ex_variant_customized_union -> string)
 [@@warning "-39"]
 
@@ -1090,12 +1193,47 @@ let ex_variant_customized_union_json_shape_explanation =
              [
                `object_of
                  [
-                   `mandatory_field ("tag", `exactly (`str "case1'"));
-                   `mandatory_field ("value", `integral);
+                   `mandatory_field
+                     ("tag", `exactly (`str "case-tuple-like-arg'"));
+                   `mandatory_field ("arg", `integral);
                  ];
                `object_of
                  [
-                   `mandatory_field ("tag", `exactly (`str "case2'"));
+                   `mandatory_field
+                     ("tag", `exactly (`str "case-tuple-like-exactly'"));
+                   `mandatory_field ("Argument", `integral);
+                 ];
+               `object_of
+                 [
+                   `mandatory_field
+                     ("tag", `exactly (`str "case-tuple-like-kind-name'"));
+                   `mandatory_field ("case-tuple-like-kind-name'", `integral);
+                 ];
+               `object_of
+                 [
+                   `mandatory_field
+                     ( "tag",
+                       `exactly (`str "case-tuple-like-kind-name-no-mangling")
+                     );
+                   `mandatory_field
+                     ("Case_tuple_like_kind_name_no_mangling", `integral);
+                 ];
+               `object_of
+                 [
+                   `mandatory_field
+                     ( "tag",
+                       `exactly
+                         (`str
+                           "case-tuple-like-kind-name-no-mangling-with-ctor-name")
+                     );
+                   `mandatory_field
+                     ( "case-tuple-like-kind-name-no-mangling-with-ctor-name",
+                       `integral );
+                 ];
+               `object_of
+                 [
+                   `mandatory_field
+                     ("tag", `exactly (`str "case-inline-record'"));
                    `mandatory_field ("x'", `integral);
                    `mandatory_field ("y'", `integral);
                  ];
@@ -1106,11 +1244,38 @@ let ex_variant_customized_union_json_shape_explanation =
 let rec ex_variant_customized_union_to_json =
   (let int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
    function
-   | Case1 x0 -> `obj [ ("tag", `str "case1'"); ("value", int_to_json x0) ]
-   | Case2 { x = x0; y = x1 } ->
+   | Case_tuple_like_arg x0 ->
+       `obj [ ("tag", `str "case-tuple-like-arg'"); ("arg", int_to_json x0) ]
+   | Case_tuple_like_exactly x0 ->
        `obj
          [
-           ("tag", `str "case2'"); ("x'", int_to_json x0); ("y'", int_to_json x1);
+           ("tag", `str "case-tuple-like-exactly'"); ("Argument", int_to_json x0);
+         ]
+   | Case_tuple_like_kind_name x0 ->
+       `obj
+         [
+           ("tag", `str "case-tuple-like-kind-name'");
+           ("case-tuple-like-kind-name'", int_to_json x0);
+         ]
+   | Case_tuple_like_kind_name_no_mangling x0 ->
+       `obj
+         [
+           ("tag", `str "case-tuple-like-kind-name-no-mangling");
+           ("Case_tuple_like_kind_name_no_mangling", int_to_json x0);
+         ]
+   | Case_tuple_like_kind_name_no_mangling_with_ctor_name x0 ->
+       `obj
+         [
+           ("tag", `str "case-tuple-like-kind-name-no-mangling-with-ctor-name");
+           ( "case-tuple-like-kind-name-no-mangling-with-ctor-name",
+             int_to_json x0 );
+         ]
+   | Case_inline_record { x = x0; y = x1 } ->
+       `obj
+         [
+           ("tag", `str "case-inline-record'");
+           ("x'", int_to_json x0);
+           ("y'", int_to_json x1);
          ]
     : ex_variant_customized_union -> Kxclib.Json.jv)
 [@@warning "-39"]
@@ -1135,14 +1300,71 @@ and ex_variant_customized_union_of_json' =
         in
         fun path __bindoj_orig ->
           match Kxclib.Jv.pump_field "tag" __bindoj_orig with
-          | `obj (("tag", `str "case1'") :: param) -> (
-              match List.assoc_opt "value" param with
+          | `obj (("tag", `str "case-tuple-like-arg'") :: param) -> (
+              match List.assoc_opt "arg" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
-                  Ok (Case1 x0)
-              | None -> Error ("mandatory field 'value' does not exist", path))
-          | `obj (("tag", `str "case2'") :: param) ->
+                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  Ok (Case_tuple_like_arg x0)
+              | None -> Error ("mandatory field 'arg' does not exist", path))
+          | `obj (("tag", `str "case-tuple-like-exactly'") :: param) -> (
+              match List.assoc_opt "Argument" param with
+              | Some arg ->
+                  let ( >>= ) = Result.bind in
+                  int_of_json' (`f "Argument" :: path) arg >>= fun x0 ->
+                  Ok (Case_tuple_like_exactly x0)
+              | None -> Error ("mandatory field 'Argument' does not exist", path)
+              )
+          | `obj (("tag", `str "case-tuple-like-kind-name'") :: param) -> (
+              match List.assoc_opt "case-tuple-like-kind-name'" param with
+              | Some arg ->
+                  let ( >>= ) = Result.bind in
+                  int_of_json' (`f "case-tuple-like-kind-name'" :: path) arg
+                  >>= fun x0 -> Ok (Case_tuple_like_kind_name x0)
+              | None ->
+                  Error
+                    ( "mandatory field 'case-tuple-like-kind-name'' does not \
+                       exist",
+                      path ))
+          | `obj (("tag", `str "case-tuple-like-kind-name-no-mangling") :: param)
+            -> (
+              match
+                List.assoc_opt "Case_tuple_like_kind_name_no_mangling" param
+              with
+              | Some arg ->
+                  let ( >>= ) = Result.bind in
+                  int_of_json'
+                    (`f "Case_tuple_like_kind_name_no_mangling" :: path)
+                    arg
+                  >>= fun x0 -> Ok (Case_tuple_like_kind_name_no_mangling x0)
+              | None ->
+                  Error
+                    ( "mandatory field 'Case_tuple_like_kind_name_no_mangling' \
+                       does not exist",
+                      path ))
+          | `obj
+              (( "tag",
+                 `str "case-tuple-like-kind-name-no-mangling-with-ctor-name" )
+              :: param) -> (
+              match
+                List.assoc_opt
+                  "case-tuple-like-kind-name-no-mangling-with-ctor-name" param
+              with
+              | Some arg ->
+                  let ( >>= ) = Result.bind in
+                  int_of_json'
+                    (`f "case-tuple-like-kind-name-no-mangling-with-ctor-name"
+                   :: path)
+                    arg
+                  >>= fun x0 ->
+                  Ok (Case_tuple_like_kind_name_no_mangling_with_ctor_name x0)
+              | None ->
+                  Error
+                    ( "mandatory field \
+                       'case-tuple-like-kind-name-no-mangling-with-ctor-name' \
+                       does not exist",
+                      path ))
+          | `obj (("tag", `str "case-inline-record'") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "x'" param
               |> Option.to_result
@@ -1153,12 +1375,16 @@ and ex_variant_customized_union_of_json' =
               |> Option.to_result
                    ~none:("mandatory field 'y'' does not exist", path)
               >>= int_of_json' (`f "y'" :: path)
-              >>= fun x1 -> Ok (Case2 { x = x0; y = x1 })
+              >>= fun x1 -> Ok (Case_inline_record { x = x0; y = x1 })
           | `obj (("tag", `str discriminator_value) :: _) ->
               Error
                 ( Printf.sprintf
                     "given discriminator field value '%s' is not one of [ \
-                     'case1'', 'case2'' ]"
+                     'case-tuple-like-arg'', 'case-tuple-like-exactly'', \
+                     'case-tuple-like-kind-name'', \
+                     'case-tuple-like-kind-name-no-mangling', \
+                     'case-tuple-like-kind-name-no-mangling-with-ctor-name', \
+                     'case-inline-record'' ]"
                     discriminator_value,
                   `f "tag" :: path )
           | `obj (("tag", jv) :: _) ->

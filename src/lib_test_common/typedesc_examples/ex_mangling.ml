@@ -168,7 +168,7 @@ module Person_no_mangling : Util.Ex_desc = struct
 
   let ts_ast : ts_ast option =
     let discriminator = "kind" in
-    let arg_fname = "arg" in
+    let arg_fname = "value" in
     let discriminator_value kind =
       Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
     in
@@ -223,7 +223,7 @@ module Person_no_mangling : Util.Ex_desc = struct
                     [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "With_id")));
-                    `mandatory_field ("arg", `integral)];
+                    `mandatory_field ("value", `integral)];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "Student")));
                     `mandatory_field ("student_id", `integral);
@@ -239,7 +239,7 @@ module Person_no_mangling : Util.Ex_desc = struct
     Util.Schema_object.variant json_name
       Schema_object.[
         "Anonymous", [];
-        "With_id", [ "arg", integer () ];
+        "With_id", [ "value", integer () ];
         "Student", [
           "student_id", integer ();
           "name", string ();
@@ -319,7 +319,7 @@ module Person_inherited : Util.Ex_desc = struct
 
   let ts_ast : ts_ast option =
     let discriminator = "kind" in
-    let arg_fname = "arg" in
+    let arg_fname = "value" in
     let discriminator_value kind =
       Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
     in
@@ -381,7 +381,7 @@ module Person_inherited : Util.Ex_desc = struct
                       [`mandatory_field ("kind", (`exactly (`str "Anonymous")))];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "With_id")));
-                    `mandatory_field ("arg", `integral)];
+                    `mandatory_field ("value", `integral)];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "student")));
                     `mandatory_field ("student_id", `integral);
@@ -399,7 +399,7 @@ module Person_inherited : Util.Ex_desc = struct
     Util.Schema_object.variant json_name
       Schema_object.[
         "Anonymous", [];
-        "With_id", [ "arg", integer () ];
+        "With_id", [ "value", integer () ];
         "student", [
           "student_id", integer ();
           "name", string ();
@@ -425,7 +425,7 @@ module Enum : Util.Ex_desc = struct
       ~configs:[ Json_config.default_mangling ]
       ~doc:(doc "second case");
     string_enum_case "Case_at3"
-      ~configs:[ Json_config.name "Case_third"; Json_config.default_mangling ]
+      ~configs:[ Json_config.name "Case-third"; Json_config.default_mangling ]
       ~doc:(doc "third case");
   ] ~configs:[ Json_config.no_mangling ])
 

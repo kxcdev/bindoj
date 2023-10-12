@@ -79,7 +79,7 @@ module Person : Util.Ex_desc = struct
 
   let ts_ast : ts_ast option =
     let discriminator = "kind" in
-    let arg_fname = "arg" in
+    let arg_fname = "value" in
     let discriminator_value kind =
       Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
     in
@@ -135,7 +135,7 @@ module Person : Util.Ex_desc = struct
                     [`mandatory_field ("kind", (`exactly (`str "anonymous")))];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "with-id")));
-                    `mandatory_field ("arg", `integral)];
+                    `mandatory_field ("value", `integral)];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "student")));
                     `mandatory_field ("studentId", `integral);
@@ -151,7 +151,7 @@ module Person : Util.Ex_desc = struct
     Util.Schema_object.variant json_name
       Schema_object.[
         "anonymous", [];
-        "with-id", [ "arg", integer () ];
+        "with-id", [ "value", integer () ];
         "student", [
           "studentId", integer ();
           "name", string ();
@@ -214,7 +214,7 @@ module Person_reused : Util.Ex_desc = struct
 
   let ts_ast : ts_ast option =
     let discriminator = "kind" in
-    let arg_fname = "arg" in
+    let arg_fname = "value" in
     let discriminator_value kind =
       Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
     in
@@ -267,7 +267,7 @@ module Person_reused : Util.Ex_desc = struct
                     [`mandatory_field ("kind", (`exactly (`str "anonymous")))];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "with-id")));
-                    `mandatory_field ("arg", `integral)];
+                    `mandatory_field ("value", `integral)];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "student")));
                     `mandatory_field ("studentId", `integral);
@@ -283,7 +283,7 @@ module Person_reused : Util.Ex_desc = struct
     Util.Schema_object.variant json_name
       Schema_object.[
         "anonymous", [];
-        "with-id", [ "arg", integer () ];
+        "with-id", [ "value", integer () ];
         "student", [
           "studentId", integer ();
           "name", string ();
@@ -329,7 +329,7 @@ module Int_list : Util.Ex_desc = struct
 
   let ts_ast : ts_ast option =
     let discriminator = "kind" in
-    let arg_fname = "arg" in
+    let arg_fname = "value" in
     let int_nil =
       `type_literal
         Util.Ts_ast.[
@@ -365,7 +365,7 @@ module Int_list : Util.Ex_desc = struct
                     [`mandatory_field ("kind", (`exactly (`str "intnil")))];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "intcons")));
-                    `mandatory_field ("arg", (`tuple_of [`integral; `self]))]]))))
+                    `mandatory_field ("value", (`tuple_of [`integral; `self]))]]))))
     )
 
   let schema_object : Schema_object.t option =
@@ -373,7 +373,7 @@ module Int_list : Util.Ex_desc = struct
       Schema_object.[
         "intnil", [];
         "intcons", [
-          "arg", tuple [ integer(); ref ("#"^json_name); ]
+          "value", tuple [ integer(); ref ("#"^json_name); ]
         ];
       ]
     |> Option.some
@@ -485,21 +485,20 @@ module Polymorphic : Util.Ex_desc = struct
   let json_name = "ExVariantFoo"
   let ts_ast : ts_ast option =
     let discriminator = "kind" in
-    let arg_fname = "arg" in
     let discriminator_value kind =
       Util.Ts_ast.property discriminator (`literal_type (`string_literal kind))
     in
     let foo0 =
       `type_literal
-        [  discriminator_value "foo0" ] in
+        [ discriminator_value "foo0" ] in
     let foo1 =
       `type_literal
         [ discriminator_value "foo1";
-          Util.Ts_ast.property arg_fname (`type_reference "number") ] in
+          Util.Ts_ast.property "value" (`type_reference "number") ] in
     let foo2 =
       `type_literal
         [ discriminator_value "foo2";
-          Util.Ts_ast.property arg_fname (`tuple [`type_reference "number"; `type_reference "number"]) ] in
+          Util.Ts_ast.property "value" (`tuple [`type_reference "number"; `type_reference "number"]) ] in
     let foos = ["Foo0", foo0; "Foo1", foo1; "Foo2", foo2] in
     let options : Util.Ts_ast.options =
       { discriminator;
@@ -526,10 +525,10 @@ module Polymorphic : Util.Ex_desc = struct
                     [`mandatory_field ("kind", (`exactly (`str "foo0")))];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "foo1")));
-                    `mandatory_field ("arg", `integral)];
+                    `mandatory_field ("value", `integral)];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "foo2")));
-                    `mandatory_field ("arg", (`tuple_of [`integral; `integral]))]]))))
+                    `mandatory_field ("value", (`tuple_of [`integral; `integral]))]]))))
     )
 
   open Bindoj_openapi.V3
@@ -542,27 +541,51 @@ module Customized_union : Util.Ex_desc = struct
 
   let variant_configs : [`type_decl] configs = [
     Json_config.variant_discriminator "tag";
+    Json_config.name_of_variant_arg (`kind_name None);
   ]
 
   include Util.Make_ex_decls(struct
     let make_decl (module D: Util.With_docstr) : type_decl =
       let open D in
       variant_decl "ex_variant_customized_union" [
-      variant_constructor "Case1" (`tuple_like [variant_argument cty_int])
+      variant_constructor "Case_tuple_like_arg" (`tuple_like [variant_argument cty_int])
         ~configs:[
-          Json_config.name "Case1'";
-          Json_config.name_of_variant_arg "value";
+          Json_config.name "case-tuple-like-arg'";
+          Json_config.name_of_variant_arg `arg;
         ]
-        ~doc:(doc "custom arg name (value)");
-      variant_constructor "Case2" (`inline_record [
+        ~doc:(doc "customized arg name (arg)");
+      variant_constructor "Case_tuple_like_exactly" (`tuple_like [variant_argument cty_int])
+        ~configs:[
+          Json_config.name "case-tuple-like-exactly'";
+          Json_config.name_of_variant_arg (`exactly "Argument");
+        ]
+        ~doc:(doc "customized arg name (exactly Argument)");
+      variant_constructor "Case_tuple_like_kind_name" (`tuple_like [variant_argument cty_int])
+        ~configs:[
+          Json_config.name "case-tuple-like-kind-name'";
+        ]
+        ~doc:(doc "inherited customized arg name (kind_name)");
+      variant_constructor "Case_tuple_like_kind_name_no_mangling" (`tuple_like [variant_argument cty_int])
+        ~configs:[
+          Json_config.name_of_variant_arg (`kind_name (Some `no_mangling));
+        ]
+        ~doc:(doc "customized arg name (kind_name of no_mangling)");
+      variant_constructor "Case_tuple_like_kind_name_no_mangling_with_ctor_name" (`tuple_like [variant_argument cty_int])
+        ~configs:[
+          Json_config.name "case-tuple-like-kind-name-no-mangling-with-ctor-name";
+          Json_config.name_of_variant_arg (`kind_name (Some `no_mangling));
+        ]
+        ~doc:(doc "customized arg name (kind_name of no_mangling) with customized constructor name");
+      variant_constructor "Case_inline_record" (`inline_record [
         record_field "x" cty_int
           ~configs:[ Json_config.name "x'" ];
         record_field "y" cty_int
           ~configs:[ Json_config.name "y'" ];
       ])
         ~configs:[
-          Json_config.name "Case2'";
-        ];
+          Json_config.name "case-inline-record'";
+        ]
+        ~doc:(doc "customized name of fields");
     ] ~configs:variant_configs
       ~doc:(doc "variant with customized discriminator and argument names")
   end)
@@ -572,16 +595,37 @@ module Customized_union : Util.Ex_desc = struct
     parent, Util.FwrtTypeEnv.(
       init
       |> bind_object ~configs:variant_configs parent []
-      |> bind_constructor ~parent "Case1"
+      |> bind_constructor ~parent "Case_tuple_like_arg"
           ~configs:[
-            Json_config.name "Case1'";
-            Json_config.name_of_variant_arg "value";
+            Json_config.name "case-tuple-like-arg'";
+            Json_config.name_of_variant_arg `arg;
           ]
           ~args:[variant_argument cty_int]
-      |> bind_constructor ~parent "Case2"
+      |> bind_constructor ~parent "Case_tuple_like_exactly"
           ~configs:[
-            Json_config.name "Case2'";
-            Json_config.name_of_variant_arg "values";
+            Json_config.name "case-tuple-like-exactly'";
+            Json_config.name_of_variant_arg (`exactly "Argument");
+          ]
+          ~args:[variant_argument cty_int]
+      |> bind_constructor ~parent "Case_tuple_like_kind_name"
+          ~args:[variant_argument cty_int]
+          ~configs:[
+            Json_config.name "case-tuple-like-kind-name'";
+          ]
+      |> bind_constructor ~parent "Case_tuple_like_kind_name_no_mangling"
+          ~args:[variant_argument cty_int]
+          ~configs:[
+            Json_config.name_of_variant_arg (`kind_name (Some `no_mangling));
+          ]
+      |> bind_constructor ~parent "Case_tuple_like_kind_name_no_mangling_with_ctor_name"
+          ~args:[variant_argument cty_int]
+          ~configs:[
+            Json_config.name "case-tuple-like-kind-name-no-mangling-with-ctor-name";
+            Json_config.name_of_variant_arg (`kind_name (Some `no_mangling));
+          ]
+      |> bind_constructor ~parent "Case_inline_record"
+          ~configs:[
+            Json_config.name "case-inline-record'";
           ]
           ~fields:[
             field "x" cty_int
@@ -594,20 +638,44 @@ module Customized_union : Util.Ex_desc = struct
   let json_name = "ExVariantCustomizedUnion"
   let ts_ast : ts_ast option =
     let discriminator = "tag" in
-    let case1 =
+    let case_tuple_like_arg =
       `type_literal
         Util.Ts_ast.[
-          property discriminator (`literal_type (`string_literal "case1'"));
-          property "value" (`type_reference "number"); ] in
-    let case2 =
+          property discriminator (`literal_type (`string_literal "case-tuple-like-arg'"));
+          property "arg" (`type_reference "number"); ] in
+    let case_tuple_like_exactly =
       `type_literal
         Util.Ts_ast.[
-          property discriminator (`literal_type (`string_literal "case2'"));
+          property discriminator (`literal_type (`string_literal "case-tuple-like-exactly'"));
+          property "Argument" (`type_reference "number"); ] in
+    let case_tuple_like_kind_name =
+      `type_literal
+        Util.Ts_ast.[
+          property discriminator (`literal_type (`string_literal "case-tuple-like-kind-name'"));
+          property "case-tuple-like-kind-name'" (`type_reference "number"); ] in
+    let case_tuple_like_kind_name_no_mangling =
+      `type_literal
+        Util.Ts_ast.[
+          property discriminator (`literal_type (`string_literal "case-tuple-like-kind-name-no-mangling"));
+          property "Case_tuple_like_kind_name_no_mangling" (`type_reference "number"); ] in
+    let case_tuple_like_kind_name_no_mangling_with_ctor_name =
+      `type_literal
+        Util.Ts_ast.[
+          property discriminator (`literal_type (`string_literal "case-tuple-like-kind-name-no-mangling-with-ctor-name"));
+          property "case-tuple-like-kind-name-no-mangling-with-ctor-name" (`type_reference "number"); ] in
+    let case_inline_record =
+      `type_literal
+        Util.Ts_ast.[
+          property discriminator (`literal_type (`string_literal "case-inline-record'"));
           property "x'" (`type_reference "number");
           property "y'" (`type_reference "number"); ] in
     let customized_union = [
-      "Case1'", case1;
-      "Case2'", case2;
+      "Case_tuple_like_arg", case_tuple_like_arg;
+      "Case_tuple_like_exactly", case_tuple_like_exactly;
+      "Case_tuple_like_kind_name", case_tuple_like_kind_name;
+      "Case_tuple_like_kind_name_no_mangling", case_tuple_like_kind_name_no_mangling;
+      "Case_tuple_like_kind_name_no_mangling_with_ctor_name", case_tuple_like_kind_name_no_mangling_with_ctor_name;
+      "Case_inline_record", case_inline_record;
     ] in
     let options : Util.Ts_ast.options =
       { discriminator;
@@ -631,10 +699,22 @@ module Customized_union : Util.Ex_desc = struct
             (json_name,
               (`anyone_of
                   [`object_of
-                    [`mandatory_field ("tag", (`exactly (`str "case1'")));
-                    `mandatory_field ("value", `integral)];
+                    [`mandatory_field ("tag", (`exactly (`str "case-tuple-like-arg'")));
+                    `mandatory_field ("arg", `integral)];
                   `object_of
-                    [`mandatory_field ("tag", (`exactly (`str "case2'")));
+                    [`mandatory_field ("tag", (`exactly (`str "case-tuple-like-exactly'")));
+                    `mandatory_field ("Argument", `integral)];
+                  `object_of
+                    [`mandatory_field ("tag", (`exactly (`str "case-tuple-like-kind-name'")));
+                    `mandatory_field ("case-tuple-like-kind-name'", `integral)];
+                  `object_of
+                    [`mandatory_field ("tag", (`exactly (`str "case-tuple-like-kind-name-no-mangling")));
+                    `mandatory_field ("Case_tuple_like_kind_name_no_mangling", `integral)];
+                  `object_of
+                    [`mandatory_field ("tag", (`exactly (`str "case-tuple-like-kind-name-no-mangling-with-ctor-name")));
+                    `mandatory_field ("case-tuple-like-kind-name-no-mangling-with-ctor-name", `integral)];
+                  `object_of
+                    [`mandatory_field ("tag", (`exactly (`str "case-inline-record'")));
                     `mandatory_field ("x'", `integral);
                     `mandatory_field ("y'", `integral)]]))))
     )

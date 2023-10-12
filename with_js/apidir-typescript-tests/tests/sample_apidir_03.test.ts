@@ -23,7 +23,7 @@ describe("apidir-typescript-tests-sample03", () => {
     });
 
     test("With_id", async () => {
-      const person: ExVariantPerson = { kind: "with-id", arg: 1619 };
+      const person: ExVariantPerson = { kind: "with-id", value: 1619 };
       const { body, status_code } = await mockClient["id-of-person"](person);
       expect(status_code).toBe(200);
       expect(body).toBe(1619);

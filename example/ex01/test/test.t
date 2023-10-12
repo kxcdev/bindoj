@@ -30,7 +30,7 @@ Check endpoints
 
 Check endpoints
   $ curl -si localhost:$PORT/student/from-person \
-  >   -d '{"kind":"with-id","arg":0}'
+  >   -d '{"kind":"with-id","value":0}'
   HTTP/1.1 422 Status 422
   Content-Type: application/json
   content-length: 22
@@ -42,9 +42,9 @@ Check endpoints
   >   -d '{"kind":"student","studentId":0}'
   HTTP/1.1 400 Status 400
   Content-Type: application/json
-  content-length: 762
+  content-length: 764
   
-  "Bad request: invalid json format - mandatory field 'name' does not exist at root; expected shape: `with_warning (\n(\"not considering any config if exists\",\n `named ((\"Person\",\n          `anyone_of ([`object_of ([`mandatory_field ((\"kind\", `exactly (\"anonymous\")))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"with-id\"))); `mandatory_field ((\"arg\", `integral))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"student\"))); `mandatory_field ((\"studentId\", `integral));\n`mandatory_field ((\"name\", `string))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"teacher\"))); `mandatory_field ((\"facultyId\", `integral));\n`mandatory_field ((\"name\", `string));\n`mandatory_field ((\"department\", `string))])\n])))))"
+  "Bad request: invalid json format - mandatory field 'name' does not exist at root; expected shape: `with_warning (\n(\"not considering any config if exists\",\n `named ((\"Person\",\n          `anyone_of ([`object_of ([`mandatory_field ((\"kind\", `exactly (\"anonymous\")))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"with-id\"))); `mandatory_field ((\"value\", `integral))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"student\"))); `mandatory_field ((\"studentId\", `integral));\n`mandatory_field ((\"name\", `string))]);\n`object_of ([`mandatory_field ((\"kind\", `exactly (\"teacher\"))); `mandatory_field ((\"facultyId\", `integral));\n`mandatory_field ((\"name\", `string));\n`mandatory_field ((\"department\", `string))])\n])))))"
 
 Kill the server process in the background.
   $ kill -9 $PID

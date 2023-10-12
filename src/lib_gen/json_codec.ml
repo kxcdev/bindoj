@@ -866,7 +866,7 @@ let gen_json_encoder :
       let (discriminator_value, base_mangling_style) =
         Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
       in
-      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style ctor in
+      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style td.td_configs ctor in
       let cstr = [%expr ([%e estring ~loc discriminator_fname], `str [%e estring ~loc discriminator_value])] in
       let of_record_fields base_mangling_style fields =
         let args = record_to_json_fields ~inherited_codec ~nested ~self_ename base_mangling_style fields in
@@ -1079,7 +1079,7 @@ let gen_json_decoder_impl :
       let (discriminator_value, base_mangling_style) =
         Json_config.get_mangled_name_of_discriminator ~inherited:base_mangling_style ctor
       in
-      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style ctor in
+      let arg_fname = Json_config.get_mangled_name_of_variant_arg ~inherited:base_mangling_style td.td_configs ctor in
       let cstr_p tail = [%pat? `obj (([%p discriminator_fname_p], `str [%p pstring ~loc discriminator_value])::[%p tail])] in
       let construct name args =
         match Caml_config.get_variant_type td_configs with
@@ -1709,9 +1709,10 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
           end
         | `tuple_like ((t :: ts) as args) ->
           let arg_name =
-            vc_configs
-            |> Json_config.(get_name_of_variant_arg default_name_of_variant_arg)
-            |> Json_config.mangled `field_name base_mangling_style
+            Json_config.get_mangled_name_of_variant_arg
+              ~inherited:base_mangling_style
+              td.td_configs
+              ctor
           in
           let convert_variant_argument va =
             let base_mangling_style = Json_config.get_mangling_style_opt va.va_configs |? base_mangling_style in

@@ -1,30 +1,30 @@
 {
   "ExVariantPerson": [
     { "kind": "anonymous" },
-    { "kind": "with-id", "arg": 1619 },
+    { "kind": "with-id", "value": 1619 },
     { "kind": "student", "studentId": 451, "name": "Ray Bradbury" },
     { "kind": "teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" }
   ],
   "ExVariantPersonReused": [
     { "kind": "anonymous" },
-    { "kind": "with-id", "arg": 1619 },
+    { "kind": "with-id", "value": 1619 },
     { "kind": "student", "studentId": 451, "name": "Ray Bradbury" },
     { "kind": "teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" }
   ],
   "ExVariantIntList": [
     { "kind": "intnil" },
-    { "kind": "intcons", "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }] },
+    { "kind": "intcons", "value": [1, { "kind": "intcons", "value": [2, { "kind": "intnil" }] }] },
     {
       "kind": "intcons",
-      "arg": [
+      "value": [
         1,
         {
           "kind": "intcons",
-          "arg": [2, { "kind": "intcons", "arg": [3, { "kind": "intcons", "arg": [4, { "kind": "intnil" }] }] }]
+          "value": [2, { "kind": "intcons", "value": [3, { "kind": "intcons", "value": [4, { "kind": "intnil" }] }] }]
         }
       ]
     },
-    { "kind": "intcons", "arg": [26335605, { "kind": "intcons", "arg": [35460072, { "kind": "intnil" }] }] }
+    { "kind": "intcons", "value": [26335605, { "kind": "intcons", "value": [35460072, { "kind": "intnil" }] }] }
   ],
   "ExVariantIntListObjtuple": [
     { "kind": "intnil" },
@@ -40,9 +40,16 @@
     },
     { "kind": "intcons", "_0": 26335605, "_1": { "kind": "intcons", "_0": 35460072, "_1": { "kind": "intnil" } } }
   ],
-  "ExVariantFoo": [{ "kind": "foo0" }, { "kind": "foo1", "arg": 1 }, { "kind": "foo2", "arg": [1, 2] }],
+  "ExVariantFoo": [{ "kind": "foo0" }, { "kind": "foo1", "value": 1 }, { "kind": "foo2", "value": [1, 2] }],
   "ExVariantCustomizedUnion": [
-    { "tag": "case1'", "value": 42 },
-    { "tag": "case2'", "x'": 4, "y'": 2 }
+    { "tag": "case-tuple-like-arg'", "arg": 42 },
+    { "tag": "case-tuple-like-exactly'", "Argument": 1024 },
+    { "tag": "case-tuple-like-kind-name'", "case-tuple-like-kind-name'": 12345 },
+    { "tag": "case-tuple-like-kind-name-no-mangling", "Case_tuple_like_kind_name_no_mangling": 654321 },
+    {
+      "tag": "case-tuple-like-kind-name-no-mangling-with-ctor-name",
+      "case-tuple-like-kind-name-no-mangling-with-ctor-name": 256
+    },
+    { "tag": "case-inline-record'", "x'": 4, "y'": 2 }
   ]
 }

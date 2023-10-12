@@ -22,7 +22,7 @@
         "description": "Tuple_like constructor",
         "type": "object",
         "properties": {
-          "value": { "nullable": true, "type": "integer" },
+          "arg": { "nullable": true, "type": "integer" },
           "tag": { "enum": ["tuple-like"], "type": "string" }
         },
         "required": ["tag"],
@@ -33,7 +33,7 @@
         "description": "Tuple_like_alias constructor",
         "type": "object",
         "properties": {
-          "value": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+          "arg": { "description": "alias of int option type", "nullable": true, "type": "integer" },
           "tag": { "enum": ["tuple-like-alias"], "type": "string" }
         },
         "required": ["tag"],

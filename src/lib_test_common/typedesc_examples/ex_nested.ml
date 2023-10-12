@@ -172,7 +172,7 @@ module Record : Util.Ex_desc = struct
                                   `object_of
                                     [`mandatory_field
                                       ("kind", (`exactly (`str "With_id")));
-                                    `mandatory_field ("arg", `integral)];
+                                    `mandatory_field ("value", `integral)];
                                   `object_of
                                     [`mandatory_field
                                       ("kind", (`exactly (`str "student")));
@@ -214,7 +214,7 @@ module Record : Util.Ex_desc = struct
                                 `object_of
                                   [`mandatory_field
                                       ("kind", (`exactly (`str "With_id")));
-                                  `mandatory_field ("arg", `integral)];
+                                  `mandatory_field ("value", `integral)];
                                 `object_of
                                   [`mandatory_field
                                       ("kind", (`exactly (`str "student")));
@@ -230,7 +230,7 @@ module Record : Util.Ex_desc = struct
                                   `mandatory_field ("name", `string);
                                   `mandatory_field ("department", `string)]]))));
                     `mandatory_field ("kind", (`exactly (`str "With_id")));
-                    `mandatory_field ("arg", `integral)];
+                    `mandatory_field ("value", `integral)];
                   `object_of
                     [`mandatory_field
                         ("unit",
@@ -257,7 +257,7 @@ module Record : Util.Ex_desc = struct
                                 `object_of
                                   [`mandatory_field
                                       ("kind", (`exactly (`str "With_id")));
-                                  `mandatory_field ("arg", `integral)];
+                                  `mandatory_field ("value", `integral)];
                                 `object_of
                                   [`mandatory_field
                                       ("kind", (`exactly (`str "student")));
@@ -303,7 +303,7 @@ module Record : Util.Ex_desc = struct
                                 `object_of
                                   [`mandatory_field
                                       ("kind", (`exactly (`str "With_id")));
-                                  `mandatory_field ("arg", `integral)];
+                                  `mandatory_field ("value", `integral)];
                                 `object_of
                                   [`mandatory_field
                                       ("kind", (`exactly (`str "student")));
@@ -328,7 +328,7 @@ module Record : Util.Ex_desc = struct
     let open Schema_object in
     let person_ctors =
       [ "Anonymous", [];
-        "With_id", [ "arg", integer () ];
+        "With_id", [ "value", integer () ];
         "student", [
           "student_id", integer ();
           "name", string ();
@@ -365,14 +365,11 @@ end
 
 module Variant : Util.Ex_desc = struct
   let discriminator = "tag"
-  let arg_fname = "value"
+  let arg_fname = "arg"
 
   let variant_configs : [`type_decl] configs = [
     Json_config.variant_discriminator discriminator;
-  ]
-
-  let constructor_configs: [`variant_constructor] configs = [
-    Json_config.name_of_variant_arg arg_fname
+    Json_config.name_of_variant_arg `arg;
   ]
 
   let module_name = "Variant"
@@ -385,7 +382,7 @@ module Variant : Util.Ex_desc = struct
         variant_constructor "Student1" (`inline_record [
           record_field_nested ~codec:(open_ "Ex_record") "student" (decl (module Ex_record.Student))
             ~configs:[ Json_config.no_mangling ];
-        ]) ~configs:constructor_configs ~doc:(doc "Student1 constructor");
+        ]) ~doc:(doc "Student1 constructor");
 
         (* nested spread record of inline_record *)
         variant_constructor "Student2" (`inline_record [
@@ -394,13 +391,13 @@ module Variant : Util.Ex_desc = struct
               Json_config.nested_field_style `spreading;
               Json_config.no_mangling;
             ];
-        ]) ~configs:constructor_configs ~doc:(doc "Student2 constructor");
+        ]) ~doc:(doc "Student2 constructor");
 
         (* nested record of tuple_like *)
         variant_constructor "Student3" (`tuple_like [
           variant_argument_nested ~codec:(open_ "Ex_record") (decl (module Ex_record.Student))
             ~configs:[ Json_config.no_mangling ];
-        ]) ~configs:constructor_configs ~doc:(doc "Student3 constructor");
+        ]) ~doc:(doc "Student3 constructor");
 
         (* nested spread record of tuple_like *)
         variant_constructor "Student4" (`tuple_like [
@@ -409,13 +406,13 @@ module Variant : Util.Ex_desc = struct
               Json_config.nested_field_style `spreading;
               Json_config.no_mangling;
             ];
-        ]) ~configs:constructor_configs ~doc:(doc "Student4 constructor");
+        ]) ~doc:(doc "Student4 constructor");
 
         (* nested variant of tuple_like *)
         variant_constructor "Int_list1" (`tuple_like [
           variant_argument_nested ~codec:(open_ "Ex_variant") (decl (module Ex_variant.Int_list))
             ~configs:[ Json_config.no_mangling ];
-        ]) ~configs:constructor_configs ~doc:(doc "Int_list1 constructor");
+        ]) ~doc:(doc "Int_list1 constructor");
 
         (* nested spread variant of tuple_like*)
         variant_constructor "Int_list2" (`tuple_like [
@@ -424,7 +421,7 @@ module Variant : Util.Ex_desc = struct
               Json_config.nested_field_style `spreading;
               Json_config.no_mangling;
             ];
-        ]) ~configs:constructor_configs ~doc:(doc "Int_list2 constructor");
+        ]) ~doc:(doc "Int_list2 constructor");
       ] ~configs:variant_configs ~doc:(doc "definition of ex_nested_variant type")
   end)
 
@@ -439,30 +436,30 @@ module Variant : Util.Ex_desc = struct
       |> bind_object ~configs:variant_configs parent []
       |> bind_constructor ~parent "Student1" ~fields:[
           field_nested ~codec:(`open_ "Ex_record_gen") "student" student;
-        ] ~configs:constructor_configs
+        ]
 
       |> bind_constructor ~parent "Student2" ~fields:[
           field_nested ~codec:(`open_ "Ex_record_gen") "student" student
             ~configs:[ Json_config.nested_field_style `spreading ];
-        ] ~configs:constructor_configs
+        ]
 
       |> bind_constructor ~parent "Student3" ~args:[
           variant_argument_nested ~codec:(`open_ "Ex_record_gen") student;
-        ] ~configs:constructor_configs
+        ]
 
       |> bind_constructor ~parent "Student4" ~args:[
           variant_argument_nested ~codec:(`open_ "Ex_record_gen") student
             ~configs:[ Json_config.nested_field_style `spreading ];
-        ] ~configs:constructor_configs
+        ]
 
       |> bind_constructor ~parent "Int_list1" ~args:[
           variant_argument_nested ~codec:(`open_ "Ex_variant_gen") int_list;
-        ] ~configs:constructor_configs
+        ]
 
       |> bind_constructor ~parent "Int_list2" ~args:[
           variant_argument_nested ~codec:(`open_ "Ex_variant_gen") int_list
             ~configs:[ Json_config.nested_field_style `spreading ]
-        ] ~configs:constructor_configs
+        ]
     )
 
   let json_name = "ExNestedVariant"
@@ -532,7 +529,7 @@ module Variant : Util.Ex_desc = struct
       `with_warning
       ("not considering any config if exists",
         (`named
-            (json_name,
+            ("ExNestedVariant",
               (`anyone_of
                 [`object_of
                     [`mandatory_field ("tag", (`exactly (`str "student1")));
@@ -550,7 +547,7 @@ module Variant : Util.Ex_desc = struct
                 `object_of
                   [`mandatory_field ("tag", (`exactly (`str "student3")));
                   `mandatory_field
-                    ("value",
+                    ("arg",
                       (`named
                           ("ExRecordStudent",
                             (`object_of
@@ -563,7 +560,7 @@ module Variant : Util.Ex_desc = struct
                 `object_of
                   [`mandatory_field ("tag", (`exactly (`str "int-list1")));
                   `mandatory_field
-                    ("value",
+                    ("arg",
                       (`named
                           ("ExVariantIntList",
                             (`anyone_of
@@ -574,14 +571,14 @@ module Variant : Util.Ex_desc = struct
                                 [`mandatory_field
                                     ("kind", (`exactly (`str "intcons")));
                                 `mandatory_field
-                                  ("arg", (`tuple_of [`integral; `self]))]]))))];
+                                  ("value", (`tuple_of [`integral; `self]))]]))))];
                 `object_of
                   [`mandatory_field ("tag", (`exactly (`str "int-list2")));
                   `mandatory_field ("kind", (`exactly (`str "intnil")))];
                 `object_of
                   [`mandatory_field ("tag", (`exactly (`str "int-list2")));
                   `mandatory_field ("kind", (`exactly (`str "intcons")));
-                  `mandatory_field ("arg", (`tuple_of [`integral; `self]))]]))))
+                  `mandatory_field ("value", (`tuple_of [`integral; `self]))]]))))
     )
 
   let schema_object : Schema_object.t option =
@@ -591,7 +588,7 @@ module Variant : Util.Ex_desc = struct
     ] in
     let int_list_fields = Schema_object.[
         "intnil", [];
-        "intcons", [ "arg", tuple [ integer(); ref "#ExVariantIntList"; ] ]
+        "intcons", [ "value", tuple [ integer(); ref "#ExVariantIntList"; ] ]
       ]
     in
     let constructor_fields name fields = fields @ [
@@ -616,7 +613,7 @@ module Variant : Util.Ex_desc = struct
           "kind", string () ~enum:[`str "intnil" ];
         ];
         record ~title:"int-list2_intcons" @@ constructor_fields "int-list2" [
-          "arg", tuple [ integer(); ref "#ExVariantIntList" ];
+          "value", tuple [ integer(); ref "#ExVariantIntList" ];
           "kind", string () ~enum:[`str "intcons" ];
         ];
       ]

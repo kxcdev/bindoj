@@ -5,13 +5,13 @@
   ],
   "ex_mangling_person_no_mangling": [
     { "kind": "Anonymous" },
-    { "kind": "With_id", "arg": 1619 },
+    { "kind": "With_id", "value": 1619 },
     { "kind": "Student", "student_id": 451, "name": "Ray Bradbury" },
     { "kind": "Teacher", "faculty_id": 2001, "name": "Arthur C. Clark", "department": "Space" }
   ],
   "ex_mangling_person_inherited": [
     { "kind": "Anonymous" },
-    { "kind": "With_id", "arg": 1619 },
+    { "kind": "With_id", "value": 1619 },
     { "kind": "student", "student_id": 451, "name": "Ray Bradbury", "caseValue": "Case_at0" },
     { "kind": "student", "student_id": 451, "name": "Ray Bradbury", "caseValue": "case-at1" },
     { "kind": "Teacher", "facultyId": 2001, "name": "Arthur C. Clark", "department": "Space" }

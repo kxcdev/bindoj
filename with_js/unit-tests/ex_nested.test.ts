@@ -33,9 +33,9 @@ describe("ex_nested", (): void => {
           point2: { x: 1, y: 2 },
           x: 1,
           y: 2,
-          person: { kind: "With_id", arg: 1619 },
+          person: { kind: "With_id", value: 1619 },
           kind: "With_id",
-          arg: 1619,
+          value: 1619,
         },
         {
           unit: 1,
@@ -73,10 +73,10 @@ describe("ex_nested", (): void => {
       expect(samples).toStrictEqual([
         { tag: "student1", student: { admissionYear: 1984, name: "William Gibson" } },
         { tag: "student2", admissionYear: 1984, name: "William Gibson" },
-        { tag: "student3", value: { admissionYear: 1984, name: "William Gibson" } },
+        { tag: "student3", arg: { admissionYear: 1984, name: "William Gibson" } },
         { tag: "student4", admissionYear: 1984, name: "William Gibson" },
-        { tag: "int-list1", value: { kind: "intcons", arg: [1, { kind: "intcons", arg: [2, { kind: "intnil" }] }] } },
-        { tag: "int-list2", kind: "intcons", arg: [1, { kind: "intcons", arg: [2, { kind: "intnil" }] }] },
+        { tag: "int-list1", arg: { kind: "intcons", value: [1, { kind: "intcons", value: [2, { kind: "intnil" }] }] } },
+        { tag: "int-list2", kind: "intcons", value: [1, { kind: "intcons", value: [2, { kind: "intnil" }] }] },
       ]);
     });
 

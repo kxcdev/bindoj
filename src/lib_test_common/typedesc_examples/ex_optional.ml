@@ -82,14 +82,14 @@ end
 
 module Variant : Util.Ex_desc = struct
   let discriminator = "tag"
-  let arg_fname = "value"
+  let arg_fname = "arg"
 
   let variant_configs : [`type_decl] configs = [
     Json_config.variant_discriminator discriminator;
   ]
 
   let ctor_configs: [`variant_constructor] configs = [
-    Json_config.name_of_variant_arg arg_fname
+    Json_config.name_of_variant_arg `arg
   ]
 
   let module_name = "Variant"
@@ -285,11 +285,11 @@ module Variant : Util.Ex_desc = struct
               (`anyone_of
                 [`object_of
                     [`mandatory_field ("tag", (`exactly (`str "tuple-like")));
-                    `optional_field ("value", `integral)];
+                    `optional_field ("arg", `integral)];
                 `object_of
                   [`mandatory_field
                       ("tag", (`exactly (`str "tuple-like-alias")));
-                  `optional_field ("value", `integral)];
+                  `optional_field ("arg", `integral)];
                 `object_of
                   [`mandatory_field
                       ("tag", (`exactly (`str "tuple-like-obj")));

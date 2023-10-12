@@ -49,8 +49,8 @@
                 "title": "With_id",
                 "description": "With_id constructor",
                 "type": "object",
-                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
-                "required": ["arg", "kind"],
+                "properties": { "value": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["value", "kind"],
                 "additionalProperties": false
               },
               {
@@ -121,8 +121,8 @@
                 "title": "With_id",
                 "description": "With_id constructor",
                 "type": "object",
-                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
-                "required": ["arg", "kind"],
+                "properties": { "value": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["value", "kind"],
                 "additionalProperties": false
               },
               {
@@ -157,10 +157,10 @@
               }
             ]
           },
-          "arg": { "type": "integer" },
+          "value": { "type": "integer" },
           "kind": { "enum": ["With_id"], "type": "string" }
         },
-        "required": ["unit", "point2", "x", "y", "person", "arg", "kind"],
+        "required": ["unit", "point2", "x", "y", "person", "value", "kind"],
         "additionalProperties": false
       },
       {
@@ -194,8 +194,8 @@
                 "title": "With_id",
                 "description": "With_id constructor",
                 "type": "object",
-                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
-                "required": ["arg", "kind"],
+                "properties": { "value": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["value", "kind"],
                 "additionalProperties": false
               },
               {
@@ -273,8 +273,8 @@
                 "title": "With_id",
                 "description": "With_id constructor",
                 "type": "object",
-                "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
-                "required": ["arg", "kind"],
+                "properties": { "value": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+                "required": ["value", "kind"],
                 "additionalProperties": false
               },
               {
@@ -362,7 +362,7 @@
         "description": "Student3 constructor",
         "type": "object",
         "properties": {
-          "value": {
+          "arg": {
             "description": "definition of ex_record_student type",
             "type": "object",
             "properties": {
@@ -374,7 +374,7 @@
           },
           "tag": { "enum": ["student3"], "type": "string" }
         },
-        "required": ["value", "tag"],
+        "required": ["arg", "tag"],
         "additionalProperties": false
       },
       {
@@ -393,7 +393,7 @@
         "description": "Int_list1 constructor",
         "type": "object",
         "properties": {
-          "value": {
+          "arg": {
             "description": "definition of ex_variant_int_list type",
             "oneOf": [
               {
@@ -409,7 +409,7 @@
                 "description": "cons for ex_variant_int_list",
                 "type": "object",
                 "properties": {
-                  "arg": {
+                  "value": {
                     "type": "array",
                     "items": [{ "type": "integer" }, { "$ref": "#ExVariantIntList" }],
                     "minItems": 2,
@@ -417,14 +417,14 @@
                   },
                   "kind": { "enum": ["intcons"], "type": "string" }
                 },
-                "required": ["arg", "kind"],
+                "required": ["value", "kind"],
                 "additionalProperties": false
               }
             ]
           },
           "tag": { "enum": ["int-list1"], "type": "string" }
         },
-        "required": ["value", "tag"],
+        "required": ["arg", "tag"],
         "additionalProperties": false
       },
       {
@@ -443,7 +443,7 @@
         "description": "cons for ex_variant_int_list",
         "type": "object",
         "properties": {
-          "arg": {
+          "value": {
             "type": "array",
             "items": [{ "type": "integer" }, { "$ref": "#ExVariantIntList" }],
             "minItems": 2,
@@ -452,7 +452,7 @@
           "kind": { "enum": ["intcons"], "type": "string" },
           "tag": { "enum": ["int-list2"], "type": "string" }
         },
-        "required": ["arg", "kind", "tag"],
+        "required": ["value", "kind", "tag"],
         "additionalProperties": false
       }
     ]

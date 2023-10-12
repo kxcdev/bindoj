@@ -38,19 +38,19 @@ module Sample_value = struct
 
     let ctor0 ?(discriminator="kind") name : jv = `obj [(discriminator, `str name)]
 
-    let ctor1 ?(discriminator="kind") ?(arg="arg") name (value: jv) : jv =
+    let ctor1 ?(discriminator="kind") ?(arg="value") name (value: jv) : jv =
       `obj [
         (discriminator, `str name);
         (arg, value);
       ]
 
-    let ctor2 ?(discriminator="kind") ?(arg="arg") name (v1: jv) (v2: jv) : jv =
+    let ctor2 ?(discriminator="kind") ?(arg="value") name (v1: jv) (v2: jv) : jv =
       `obj [
         (discriminator, `str name);
         (arg, `arr [v1; v2]);
       ]
 
-    let ctorN ?(discriminator="kind") ?(arg="arg") name (values: jv list) : jv =
+    let ctorN ?(discriminator="kind") ?(arg="value") name (values: jv list) : jv =
       `obj [
         (discriminator, `str name);
         (arg, `arr values);

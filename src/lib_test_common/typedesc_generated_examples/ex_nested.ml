@@ -69,7 +69,7 @@ module Record = struct
       ];
       With_id 1619, [
         ("kind", `str "With_id");
-        ("arg", `num 1619.);
+        ("value", `num 1619.);
       ];
       Student {
         student_id = 451;
@@ -163,7 +163,7 @@ module Variant = struct
 
   let sample_value03 = {
     orig = Student3 sample_student;
-    jv = `obj [ ("tag", `str "student3"); ("value", `obj sample_student_jv_fields); ]
+    jv = `obj [ ("tag", `str "student3"); ("arg", `obj sample_student_jv_fields); ]
   }
 
   let sample_value04 = {
@@ -173,12 +173,12 @@ module Variant = struct
 
   let sample_value05 = {
     orig = Int_list1 (IntCons (1, IntCons (2, IntNil)));
-    jv = `obj [ ("tag", `str "int-list1"); ("value", intCons 1 (intCons 2 intNil))]
+    jv = `obj [ ("tag", `str "int-list1"); ("arg", intCons 1 (intCons 2 intNil))]
   }
 
   let sample_value06 = {
     orig = Int_list2 (IntCons (1, IntCons (2, IntNil)));
-    jv = `obj [ ("tag", `str "int-list2"); ("kind", `str "intcons"); ("arg", `arr [ `num 1.; intCons 2 intNil ]); ]
+    jv = `obj [ ("tag", `str "int-list2"); ("kind", `str "intcons"); ("value", `arr [ `num 1.; intCons 2 intNil ]); ]
   }
 
   let sample_values = [

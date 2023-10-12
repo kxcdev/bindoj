@@ -90,7 +90,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -168,7 +168,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -204,7 +204,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -247,7 +247,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -331,7 +331,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -402,7 +402,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -475,7 +475,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -553,7 +553,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -589,7 +589,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -632,7 +632,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -716,7 +716,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -787,7 +787,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -810,7 +810,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                  ];
                              ] ) );
                    `mandatory_field ("kind", `exactly (`str "With_id"));
-                   `mandatory_field ("arg", `integral);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
@@ -861,7 +861,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -939,7 +939,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -975,7 +975,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -1018,7 +1018,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -1102,7 +1102,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -1173,7 +1173,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -1250,7 +1250,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -1328,7 +1328,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -1364,7 +1364,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -1407,7 +1407,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -1491,7 +1491,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -1562,7 +1562,7 @@ let ex_nested_multiply_record_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -1601,7 +1601,7 @@ let rec ex_nested_multiply_record_to_json =
    let rec ex_mangling_gen__ex_mangling_person_inherited_to_json_nested =
      (function
       | Anonymous -> [ ("kind", `str "Anonymous") ]
-      | With_id x0 -> [ ("kind", `str "With_id"); ("arg", int_to_json x0) ]
+      | With_id x0 -> [ ("kind", `str "With_id"); ("value", int_to_json x0) ]
       | Student { student_id = x0; name = x1; case_value = x2 } ->
           [
             ("kind", `str "student");
@@ -1708,12 +1708,12 @@ and ex_nested_multiply_record_of_json' =
           | `obj (("kind", `str "Anonymous") :: _) ->
               Ok (Anonymous : Ex_mangling_gen.ex_mangling_person_inherited)
           | `obj (("kind", `str "With_id") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
                   Ok (With_id x0 : Ex_mangling_gen.ex_mangling_person_inherited)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str "student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "student_id" param
@@ -2057,7 +2057,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2135,7 +2135,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2171,7 +2171,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -2214,7 +2214,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2298,7 +2298,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2369,7 +2369,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -2443,7 +2443,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2521,7 +2521,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2557,7 +2557,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -2600,7 +2600,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2684,7 +2684,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2755,7 +2755,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -2778,7 +2778,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                  ];
                              ] ) );
                    `mandatory_field ("kind", `exactly (`str "With_id"));
-                   `mandatory_field ("arg", `integral);
+                   `mandatory_field ("value", `integral);
                  ];
                `object_of
                  [
@@ -2830,7 +2830,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2908,7 +2908,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -2944,7 +2944,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -2987,7 +2987,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -3071,7 +3071,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -3142,7 +3142,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -3220,7 +3220,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -3298,7 +3298,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -3334,7 +3334,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                              ] ) );
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -3377,7 +3377,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -3461,7 +3461,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "With_id")
                                                      );
                                                    `mandatory_field
-                                                     ("arg", `integral);
+                                                     ("value", `integral);
                                                  ];
                                                `object_of
                                                  [
@@ -3532,7 +3532,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                  [
                                    `mandatory_field
                                      ("kind", `exactly (`str "With_id"));
-                                   `mandatory_field ("arg", `integral);
+                                   `mandatory_field ("value", `integral);
                                  ];
                                `object_of
                                  [
@@ -3595,7 +3595,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "student3"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExRecordStudent",
                                            `object_of
@@ -3617,7 +3617,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "int-list1"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExVariantIntList",
                                            `anyone_of
@@ -3636,7 +3636,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "intcons")
                                                      );
                                                    `mandatory_field
-                                                     ( "arg",
+                                                     ( "value",
                                                        `tuple_of
                                                          [ `integral; `self ] );
                                                  ];
@@ -3656,7 +3656,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                    `mandatory_field ("tag", `exactly (`str "student1"));
@@ -3706,7 +3706,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "student3"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExRecordStudent",
                                            `object_of
@@ -3728,7 +3728,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "int-list1"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExVariantIntList",
                                            `anyone_of
@@ -3747,7 +3747,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "intcons")
                                                      );
                                                    `mandatory_field
-                                                     ( "arg",
+                                                     ( "value",
                                                        `tuple_of
                                                          [ `integral; `self ] );
                                                  ];
@@ -3767,7 +3767,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                    `mandatory_field ("tag", `exactly (`str "student2"));
@@ -3810,7 +3810,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "student3"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExRecordStudent",
                                            `object_of
@@ -3832,7 +3832,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "int-list1"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExVariantIntList",
                                            `anyone_of
@@ -3851,7 +3851,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "intcons")
                                                      );
                                                    `mandatory_field
-                                                     ( "arg",
+                                                     ( "value",
                                                        `tuple_of
                                                          [ `integral; `self ] );
                                                  ];
@@ -3871,12 +3871,12 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                    `mandatory_field ("tag", `exactly (`str "student3"));
                    `mandatory_field
-                     ( "value",
+                     ( "arg",
                        `named
                          ( "ExRecordStudent",
                            `object_of
@@ -3921,7 +3921,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "student3"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExRecordStudent",
                                            `object_of
@@ -3943,7 +3943,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "int-list1"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExVariantIntList",
                                            `anyone_of
@@ -3962,7 +3962,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "intcons")
                                                      );
                                                    `mandatory_field
-                                                     ( "arg",
+                                                     ( "value",
                                                        `tuple_of
                                                          [ `integral; `self ] );
                                                  ];
@@ -3982,7 +3982,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                    `mandatory_field ("tag", `exactly (`str "student4"));
@@ -4025,7 +4025,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "student3"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExRecordStudent",
                                            `object_of
@@ -4047,7 +4047,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "int-list1"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExVariantIntList",
                                            `anyone_of
@@ -4066,7 +4066,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "intcons")
                                                      );
                                                    `mandatory_field
-                                                     ( "arg",
+                                                     ( "value",
                                                        `tuple_of
                                                          [ `integral; `self ] );
                                                  ];
@@ -4086,12 +4086,12 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                    `mandatory_field ("tag", `exactly (`str "int-list1"));
                    `mandatory_field
-                     ( "value",
+                     ( "arg",
                        `named
                          ( "ExVariantIntList",
                            `anyone_of
@@ -4106,7 +4106,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                  ];
@@ -4146,7 +4146,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "student3"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExRecordStudent",
                                            `object_of
@@ -4168,7 +4168,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "int-list1"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExVariantIntList",
                                            `anyone_of
@@ -4187,7 +4187,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "intcons")
                                                      );
                                                    `mandatory_field
-                                                     ( "arg",
+                                                     ( "value",
                                                        `tuple_of
                                                          [ `integral; `self ] );
                                                  ];
@@ -4207,7 +4207,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                    `mandatory_field ("tag", `exactly (`str "int-list2"));
@@ -4249,7 +4249,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "student3"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExRecordStudent",
                                            `object_of
@@ -4271,7 +4271,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("tag", `exactly (`str "int-list1"));
                                    `mandatory_field
-                                     ( "value",
+                                     ( "arg",
                                        `named
                                          ( "ExVariantIntList",
                                            `anyone_of
@@ -4290,7 +4290,7 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                                        `exactly (`str "intcons")
                                                      );
                                                    `mandatory_field
-                                                     ( "arg",
+                                                     ( "value",
                                                        `tuple_of
                                                          [ `integral; `self ] );
                                                  ];
@@ -4310,12 +4310,12 @@ let ex_nested_multiply_variant_json_shape_explanation =
                                    `mandatory_field
                                      ("kind", `exactly (`str "intcons"));
                                    `mandatory_field
-                                     ("arg", `tuple_of [ `integral; `self ]);
+                                     ("value", `tuple_of [ `integral; `self ]);
                                  ];
                              ] ) );
                    `mandatory_field ("tag", `exactly (`str "int-list2"));
                    `mandatory_field ("kind", `exactly (`str "intcons"));
-                   `mandatory_field ("arg", `tuple_of [ `integral; `self ]);
+                   `mandatory_field ("value", `tuple_of [ `integral; `self ]);
                  ];
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
@@ -4329,7 +4329,7 @@ let rec ex_nested_multiply_variant_to_json =
    let rec ex_mangling_gen__ex_mangling_person_inherited_to_json_nested =
      (function
       | Anonymous -> [ ("kind", `str "Anonymous") ]
-      | With_id x0 -> [ ("kind", `str "With_id"); ("arg", int_to_json x0) ]
+      | With_id x0 -> [ ("kind", `str "With_id"); ("value", int_to_json x0) ]
       | Student { student_id = x0; name = x1; case_value = x2 } ->
           [
             ("kind", `str "student");
@@ -4388,7 +4388,7 @@ let rec ex_nested_multiply_variant_to_json =
       | Student3 x0 ->
           [
             ("tag", `str "student3");
-            ("value", `obj (ex_record_gen__ex_record_student_to_json_nested x0));
+            ("arg", `obj (ex_record_gen__ex_record_student_to_json_nested x0));
           ]
       | Student4 x0 ->
           ("tag", `str "student4")
@@ -4396,8 +4396,7 @@ let rec ex_nested_multiply_variant_to_json =
       | Int_list1 x0 ->
           [
             ("tag", `str "int-list1");
-            ( "value",
-              `obj (ex_variant_gen__ex_variant_int_list_to_json_nested x0) );
+            ("arg", `obj (ex_variant_gen__ex_variant_int_list_to_json_nested x0));
           ]
       | Int_list2 x0 ->
           ("tag", `str "int-list2")
@@ -4413,7 +4412,7 @@ let rec ex_nested_multiply_variant_to_json =
       | IntCons (x0, x1) ->
           [
             ("kind", `str "intcons");
-            ( "arg",
+            ( "value",
               `arr
                 [
                   int_to_json x0;
@@ -4493,12 +4492,12 @@ and ex_nested_multiply_variant_of_json' =
           | `obj (("kind", `str "Anonymous") :: _) ->
               Ok (Anonymous : Ex_mangling_gen.ex_mangling_person_inherited)
           | `obj (("kind", `str "With_id") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`f "arg" :: path) arg >>= fun x0 ->
+                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
                   Ok (With_id x0 : Ex_mangling_gen.ex_mangling_person_inherited)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str "student") :: param) ->
               let ( >>= ) = Result.bind in
               List.assoc_opt "student_id" param
@@ -4667,27 +4666,27 @@ and ex_nested_multiply_variant_of_json' =
               >>= fun x0 ->
               Ok (Student2 { student = x0 } : Ex_nested_gen.ex_nested_variant)
           | `obj (("tag", `str "student3") :: param) -> (
-              match List.assoc_opt "value" param with
+              match List.assoc_opt "arg" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
                   ex_record_gen__ex_record_student_of_json_nested
-                    (`f "value" :: path) arg
+                    (`f "arg" :: path) arg
                   >>= fun x0 ->
                   Ok (Student3 x0 : Ex_nested_gen.ex_nested_variant)
-              | None -> Error ("mandatory field 'value' does not exist", path))
+              | None -> Error ("mandatory field 'arg' does not exist", path))
           | `obj (("tag", `str "student4") :: _) ->
               let ( >>= ) = Result.bind in
               ex_record_gen__ex_record_student_of_json_nested path __bindoj_orig
               >>= fun x0 -> Ok (Student4 x0 : Ex_nested_gen.ex_nested_variant)
           | `obj (("tag", `str "int-list1") :: param) -> (
-              match List.assoc_opt "value" param with
+              match List.assoc_opt "arg" param with
               | Some arg ->
                   let ( >>= ) = Result.bind in
                   ex_variant_gen__ex_variant_int_list_of_json_nested
-                    (`f "value" :: path) arg
+                    (`f "arg" :: path) arg
                   >>= fun x0 ->
                   Ok (Int_list1 x0 : Ex_nested_gen.ex_nested_variant)
-              | None -> Error ("mandatory field 'value' does not exist", path))
+              | None -> Error ("mandatory field 'arg' does not exist", path))
           | `obj (("tag", `str "int-list2") :: _) ->
               let ( >>= ) = Result.bind in
               ex_variant_gen__ex_variant_int_list_of_json_nested path
@@ -4749,12 +4748,13 @@ and ex_nested_multiply_variant_of_json' =
           | `obj (("kind", `str "intnil") :: _) ->
               Ok (IntNil : Ex_variant_gen.ex_variant_int_list)
           | `obj (("kind", `str "intcons") :: param) -> (
-              match List.assoc_opt "arg" param with
+              match List.assoc_opt "value" param with
               | Some (`arr [ x0; x1 ]) ->
                   let ( >>= ) = Result.bind in
-                  int_of_json' (`i 0 :: `f "arg" :: path) x0 >>= fun x0 ->
+                  int_of_json' (`i 0 :: `f "value" :: path) x0 >>= fun x0 ->
                   ex_variant_gen__ex_variant_int_list_of_json_nested
-                    (`i 1 :: `f "arg" :: path) x1
+                    (`i 1 :: `f "value" :: path)
+                    x1
                   >>= fun x1 ->
                   Ok (IntCons (x0, x1) : Ex_variant_gen.ex_variant_int_list)
               | Some (`arr xs) ->
@@ -4763,7 +4763,7 @@ and ex_nested_multiply_variant_of_json' =
                         "expecting an array of length 2, but the given has a \
                          length of %d"
                         (List.length xs),
-                      `f "arg" :: path )
+                      `f "value" :: path )
               | Some jv ->
                   Error
                     ( Printf.sprintf
@@ -4771,8 +4771,8 @@ and ex_nested_multiply_variant_of_json' =
                          is of type '%s'"
                         (let open Kxclib.Json in
                          string_of_jv_kind (classify_jv jv)),
-                      `f "arg" :: path )
-              | None -> Error ("mandatory field 'arg' does not exist", path))
+                      `f "value" :: path )
+              | None -> Error ("mandatory field 'value' does not exist", path))
           | `obj (("kind", `str discriminator_value) :: _) ->
               Error
                 ( Printf.sprintf

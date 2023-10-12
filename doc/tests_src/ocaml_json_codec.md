@@ -216,7 +216,7 @@ let person_to_json =
   (function
    | Anonymous -> `obj [("kind", (`str "anonymous"))]
    | With_id x0 ->
-       `obj [("kind", (`str "with-id")); ("arg", (int_to_json x0))]
+       `obj [("kind", (`str "with-id")); ("value", (int_to_json x0))]
    | Student { student_id = x0; name = x1 } ->
        `obj
          [("kind", (`str "student"));
@@ -240,13 +240,13 @@ let person_of_json' =
            match Kxclib.Jv.pump_field "kind" __bindoj_orig with
            | `obj (("kind", `str "anonymous")::_) -> Ok Anonymous
            | `obj (("kind", `str "with-id")::param) ->
-               (match List.assoc_opt "arg" param with
+               (match List.assoc_opt "value" param with
                 | Some arg ->
                     let (>>=) = Result.bind in
-                    (int_of_json' ((`f "arg") :: path) arg) >>=
+                    (int_of_json' ((`f "value") :: path) arg) >>=
                       ((fun x0 -> Ok (With_id x0)))
                 | None ->
-                    Error ("mandatory field 'arg' does not exist", path))
+                    Error ("mandatory field 'value' does not exist", path))
            | `obj (("kind", `str "student")::param) ->
                let (>>=) = Result.bind in
                (((List.assoc_opt "studentId" param) |>
@@ -329,7 +329,7 @@ let person_of_json' =
                               `object_of
                                 [`mandatory_field
                                    ("kind", (`exactly (`str "with-id")));
-                                `mandatory_field ("arg", `integral)];
+                                `mandatory_field ("value", `integral)];
                               `object_of
                                 [`mandatory_field
                                    ("kind", (`exactly (`str "student")));

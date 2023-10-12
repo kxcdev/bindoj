@@ -28,9 +28,9 @@ describe("ex_optional", (): void => {
     test("it compiles", () => {
       expect(samples).toStrictEqual([
         { tag: "tuple-like" },
-        { tag: "tuple-like", value: 42 },
+        { tag: "tuple-like", arg: 42 },
         { tag: "tuple-like-alias" },
-        { tag: "tuple-like-alias", value: 42 },
+        { tag: "tuple-like-alias", arg: 42 },
         { tag: "tuple-like-obj" },
         { tag: "tuple-like-obj", _0: 42 },
         { tag: "tuple-like-obj", _1: 128 },

@@ -282,8 +282,12 @@ end
 
 module Customized_union = struct
   type t = ex_variant_customized_union =
-    | Case1 of int
-    | Case2 of { x: int; y: int }
+    | Case_tuple_like_arg of int
+    | Case_tuple_like_exactly of int
+    | Case_tuple_like_kind_name of int
+    | Case_tuple_like_kind_name_no_mangling of int
+    | Case_tuple_like_kind_name_no_mangling_with_ctor_name of int
+    | Case_inline_record of { x : int; y : int }
   [@@deriving show]
   let decl = Td_ex_variant.Customized_union.decl
   let reflect = ex_variant_customized_union_reflect
@@ -300,13 +304,28 @@ module Customized_union = struct
   let discriminator = "tag"
 
   let sample_value01 = {
-    orig = Case1 42;
-    jv = ctor1 ~discriminator ~arg:"value" "case1'" (`num 42.);
+    orig = Case_tuple_like_arg 42;
+    jv = ctor1 ~discriminator ~arg:"arg" "case-tuple-like-arg'" (`num 42.);
   }
-
   let sample_value02 = {
-    orig = Case2 { x = 4; y = 2 };
-    jv = ctor_record ~discriminator "case2'" [
+    orig = Case_tuple_like_exactly 1024;
+    jv = ctor1 ~discriminator ~arg:"Argument" "case-tuple-like-exactly'" (`num 1024.);
+  }
+  let sample_value03 = {
+    orig = Case_tuple_like_kind_name 12345;
+    jv = ctor1 ~discriminator ~arg:"case-tuple-like-kind-name'" "case-tuple-like-kind-name'" (`num 12345.);
+  }
+  let sample_value04 = {
+    orig = Case_tuple_like_kind_name_no_mangling 654321;
+    jv = ctor1 ~discriminator ~arg:"Case_tuple_like_kind_name_no_mangling" "case-tuple-like-kind-name-no-mangling" (`num 654321.);
+  }
+  let sample_value05 = {
+    orig = Case_tuple_like_kind_name_no_mangling_with_ctor_name 256;
+    jv = ctor1 ~discriminator ~arg:"case-tuple-like-kind-name-no-mangling-with-ctor-name" "case-tuple-like-kind-name-no-mangling-with-ctor-name" (`num 256.);
+  }
+  let sample_value06 = {
+    orig = Case_inline_record { x = 4; y = 2 };
+    jv = ctor_record ~discriminator "case-inline-record'" [
       "x'", `num 4.;
       "y'", `num 2.;
     ]
@@ -315,6 +334,10 @@ module Customized_union = struct
   let sample_values = [
     sample_value01;
     sample_value02;
+    sample_value03;
+    sample_value04;
+    sample_value05;
+    sample_value06;
   ]
 end
 

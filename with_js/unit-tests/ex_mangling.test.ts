@@ -39,7 +39,7 @@ describe("ex_mangling", (): void => {
     test("the case analyzer works", (): void => {
       const analyzer = ex.analyze_ex_mangling_person_no_mangling<AnalyzeResult>({
         Anonymous: (_) => "Anonymous",
-        With_id: (v) => v.arg,
+        With_id: (v) => v.value,
         Student: (v) => [v.name, v.student_id],
         Teacher: (v) => [v.name, v.faculty_id, v.department],
       });
@@ -61,7 +61,7 @@ describe("ex_mangling", (): void => {
     test("the case analyzer works", (): void => {
       const analyzer = ex.analyze_ex_mangling_person_inherited<AnalyzeResult>({
         Anonymous: (_) => "Anonymous",
-        With_id: (v) => v.arg,
+        With_id: (v) => v.value,
         student: (v) => [v.name, v.student_id, v.caseValue],
         Teacher: (v) => [v.name, v.facultyId, v.department],
       });

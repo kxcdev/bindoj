@@ -31,8 +31,8 @@
         "title": "With_id",
         "description": "With_id constructor",
         "type": "object",
-        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
-        "required": ["arg", "kind"],
+        "properties": { "value": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+        "required": ["value", "kind"],
         "additionalProperties": false
       },
       {
@@ -80,8 +80,8 @@
         "title": "With_id",
         "description": "With_id constructor",
         "type": "object",
-        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
-        "required": ["arg", "kind"],
+        "properties": { "value": { "type": "integer" }, "kind": { "enum": ["With_id"], "type": "string" } },
+        "required": ["value", "kind"],
         "additionalProperties": false
       },
       {

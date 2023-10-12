@@ -13,7 +13,9 @@
               "schema": { "$ref": "#/components/schemas/ExVariantPerson" },
               "examples": {
                 "example_0": { "value": { "kind": "anonymous" } },
-                "example_1": { "value": { "kind": "with-id", "arg": 1619 } },
+                "example_1": {
+                  "value": { "kind": "with-id", "value": 1619 }
+                },
                 "example_2": {
                   "value": {
                     "kind": "student",
@@ -86,10 +88,10 @@
             "title": "with-id",
             "type": "object",
             "properties": {
-              "arg": { "type": "integer" },
+              "value": { "type": "integer" },
               "kind": { "enum": ["with-id"], "type": "string" }
             },
-            "required": ["arg", "kind"],
+            "required": ["value", "kind"],
             "additionalProperties": false
           },
           {

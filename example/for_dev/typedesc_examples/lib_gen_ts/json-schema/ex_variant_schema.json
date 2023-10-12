@@ -17,8 +17,8 @@
         "title": "with-id",
         "description": "With_id constructor",
         "type": "object",
-        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["with-id"], "type": "string" } },
-        "required": ["arg", "kind"],
+        "properties": { "value": { "type": "integer" }, "kind": { "enum": ["with-id"], "type": "string" } },
+        "required": ["value", "kind"],
         "additionalProperties": false
       },
       {
@@ -66,8 +66,8 @@
         "title": "with-id",
         "description": "With_id constructor",
         "type": "object",
-        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["with-id"], "type": "string" } },
-        "required": ["arg", "kind"],
+        "properties": { "value": { "type": "integer" }, "kind": { "enum": ["with-id"], "type": "string" } },
+        "required": ["value", "kind"],
         "additionalProperties": false
       },
       {
@@ -116,7 +116,7 @@
         "description": "cons for ex_variant_int_list",
         "type": "object",
         "properties": {
-          "arg": {
+          "value": {
             "type": "array",
             "items": [{ "type": "integer" }, { "$ref": "#ExVariantIntList" }],
             "minItems": 2,
@@ -124,7 +124,7 @@
           },
           "kind": { "enum": ["intcons"], "type": "string" }
         },
-        "required": ["arg", "kind"],
+        "required": ["value", "kind"],
         "additionalProperties": false
       }
     ]
@@ -175,8 +175,8 @@
         "title": "foo1",
         "description": "polyvariant case (length=1)",
         "type": "object",
-        "properties": { "arg": { "type": "integer" }, "kind": { "enum": ["foo1"], "type": "string" } },
-        "required": ["arg", "kind"],
+        "properties": { "value": { "type": "integer" }, "kind": { "enum": ["foo1"], "type": "string" } },
+        "required": ["value", "kind"],
         "additionalProperties": false
       },
       {
@@ -184,7 +184,7 @@
         "description": "polyvariant case (length=2)",
         "type": "object",
         "properties": {
-          "arg": {
+          "value": {
             "type": "array",
             "items": [{ "type": "integer" }, { "type": "integer" }],
             "minItems": 2,
@@ -192,7 +192,7 @@
           },
           "kind": { "enum": ["foo2"], "type": "string" }
         },
-        "required": ["arg", "kind"],
+        "required": ["value", "kind"],
         "additionalProperties": false
       }
     ]
@@ -204,20 +204,65 @@
     "id": "#ExVariantCustomizedUnion",
     "oneOf": [
       {
-        "title": "case1'",
-        "description": "custom arg name (value)",
+        "title": "case-tuple-like-arg'",
+        "description": "customized arg name (arg)",
         "type": "object",
-        "properties": { "value": { "type": "integer" }, "tag": { "enum": ["case1'"], "type": "string" } },
-        "required": ["value", "tag"],
+        "properties": { "arg": { "type": "integer" }, "tag": { "enum": ["case-tuple-like-arg'"], "type": "string" } },
+        "required": ["arg", "tag"],
         "additionalProperties": false
       },
       {
-        "title": "case2'",
+        "title": "case-tuple-like-exactly'",
+        "description": "customized arg name (exactly Argument)",
+        "type": "object",
+        "properties": {
+          "Argument": { "type": "integer" },
+          "tag": { "enum": ["case-tuple-like-exactly'"], "type": "string" }
+        },
+        "required": ["Argument", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "case-tuple-like-kind-name'",
+        "description": "inherited customized arg name (kind_name)",
+        "type": "object",
+        "properties": {
+          "case-tuple-like-kind-name'": { "type": "integer" },
+          "tag": { "enum": ["case-tuple-like-kind-name'"], "type": "string" }
+        },
+        "required": ["case-tuple-like-kind-name'", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "case-tuple-like-kind-name-no-mangling",
+        "description": "customized arg name (kind_name of no_mangling)",
+        "type": "object",
+        "properties": {
+          "Case_tuple_like_kind_name_no_mangling": { "type": "integer" },
+          "tag": { "enum": ["case-tuple-like-kind-name-no-mangling"], "type": "string" }
+        },
+        "required": ["Case_tuple_like_kind_name_no_mangling", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "case-tuple-like-kind-name-no-mangling-with-ctor-name",
+        "description": "customized arg name (kind_name of no_mangling) with customized constructor name",
+        "type": "object",
+        "properties": {
+          "case-tuple-like-kind-name-no-mangling-with-ctor-name": { "type": "integer" },
+          "tag": { "enum": ["case-tuple-like-kind-name-no-mangling-with-ctor-name"], "type": "string" }
+        },
+        "required": ["case-tuple-like-kind-name-no-mangling-with-ctor-name", "tag"],
+        "additionalProperties": false
+      },
+      {
+        "title": "case-inline-record'",
+        "description": "customized name of fields",
         "type": "object",
         "properties": {
           "x'": { "type": "integer" },
           "y'": { "type": "integer" },
-          "tag": { "enum": ["case2'"], "type": "string" }
+          "tag": { "enum": ["case-inline-record'"], "type": "string" }
         },
         "required": ["x'", "y'", "tag"],
         "additionalProperties": false

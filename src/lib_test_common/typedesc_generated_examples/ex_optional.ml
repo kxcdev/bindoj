@@ -158,12 +158,12 @@ module Variant = struct
     [ sample_opts |&> (fun (opt, jv) ->
       Tuple_like opt,
         [ ("tag", `str "tuple-like");
-          ("value", jv) ]);
+          ("arg", jv) ]);
 
       sample_opts |&> (fun (opt, jv) ->
         Tuple_like_alias opt,
           [ ("tag", `str "tuple-like-alias");
-            ("value", jv) ]);
+            ("arg", jv) ]);
 
       sample_tuples |&> (fun ((a, b), fields) ->
         Tuple_like_obj (a, b),

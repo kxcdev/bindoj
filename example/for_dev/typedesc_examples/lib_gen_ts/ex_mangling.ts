@@ -8,12 +8,12 @@ export type ex_mangling_person_no_mangling =
   | { kind: "Anonymous" }
   | { kind: "Student"; name: string; student_id: number }
   | { kind: "Teacher"; department: string; faculty_id: number; name: string }
-  | { kind: "With_id"; arg: number };
+  | { kind: "With_id"; value: number };
 export function analyze_ex_mangling_person_no_mangling<__bindoj_ret>(__bindoj_fns: {
   Anonymous: (__bindoj_v: { kind: "Anonymous" }) => __bindoj_ret;
   Student: (__bindoj_v: { kind: "Student"; name: string; student_id: number }) => __bindoj_ret;
   Teacher: (__bindoj_v: { kind: "Teacher"; department: string; faculty_id: number; name: string }) => __bindoj_ret;
-  With_id: (__bindoj_v: { kind: "With_id"; arg: number }) => __bindoj_ret;
+  With_id: (__bindoj_v: { kind: "With_id"; value: number }) => __bindoj_ret;
 }): (__bindoj_x: ex_mangling_person_no_mangling) => __bindoj_ret {
   return (__bindoj_x: ex_mangling_person_no_mangling) => {
     if (__bindoj_x.kind === "Anonymous") {
@@ -34,7 +34,7 @@ export type ex_mangling_person_inherited =
   | { kind: "Anonymous" }
   | { kind: "student"; caseValue: "Case_at0" | "case-at1"; name: string; student_id: number }
   | { kind: "Teacher"; department: string; facultyId: number; name: string }
-  | { kind: "With_id"; arg: number };
+  | { kind: "With_id"; value: number };
 export function analyze_ex_mangling_person_inherited<__bindoj_ret>(__bindoj_fns: {
   Anonymous: (__bindoj_v: { kind: "Anonymous" }) => __bindoj_ret;
   student: (__bindoj_v: {
@@ -44,7 +44,7 @@ export function analyze_ex_mangling_person_inherited<__bindoj_ret>(__bindoj_fns:
     student_id: number;
   }) => __bindoj_ret;
   Teacher: (__bindoj_v: { kind: "Teacher"; department: string; facultyId: number; name: string }) => __bindoj_ret;
-  With_id: (__bindoj_v: { kind: "With_id"; arg: number }) => __bindoj_ret;
+  With_id: (__bindoj_v: { kind: "With_id"; value: number }) => __bindoj_ret;
 }): (__bindoj_x: ex_mangling_person_inherited) => __bindoj_ret {
   return (__bindoj_x: ex_mangling_person_inherited) => {
     if (__bindoj_x.kind === "Anonymous") {

@@ -32,14 +32,13 @@ end = struct
 end
 
 let create_test_cases (module S : Sample_generated) =
-  S.name, (S.descs |&>> (fun (module D : Sample_generated_desc) ->
-    D.samples |&> (fun (name, jv, (msg, path)) ->
+  (S.descs |&> (fun (module D : Sample_generated_desc) ->
+    S.name^"."^D.decl.td_name, D.samples |&> (fun (name, jv, (msg, path)) ->
       let msg =
         if List.empty path then sprintf "%s at root" msg
         else sprintf "%s at path %s" msg (path |> List.rev |> Json.unparse_jvpath)
       in
-      let test_name = sprintf "%s.%s (%s)" S.name D.decl.td_name name in
-      test_case test_name `Quick(fun () ->
+      test_case name `Quick(fun () ->
         let res_msg, res_path =
           D.of_json' jv
           |> function
@@ -59,10 +58,9 @@ let create_test_cases (module S : Sample_generated) =
               ~expected
               ~actual:D.json_shape_explanation
           )]
-        end)
-    )
+        end))
 
 let () =
   all_generated
-  |&> create_test_cases
+  |&>> create_test_cases
   |> Alcotest.run "lib_gen.of_json'"

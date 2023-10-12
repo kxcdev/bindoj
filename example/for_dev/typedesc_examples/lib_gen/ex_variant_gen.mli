@@ -123,8 +123,12 @@ val ex_variant_foo_typed_decl :
   Bindoj_runtime.generic_typed_type_decl
 
 type ex_variant_customized_union =
-  | Case1 of int
-  | Case2 of { x : int; y : int }
+  | Case_tuple_like_arg of int
+  | Case_tuple_like_exactly of int
+  | Case_tuple_like_kind_name of int
+  | Case_tuple_like_kind_name_no_mangling of int
+  | Case_tuple_like_kind_name_no_mangling_with_ctor_name of int
+  | Case_inline_record of { x : int; y : int }
 
 val ex_variant_customized_union_reflect :
   ex_variant_customized_union Bindoj_runtime.Refl.t

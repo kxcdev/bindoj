@@ -44,9 +44,17 @@ type json_nested_field_style = [
   ]
 (** default : [ `nested ] *)
 
+type variant_arg_name_style = [
+  | `exactly of string
+  | `value
+  | `arg
+  | `kind_name of json_mangling_style option
+]
+
 type ('pos, 'kind) config +=
   | Config_json_name : string -> ('pos, [`json_name]) config
-  | Config_json_name_of_variant_arg : string -> ([`variant_constructor], [`json_name_of_variant_arg]) config
+  | Config_json_name_of_variant_arg :
+    variant_arg_name_style -> ([< `variant_constructor | `type_decl], [`json_name_of_variant_arg]) config
   | Config_json_variant_style :
     json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
   | Config_json_variant_discriminator :
@@ -71,12 +79,13 @@ let get_name_opt configs =
 
 let name_of_variant_arg name = Config_json_name_of_variant_arg name
 
-let get_name_of_variant_arg default =
-  Configs.find_or_default ~default (function
+let get_name_of_variant_arg_opt configs =
+  Configs.find (function
     | Config_json_name_of_variant_arg s -> Some s
     | _ -> None
-  )
-let default_name_of_variant_arg = "arg"
+  ) configs
+
+let default_name_of_variant_arg : variant_arg_name_style = `value
 
 let default_variant_style : json_variant_style = `flatten
 let variant_style style = Config_json_variant_style style
@@ -138,20 +147,24 @@ let mangled kind mangling_style name =
 let get_mangled_name_of_type : ?inherited:json_mangling_style -> type_decl -> string * json_mangling_style =
   fun ?(inherited=default_mangling_style) { td_name; td_configs; _ } ->
     let style = get_mangling_style_opt td_configs |? inherited in
-    td_configs |> get_name_opt |? td_name
-    |> mangled `type_name style, style
+    td_configs |> get_name_opt |? (mangled `type_name style td_name)
+    , style
 
 let get_mangled_name_of_field : ?inherited:json_mangling_style -> record_field -> string * json_mangling_style =
   fun ?(inherited=default_mangling_style) { rf_name; rf_configs; _ } ->
     let style = get_mangling_style_opt rf_configs |? inherited in
-    rf_configs |> get_name_opt |? rf_name
-    |> mangled `field_name style, style
+    rf_configs |> get_name_opt |? (mangled `field_name style rf_name)
+    , style
+
+let get_mangled_name_of_discriminator' =
+  fun ?(inherited=default_mangling_style) vc_configs vc_name ->
+    let style = get_mangling_style_opt vc_configs |? inherited in
+    vc_configs |> get_name_opt |? (mangled `discriminator_value style vc_name)
+    , style
 
 let get_mangled_name_of_discriminator : ?inherited:json_mangling_style -> variant_constructor -> string * json_mangling_style =
-  fun ?(inherited=default_mangling_style) { vc_name; vc_configs; _ } ->
-    let style = get_mangling_style_opt vc_configs |? inherited in
-    vc_configs |> get_name_opt |? vc_name
-    |> mangled `discriminator_value style, style
+  fun ?inherited { vc_name; vc_configs; _ } ->
+    get_mangled_name_of_discriminator' ?inherited vc_configs vc_name
 
 let get_mangled_name_of_discriminator_field': ?inherited:json_mangling_style -> [`type_decl] configs -> string =
   fun ?(inherited=default_mangling_style) td_configs ->
@@ -164,20 +177,27 @@ let get_mangled_name_of_discriminator_field =
     get_mangled_name_of_discriminator_field' ?inherited td_configs
 
 let get_mangled_name_of_variant_arg' =
-  fun ?(inherited=default_mangling_style) vc_configs ->
-    let style = get_mangling_style_opt vc_configs |? inherited in
-    vc_configs |> get_name_of_variant_arg default_name_of_variant_arg
-    |> mangled `field_name style
+  fun ?(inherited=default_mangling_style) td_configs vc_configs vc_name ->
+    let mangling_style = get_mangling_style_opt vc_configs |? inherited in
+    get_name_of_variant_arg_opt vc_configs
+    ||?! (fun () -> get_name_of_variant_arg_opt td_configs)
+    |? default_name_of_variant_arg
+    |> function
+    | `exactly name -> name
+    | `value -> "value"
+    | `arg -> "arg"
+    | `kind_name style ->
+      get_mangled_name_of_discriminator' ~inherited:(style |? mangling_style) vc_configs vc_name
+      |> fst
 
 let get_mangled_name_of_variant_arg =
-  fun ?inherited { vc_configs; _ } ->
-    get_mangled_name_of_variant_arg' ?inherited vc_configs
+  fun ?inherited td_configs { vc_name; vc_configs; _ } ->
+    get_mangled_name_of_variant_arg' ?inherited td_configs vc_configs vc_name
 
 let get_mangled_name_of_string_enum_case : ?inherited:json_mangling_style -> Coretype.string_enum_case -> string =
   fun ?(inherited=default_mangling_style) (name, configs, _) ->
     let style = get_mangling_style_opt configs |? inherited in
-    configs |> get_name_opt |? name
-    |> mangled `string_enum_case style
+    configs |> get_name_opt |? (mangled `string_enum_case style name)
 
 let custom_encoder encoder_name = Config_json_custom_encoder encoder_name
 let get_custom_encoder =
@@ -250,7 +270,9 @@ let check_field_name_collision =
           let arg_fname =
             get_mangled_name_of_variant_arg
               ~inherited:base_mangling_style
-              ctor in
+              td_configs
+              ctor
+          in
           fs >>? (List.map (add_field arg_fname) &> sequence_list)
       )
       |> sequence_list

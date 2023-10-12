@@ -70,8 +70,12 @@ end
 module Ex_variant_customized_union = struct
   include Ex_variant.Customized_union
   let expected = function
-    | Case1 _ -> "case1'"
-    | Case2 _ -> "case2'"
+    | Case_tuple_like_arg _ -> "case-tuple-like-arg'"
+    | Case_tuple_like_exactly _ -> "case-tuple-like-exactly'"
+    | Case_tuple_like_kind_name _ -> "case-tuple-like-kind-name'"
+    | Case_tuple_like_kind_name_no_mangling _ -> "case-tuple-like-kind-name-no-mangling"
+    | Case_tuple_like_kind_name_no_mangling_with_ctor_name _ -> "case-tuple-like-kind-name-no-mangling-with-ctor-name"
+    | Case_inline_record _ -> "case-inline-record'"
 end
 
 let all_generated_variant_decl : (module Sample_variant) list =

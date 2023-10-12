@@ -33,15 +33,14 @@ end
 
 
 let create_test_cases sample_name env descs =
-  sample_name, (descs |&>> (fun (module D : Sample_dynamic_desc) ->
+  (descs |&> (fun (module D : Sample_dynamic_desc) ->
     let typed_decl = Typed_type_desc.Typed.mk D.decl D.reflect in
       D.samples |&> (fun (name, jv, (msg, path)) ->
       let msg =
         if List.empty path then sprintf "%s at root" msg
         else sprintf "%s at path %s" msg (path |> List.rev |> Json.unparse_jvpath)
       in
-      let test_name = sprintf "%s.%s (%s)" sample_name D.decl.td_name name in
-      test_case test_name `Quick(fun () ->
+      test_case name `Quick(fun () ->
         let res_msg, res_path =
           Bindoj_codec.Json.of_json' ~env typed_decl jv
           |> function
@@ -52,7 +51,7 @@ let create_test_cases sample_name env descs =
         check' (option string) ~msg:"error message" ~expected:(Some msg) ~actual:res_msg;
         check' (option Testables.jvpath) ~msg:"error jvpath" ~expected:(Some path) ~actual:res_path;
       )) |> fun tests ->
-        tests @ begin match D.expected_json_shape_explanation with
+        sample_name^"."^D.decl.td_name, tests @ begin match D.expected_json_shape_explanation with
         | None -> [ test_case "json_shape_explanation(skipped)" `Quick ignore]
         | Some expected -> [
             test_case "json_shape_explanation" `Quick(fun () ->
@@ -68,6 +67,6 @@ let create_test_cases sample_name env descs =
     ))
 
 let () =
-  all |&> (fun (module S : Sample_dynamic) ->
+  all |&>> (fun (module S : Sample_dynamic) ->
     create_test_cases S.name S.env S.descs)
   |> Alcotest.run "lib_codec.of_json'"

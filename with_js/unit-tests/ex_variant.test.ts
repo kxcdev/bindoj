@@ -22,7 +22,7 @@ describe("ex_variant", (): void => {
     test("the case analyzer works", (): void => {
       const analyzer = ex.analyzeExVariantPerson<AnalyzeResult>({
         anonymous: (_) => "Anonymous",
-        "with-id": (v) => v.arg,
+        "with-id": (v) => v.value,
         student: (v) => [v.name, v.studentId],
         teacher: (v) => [v.name, v.facultyId, v.department],
       });
@@ -42,7 +42,7 @@ describe("ex_variant", (): void => {
     test("the case analyzer works", (): void => {
       const analyzer = ex.analyzeExVariantPersonReused<AnalyzeResult>({
         anonymous: (_) => "Anonymous",
-        "with-id": (v) => v.arg,
+        "with-id": (v) => v.value,
         student: (v) => [v.name, v.studentId],
         teacher: (v) => [v.name, v.facultyId, v.department],
       });
@@ -62,7 +62,7 @@ describe("ex_variant", (): void => {
     test("the case analyzer works", (): void => {
       function analyzer(x: ex.ExVariantIntList): number {
         return ex.analyzeExVariantIntList({
-          intcons: (v) => v.arg[0] + analyzer(v.arg[1]),
+          intcons: (v) => v.value[0] + analyzer(v.value[1]),
           intnil: (_) => 0,
         })(x);
       }
@@ -103,8 +103,8 @@ describe("ex_variant", (): void => {
       function analyzer(x: ex.ExVariantFoo) {
         return ex.analyzeExVariantFoo<number>({
           foo0: (_) => 0,
-          foo1: (v) => v.arg,
-          foo2: (v) => v.arg.reduce((x, y) => x + y, 0),
+          foo1: (v) => v.value,
+          foo2: (v) => v.value.reduce((x, y) => x + y, 0),
         })(x);
       }
 
@@ -123,13 +123,22 @@ describe("ex_variant", (): void => {
     test("the case analyzer works", (): void => {
       function analyzer(x: ex.ExVariantCustomizedUnion) {
         return ex.analyzeExVariantCustomizedUnion<number>({
-          "case1'": (v) => v.value,
-          "case2'": (v) => v["x'"] + v["y'"],
+          "case-tuple-like-arg'": (v) => v.arg,
+          "case-tuple-like-exactly'": (v) => v.Argument,
+          "case-tuple-like-kind-name'": (v) => v["case-tuple-like-kind-name'"],
+          "case-tuple-like-kind-name-no-mangling": (v) => v.Case_tuple_like_kind_name_no_mangling,
+          "case-tuple-like-kind-name-no-mangling-with-ctor-name": (v) =>
+            v["case-tuple-like-kind-name-no-mangling-with-ctor-name"],
+          "case-inline-record'": (v) => v["x'"] + v["y'"],
         })(x);
       }
 
       expect(analyzer(samples[0])).toBe(42);
-      expect(analyzer(samples[1])).toBe(6);
+      expect(analyzer(samples[1])).toBe(1024);
+      expect(analyzer(samples[2])).toBe(12345);
+      expect(analyzer(samples[3])).toBe(654321);
+      expect(analyzer(samples[4])).toBe(256);
+      expect(analyzer(samples[5])).toBe(6);
     });
   });
 });

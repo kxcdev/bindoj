@@ -22,17 +22,17 @@
         "point2": { "x": 1, "y": 2 },
         "x": 1,
         "y": 2,
-        "person": { "kind": "With_id", "arg": 1619 },
+        "person": { "kind": "With_id", "value": 1619 },
         "kind": "With_id",
-        "arg": 1619
+        "value": 1619
       },
       "unit": 1,
       "point2": { "x": 1, "y": 2 },
       "x": 1,
       "y": 2,
-      "person": { "kind": "With_id", "arg": 1619 },
+      "person": { "kind": "With_id", "value": 1619 },
       "kind": "With_id",
-      "arg": 1619
+      "value": 1619
     },
     {
       "nestedRecord": {
@@ -104,17 +104,17 @@
         "point2": { "x": 1, "y": 2 },
         "x": 1,
         "y": 2,
-        "person": { "kind": "With_id", "arg": 1619 },
+        "person": { "kind": "With_id", "value": 1619 },
         "kind": "With_id",
-        "arg": 1619
+        "value": 1619
       },
       "unit": 1,
       "point2": { "x": 1, "y": 2 },
       "x": 1,
       "y": 2,
-      "person": { "kind": "With_id", "arg": 1619 },
+      "person": { "kind": "With_id", "value": 1619 },
       "kind": "With_id",
-      "arg": 1619
+      "value": 1619
     },
     {
       "label": "nested-record",
@@ -177,9 +177,9 @@
     },
     {
       "label": "nested-variant",
-      "nestedVariant": { "tag": "student3", "value": { "admissionYear": 1984, "name": "William Gibson" } },
+      "nestedVariant": { "tag": "student3", "arg": { "admissionYear": 1984, "name": "William Gibson" } },
       "tag": "student3",
-      "value": { "admissionYear": 1984, "name": "William Gibson" }
+      "arg": { "admissionYear": 1984, "name": "William Gibson" }
     },
     {
       "label": "nested-variant",
@@ -192,21 +192,21 @@
       "label": "nested-variant",
       "nestedVariant": {
         "tag": "int-list1",
-        "value": { "kind": "intcons", "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }] }
+        "arg": { "kind": "intcons", "value": [1, { "kind": "intcons", "value": [2, { "kind": "intnil" }] }] }
       },
       "tag": "int-list1",
-      "value": { "kind": "intcons", "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }] }
+      "arg": { "kind": "intcons", "value": [1, { "kind": "intcons", "value": [2, { "kind": "intnil" }] }] }
     },
     {
       "label": "nested-variant",
       "nestedVariant": {
         "tag": "int-list2",
         "kind": "intcons",
-        "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }]
+        "value": [1, { "kind": "intcons", "value": [2, { "kind": "intnil" }] }]
       },
       "tag": "int-list2",
       "kind": "intcons",
-      "arg": [1, { "kind": "intcons", "arg": [2, { "kind": "intnil" }] }]
+      "value": [1, { "kind": "intcons", "value": [2, { "kind": "intnil" }] }]
     }
   ]
 }

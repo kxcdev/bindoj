@@ -98,10 +98,10 @@
             "title": "With_id",
             "type": "object",
             "properties": {
-              "arg": { "type": "integer" },
+              "value": { "type": "integer" },
               "kind": { "enum": ["With_id"], "type": "string" }
             },
-            "required": ["arg", "kind"],
+            "required": ["value", "kind"],
             "additionalProperties": false
           },
           {

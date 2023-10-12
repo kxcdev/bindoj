@@ -12,18 +12,18 @@ export type ExNestedRecord = {
   ExNestedPoint2;
 
 export type ExNestedVariant =
-  | { tag: "int-list1"; value: ExVariantIntList }
+  | { tag: "int-list1"; arg: ExVariantIntList }
   | ({ tag: "int-list2" } & ExVariantIntList)
   | { tag: "student1"; student: ExRecordStudent }
   | ({ tag: "student2" } & ExRecordStudent)
-  | { tag: "student3"; value: ExRecordStudent }
+  | { tag: "student3"; arg: ExRecordStudent }
   | ({ tag: "student4" } & ExRecordStudent);
 export function analyzeExNestedVariant<__bindoj_ret>(__bindoj_fns: {
-  "int-list1": (__bindoj_v: { tag: "int-list1"; value: ExVariantIntList }) => __bindoj_ret;
+  "int-list1": (__bindoj_v: { tag: "int-list1"; arg: ExVariantIntList }) => __bindoj_ret;
   "int-list2": (__bindoj_v: { tag: "int-list2" } & ExVariantIntList) => __bindoj_ret;
   student1: (__bindoj_v: { tag: "student1"; student: ExRecordStudent }) => __bindoj_ret;
   student2: (__bindoj_v: { tag: "student2" } & ExRecordStudent) => __bindoj_ret;
-  student3: (__bindoj_v: { tag: "student3"; value: ExRecordStudent }) => __bindoj_ret;
+  student3: (__bindoj_v: { tag: "student3"; arg: ExRecordStudent }) => __bindoj_ret;
   student4: (__bindoj_v: { tag: "student4" } & ExRecordStudent) => __bindoj_ret;
 }): (__bindoj_x: ExNestedVariant) => __bindoj_ret {
   return (__bindoj_x: ExNestedVariant) => {

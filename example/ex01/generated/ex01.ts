@@ -8,12 +8,12 @@ export type Person =
   | { kind: "anonymous" }
   | { kind: "student"; name: string; studentId: number }
   | { kind: "teacher"; department: string; facultyId: number; name: string }
-  | { kind: "with-id"; arg: number };
+  | { kind: "with-id"; value: number };
 export function analyzePerson<__bindoj_ret>(__bindoj_fns: {
   anonymous: (__bindoj_v: { kind: "anonymous" }) => __bindoj_ret;
   student: (__bindoj_v: { kind: "student"; name: string; studentId: number }) => __bindoj_ret;
   teacher: (__bindoj_v: { kind: "teacher"; department: string; facultyId: number; name: string }) => __bindoj_ret;
-  "with-id": (__bindoj_v: { kind: "with-id"; arg: number }) => __bindoj_ret;
+  "with-id": (__bindoj_v: { kind: "with-id"; value: number }) => __bindoj_ret;
 }): (__bindoj_x: Person) => __bindoj_ret {
   return (__bindoj_x: Person) => {
     if (__bindoj_x.kind === "anonymous") {

@@ -331,12 +331,12 @@ let ex_optional_variant_json_shape_explanation =
                `object_of
                  [
                    `mandatory_field ("tag", `exactly (`str "tuple-like"));
-                   `optional_field ("value", `integral);
+                   `optional_field ("arg", `integral);
                  ];
                `object_of
                  [
                    `mandatory_field ("tag", `exactly (`str "tuple-like-alias"));
-                   `optional_field ("value", `integral);
+                   `optional_field ("arg", `integral);
                  ];
                `object_of
                  [
@@ -399,10 +399,10 @@ let rec ex_optional_variant_to_json =
    function
    | Tuple_like None -> `obj [ ("tag", `str "tuple-like") ]
    | Tuple_like (Some x0) ->
-       `obj [ ("tag", `str "tuple-like"); ("value", int_to_json x0) ]
+       `obj [ ("tag", `str "tuple-like"); ("arg", int_to_json x0) ]
    | Tuple_like_alias None -> `obj [ ("tag", `str "tuple-like-alias") ]
    | Tuple_like_alias (Some x0) ->
-       `obj [ ("tag", `str "tuple-like-alias"); ("value", int_to_json x0) ]
+       `obj [ ("tag", `str "tuple-like-alias"); ("arg", int_to_json x0) ]
    | Tuple_like_obj (x0, x1) ->
        `obj
          (("tag", `str "tuple-like-obj")
@@ -504,15 +504,15 @@ and ex_optional_variant_of_json' =
           match Kxclib.Jv.pump_field "tag" __bindoj_orig with
           | `obj (("tag", `str "tuple-like") :: param) ->
               let ( >>= ) = Result.bind in
-              List.assoc_opt "value" param
+              List.assoc_opt "arg" param
               |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "value" :: path)
+              |> (option_of_json' int_of_json') (`f "arg" :: path)
               >>= fun x0 -> Ok (Tuple_like x0)
           | `obj (("tag", `str "tuple-like-alias") :: param) ->
               let ( >>= ) = Result.bind in
-              List.assoc_opt "value" param
+              List.assoc_opt "arg" param
               |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "value" :: path)
+              |> (option_of_json' int_of_json') (`f "arg" :: path)
               >>= fun x0 -> Ok (Tuple_like_alias x0)
           | `obj (("tag", `str "tuple-like-obj") :: param) ->
               let ( >>= ) = Result.bind in

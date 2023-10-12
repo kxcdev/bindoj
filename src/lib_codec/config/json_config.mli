@@ -99,9 +99,19 @@ type json_nested_field_style = [
       resolves to a {!Bindoj_typedesc.Type_desc.Record_decl} / {!Bindoj_typedesc.Type_desc.Variant_decl} kinded {!Bindoj_typedesc.Type_desc.type_decl} *)
   ]
 
+type variant_arg_name_style = [
+  | `exactly of string
+  | `value (** ["value"], the default *)
+  | `arg (** ["arg"] *)
+  | `kind_name of json_mangling_style option
+  (** if argument is [None], the exact same string of the kind field is used;
+      otherwise, the kind name will be mangled accordingly to the supplied mangling style *)
+  ]
+
 type ('pos, 'kind) config +=
   | Config_json_name : string -> ('pos, [`json_name]) config
-  | Config_json_name_of_variant_arg : string -> ([`variant_constructor], [`json_name_of_variant_arg]) config
+  | Config_json_name_of_variant_arg :
+    variant_arg_name_style -> ([< `variant_constructor | `type_decl], [`json_name_of_variant_arg]) config
   | Config_json_variant_style :
     json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
   | Config_json_variant_discriminator :
@@ -119,14 +129,15 @@ val tuple_index_to_field_name : int -> string
 val name : string -> ([< pos], [`json_name]) config
 val get_name_opt : [< pos] configs -> string option
 
-val name_of_variant_arg : string -> ([`variant_constructor], [`json_name_of_variant_arg]) config
-val get_name_of_variant_arg : string -> [`variant_constructor] configs -> string
+val name_of_variant_arg : variant_arg_name_style -> ([< `variant_constructor | `type_decl], [`json_name_of_variant_arg]) config
+val get_name_of_variant_arg_opt : [< `variant_constructor | `type_decl] configs -> variant_arg_name_style option
 
 (**
+  default : [ `value ].
   The default field name for the argument of a variant constructor.
   Use [Json_config.name_of_variant_arg] for [variant_constructor .. (`tuple_like ..)] to override.
 *)
-val default_name_of_variant_arg : string
+val default_name_of_variant_arg : variant_arg_name_style
 
 val default_variant_style : json_variant_style
 val variant_style : json_variant_style -> ([`variant_constructor], [`json_variant_style]) config
@@ -163,6 +174,9 @@ val get_mangled_name_of_type :
 val get_mangled_name_of_field :
   ?inherited:json_mangling_style
   -> record_field -> string * json_mangling_style
+val get_mangled_name_of_discriminator' :
+  ?inherited:json_mangling_style
+  -> [`variant_constructor] configs -> string -> string * json_mangling_style
 val get_mangled_name_of_discriminator :
   ?inherited:json_mangling_style
   -> variant_constructor -> string * json_mangling_style
@@ -174,9 +188,11 @@ val get_mangled_name_of_discriminator_field :
   -> type_decl -> string
 val get_mangled_name_of_variant_arg' :
   ?inherited:json_mangling_style
-  -> [`variant_constructor] configs -> string
-val get_mangled_name_of_variant_arg :
+  -> [`type_decl] configs
+  -> [`variant_constructor] configs -> string -> string
+  val get_mangled_name_of_variant_arg :
   ?inherited:json_mangling_style
+  -> [`type_decl] configs
   -> variant_constructor -> string
 val get_mangled_name_of_string_enum_case :
   ?inherited:json_mangling_style
