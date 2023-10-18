@@ -1557,7 +1557,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
 
   let docopt = function `docstr s -> Some s | `nodoc -> None in
 
-  let convert_coretype ?alias_decl_props ~self_name ~self_mangled_type_name base_mangling_style ?description (ct: coretype) =
+  let convert_coretype ?alias_decl_props ~self_name:_ ~self_mangled_type_name base_mangling_style ?description (ct: coretype) =
     let base_mangling_style =
       Json_config.get_mangling_style_opt ct.ct_configs |? base_mangling_style
     in
