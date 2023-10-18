@@ -1592,8 +1592,10 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         begin match tuple_style with
         | `arr ->
           if openapi then
-            raise (Incompatible_with_openapi_v3 (
-              sprintf "OpenAPI v3 does not support tuple validation (in type '%s')" self_name))
+            let len = List.length ts in
+            Schema_object.array () ?schema ?id ?title ?description
+              ~minItems:len ~maxItems:len
+              ~items:(`T (ts |> List.map go |> Schema_object.oneOf))
           else
             Schema_object.tuple ?schema ?id ?title ?description (ts |> List.map go)
         | `obj `default ->
@@ -1727,12 +1729,14 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
             match ts, Json_config.get_tuple_style vc_configs with
             | [], _ -> [arg_name, convert_variant_argument t]
             | _, `arr ->
+              let ts = args |> List.map convert_variant_argument in
               if openapi then
-                raise (Incompatible_with_openapi_v3 (
-                  sprintf "OpenAPI v3 does not support tuple validation (in type '%s')" self_name))
-              else
-                let ts = args |> List.map convert_variant_argument in
-                [arg_name, Schema_object.tuple ts]
+                let len = List.length ts in
+                [ arg_name,
+                  Schema_object.array ()
+                    ~minItems:len ~maxItems:len
+                    ~items:(`T (ts |> Schema_object.oneOf)) ]
+              else [arg_name, Schema_object.tuple ts]
             | _, `obj `default ->
               args |> List.mapi (fun i t ->
                 Json_config.tuple_index_to_field_name i, convert_variant_argument t
