@@ -26,27 +26,7 @@ let require specifier = Js.Unsafe.eval_string (Format.sprintf "require('%s')" sp
 
 let clone (obj: 'a) : 'a = _JSON##parse (_JSON##stringify obj)
 
-module Optional : Js.OPT = struct
-  type 'a t = 'a
-  open struct
-    external cast : 'a -> 'b = "%identity"
-    let null = Js.Unsafe.pure_js_expr "null"
-    let undefined = Js.Unsafe.pure_js_expr "undefined"
-    external equals : 'a -> 'b -> bool = "caml_js_equals"
-    let is_null_or_undefined x =
-      equals x null || equals x undefined
-  end
-  let empty = null
-  let return x = x
-  let bind x f = if is_null_or_undefined x then cast x else f x
-  let map x f = if is_null_or_undefined x then cast x else return (f x)
-  let test x = not (is_null_or_undefined x)
-  let iter x f = if not (is_null_or_undefined x) then f x
-  let case x f g = if is_null_or_undefined x then f () else g x
-  let get x f = if is_null_or_undefined x then f () else x
-  let option = function None -> empty | Some x -> return x
-  let to_option x = case x (fun () -> None) (fun x -> Some x)
-end
+module Optional : Js.OPT = Opt
 
 let optional x = Optional.return x |> Optional.to_option
 
