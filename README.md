@@ -109,10 +109,10 @@ To check for other packages, see the [dune-project](dune-project) and [with_js/p
       - Run `$ npm install -g yarn`.
 2. Clone this repository:
     ```bash
-    $ git clone --recursive git@github.com:kxcinc/bindoj.git
+    $ git clone --recursive git@github.com:kxcdev/bindoj.git
 
     # or
-    $ git clone git@github.com:kxcinc/bindoj.git
+    $ git clone git@github.com:kxcdev/bindoj.git
     $ git submodule init
     $ git submodule update
     ```
