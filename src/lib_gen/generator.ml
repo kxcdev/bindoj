@@ -50,7 +50,7 @@ let gen_structure_with_json_codec :
       ]
       decl
   in
-  Astlib.Pprintast.structure formatter structure
+  Emitter.structure formatter structure
 
 let gen_signature_with_json_codec
   ?gen_json_shape_explanation
@@ -70,4 +70,4 @@ let gen_signature_with_json_codec
       ]
       decl
   in
-  Astlib.Pprintast.signature formatter structure
+  Emitter.signature formatter structure

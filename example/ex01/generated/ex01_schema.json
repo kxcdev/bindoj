@@ -13,11 +13,11 @@
   },
   {
     "title": "Student",
-    "description": "definition of student type",
+    "description": "📝 definition of student type",
     "type": "object",
     "properties": {
-      "admissionYear": { "description": "addmission_year field", "type": "integer" },
-      "name": { "description": "name field", "type": "string" }
+      "admissionYear": { "description": "📅 addmission_year field", "type": "integer" },
+      "name": { "description": "📛 name field", "type": "string" }
     },
     "required": ["admissionYear", "name"],
     "additionalProperties": false

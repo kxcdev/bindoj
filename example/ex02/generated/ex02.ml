@@ -52,12 +52,12 @@ and product_id_of_json =
 [@@warning "-39"]
 
 type product_details = {
-  name : string; [@ocaml.doc "Product name"]
-  description : string; [@ocaml.doc "Product description"]
-  price : int; [@ocaml.doc "Product price"]
-  count : int; [@ocaml.doc "Count of the product"]
+  name : string;  (** Product name *)
+  description : string;  (** Product description *)
+  price : int;  (** Product price *)
+  count : int;  (** Count of the product *)
 }
-[@@ocaml.doc "Product details"]
+(** Product details *)
 
 let rec (product_details_reflect : _ Bindoj_runtime.Refl.t) =
   lazy
@@ -187,11 +187,8 @@ and product_details_of_json =
     : Kxclib.Json.jv -> product_details option)
 [@@warning "-39"]
 
-type product = {
-  id : product_id; [@ocaml.doc "Product ID"]
-  details : product_details;
-}
-[@@ocaml.doc "Product"]
+type product = { id : product_id;  (** Product ID *) details : product_details }
+(** Product *)
 
 let rec (product_reflect : _ Bindoj_runtime.Refl.t) =
   lazy
@@ -412,19 +409,19 @@ and order_id_of_json =
     : Kxclib.Json.jv -> order_id option)
 [@@warning "-39"]
 
+(** Payment method of an order *)
 type payment_method =
   | Credit_card of {
-      card_number : string; [@ocaml.doc "Card number"]
-      holder_name : string; [@ocaml.doc "Card holder name"]
-      expiration_date : int * int; [@ocaml.doc "Expiration date"]
-      cvv : string; [@ocaml.doc "Card CVV"]
-    } [@ocaml.doc "Payment by credit card"]
+      card_number : string;  (** Card number *)
+      holder_name : string;  (** Card holder name *)
+      expiration_date : int * int;  (** Expiration date *)
+      cvv : string;  (** Card CVV *)
+    }  (** Payment by credit card *)
   | Bank_transfer of {
-      account_number : string; [@ocaml.doc "Account number"]
-      bank_name : string; [@ocaml.doc "Bank name"]
-      holder_name : string; [@ocaml.doc "Account holder name"]
-    } [@ocaml.doc "Payment by bank transer"]
-[@@ocaml.doc "Payment method of an order"]
+      account_number : string;  (** Account number *)
+      bank_name : string;  (** Bank name *)
+      holder_name : string;  (** Account holder name *)
+    }  (** Payment by bank transer *)
 
 let rec (payment_method_reflect : _ Bindoj_runtime.Refl.t) =
   lazy
@@ -709,8 +706,8 @@ and payment_method_of_json =
 
 type order_details = {
   products : (product_id * int) list;
-      [@ocaml.doc "ID and it's count of ordered products"]
-  payment_method : payment_method; [@ocaml.doc "Payment method"]
+      (** ID and it's count of ordered products *)
+  payment_method : payment_method;  (** Payment method *)
 }
 
 let rec (order_details_reflect : _ Bindoj_runtime.Refl.t) =
@@ -1050,7 +1047,7 @@ and order_details_of_json =
 
 type nonrec order_status =
   [ `Unpaid | `Paid | `Shipped | `Delivered | `Canceled ]
-[@@ocaml.doc "Status of an order"]
+(** Status of an order *)
 
 let (order_status_reflect : _ Bindoj_runtime.Refl.t) =
   lazy
@@ -1135,7 +1132,7 @@ and order_status_of_json =
 [@@warning "-39"]
 
 type order = {
-  id : order_id; [@ocaml.doc "Order ID"]
+  id : order_id;  (** Order ID *)
   total_price : int;
   details : order_details;
   status : order_status;
@@ -1587,15 +1584,14 @@ and order_of_json =
 
 type product_query = {
   searchQuery : string option;
-      [@ocaml.doc
-        "Optional search string to match product names or descriptions"]
+      (** Optional search string to match product names or descriptions *)
   minimum_price : int option;
-      [@ocaml.doc "Optional minimum price constraint for a product"]
+      (** Optional minimum price constraint for a product *)
   maximum_price : int option;
-      [@ocaml.doc "Optional maximum price constraint for a product"]
-  limit : int option; [@ocaml.doc "Number limit of data to be acquired."]
+      (** Optional maximum price constraint for a product *)
+  limit : int option;  (** Number limit of data to be acquired. *)
 }
-[@@ocaml.doc "Query to search products"]
+(** Query to search products *)
 
 let rec (product_query_reflect : _ Bindoj_runtime.Refl.t) =
   lazy
@@ -1745,16 +1741,15 @@ and product_query_of_json =
 [@@warning "-39"]
 
 type order_query = {
-  products : int list option; [@ocaml.doc "List of product IDs in the order"]
-  status : order_status list option;
-      [@ocaml.doc "Optional order status constraint"]
+  products : int list option;  (** List of product IDs in the order *)
+  status : order_status list option;  (** Optional order status constraint *)
   minimum_price : int option;
-      [@ocaml.doc "Optional minimum total price constraint for the order"]
+      (** Optional minimum total price constraint for the order *)
   maximum_price : int option;
-      [@ocaml.doc "Optional maximum total price constraint for the order"]
-  limit : int option; [@ocaml.doc "Number limit of data to be acquired."]
+      (** Optional maximum total price constraint for the order *)
+  limit : int option;  (** Number limit of data to be acquired. *)
 }
-[@@ocaml.doc "Query to search orders"]
+(** Query to search orders *)
 
 let rec (order_query_reflect : _ Bindoj_runtime.Refl.t) =
   lazy

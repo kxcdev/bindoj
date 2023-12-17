@@ -30,7 +30,7 @@ module Versioned = struct
     module Caml = struct
       module Ppxlib = Ppxlib
       module Astlib = Astlib
-      module Pprintast = Astlib.Pprintast
+      module Emitter = Bindoj_gen.Emitter
 
       module CommonTypes = struct
         type signature_item = Ppxlib.signature_item
@@ -80,14 +80,14 @@ module Versioned = struct
         let open_utils' : structure list -> structure_item =
           open_utils % List.flatten
 
-        let pp_caml : Format.formatter -> t -> unit = Pprintast.structure
+        let pp_caml : Format.formatter -> t -> unit = Emitter.structure
       end
 
       module Signature = struct
         type elt = signature_item
         type t = signature
 
-        let pp_caml : Format.formatter -> t -> unit = Pprintast.signature
+        let pp_caml : Format.formatter -> t -> unit = Emitter.signature
       end
 
     end

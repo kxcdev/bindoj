@@ -43,6 +43,7 @@ const ignorePatterns = [
   /.+_gen\.[A-Za-z]+$/,
   /.*README\.md$/,
   /src\/lib_kxclib_testlib/,
+  /src\/lib_gen\/emitter.ml/,
 ]
 
 const filetypes = new Map([

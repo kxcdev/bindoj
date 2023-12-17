@@ -506,7 +506,7 @@ let gen_structure :
             | Ppat_var l -> evar l.txt
             | Ppat_constraint (p, _) -> go p.ppat_desc
             | _ -> failwith' "impossible @%s: %a" __LOC__
-                     Pprintast.pattern reflect.pvb_pat
+                     Emitter.pattern reflect.pvb_pat
           in
           go reflect.pvb_pat.ppat_desc
         in

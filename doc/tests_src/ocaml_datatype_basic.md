@@ -210,7 +210,7 @@ module Caml :
   sig
     module Ppxlib = Ppxlib
     module Astlib = Astlib
-    module Pprintast = Astlib.Pprintast
+    module Emitter = Bindoj_gen.Emitter
     module CommonTypes : sig ... end
     type signature_item = CommonTypes.signature_item
     type signature = CommonTypes.signature

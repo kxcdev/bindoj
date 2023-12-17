@@ -187,14 +187,14 @@
       "String": { "title": "String", "type": "string" },
       "Student": {
         "title": "Student",
-        "description": "definition of student type",
+        "description": "📝 definition of student type",
         "type": "object",
         "properties": {
           "admissionYear": {
-            "description": "addmission_year field",
+            "description": "📅 addmission_year field",
             "type": "integer"
           },
-          "name": { "description": "name field", "type": "string" }
+          "name": { "description": "📛 name field", "type": "string" }
         },
         "required": ["admissionYear", "name"],
         "additionalProperties": false

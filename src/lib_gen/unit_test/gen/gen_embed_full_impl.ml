@@ -72,7 +72,7 @@ let gen_structure_embed_full_impl =
       ]
       decl
   in
-  Astlib.Pprintast.structure formatter structure
+  Emitter.structure formatter structure
 
 let () =
   let gen_type_decl = ArgOptions.has_flag "-gen-type-decl" in

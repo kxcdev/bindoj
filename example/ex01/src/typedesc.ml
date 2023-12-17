@@ -38,10 +38,10 @@ let my_tuple_decl = alias_decl "my_tuple" (
 
 let student_decl = record_decl "student" [
   record_field "admission_year" cty_int
-    ~doc:(`docstr "addmission_year field");
+    ~doc:(`docstr "📅 addmission_year field");
   record_field "name" cty_string
-    ~doc:( `docstr "name field");
-] ~doc:(`docstr "definition of student type")
+    ~doc:( `docstr "📛 name field");
+] ~doc:(`docstr "📝 definition of student type")
 
 let person_decl = variant_decl "person" [
   variant_constructor "Anonymous" `no_param
