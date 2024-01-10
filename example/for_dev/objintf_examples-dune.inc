@@ -78,7 +78,6 @@
 (subdir objintf_examples/lib_objintf_gen_jsoo
  (library
   (name dev_example_objintf_examples_lib_objintf_gen_jsoo)
-  (preprocess (pps js_of_ocaml-ppx))
   (modules
    ex_objintf_system_io_jsoo_gen
    ex_objintf_empty_jsoo_gen
@@ -92,7 +91,7 @@
    bindoj.objintf_shared
    bindoj_objintf_gen_jsoo_test_gen_utils
    js_of_ocaml
-   yojson
+   kxclib.js
    dev_example_objintf_examples_lib_objintf_gen))
  (rule
   (alias gen)

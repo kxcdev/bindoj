@@ -348,20 +348,11 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge =
                                                   Unsafe.obj
                                                     [|("student",
                                                         (Unsafe.inject
-                                                           ((let open Js_of_ocaml in
-                                                               fun x ->
-                                                                 ((((ex_record_student_to_json
-                                                                    x) |>
-                                                                    Kxclib.Json.to_yojson)
-                                                                    |>
-                                                                    Yojson.Safe.to_string)
-                                                                    |>
-                                                                    Js.string)
-                                                                   |>
-                                                                   (fun x ->
-                                                                    (Js._JSON
-                                                                    ## parse)
-                                                                    x))
+                                                           ((fun x ->
+                                                               (ex_record_student_to_json
+                                                                  x)
+                                                                 |>
+                                                                 Kxclib_js.Json_ext.to_xjv)
                                                               (student |>
                                                                  (Option.value
                                                                     ~default:

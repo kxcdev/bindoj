@@ -55,7 +55,7 @@ let export_to_js (module Dir : Sample_apidir) =
     let postprocess resp =
       let open FutexnIoOps in
       resp >|= prepare_response_for_js
-      >|= cast % Kxclib_jsoo.Json_ext.to_xjv
+      >|= cast % Kxclib_js.Json_ext.to_xjv
       |> FutexnIo.to_promise in
     object%js
       method handle_path_json_get_js path =
@@ -65,7 +65,7 @@ let export_to_js (module Dir : Sample_apidir) =
       method handle_path_json_post_js path reqbody =
         let path = ostr path in
         let reqbody : Json.jv =
-          reqbody |> Kxclib_jsoo.Json_ext.of_xjv |> cast in
+          reqbody |> Kxclib_js.Json_ext.of_xjv |> cast in
         Bridge.handle_path_json_post path reqbody
         |> postprocess
     end

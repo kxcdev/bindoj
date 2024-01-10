@@ -304,25 +304,18 @@ module Full_bridge_with_jsoo : Endemic_setup_only_full_bridge = functor (M :
                                             (fun la ->
                                                Optdef.map
                                                  (Unsafe.get la "student")
-                                                 (let open Js_of_ocaml in
-                                                    fun x ->
-                                                      ((((((Js._JSON ##
-                                                              stringify) x)
-                                                            |> to_string)
-                                                           |>
-                                                           Yojson.Safe.from_string)
-                                                          |>
-                                                          Kxclib.Json.of_yojson)
-                                                         |>
-                                                         ex_record_student_of_json')
-                                                        |>
-                                                        (function
-                                                         | Error e ->
-                                                             failwith
-                                                               (Bindoj_runtime.OfJsonResult.Err.to_string
-                                                                  e)
-                                                         | Ok result ->
-                                                             result))))
+                                                 (fun x ->
+                                                    ((Kxclib_js.Json_ext.of_xjv
+                                                        x)
+                                                       |>
+                                                       ex_record_student_of_json')
+                                                      |>
+                                                      (function
+                                                       | Error e ->
+                                                           failwith
+                                                             (Bindoj_runtime.OfJsonResult.Err.to_string
+                                                                e)
+                                                       | Ok result -> result))))
                                            |> Optdef.to_option)
                                         |>
                                         (Option.value

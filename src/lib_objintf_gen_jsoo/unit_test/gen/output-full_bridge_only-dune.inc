@@ -3,7 +3,6 @@
 (subdir output_full_bridge_only
  (library
   (name bindoj_objintf_gen_jsoo_test_gen_output_full_bridge_only)
-  (preprocess (pps js_of_ocaml-ppx))
   (modules
    ex_objintf_system_io_jsoo_gen
    ex_objintf_empty_jsoo_gen
@@ -18,7 +17,7 @@
    bindoj.objintf_shared
    bindoj_objintf_gen_test_gen_output
    kxclib
-   yojson
+   kxclib.js
    js_of_ocaml))
  (rule
   (alias gen)

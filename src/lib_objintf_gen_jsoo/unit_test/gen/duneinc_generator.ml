@@ -92,10 +92,9 @@ let () =
                 | `output_full_bridge_only -> [ "bindoj_objintf_gen_test_gen_output" ]
               ) @ [
               "kxclib";
-              "yojson";
+              "kxclib.js";
               "js_of_ocaml";
-            ])
-            ~preprocess:[ "(pps js_of_ocaml-ppx)" ];
+            ]);
             many caml_module
         ]
       ]

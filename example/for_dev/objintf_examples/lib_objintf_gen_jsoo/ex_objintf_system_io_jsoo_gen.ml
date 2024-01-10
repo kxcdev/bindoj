@@ -270,14 +270,9 @@ module Full_bridge_with_jsoo : Dual_setup_full_bridge = functor (M :
                                (__caml_obj : byte_source') =
                                Js_of_ocaml.Js.Unsafe.callback
                                  (fun labeledArgs ->
-                                    (let open Js_of_ocaml in
-                                       fun x ->
-                                         ((((byte_source_state_to_json x) |>
-                                              Kxclib.Json.to_yojson)
-                                             |> Yojson.Safe.to_string)
-                                            |> Js.string)
-                                           |>
-                                           (fun x -> (Js._JSON ## parse) x))
+                                    (fun x ->
+                                       (byte_source_state_to_json x) |>
+                                         Kxclib_js.Json_ext.to_xjv)
                                       (__caml_obj
                                          ?max:(let open Js_of_ocaml.Js in
                                                  (Optdef.bind labeledArgs

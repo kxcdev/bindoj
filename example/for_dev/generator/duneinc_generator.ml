@@ -246,10 +246,9 @@ let () =
               "bindoj.objintf_shared";
               "bindoj_objintf_gen_jsoo_test_gen_utils";
               "js_of_ocaml";
-              "yojson";
+              "kxclib.js";
               objintf_gen_lib_name;
-            ]
-            ~preprocess:[ "(pps js_of_ocaml-ppx)" ];
+            ];
             many (
               let outputs = [
                 fmt "%s_jsoo_gen.ml";

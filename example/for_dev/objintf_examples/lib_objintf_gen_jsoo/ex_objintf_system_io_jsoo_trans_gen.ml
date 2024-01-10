@@ -417,20 +417,16 @@ module Full_bridge_with_jsoo : Dual_setup_full_bridge = functor (M :
                              let rec decode_byte_source'_of_js __js_obj ?max 
                                () =
                                let open Js_of_ocaml in
-                                 (let open Js_of_ocaml in
-                                    fun x ->
-                                      ((((((Js._JSON ## stringify) x) |>
-                                            to_string)
-                                           |> Yojson.Safe.from_string)
-                                          |> Kxclib.Json.of_yojson)
-                                         |> byte_source_state_of_json')
-                                        |>
-                                        (function
-                                         | Error e ->
-                                             failwith
-                                               (Bindoj_runtime.OfJsonResult.Err.to_string
-                                                  e)
-                                         | Ok result -> result))
+                                 (fun x ->
+                                    ((Kxclib_js.Json_ext.of_xjv x) |>
+                                       byte_source_state_of_json')
+                                      |>
+                                      (function
+                                       | Error e ->
+                                           failwith
+                                             (Bindoj_runtime.OfJsonResult.Err.to_string
+                                                e)
+                                       | Ok result -> result))
                                    (Js.Unsafe.fun_call __js_obj
                                       [|(Js.Unsafe.inject
                                            (let open Js_of_ocaml.Js in

@@ -16,7 +16,7 @@
    bindoj_apidir_shared bindoj_apidir_runtime bindoj_apidir_typescript
    bindoj_test_common_jsoo_utils
    js_of_ocaml prr
-   kxclib kxclib.jsoo)
+   kxclib kxclib-jsoo kxclib.js)
  (preprocess (pps js_of_ocaml-ppx))
  (flags (:standard -open Kxclib)))
 

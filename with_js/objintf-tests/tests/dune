@@ -10,7 +10,7 @@
   bindoj_runtime
   bindoj_typedesc
   bindoj_objintf_gen_jsoo_test_gen_output
-  kxclib kxclib.jsoo yojson jsonm js_of_ocaml prr)
+  kxclib kxclib-jsoo yojson jsonm js_of_ocaml prr)
  (flags (:standard -open Kxclib))
  (preprocess (pps ppx_deriving.show js_of_ocaml-ppx))
  (modes js))

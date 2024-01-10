@@ -161,7 +161,7 @@ module TestTup2(M0 : Testable) (M1 : Testable) : Testable = struct
   let testable = Alcotest.pair M0.testable M1.testable
   let to_string (a0, a1) = sprintf "(%s, %s)" (M0.to_string a0) (M1.to_string a1)
   let values =
-    let open MonadOps(List0) in
+    let open MonadOps(List) in
     M0.values
     >>= (fun v0 ->
       M1.values
@@ -176,7 +176,7 @@ module TestTup3(M0 : Testable) (M1 : Testable) (M2 : Testable) : Testable = stru
   let testable = Alcotest.triple M0.testable M1.testable M2.testable
   let to_string (a0, a1, a2) = sprintf "(%s, %s, %s)" (M0.to_string a0) (M1.to_string a1) (M2.to_string a2)
   let values =
-    let open MonadOps(List0) in
+    let open MonadOps(List) in
     M0.values
     >>= (fun v0 ->
       M1.values

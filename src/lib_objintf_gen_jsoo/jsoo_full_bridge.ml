@@ -449,12 +449,9 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
             | _ -> codec
           in
           let open_, name = Json_config.get_encoder_name ~resolution_strategy:codec td_name in
-          [%expr Js_of_ocaml.(fun x ->
+          [%expr (fun x ->
             [%e evar ?open_ name] x
-            |> Kxclib.Json.to_yojson
-            |> Yojson.Safe.to_string
-            |> Js.string
-            |> (fun x -> Js._JSON##parse x)
+            |> Kxclib_js.Json_ext.to_xjv
           )]
         | `bridgeable (party, bi) ->
           bi
@@ -494,11 +491,8 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
             | _ -> codec
           in
           let open_, name = Json_config.get_decoder_name ~resolution_strategy:codec td_name in
-          [%expr Js_of_ocaml.(fun x ->
-            Js._JSON##stringify x
-            |> to_string
-            |> Yojson.Safe.from_string
-            |> Kxclib.Json.of_yojson
+          [%expr (fun x ->
+            Kxclib_js.Json_ext.of_xjv x
             |> [%e evar ?open_ name]
             |> (function
               | Error e -> failwith (Bindoj_runtime.OfJsonResult.Err.to_string e)
