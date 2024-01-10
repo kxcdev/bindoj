@@ -12,7 +12,7 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-version:
-          - 4.13.1
+          - 5.1.x
           ## we only test all versions at the [all-variants] flow
         node-version:
           - lts/hydrogen # v18 Active LTS
