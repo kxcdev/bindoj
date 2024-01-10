@@ -221,7 +221,12 @@ let () =
               "bindoj_objintf_gen_test_gen_utils";
             ];
             many (
-              let outputs = [ fmt "%s_gen.ml"; fmt "%s_trans_gen.ml" ] in
+              let outputs = [
+                fmt "%s_gen.ml";
+                fmt "%s_gen.mli";
+                fmt "%s_trans_gen.ml";
+                fmt "%s_trans_gen.mli"; ]
+              in
               Rule.mkp_gen [
                 targets outputs;
                 Deps.(mk [named "generator" & str lib_objintf_gen_generator_dep]);
@@ -246,7 +251,12 @@ let () =
             ]
             ~preprocess:[ "(pps js_of_ocaml-ppx)" ];
             many (
-              let outputs = [ fmt "%s_jsoo_gen.ml"; fmt "%s_jsoo_trans_gen.ml" ] in
+              let outputs = [
+                fmt "%s_jsoo_gen.ml";
+                fmt "%s_jsoo_gen.mli";
+                fmt "%s_jsoo_trans_gen.ml";
+                fmt "%s_jsoo_trans_gen.mli" ]
+              in
               Rule.mkp_gen [
                 targets outputs;
                 Deps.(mk [named "generator" & str lib_objintf_gen_jsoo_generator_dep]);

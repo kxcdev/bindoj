@@ -24,35 +24,55 @@
   (mode (promote (until-clean)))
   (targets
    ex_objintf_system_io_jsoo_gen.ml
-   ex_objintf_system_io_jsoo_trans_gen.ml)
+   ex_objintf_system_io_jsoo_gen.mli
+   ex_objintf_system_io_jsoo_trans_gen.ml
+   ex_objintf_system_io_jsoo_trans_gen.mli)
   (deps (:generator ../gen.exe))
   (action
    (progn
     (with-stdout-to ex_objintf_system_io_jsoo_gen.ml
      (run %{generator} ex_objintf_system_io_jsoo_gen.ml))
+    (with-stdout-to ex_objintf_system_io_jsoo_gen.mli
+     (run %{generator} ex_objintf_system_io_jsoo_gen.mli))
     (with-stdout-to ex_objintf_system_io_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.ml)))))
+     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.ml))
+    (with-stdout-to ex_objintf_system_io_jsoo_trans_gen.mli
+     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.mli)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex_objintf_empty_jsoo_gen.ml ex_objintf_empty_jsoo_trans_gen.ml)
+  (targets
+   ex_objintf_empty_jsoo_gen.ml
+   ex_objintf_empty_jsoo_gen.mli
+   ex_objintf_empty_jsoo_trans_gen.ml
+   ex_objintf_empty_jsoo_trans_gen.mli)
   (deps (:generator ../gen.exe))
   (action
    (progn
     (with-stdout-to ex_objintf_empty_jsoo_gen.ml
      (run %{generator} ex_objintf_empty_jsoo_gen.ml))
+    (with-stdout-to ex_objintf_empty_jsoo_gen.mli
+     (run %{generator} ex_objintf_empty_jsoo_gen.mli))
     (with-stdout-to ex_objintf_empty_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_empty_jsoo_trans_gen.ml)))))
+     (run %{generator} ex_objintf_empty_jsoo_trans_gen.ml))
+    (with-stdout-to ex_objintf_empty_jsoo_trans_gen.mli
+     (run %{generator} ex_objintf_empty_jsoo_trans_gen.mli)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (targets
    ex_objintf_one_directional_jsoo_gen.ml
-   ex_objintf_one_directional_jsoo_trans_gen.ml)
+   ex_objintf_one_directional_jsoo_gen.mli
+   ex_objintf_one_directional_jsoo_trans_gen.ml
+   ex_objintf_one_directional_jsoo_trans_gen.mli)
   (deps (:generator ../gen.exe))
   (action
    (progn
     (with-stdout-to ex_objintf_one_directional_jsoo_gen.ml
      (run %{generator} ex_objintf_one_directional_jsoo_gen.ml))
+    (with-stdout-to ex_objintf_one_directional_jsoo_gen.mli
+     (run %{generator} ex_objintf_one_directional_jsoo_gen.mli))
     (with-stdout-to ex_objintf_one_directional_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.ml))))))
+     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.ml))
+    (with-stdout-to ex_objintf_one_directional_jsoo_trans_gen.mli
+     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.mli))))))

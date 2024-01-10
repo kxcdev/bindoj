@@ -314,31 +314,24 @@ let gen_interfaces_of :
         ~bridgeable_ident_resolver
         ~polarity:objintf.so_polarity)
 
-let gen_simple_interfaces ~resolution_strategy ~bridgeable_ident_resolver objintf =
-  gen_interfaces_of ~resolution_strategy ~bridgeable_ident_resolver `simple objintf
-  |&> bridgeable_to_structure_item
-  |> Mod.structure
-  |> Mb.mk (locmk & some Bridge_labels.simple_interfaces)
-  |> Str.module_
-  |> List.return
-and gen_complex_interfaces_signature_item ~resolution_strategy ~bridgeable_ident_resolver objintf =
-  gen_interfaces_of ~resolution_strategy ~bridgeable_ident_resolver `complex objintf
+let gen_interfaces_sig ~resolution_strategy ~bridgeable_ident_resolver kind objintf =
+  gen_interfaces_of ~resolution_strategy ~bridgeable_ident_resolver kind objintf
   |&> bridgeable_to_signature_item
   |> Mty.signature
-  |> Md.mk (locmk & some Bridge_labels.complex_interfaces)
+  |> Md.mk (locmk & some Bridge_labels.(match kind with `simple -> simple_interfaces | `complex -> complex_interfaces))
   |> Sig.module_
-and gen_complex_interfaces_structure_item ~resolution_strategy ~bridgeable_ident_resolver objintf =
-  gen_interfaces_of ~resolution_strategy ~bridgeable_ident_resolver `complex objintf
+and gen_interfaces_str ~resolution_strategy ~bridgeable_ident_resolver kind objintf =
+  gen_interfaces_of ~resolution_strategy ~bridgeable_ident_resolver kind objintf
   |&> bridgeable_to_structure_item
   |> Mod.structure
-  |> Mb.mk (locmk & some Bridge_labels.complex_interfaces)
+  |> Mb.mk (locmk & some Bridge_labels.(match kind with `simple -> simple_interfaces | `complex -> complex_interfaces))
   |> Str.module_
 
 let gen_endemic_object_registry_interfaces :
   resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
   -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
   -> 'bridgeable_ident sameworld_objintf
-  -> Ppxlib.structure option =
+  -> module_type_declaration option =
   fun ~resolution_strategy ~bridgeable_ident_resolver objintf ->
   objintf.so_object_registries
   |&?> (fun { ord_name; ord_coordinate_desc; ord_party; ord_typ; ord_doc } ->
@@ -369,26 +362,18 @@ let gen_endemic_object_registry_interfaces :
   |> function
   | [] -> None
   | s ->
-      Mtd.mk
-        ~typ:(Mty.signature s)
-        (locmk Bridge_labels.endemic_object_registry_interface)
-  |> Str.modtype
-  |> List.return
-  |> some
+    Mtd.mk
+      ~typ:(Mty.signature s)
+      (locmk Bridge_labels.endemic_object_registry_interface)
+    |> some
 
 and gen_concrete_bridge :
     resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
     -> bridgeable_ident_resolver:'bi bridgeable_ident_resolver
     -> initial_registry_object_registers_is_generated:bool
     -> 'bi sameworld_objintf
-    -> Ppxlib.structure =
+    -> module_type_declaration =
   fun ~resolution_strategy ~bridgeable_ident_resolver ~initial_registry_object_registers_is_generated objintf ->
-    let loc = Location.none in
-    let redefine_module name =
-      Mty.alias (lidloc name)
-      |> Md.mk (locmk & some name)
-      |> Sig.module_
-    in
     let peer_object_registry =
       objintf.so_object_registries
       |> List.filter_map (fun ord ->
@@ -426,41 +411,7 @@ and gen_concrete_bridge :
           |> some)
     in
     [
-      [%sig:
-        open Bindoj_objintf_shared
-
-        type br (** marker type for this specific concrete bridge *)
-
-        type 'x peer = ('x, br) peer'
-        type 'x endemic = ('x, br) endemic'
-      ];
-      [ 
-        Sig.value (Val.mk (locmk Bridge_labels.access_peer) [%type: 'x peer -> 'x]);
-        Sig.value (Val.mk (locmk Bridge_labels.bridge_endemic) [%type: 'x -> 'x endemic]);
-      ];
-      [
-        redefine_module Bridge_labels.simple_interfaces;
-        gen_complex_interfaces_signature_item
-          ~resolution_strategy
-          ~bridgeable_ident_resolver
-          objintf;
-        (
-          let mods = [ Bridge_labels.simple_interfaces; Bridge_labels.complex_interfaces ] in
-          (mods |&> fun name ->
-            Mod.ident (lidloc name)
-            |> Mty.typeof_
-            |> Md.mk (locmk & some name)
-            |> Sig.module_)
-          @ (mods |&> fun name ->
-            Mod.ident (lidloc name)
-            |> Mty.typeof_
-            |> Incl.mk
-            |> Sig.include_)
-          |> Mty.signature
-          |> Md.mk (locmk & some Bridge_labels.interfaces)
-          |> Sig.module_
-        )
-      ];
+      [ Sig.include_ & Incl.mk & Mty.typeof_ &  Mod.ident (lidloc Bridge_labels.concrete_bridge_interfaces) ];
       (match peer_object_registry, peer_objects with
         | [], [] -> []
         | _ -> [ Sig.open_ (Opn.mk (lidloc Bridge_labels.interfaces)) ]);
@@ -498,14 +449,12 @@ and gen_concrete_bridge :
         ~attrs:(doc_attribute objintf.so_doc)
         ~typ:(Mty.signature s)
         (locmk Bridge_labels.concrete_bridge)
-  |> Str.modtype
-  |> List.return
 
-and gen_concrete_bridge_interfaces :
+let gen_concrete_bridge_interfaces :
   resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
   -> bridgeable_ident_resolver:'bi bridgeable_ident_resolver
   -> 'bi sameworld_objintf
-  -> _ =
+  -> structure_item =
   fun ~resolution_strategy ~bridgeable_ident_resolver objintf ->
     let loc = Location.none in
     let redefine_module name =
@@ -528,15 +477,15 @@ and gen_concrete_bridge_interfaces :
       [%str
         type 'x peer = ('x, br) peer'
         type 'x endemic = ('x, br) endemic'
-
-        let access x = access x
+        let access : 'x peer -> 'x = access
         let bridge x = bridge_generic ~bridge:Br x
       ];
       [
         redefine_module Bridge_labels.simple_interfaces;
-        gen_complex_interfaces_structure_item
+        gen_interfaces_str
           ~resolution_strategy
           ~bridgeable_ident_resolver
+          `complex
           objintf;
         ( let mods = [ Bridge_labels.simple_interfaces; Bridge_labels.complex_interfaces ] in
           (mods |&> fun name ->
@@ -555,9 +504,63 @@ and gen_concrete_bridge_interfaces :
     |> Mod.structure
     |> Mb.mk (locmk & some Bridge_labels.concrete_bridge_interfaces)
     |> Str.module_
-    |> List.return
 
-and to_full_bridge_kind ?param_name ~resolution_strategy ~bridgeable_ident_resolver objintf =
+and gen_concrete_bridge_interfaces_sig :
+  resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+  -> bridgeable_ident_resolver:'bi bridgeable_ident_resolver
+  -> 'bi sameworld_objintf
+  -> signature_item =
+  fun ~resolution_strategy ~bridgeable_ident_resolver objintf ->
+    let loc = Location.none in
+    let redefine_module name =
+      Mty.alias (lidloc name)
+      |> Md.mk (locmk & some name)
+      |> Sig.module_
+    in
+    [ [%sig:
+        open Bindoj_objintf_shared
+      ];
+      (Sig.type_ Nonrecursive [
+        Type.mk
+          ~attrs:(doc_attribute & `docstr "marker type for this specific concrete bridge")
+          ~kind:(Ptype_variant [
+            Type.constructor (locmk Bridge_labels.bridge_marker_ctor)
+          ])
+          (locmk "br")
+      ]
+      |> List.return);
+      [%sig:
+        type 'x peer = ('x, br) peer'
+        type 'x endemic = ('x, br) endemic'
+        val access : 'x peer -> 'x
+        val bridge : 'x -> 'x endemic
+      ];
+      [
+        redefine_module Bridge_labels.simple_interfaces;
+        gen_interfaces_sig
+          ~resolution_strategy
+          ~bridgeable_ident_resolver
+          `complex
+          objintf;
+        ( let mods = [ Bridge_labels.simple_interfaces; Bridge_labels.complex_interfaces ] in
+          (mods |&> fun name ->
+            Mty.alias (lidloc name)
+            |> Md.mk (locmk & some name)
+            |> Sig.module_)
+          @ (mods |&> (fun name ->
+            Mty.typeof_ (Mod.ident (lidloc name))
+            |> Incl.mk
+            |> Sig.include_))
+          |> Mty.signature
+          |> Md.mk (locmk & some Bridge_labels.interfaces)
+          |> Sig.module_);
+      ];
+    ] |> List.concat
+    |> Mty.signature
+    |> Md.mk (locmk & some Bridge_labels.concrete_bridge_interfaces)
+    |> Sig.module_
+
+let to_full_bridge_kind ?param_name ~resolution_strategy ~bridgeable_ident_resolver objintf =
   let functor_param  =
     let polarity = objintf.so_polarity in
     (objintf.so_named_objects
@@ -600,7 +603,7 @@ let gen_full_bridge :
   resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
     -> bridgeable_ident_resolver:'bi bridgeable_ident_resolver
     -> 'bi sameworld_objintf
-    -> Ppxlib.structure =
+    -> module_type_declaration =
   fun ~resolution_strategy ~bridgeable_ident_resolver objintf ->
     let loc = Location.none in
     let name, mty =
@@ -634,20 +637,18 @@ let gen_full_bridge :
         Bridge_labels.dual_setup_full_bridge, Mty.functor_ p & peer_setup_bridge ()
     in
     Mtd.mk ~typ:mty (locmk name)
-    |> Str.modtype
-    |> List.return
 
 let gen_structure :
   ?generators:(
     resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
     -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
     -> 'bridgeable_ident sameworld_objintf
-    -> Ppxlib.structure
+    -> structure
   ) list
   -> ?resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
   -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
   -> 'bridgeable_ident sameworld_objintf
-  -> Ppxlib.structure =
+  -> structure =
   fun ?(generators=[]) ?resolution_strategy ~bridgeable_ident_resolver objintf ->
     let objintf =
       validate_objintf ~bridgeable_ident_resolver objintf
@@ -668,6 +669,7 @@ let gen_structure :
       gen_endemic_object_registry_interfaces
         ~resolution_strategy ~bridgeable_ident_resolver
         objintf
+      >? (Str.modtype &> List.return)
     in
     (infile_defined_tds
       |&>> fun (td, codec, type_decl) ->
@@ -684,24 +686,90 @@ let gen_structure :
             ]
             td
         ))
-    @ gen_simple_interfaces ~resolution_strategy ~bridgeable_ident_resolver objintf
-    @ [ Str.open_
+    @ [ gen_interfaces_str ~resolution_strategy ~bridgeable_ident_resolver `simple objintf;
+        Str.open_
           & Opn.mk ~attrs:(warning_attribute "-33") (* suppress 'unused open' warning *)
             & Mod.ident (lidloc Bridge_labels.simple_interfaces) ] 
     @ (initial_registry_object_registers |? [])
-    @ gen_concrete_bridge
-      ~resolution_strategy ~bridgeable_ident_resolver
-      ~initial_registry_object_registers_is_generated:(Option.is_some initial_registry_object_registers)
-      objintf
-    @ gen_concrete_bridge_interfaces
-      ~resolution_strategy ~bridgeable_ident_resolver
-      objintf
-    @ [
-      Str.open_
+    @ [ gen_concrete_bridge_interfaces
+          ~resolution_strategy ~bridgeable_ident_resolver
+          objintf;
+        gen_concrete_bridge
+          ~resolution_strategy ~bridgeable_ident_resolver
+          ~initial_registry_object_registers_is_generated:(Option.is_some initial_registry_object_registers)
+          objintf
+          |> Str.modtype;
+        Str.open_
+          & Opn.mk ~attrs:(warning_attribute "-33") (* suppress 'unused open' warning *)
+            & Mod.ident (lidloc Bridge_labels.(concrete_bridge_interfaces^"."^interfaces));
+        gen_full_bridge ~resolution_strategy ~bridgeable_ident_resolver objintf
+        |> Str.modtype ]
+    @ (generators |> List.concat_map(fun gen -> gen ~resolution_strategy ~bridgeable_ident_resolver objintf))
+
+let gen_signature :
+  ?generators:(
+    resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+    -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+    -> 'bridgeable_ident sameworld_objintf
+    -> signature
+  ) list
+  -> ?resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+  -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+  -> 'bridgeable_ident sameworld_objintf
+  -> signature =
+  fun ?(generators=[]) ?resolution_strategy ~bridgeable_ident_resolver objintf ->
+    let objintf =
+      validate_objintf ~bridgeable_ident_resolver objintf
+      |> function
+      | Ok x -> x
+      | Error s -> failwith s
+    in
+    let resolution_strategy = resolution_strategy |? (fun _ _ -> `infile_type_definition None) in
+    let infile_defined_tds =
+      extract_type_decls objintf
+      |&?> (fun (td, codec) ->
+        match validate_resolution_strategy ~resolution_strategy td codec with
+        | `no_resolution
+        | `inline_type_definition -> None
+        | `infile_type_definition _ -> Some (td, codec, None))
+    in
+    let initial_registry_object_registers =
+      gen_endemic_object_registry_interfaces
+        ~resolution_strategy ~bridgeable_ident_resolver
+        objintf
+      >? (Sig.modtype &> List.return)
+    in
+    (infile_defined_tds
+      |&>> fun (td, codec, type_decl) ->
+        Bindoj_gen.(
+          Caml_datatype.gen_signature
+            ?type_decl
+            ~codec
+            ~generators:[
+              Json_codec.gen_json_codec_signature
+                ~gen_json_shape_explanation:true
+                ~discriminator_value_accessor:true;
+            ]
+            td
+        ))
+    @ [ gen_interfaces_sig ~resolution_strategy ~bridgeable_ident_resolver `simple objintf;
+        Sig.open_
+          & Opn.mk ~attrs:(warning_attribute "-33") (* suppress 'unused open' warning *)
+            & (lidloc Bridge_labels.simple_interfaces) ] 
+    @ (initial_registry_object_registers |? [])
+    @ [ gen_concrete_bridge_interfaces_sig
+          ~resolution_strategy ~bridgeable_ident_resolver
+          objintf;
+        gen_concrete_bridge
+          ~resolution_strategy ~bridgeable_ident_resolver
+          ~initial_registry_object_registers_is_generated:(Option.is_some initial_registry_object_registers)
+          objintf
+          |> Sig.modtype;
+      Sig.open_
         & Opn.mk ~attrs:(warning_attribute "-33") (* suppress 'unused open' warning *)
-          & Mod.ident (lidloc Bridge_labels.(concrete_bridge_interfaces^"."^interfaces))
-    ]
-    @ gen_full_bridge ~resolution_strategy ~bridgeable_ident_resolver objintf
+          (lidloc Bridge_labels.(concrete_bridge_interfaces^"."^interfaces));
+      gen_full_bridge ~resolution_strategy ~bridgeable_ident_resolver objintf
+      |> Sig.modtype; ]
     @ (generators |> List.concat_map(fun gen -> gen ~resolution_strategy ~bridgeable_ident_resolver objintf))
 
 type builtin_codec = {
@@ -1220,3 +1288,23 @@ let gen_full_bridge_impl : type bridgeable_ident.
     |> Mb.mk (locmk & some (get_module_name "Full_bridge"))
     |> Str.module_
     |> List.return
+
+let gen_full_bridge_impl_signature :
+  resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+  -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+  -> get_module_name:(string -> string)
+  -> 'bridgeable_ident sameworld_objintf
+  -> signature =
+  fun ~resolution_strategy ~bridgeable_ident_resolver ~get_module_name objintf ->
+  let mty: module_type =
+    let open Bridge_labels in
+    (match to_full_bridge_kind ~param_name:Bridge_labels.functor_parameter_var ~resolution_strategy ~bridgeable_ident_resolver objintf with
+    | `setup_less -> setup_less_full_bridge
+    | `peer_setup_only -> peer_setup_only_full_bridge
+    | `endemic_setup_only _ -> endemic_setup_only_full_bridge
+    | `dual_setup _ -> dual_setup_full_bridge)
+    |> lidloc |> Mty.ident
+  in
+  Md.mk (locmk & some (get_module_name "Full_bridge")) mty
+  |> Sig.module_
+  |> List.return

@@ -38,6 +38,8 @@ module Bridge_labels = struct
   let unwrap_endemic = "unwrap_endemic"
   let wrap_peer = "wrap_peer"
 
+  let get_module_name = sprintf "%s_with_jsoo"
+
   module Codec = struct
     let get_encoder_name ?(codec=`default) name =
       match codec with
@@ -514,7 +516,7 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
     (module (struct
       type nonrec bridgeable_ident = bridgeable_ident
 
-      let get_module_name = sprintf "%s_with_jsoo"
+      let get_module_name = Bridge_labels.get_module_name
 
       let get_encoder_name = Bridge_labels.Codec.get_encoder_name &> snd
       let get_decoder_name = Bridge_labels.Codec.get_decoder_name &> snd
@@ -945,4 +947,17 @@ let gen_structure : type bridgeable_ident.
   -> Ppxlib.structure
   = fun ?resolution_strategy ~bridgeable_ident_resolver objintf ->
     gen_structure ~generators:[ gen_full_bridge_impl ]
+    ?resolution_strategy ~bridgeable_ident_resolver objintf
+
+let gen_full_bridge_impl_signature =
+  gen_full_bridge_impl_signature
+    ~get_module_name:Bridge_labels.get_module_name
+
+let gen_signature : type bridgeable_ident.
+  ?resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+  -> bridgeable_ident_resolver:bridgeable_ident bridgeable_ident_resolver
+  -> bridgeable_ident sameworld_objintf
+  -> Ppxlib.signature
+  = fun ?resolution_strategy ~bridgeable_ident_resolver objintf ->
+    gen_signature ~generators:[ gen_full_bridge_impl_signature ]
     ?resolution_strategy ~bridgeable_ident_resolver objintf

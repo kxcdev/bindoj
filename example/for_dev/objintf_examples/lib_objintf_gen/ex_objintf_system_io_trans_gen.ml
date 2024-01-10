@@ -48,80 +48,6 @@ module type Endemic_object_registry_interface  =
         variant:[ `persistent  | `transient ] ->
           (module Logger) option -> unit
   end
-
-(** Ex_objintf_system_io objintf *)
-module type Concrete_bridge  =
-  sig
-    open Bindoj_objintf_shared
-    
-    (**  marker type for this specific concrete bridge  *)
-    type br
-    type 'x peer = ('x, br) peer'
-    type 'x endemic = ('x, br) endemic'
-    val access : 'x peer -> 'x
-    val bridge : 'x -> 'x endemic
-    module Simple_interfaces = Simple_interfaces
-    module Complex_interfaces :
-    sig
-      
-      (** output_channel bridgeable. *)
-      class type output_channel =
-        object
-          
-          (** channel_name method. *)
-          method  channel_name : string
-          
-          (** write method. *)
-          method  write : Bytes.t -> unit
-          
-          (** write_bulk method.
-              @param arg0 argument at 0. *)
-          method  write_bulk : byte_source peer -> unit
-          
-          (** write_async method.
-              @param arg0 argument at 0. *)
-          method  write_async : byte_source' peer -> unit
-        end
-      
-      (** System_io bridgeable *)
-      module type System_io  =
-        sig
-          
-          (** stdout method *)
-          val stdout : unit -> output_channel endemic
-          
-          (** stderr method *)
-          val stderr : unit -> output_channel endemic
-          
-          (** open_file_wo method
-              @param path path argument *)
-          val open_file_wo : path:string -> output_channel endemic
-          
-          (** open_file_ro method
-              @param path path argument *)
-          val open_file_ro : path:string -> byte_source endemic
-        end
-    end
-    module Interfaces :
-    sig
-      module Simple_interfaces : module type of Simple_interfaces
-      module Complex_interfaces : module type of Complex_interfaces
-      include module type of Simple_interfaces
-      include module type of Complex_interfaces
-    end
-    open Interfaces
-    module Peer_object_registry :
-    sig
-      
-      (** logger registry *)
-      val lookup_logger : id:string -> (module Logger) peer option
-    end
-    module Peer_objects :
-    sig 
-      (** my_logger object *)
-      val my_logger : (module Logger) peer end
-    module Endemic_object_registry : Endemic_object_registry_interface
-  end
 module Concrete_bridge_interfaces =
   struct
     open Bindoj_objintf_shared
@@ -131,7 +57,7 @@ module Concrete_bridge_interfaces =
       | Br 
     type 'x peer = ('x, br) peer'
     type 'x endemic = ('x, br) endemic'
-    let access x = access x
+    let access : 'x peer -> 'x = access
     let bridge x = bridge_generic ~bridge:Br x
     module Simple_interfaces = Simple_interfaces
     module Complex_interfaces =
@@ -182,6 +108,24 @@ module Concrete_bridge_interfaces =
         include Simple_interfaces
         include Complex_interfaces
       end
+  end
+
+(** Ex_objintf_system_io objintf *)
+module type Concrete_bridge  =
+  sig
+    include module type of Concrete_bridge_interfaces
+    open Interfaces
+    module Peer_object_registry :
+    sig
+      
+      (** logger registry *)
+      val lookup_logger : id:string -> (module Logger) peer option
+    end
+    module Peer_objects :
+    sig 
+      (** my_logger object *)
+      val my_logger : (module Logger) peer end
+    module Endemic_object_registry : Endemic_object_registry_interface
   end
 open Concrete_bridge_interfaces.Interfaces[@@warning "-33"]
 module type Dual_setup_full_bridge  =

@@ -26,7 +26,7 @@ open Bindoj_objintf_gen_jsoo
 open Bindoj_gen
 open Bindoj_test_common_objintf_examples
 
-let gen =
+let gen_structure =
   fun ~formatter ~trans_party (module M: Utils.Ex) ->
     let open M in
     let structure: Ppxlib.structure =
@@ -44,7 +44,25 @@ let gen =
     @ structure
     |> Emitter.structure formatter
 
-let gen_full_bridge_only =
+let gen_signature =
+  fun ~formatter ~trans_party (module M: Utils.Ex) ->
+    let open M in
+    let signature: Ppxlib.signature =
+      Caml_bridge.gen_signature
+        ~resolution_strategy:caml_resolution_strategy
+        ~bridgeable_ident_resolver
+        ~generators:[
+          Jsoo_full_bridge.gen_full_bridge_impl_signature
+        ]
+        (objintf_decl trans_party)
+    in
+    ([ "Bindoj_objintf_gen_jsoo_test_gen_utils",
+        warning_attribute "-33" (* suppress 'unused open' warning *)
+    ] |&> fun (s, attrs) -> Sig.open_ & Opn.mk ~attrs & lidloc s)
+    @ signature
+    |> Emitter.signature formatter
+
+let gen_full_bridge_only_structure =
   fun ~formatter ~trans_party (module M: Utils.Ex) ->
     let open M in
     let structure: Ppxlib.structure =
@@ -65,11 +83,34 @@ let gen_full_bridge_only =
     @ structure
     |> Emitter.structure formatter
 
+let gen_full_bridge_only_signature =
+  fun ~formatter ~trans_party (module M: Utils.Ex) ->
+    let open M in
+    let signature: Ppxlib.signature =
+      Jsoo_full_bridge.gen_full_bridge_impl_signature
+        ~resolution_strategy:caml_resolution_strategy
+        ~bridgeable_ident_resolver
+        (objintf_decl trans_party)
+    in
+    ([ sprintf "Bindoj_objintf_gen_test_gen_output.%s%s_gen"
+        M.module_name
+        (match trans_party with | Cis_party -> "" | Trans_party -> "_trans"),
+        [];
+        "Bindoj_objintf_gen_jsoo_test_gen_utils",
+        warning_attribute "-33" (* suppress 'unused open' warning *);
+        Bridge_labels.(concrete_bridge_interfaces^"."^interfaces),
+        warning_attribute "-33" (* suppress 'unused open' warning *); ]
+      |&> fun (s, attrs) -> Sig.open_ & Opn.mk ~attrs & lidloc s)
+    @ signature
+    |> Emitter.signature formatter
+
 let mapping =
   All.all |&>> (fun ((module M: Utils.Ex) as m) ->
     let name = String.lowercase_ascii M.module_name in
-    [ sprintf "%s_jsoo_gen.ml" name, (m, Cis_party);
-      sprintf "%s_jsoo_trans_gen.ml" name, (m, Trans_party); ])
+    [ sprintf "%s_jsoo_gen.ml" name, (m, Cis_party, `structure);
+      sprintf "%s_jsoo_gen.mli" name, (m, Cis_party, `signature);
+      sprintf "%s_jsoo_trans_gen.ml" name, (m, Trans_party, `structure);
+      sprintf "%s_jsoo_trans_gen.mli" name, (m, Trans_party, `signature);])
 
 let () =
     let full_bridge_only = ArgOptions.has_flag "-full-bridge-only" in
@@ -79,9 +120,15 @@ let () =
     | name :: _ ->
       match List.assoc_opt name mapping with
       | None -> failwith' "unknown example %s" name
-      | Some (m, trans_party) ->
+      | Some (m, trans_party, `structure) ->
         let formatter = Format.std_formatter in
         if full_bridge_only then
-          gen_full_bridge_only ~formatter ~trans_party m
+          gen_full_bridge_only_structure ~formatter ~trans_party m
         else
-          gen ~formatter ~trans_party m
+          gen_structure ~formatter ~trans_party m
+      | Some (m, trans_party, `signature) ->
+        let formatter = Format.std_formatter in
+        if full_bridge_only then
+          gen_full_bridge_only_signature ~formatter ~trans_party m
+        else
+          gen_signature ~formatter ~trans_party m

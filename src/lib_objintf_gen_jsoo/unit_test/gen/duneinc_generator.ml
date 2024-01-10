@@ -59,7 +59,7 @@ let () =
     output_duneinc_header target_name;
     output_fmtd_newline & Dcomb.(
       let caml_module =
-        let outputs = [fmt "%s_jsoo_gen.ml"; fmt "%s_jsoo_trans_gen.ml" ] in
+        let outputs = [fmt "%s_jsoo_gen.ml"; fmt "%s_jsoo_gen.mli"; fmt "%s_jsoo_trans_gen.ml"; fmt "%s_jsoo_trans_gen.mli" ] in
         let args =
           match kind with
           | `output -> []

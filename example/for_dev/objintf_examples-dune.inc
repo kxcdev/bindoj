@@ -18,41 +18,63 @@
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex_objintf_system_io_gen.ml ex_objintf_system_io_trans_gen.ml)
+  (targets
+   ex_objintf_system_io_gen.ml
+   ex_objintf_system_io_gen.mli
+   ex_objintf_system_io_trans_gen.ml
+   ex_objintf_system_io_trans_gen.mli)
   (deps
    (:generator %{workspace_root}/src/lib_objintf_gen/unit_test/gen/gen.exe))
   (action
    (progn
     (with-stdout-to ex_objintf_system_io_gen.ml
      (run %{generator} ex_objintf_system_io_gen.ml))
+    (with-stdout-to ex_objintf_system_io_gen.mli
+     (run %{generator} ex_objintf_system_io_gen.mli))
     (with-stdout-to ex_objintf_system_io_trans_gen.ml
-     (run %{generator} ex_objintf_system_io_trans_gen.ml)))))
+     (run %{generator} ex_objintf_system_io_trans_gen.ml))
+    (with-stdout-to ex_objintf_system_io_trans_gen.mli
+     (run %{generator} ex_objintf_system_io_trans_gen.mli)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex_objintf_empty_gen.ml ex_objintf_empty_trans_gen.ml)
+  (targets
+   ex_objintf_empty_gen.ml
+   ex_objintf_empty_gen.mli
+   ex_objintf_empty_trans_gen.ml
+   ex_objintf_empty_trans_gen.mli)
   (deps
    (:generator %{workspace_root}/src/lib_objintf_gen/unit_test/gen/gen.exe))
   (action
    (progn
     (with-stdout-to ex_objintf_empty_gen.ml
      (run %{generator} ex_objintf_empty_gen.ml))
+    (with-stdout-to ex_objintf_empty_gen.mli
+     (run %{generator} ex_objintf_empty_gen.mli))
     (with-stdout-to ex_objintf_empty_trans_gen.ml
-     (run %{generator} ex_objintf_empty_trans_gen.ml)))))
+     (run %{generator} ex_objintf_empty_trans_gen.ml))
+    (with-stdout-to ex_objintf_empty_trans_gen.mli
+     (run %{generator} ex_objintf_empty_trans_gen.mli)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (targets
    ex_objintf_one_directional_gen.ml
-   ex_objintf_one_directional_trans_gen.ml)
+   ex_objintf_one_directional_gen.mli
+   ex_objintf_one_directional_trans_gen.ml
+   ex_objintf_one_directional_trans_gen.mli)
   (deps
    (:generator %{workspace_root}/src/lib_objintf_gen/unit_test/gen/gen.exe))
   (action
    (progn
     (with-stdout-to ex_objintf_one_directional_gen.ml
      (run %{generator} ex_objintf_one_directional_gen.ml))
+    (with-stdout-to ex_objintf_one_directional_gen.mli
+     (run %{generator} ex_objintf_one_directional_gen.mli))
     (with-stdout-to ex_objintf_one_directional_trans_gen.ml
-     (run %{generator} ex_objintf_one_directional_trans_gen.ml))))))
+     (run %{generator} ex_objintf_one_directional_trans_gen.ml))
+    (with-stdout-to ex_objintf_one_directional_trans_gen.mli
+     (run %{generator} ex_objintf_one_directional_trans_gen.mli))))))
 (subdir objintf_examples/lib_objintf_gen_jsoo
  (library
   (name dev_example_objintf_examples_lib_objintf_gen_jsoo)
@@ -77,7 +99,9 @@
   (mode (promote (until-clean)))
   (targets
    ex_objintf_system_io_jsoo_gen.ml
-   ex_objintf_system_io_jsoo_trans_gen.ml)
+   ex_objintf_system_io_jsoo_gen.mli
+   ex_objintf_system_io_jsoo_trans_gen.ml
+   ex_objintf_system_io_jsoo_trans_gen.mli)
   (deps
    (:generator
     %{workspace_root}/src/lib_objintf_gen_jsoo/unit_test/gen/gen.exe))
@@ -85,12 +109,20 @@
    (progn
     (with-stdout-to ex_objintf_system_io_jsoo_gen.ml
      (run %{generator} ex_objintf_system_io_jsoo_gen.ml))
+    (with-stdout-to ex_objintf_system_io_jsoo_gen.mli
+     (run %{generator} ex_objintf_system_io_jsoo_gen.mli))
     (with-stdout-to ex_objintf_system_io_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.ml)))))
+     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.ml))
+    (with-stdout-to ex_objintf_system_io_jsoo_trans_gen.mli
+     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.mli)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
-  (targets ex_objintf_empty_jsoo_gen.ml ex_objintf_empty_jsoo_trans_gen.ml)
+  (targets
+   ex_objintf_empty_jsoo_gen.ml
+   ex_objintf_empty_jsoo_gen.mli
+   ex_objintf_empty_jsoo_trans_gen.ml
+   ex_objintf_empty_jsoo_trans_gen.mli)
   (deps
    (:generator
     %{workspace_root}/src/lib_objintf_gen_jsoo/unit_test/gen/gen.exe))
@@ -98,14 +130,20 @@
    (progn
     (with-stdout-to ex_objintf_empty_jsoo_gen.ml
      (run %{generator} ex_objintf_empty_jsoo_gen.ml))
+    (with-stdout-to ex_objintf_empty_jsoo_gen.mli
+     (run %{generator} ex_objintf_empty_jsoo_gen.mli))
     (with-stdout-to ex_objintf_empty_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_empty_jsoo_trans_gen.ml)))))
+     (run %{generator} ex_objintf_empty_jsoo_trans_gen.ml))
+    (with-stdout-to ex_objintf_empty_jsoo_trans_gen.mli
+     (run %{generator} ex_objintf_empty_jsoo_trans_gen.mli)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
   (targets
    ex_objintf_one_directional_jsoo_gen.ml
-   ex_objintf_one_directional_jsoo_trans_gen.ml)
+   ex_objintf_one_directional_jsoo_gen.mli
+   ex_objintf_one_directional_jsoo_trans_gen.ml
+   ex_objintf_one_directional_jsoo_trans_gen.mli)
   (deps
    (:generator
     %{workspace_root}/src/lib_objintf_gen_jsoo/unit_test/gen/gen.exe))
@@ -113,8 +151,12 @@
    (progn
     (with-stdout-to ex_objintf_one_directional_jsoo_gen.ml
      (run %{generator} ex_objintf_one_directional_jsoo_gen.ml))
+    (with-stdout-to ex_objintf_one_directional_jsoo_gen.mli
+     (run %{generator} ex_objintf_one_directional_jsoo_gen.mli))
     (with-stdout-to ex_objintf_one_directional_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.ml))))))
+     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.ml))
+    (with-stdout-to ex_objintf_one_directional_jsoo_trans_gen.mli
+     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.mli))))))
 (subdir objintf_examples/lib_objintf_gen_ts
  (rule
   (alias gen)

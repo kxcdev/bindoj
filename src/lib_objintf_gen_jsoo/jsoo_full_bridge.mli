@@ -38,3 +38,15 @@ val gen_structure :
     -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
     -> 'bridgeable_ident sameworld_objintf
     -> Ppxlib.structure
+
+val gen_full_bridge_impl_signature :
+    resolution_strategy:(type_decl -> Coretype.codec -> Caml_bridge.resolution_strategy)
+    -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+    -> 'bridgeable_ident sameworld_objintf
+    -> Ppxlib.signature
+
+val gen_signature :
+    ?resolution_strategy:(type_decl -> Coretype.codec -> Caml_bridge.resolution_strategy)
+    -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+    -> 'bridgeable_ident sameworld_objintf
+    -> Ppxlib.signature

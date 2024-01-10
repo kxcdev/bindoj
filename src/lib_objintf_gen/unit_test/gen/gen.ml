@@ -25,7 +25,7 @@ open Bindoj_objintf_gen
 open Bindoj_gen
 open Bindoj_test_common_objintf_examples
 
-let gen =
+let gen_structure =
   fun ~formatter ~trans_party (module M: Utils.Ex) ->
     let open M in
     let structure: Ppxlib.structure =
@@ -40,11 +40,28 @@ let gen =
     @ structure
     |> Emitter.structure formatter
 
+let gen_signature =
+  fun ~formatter ~trans_party (module M: Utils.Ex) ->
+    let open M in
+    let signature: Ppxlib.signature =
+      Caml_bridge.gen_signature
+        ~resolution_strategy:caml_resolution_strategy
+        ~bridgeable_ident_resolver
+        (objintf_decl trans_party)
+    in
+    ([ "Bindoj_objintf_gen_test_gen_utils",
+        warning_attribute "-33" (* suppress 'unused open' warning *)
+    ] |&> fun (s, attrs) -> Sig.open_ & Opn.mk ~attrs & lidloc s)
+    @ signature
+    |> Emitter.signature formatter
+
 let mapping =
   All.all |&>> (fun ((module M: Utils.Ex) as m) ->
     let name = String.lowercase_ascii M.module_name in
-    [ sprintf "%s_gen.ml" name, (m, Cis_party);
-      sprintf "%s_trans_gen.ml" name, (m, Trans_party); ])
+    [ sprintf "%s_gen.ml" name, (m, Cis_party, `structure);
+      sprintf "%s_gen.mli" name, (m, Cis_party, `signature);
+      sprintf "%s_trans_gen.ml" name, (m, Trans_party, `structure);
+      sprintf "%s_trans_gen.mli" name, (m, Trans_party, `signature); ])
 
 let () =
     match Array.to_list Sys.argv |> List.tl with
@@ -53,6 +70,9 @@ let () =
     | name :: _ ->
       match List.assoc_opt name mapping with
       | None -> failwith' "unknown example %s" name
-      | Some (m, trans_party) ->
+      | Some (m, trans_party, `structure) ->
         let formatter = Format.std_formatter in
-        gen ~formatter ~trans_party m
+        gen_structure ~formatter ~trans_party m
+      | Some (m, trans_party, `signature) ->
+        let formatter = Format.std_formatter in
+        gen_signature ~formatter ~trans_party m

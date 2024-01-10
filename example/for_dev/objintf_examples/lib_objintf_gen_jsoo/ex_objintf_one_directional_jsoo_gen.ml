@@ -129,30 +129,35 @@ module Simple_interfaces =
       end
   end
 open Simple_interfaces[@@warning "-33"]
-module type Concrete_bridge  =
-  sig
+module Concrete_bridge_interfaces =
+  struct
     open Bindoj_objintf_shared
     
-    (**  marker type for this specific concrete bridge  *)
-    type br
+    (** marker type for this specific concrete bridge *)
+    type nonrec br =
+      | Br 
     type 'x peer = ('x, br) peer'
     type 'x endemic = ('x, br) endemic'
-    val access : 'x peer -> 'x
-    val bridge : 'x -> 'x endemic
+    let access : 'x peer -> 'x = access
+    let bridge x = bridge_generic ~bridge:Br x
     module Simple_interfaces = Simple_interfaces
-    module Complex_interfaces :
-    sig
-      type nonrec sole_var = string
-      class type rec_obj =
-        object method  name : string method  get_self : rec_obj peer end
-    end
-    module Interfaces :
-    sig
-      module Simple_interfaces : module type of Simple_interfaces
-      module Complex_interfaces : module type of Complex_interfaces
-      include module type of Simple_interfaces
-      include module type of Complex_interfaces
-    end
+    module Complex_interfaces =
+      struct
+        type nonrec sole_var = string
+        class type rec_obj =
+          object method  name : string method  get_self : rec_obj peer end
+      end
+    module Interfaces =
+      struct
+        module Simple_interfaces = Simple_interfaces
+        module Complex_interfaces = Complex_interfaces
+        include Simple_interfaces
+        include Complex_interfaces
+      end
+  end
+module type Concrete_bridge  =
+  sig
+    include module type of Concrete_bridge_interfaces
     open Interfaces
     module Peer_object_registry :
     sig
@@ -171,32 +176,6 @@ module type Concrete_bridge  =
       val my_non_json_values : Utils.non_json_values
       val with_default_value : (module with_default_value) peer
     end
-  end
-module Concrete_bridge_interfaces =
-  struct
-    open Bindoj_objintf_shared
-    
-    (** marker type for this specific concrete bridge *)
-    type nonrec br =
-      | Br 
-    type 'x peer = ('x, br) peer'
-    type 'x endemic = ('x, br) endemic'
-    let access x = access x
-    let bridge x = bridge_generic ~bridge:Br x
-    module Simple_interfaces = Simple_interfaces
-    module Complex_interfaces =
-      struct
-        type nonrec sole_var = string
-        class type rec_obj =
-          object method  name : string method  get_self : rec_obj peer end
-      end
-    module Interfaces =
-      struct
-        module Simple_interfaces = Simple_interfaces
-        module Complex_interfaces = Complex_interfaces
-        include Simple_interfaces
-        include Complex_interfaces
-      end
   end
 open Concrete_bridge_interfaces.Interfaces[@@warning "-33"]
 module type Peer_setup_only_full_bridge  =

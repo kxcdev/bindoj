@@ -50,6 +50,18 @@ val gen_structure :
   -> 'bridgeable_ident sameworld_objintf
   -> structure
 
+val gen_signature :
+  ?generators:(
+    resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+    -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+    -> 'bridgeable_ident sameworld_objintf
+    -> signature
+  ) list
+  -> ?resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+  -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+  -> 'bridgeable_ident sameworld_objintf
+  -> Ppxlib.signature
+
 (** Represents encoder/decoder expressions of Coretype. *)
 type builtin_codec = {
   encoder: expression;
@@ -115,3 +127,10 @@ val gen_full_bridge_impl :
     -> 'bridgeable_ident full_bridge_impl)
   -> 'bridgeable_ident sameworld_objintf
   -> structure
+
+val gen_full_bridge_impl_signature :
+  resolution_strategy:(type_decl -> Coretype.codec -> resolution_strategy)
+  -> bridgeable_ident_resolver:'bridgeable_ident bridgeable_ident_resolver
+  -> get_module_name:(string -> string) (** Specify the module name of the Full bridge. *)
+  -> 'bridgeable_ident sameworld_objintf
+  -> signature
