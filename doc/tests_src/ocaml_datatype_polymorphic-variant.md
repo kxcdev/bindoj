@@ -31,8 +31,8 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 
 # let int_or_string_desc =
     variant_decl "int_or_string" [
-      variant_constructor "int" (`tuple_like [variant_argument @@ Coretype.mk_prim `int]);
-      variant_constructor "string" (`tuple_like [variant_argument @@ Coretype.mk_prim `string]);
+      variant_constructor "int" (`tuple_like [variant_argument & Coretype.mk_prim `int]);
+      variant_constructor "string" (`tuple_like [variant_argument & Coretype.mk_prim `string]);
     ] ~configs:[
       Caml_config.variant_type `polymorphic
     ];;

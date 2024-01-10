@@ -27,6 +27,7 @@ type pos = [
   | `variant_tuple_argument
   | `coretype
   | `string_enum_case
+  | `method_bundle_brideable_decl
 ]
 
 (** Configuration type where 'pos is restricted to pos types. *)

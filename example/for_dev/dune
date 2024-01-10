@@ -17,3 +17,13 @@
  (action (with-stdout-to %{target}
           (run generator/duneinc_generator.exe -target %{target}))))
 (include apidir_examples-dune.inc)
+
+(rule
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff objintf_examples-dune.inc objintf_examples-dune.inc.gen)))
+(rule
+ (target objintf_examples-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run generator/duneinc_generator.exe -target %{target}))))
+(include objintf_examples-dune.inc)

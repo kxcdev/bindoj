@@ -1,0 +1,21 @@
+(library
+ (name bindoj_objintf_gen_jsoo)
+ (public_name bindoj.objintf_gen_jsoo)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  kxclib
+  bindoj_base
+  bindoj_common
+  bindoj_typedesc
+  bindoj_objintf_shared
+  bindoj_objintf_gen
+  bindoj_objintf_shared_js
+  bindoj_objintf_gen_jsoo_config
+  bindoj_gen
+  bindoj_ppxlib_utils
+  js_of_ocaml
+  (re_export bindoj.runtime))
+ (preprocess
+  (pps ppxlib.metaquot))
+ (flags (:standard
+          -open Kxclib)))

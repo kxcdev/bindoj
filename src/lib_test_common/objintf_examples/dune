@@ -1,0 +1,13 @@
+(library
+ (name bindoj_test_common_objintf_examples)
+ (libraries
+  alcotest
+  bindoj_objintf_shared
+  bindoj_objintf_gen
+  bindoj_objintf_gen_ts
+  bindoj_typedesc
+  bindoj_test_common_typedesc_examples
+  bindoj_test_common_typedesc_generated_examples
+  kxclib yojson jsonm)
+ (preprocess (pps ppx_deriving.show))
+ (flags (:standard -open Kxclib)))

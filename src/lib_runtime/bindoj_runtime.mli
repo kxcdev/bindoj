@@ -330,3 +330,33 @@ type 'a json_full_decoder =
   -> Kxclib.Json.jv
   -> 'a OfJsonResult.t
 (** Type of json decoder that returns result. *)
+
+module Map_key : sig
+
+  type map_key_type_desc =
+    [ `Dictionary of 'map_key
+    | `StringEnum of string list
+    | `Tuple of 'map_key list
+    | `int53p
+    | `string ]
+    as 'map_key
+
+  val is_valid_dictionary_key_char : char -> bool
+  val is_valid_dictionary_key : string -> bool
+
+  type map_key_value =
+    | Mk_string of string
+    | Mk_int53 of int53p
+    | Mk_tuple of map_key_value list
+    | Mk_string_enum of string
+    | Mk_dictionary of (string * map_key_value) list
+
+  val check_map_key_value :
+    map_key_type_desc -> map_key_value -> bool
+
+  val escape_string : string -> string
+  val unescape_string : string -> string
+
+  val encode_map_key :
+    ?check_type:map_key_type_desc -> map_key_value -> string
+end

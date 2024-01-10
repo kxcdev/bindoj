@@ -26,6 +26,7 @@ type pos = [
   | `variant_tuple_argument
   | `coretype
   | `string_enum_case
+  | `method_bundle_brideable_decl
 ]
 
 type ('pos, 'kind) config = .. constraint 'pos = [< pos]

@@ -1,0 +1,5 @@
+(rule
+ (targets (dir dist))
+ (mode (promote (until-clean)))
+ (deps package.json tsconfig.json index.ts (source_tree src))
+ (action (run yarn build)))

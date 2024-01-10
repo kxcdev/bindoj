@@ -1,0 +1,31 @@
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (target ex_objintf_system_io_usage.js)
+ (deps ../ex_objintf_system_io_usage.bc.js)
+ (action
+  (copy %{deps} %{target})))
+
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (target ex_objintf_system_io_trans_usage.js)
+ (deps ../ex_objintf_system_io_trans_usage.bc.js)
+ (action
+  (copy %{deps} %{target})))
+
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (target ex_objintf_one_directional_usage.js)
+ (deps ../ex_objintf_one_directional_usage.bc.js)
+ (action
+  (copy %{deps} %{target})))
+
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (target ex_objintf_one_directional_trans_usage.js)
+ (deps ../ex_objintf_one_directional_trans_usage.bc.js)
+ (action
+  (copy %{deps} %{target})))

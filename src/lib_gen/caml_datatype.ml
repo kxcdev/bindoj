@@ -59,28 +59,7 @@ and type_manifest_of_type_decl_kind : self_name:string -> type_decl -> core_type
     match Caml_config.get_variant_type td.td_configs with
     | `regular -> None
     | `polymorphic ->
-      let fields =
-      ctors |&> fun ctor ->
-        match ctor.vc_param with
-        | `no_param ->
-          Rf.tag ~attrs:(doc_attribute ctor.vc_doc)
-            (locmk ctor.vc_name)
-            false
-            []
-        | `tuple_like ts ->
-          Rf.tag ~attrs:(doc_attribute ctor.vc_doc)
-            (locmk ctor.vc_name)
-            true
-            (match ts with
-            | [] -> failwith "impossible"
-            | [arg] -> [type_of_nested_type ~self_name arg.va_type]
-            | args -> [Typ.tuple (args |&> fun { va_type; _ } -> type_of_nested_type ~self_name va_type)])
-        | `inline_record _ ->
-          failwith' "case '%s' with an inline record cannot be used in a polymorphic variant" ctor.vc_name
-        | `reused_inline_record _ ->
-          failwith' "case '%s' with an reused inline record cannot be used in a polymorphic variant" ctor.vc_name
-      in
-      Some (Typ.variant fields Closed None)
+      Some (Utils.type_of_polymorphic_variant ~self_name ctors)
 
 and label_declarations_of_record_fields ~self_name fields =
   fields |&> fun field ->
@@ -107,46 +86,6 @@ and constructor_declarations_of_variant_constructors ~self_name ctors =
         ctor.vc_name, Pcstr_record (fields |> label_declarations_of_record_fields ~self_name)
     in
     Type.constructor ~attrs:(doc_attribute ctor.vc_doc) ~args (locmk name)
-
-and type_of_coretype : self_name:string -> coretype -> core_type =
-  fun ~self_name { ct_desc; _ } ->
-  let open Coretype in
-  let type_of_prim = function
-    | `unit -> typcons "unit"
-    | `bool -> typcons "bool"
-    | `int -> typcons "int"
-    | `int53p -> typcons "Kxclib.int53p"
-    | `float -> typcons "float"
-    | `string -> typcons "string"
-    | `uchar -> typcons "Uchar.t"
-    | `byte -> typcons "char"
-    | `bytes -> typcons "Bytes.t"
-  in
-  let rec go = function
-    | Prim p -> type_of_prim p
-    | Uninhabitable -> typcons "unit"
-    | Ident { id_name; id_codec; } ->
-      typcons (Utils.type_name_with_codec ~codec:id_codec id_name)
-    | Option t -> typcons "option" ~args:[go t]
-    | List t -> typcons "list" ~args:[go t]
-    | Map (k, v) ->
-      let k = desc_of_map_key k in
-      typcons "list" ~args:[Typ.tuple [go k; go v]]
-    | Tuple ts -> ts |> List.map go |> Typ.tuple
-    | StringEnum cs ->
-      let cases = cs |&> (fun (k, _, doc) ->
-        Rf.tag
-          ~attrs:(doc_attribute doc)
-          (locmk (escape_as_constructor_name k)) true [])
-      in
-      Typ.variant cases Closed None
-    | Self -> typcons self_name
-    in go ct_desc
-
-and type_of_nested_type ~self_name = function
-  | `direct ct -> type_of_coretype ~self_name ct
-  | `nested ({ td_name; _ }, codec) ->
-    typcons (Utils.type_name_with_codec ~codec td_name)
 
 open Bindoj_base.Typed_type_desc
 

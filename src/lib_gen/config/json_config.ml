@@ -30,3 +30,16 @@ include Bindoj_codec_config.Json_config
 
 let custom_json_schema schema =
   Configs.Config_foreign_type_expression (json_schema, schema)
+
+let get_encoder_name ?resolution_strategy type_name : string option * string =
+  match resolution_strategy with
+  | None | Some `default -> None, type_name^"_to_json"
+  | Some `open_ m -> Some m, type_name^"_to_json"
+  | Some `in_module m -> None, m^".to_json"
+  (* | `codec_val v -> v *)
+let get_decoder_name ?resolution_strategy type_name : string option * string =
+  match resolution_strategy with
+  | None | Some `default -> None, type_name^"_of_json'"
+  | Some `open_ m -> Some m,  type_name^"_of_json'"
+  | Some `in_module m -> None, m^".of_json'"
+  (* | `codec_val v -> v *)

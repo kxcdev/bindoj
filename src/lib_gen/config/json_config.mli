@@ -32,3 +32,6 @@ include module type of Bindoj_codec.Json.Json_config
 val custom_json_schema :
   Bindoj_openapi.V3.Schema_object.t
   -> ([`coretype], [`foreign_type_expression]) config
+
+val get_encoder_name : ?resolution_strategy:[ `default | `in_module of string | `open_ of string ] -> string -> string option * string
+val get_decoder_name : ?resolution_strategy:[ `default | `in_module of string | `open_ of string ] -> string -> string option * string

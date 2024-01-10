@@ -228,14 +228,16 @@ module Code = struct
          |> Rope.to_string);
       test_case'
         "rope_of_ts_expression"
-        ("(" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ " : " ^ number ^ ") => { " ^
+        ("(" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ "? : " ^ number ^ ") => { " ^
          "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
          ^ " }")
         (`arrow_function {
             tsaf_parameters = [
               { tsp_name = var_x;
+                tsp_optional = false;
                 tsp_type_desc = `type_reference number; };
               { tsp_name = var_y;
+                tsp_optional = true;
                 tsp_type_desc = `type_reference number; };
             ];
             tsaf_body = [
@@ -432,12 +434,14 @@ module Code = struct
          |> Rope.to_string);
       test_case'
         "rope_of_ts_type_desc"
-        ("(" ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ ": " ^ number ^ ") => " ^ number)
+        ("(" ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ "?: " ^ number ^ ") => " ^ number)
         (`func_type {
             tsft_parameters = [
               { tsp_name = var_x;
+                tsp_optional = false;
                 tsp_type_desc = `type_reference number; };
               { tsp_name = var_y;
+                tsp_optional = true;
                 tsp_type_desc = `type_reference number; }
             ];
             tsft_type_desc = `type_reference number;
@@ -502,7 +506,7 @@ module Code = struct
          |> Rope.to_string);
       test_case'
         "rope_of_ts_statement"
-        ("function " ^ var_f ^ "(" ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ ": " ^ number ^  "): " ^ number ^ "{ " ^
+        ("function " ^ var_f ^ "(" ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ "?: " ^ number ^  "): " ^ number ^ "{ " ^
          "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
          ^ " }")
         (`function_declaration {
@@ -511,8 +515,10 @@ module Code = struct
             tsf_type_parameters = [];
             tsf_parameters = [
               { tsp_name = var_x;
+                tsp_optional = false;
                 tsp_type_desc = `type_reference number; };
               { tsp_name = var_y;
+                tsp_optional = true;
                 tsp_type_desc = `type_reference number; };
             ];
             tsf_type_desc = `type_reference number;
@@ -537,6 +543,7 @@ module Code = struct
             tsf_type_parameters = [type_A];
             tsf_parameters = [
               { tsp_name = var_x;
+                tsp_optional = false;
                 tsp_type_desc = `type_reference type_A; }
             ];
             tsf_type_desc = `type_reference type_A;
@@ -594,15 +601,17 @@ module Code = struct
          |> Rope.to_string);
       test_case'
         "rope_of_ts_expression"
-        ("((" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ " : " ^ number ^ ") => {" ^
+        ("((" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ "? : " ^ number ^ ") => {" ^
          "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
          ^ "})" ^ "(" ^ var_a ^ ", " ^ var_b ^ ")")
         (`call_expression {
             tsce_expression = `arrow_function {
                 tsaf_parameters = [
                   { tsp_name = var_x;
+                    tsp_optional = false;
                     tsp_type_desc = `type_reference number; };
                   { tsp_name = var_y;
+                    tsp_optional = true;
                     tsp_type_desc = `type_reference number; };
                 ];
                 tsaf_body = [

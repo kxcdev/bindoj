@@ -21,6 +21,7 @@ open Bindoj_base
 open Bindoj_typedesc.Typed_type_desc
 open Bindoj_typedesc.Type_desc
 open Typescript_datatype
+open Bindoj_common
 
 type resolution_strategy = [
   | `import_location of string
@@ -66,7 +67,7 @@ let generate_import_and_env ~(env: tdenv) ~resolution_strategy ~formatter (decls
         types := tds |> List.foldl (fun ts { td_name; _ } -> td_name :: ts) !types;
         let tnames =
           tds
-          |&> (Ts_config.get_mangled_name_of_type &> fst)
+          |&> (Ts_config.get_mangled_name_of_type ~escaping_charmap:Mangling.charmap_js_identifier &> fst)
           |> List.sort_uniq compare
         in
         sprintf "import { %s } from \"%s\";" (String.concat ", " tnames) loc

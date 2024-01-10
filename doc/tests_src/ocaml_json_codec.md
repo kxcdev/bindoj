@@ -81,7 +81,7 @@ type nonrec type_decl =
 # let person_desc =
     variant_decl "person" [
       variant_constructor "Anonymous" `no_param;
-      variant_constructor "With_id" (`tuple_like [variant_argument @@ Coretype.mk_prim `int]);
+      variant_constructor "With_id" (`tuple_like [variant_argument & Coretype.mk_prim `int]);
       variant_constructor "Student" (`inline_record [
         record_field "student_id" (Coretype.mk_prim `int);
         record_field "name" (Coretype.mk_prim `string);

@@ -20,6 +20,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
 open Bindoj_base
 open Typed_type_desc
 open Runtime
+open Bindoj_common
 
 type json_variant_style = [
   | `flatten
@@ -136,7 +137,7 @@ let mangled kind mangling_style name =
     let preserve_version_substring =
       mangling_style = `default
     in
-    let open Bindoj_common.Mangling in
+    let open Mangling in
     let mangler = match kind with
       | `type_name -> snake_to_upper_camel
       | `field_name -> snake_to_lower_camel
@@ -144,10 +145,13 @@ let mangled kind mangling_style name =
       | `string_enum_case -> snake_to_kebab in
     mangler ~preserve_version_substring name
 
-let get_mangled_name_of_type : ?inherited:json_mangling_style -> type_decl -> string * json_mangling_style =
-  fun ?(inherited=default_mangling_style) { td_name; td_configs; _ } ->
+let get_mangled_name_of_type : ?inherited:json_mangling_style -> ?escaping_charmap:(char -> string option) -> type_decl -> string * json_mangling_style =
+  fun ?(inherited=default_mangling_style) ?escaping_charmap { td_name; td_configs; _ } ->
     let style = get_mangling_style_opt td_configs |? inherited in
-    td_configs |> get_name_opt |? (mangled `type_name style td_name)
+    (td_configs |> get_name_opt |? (mangled `type_name style td_name))
+    |> (match escaping_charmap with
+      | None -> identity
+      | Some charmap -> Mangling.escape ~charmap)
     , style
 
 let get_mangled_name_of_field : ?inherited:json_mangling_style -> record_field -> string * json_mangling_style =
@@ -279,3 +283,39 @@ let check_field_name_collision =
       >|= List.concat
   in
   fun td -> go default_mangling_style td (Some []) |> Option.is_some
+
+module Bindoj_private = struct
+  let collect_coretypes_folder ?json_tuple_style ~including_optional_fields get_value =
+    let rec go state desc =
+      let add name wrap =
+        get_value (wrap name)
+        |> function
+          | Some v -> state |> StringMap.add name v
+          | None -> state
+      in
+      begin match desc with
+      | Coretype.Prim p -> add (Coretype.string_of_prim p) (fun s -> `prim s)
+      | Uninhabitable -> add "uninhabitable" & constant `uninhabitable
+      | Option d -> go (add "option" & constant `option) d
+      | List d -> go (add "list" & constant `list) d
+      | Map (_, d) -> go (add "map" & constant `map) d
+      | Tuple ds ->
+        begin match json_tuple_style with
+        | None -> failwith "configs is not specified."
+        | Some `arr -> List.fold_left go state ds
+        | Some (`obj `default) ->
+          List.fold_left (fun state -> function
+            | Coretype.Option (Option _) when not including_optional_fields ->
+              failwith "Nested option types cannot be json fields."
+            | Option d when not including_optional_fields ->
+              go state d
+            | d -> go state d
+          ) state ds
+        end
+      | Ident { id_name; _ } -> add "ident" & constant (`ident id_name)
+      | StringEnum _ -> add "string_enum" & constant `string_enum
+      | Self -> add "self" & constant `self
+      end
+    in
+    go
+end

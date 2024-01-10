@@ -2,7 +2,13 @@
  (name bindoj_gen)
  (public_name bindoj.gen)
  (instrumentation (backend bisect_ppx))
- (libraries bindoj_gen_config kxclib bindoj_base bindoj_codec bindoj_openapi ppx_deriving.show)
+ (libraries
+  bindoj_gen_config
+  bindoj_base
+  bindoj_codec
+  bindoj_openapi
+  bindoj_ppxlib_utils
+  kxclib)
  (preprocess
   (pps ppxlib.metaquot))
  (private_modules utils)

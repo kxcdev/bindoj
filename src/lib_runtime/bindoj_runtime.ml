@@ -359,3 +359,102 @@ type 'a json_full_decoder =
   ?path:Kxclib.Json.jvpath
   -> Kxclib.Json.jv
   -> 'a OfJsonResult.t
+
+module Map_key = struct
+  type map_key_type_desc = [
+    | `string
+    | `int53p
+    | `Tuple of 'map_key list
+    | `StringEnum of string list
+    | `Dictionary of 'map_key
+    ] as 'map_key
+
+  open struct
+    let has_duplication xs =
+      let rec loop seen = function
+        | [] -> false
+        | x :: _ when StringMap.mem x seen -> true
+        | x :: xs -> loop (StringMap.add x () seen) xs
+      in loop StringMap.empty xs
+  end
+
+  let is_valid_dictionary_key_char = function
+    | '_' | '-' | '0'..'9' -> true
+    | 'a'..'z' | 'A'..'Z' -> true
+    | _ -> false
+
+  let is_valid_dictionary_key =
+    String.for_all is_valid_dictionary_key_char
+
+  type map_key_value =
+    | Mk_string of string
+    | Mk_int53 of int53p
+    | Mk_tuple of map_key_value list
+    | Mk_string_enum of string
+    | Mk_dictionary of (string * map_key_value) list
+
+  let rec check_map_key_value : map_key_type_desc -> map_key_value -> bool
+    = fun t v ->
+    match t, v with
+    | `string, Mk_string _ -> true
+    | `int53p, Mk_int53 _ -> true
+    | `Tuple ts, Mk_tuple vs -> (
+       try List.map2 check_map_key_value ts vs |> List.for_all identity
+       with Invalid_argument _ -> false)
+    | `StringEnum cases, Mk_string_enum c ->
+       List.mem c cases
+    | `Dictionary ty, Mk_dictionary vs ->
+       vs |> List.for_all (fun (k, v) ->
+                 is_valid_dictionary_key k
+                 && check_map_key_value ty v)
+       && vs |&> fst |> has_duplication |> not
+    | _ -> false
+
+  let escape_string : string -> string =
+    fun str ->
+    let need_escaping  = not & is_valid_dictionary_key str in
+    if need_escaping then Seq.Ops_piping.(
+      String.to_seq str |&>>
+        function
+        | c when is_valid_dictionary_key_char c ->
+           c |> Seq.Ops_monad.return
+        | c -> Char.code c |> sprintf "?%02X" |> String.to_seq
+    ) |> String.of_seq
+    else str
+
+  let unescape_string : string -> string = fun _ -> failwith "todo"
+
+  let rec encode_map_key : ?check_type:map_key_type_desc -> map_key_value -> string =
+    fun ?check_type mk ->
+    check_type >? (Fn.fix2nd mk check_map_key_value)
+    |> Option.iter (function
+           | false -> invalid_arg' "encode_map_key - bad type"
+           | _ -> ());
+    let rec go = function
+      | Mk_string s ->
+         let escaped = escape_string s in
+         sprintf "#str:%d:%s" (String.length escaped) escaped
+      | Mk_int53 x ->
+         sprintf "#i53p:%s" (Int53p.to_string x)
+      | Mk_tuple xs ->
+         xs |&> go |> String.concat ","
+         |> sprintf "#tup:%d[%s]" (List.length xs)
+      | Mk_string_enum c ->
+         let escaped = escape_string c in
+         sprintf "#strenum:%d:%s" (String.length escaped) escaped
+      | Mk_dictionary kvs -> (
+        if Option.is_none check_type then (
+          if List.for_all (is_valid_dictionary_key % fst) kvs |> not
+             || kvs |&> fst |> has_duplication
+          then invalid_arg' "encode_map_key - bad dictionary key(s)"
+        );
+        let kvs = Array.of_list kvs in
+        Array.stable_sort (projected_compare fst) kvs;
+        Array.to_seq kvs
+        |> Seq.map (fun (k, v) -> sprintf "%s=%s" k (encode_map_key v))
+        |> List.of_seq |> String.concat ","
+        |> sprintf "#dict:%d{%s}" (Array.length kvs)
+      ) in
+    go mk
+
+end

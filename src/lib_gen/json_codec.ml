@@ -29,17 +29,6 @@ module Json_config = Bindoj_gen_config.Json_config
 
 let tuple_index_to_field_name = Json_config.tuple_index_to_field_name
 
-let get_encoder_name type_name = function
-  | `default -> None, type_name^"_to_json"
-  | `open_ m -> Some m, type_name^"_to_json"
-  | `in_module m -> None, m^".to_json"
-  (* | `codec_val v -> v *)
-let get_decoder_name type_name = function
-  | `default -> None, type_name^"_of_json'"
-  | `open_ m -> Some m,  type_name^"_of_json'"
-  | `in_module m -> None, m^".of_json'"
-  (* | `codec_val v -> v *)
-
 let get_json_shape_explanation_name type_name = function
   | `default -> None, type_name^"_json_shape_explanation"
   | `open_ m -> Some m, type_name^"_json_shape_explanation"
@@ -210,8 +199,8 @@ let codec_of_coretype ~inherited_codec ~get_custom_codec ~get_name ~map_key_conv
   match get_custom_codec ct.ct_configs with
   | Some coder -> evar coder
   | None ->
-    let evar_name ?(codec = `default) name =
-      let open_, name = get_name name codec in
+    let evar_name ?codec name =
+      let open_, name = get_name ?resolution_strategy:codec name in
       evar ?open_ name
     in
     let rec go = function
@@ -232,32 +221,16 @@ let codec_of_coretype ~inherited_codec ~get_custom_codec ~get_name ~map_key_conv
 let collect_builtin_codecs ~including_optional_fields (td: type_decl) =
   let folder state =
     let folder configs =
-      let rec go state =
-        let add name =
-          state |> StringMap.add name
-            (builtin_codecs_map |> StringMap.find name)
-        in
-        function
-        | Coretype.Prim p -> add (Coretype.string_of_prim p)
-        | Uninhabitable -> add "uninhabitable"
-        | Option d -> go (add "option") d
-        | List d -> go (add "list") d
-        | Map (_, d) -> go (add "map") d
-        | Tuple ds ->
-          begin match Json_config.get_tuple_style configs with
-          | `arr -> List.fold_left go state ds
-          | `obj `default ->
-            List.fold_left (fun state -> function
-              | Coretype.Option (Option _) when not including_optional_fields ->
-                failwith "Nested option types cannot be json fields."
-              | Option d when not including_optional_fields ->
-                go state d
-              | d -> go state d
-            ) state ds
-          end
-        | Ident _ | Self | StringEnum _  -> state
-      in
-      go
+      let json_tuple_style = Json_config.get_tuple_style configs in
+      Json_config.Bindoj_private.collect_coretypes_folder ~json_tuple_style ~including_optional_fields
+        ((function
+          | `prim s -> Some s
+          | `uninhabitable -> Some "uninhabitable"
+          | `option -> Some "option"
+          | `list -> Some "list"
+          | `map -> Some "map"
+          | `ident _ | `string_enum | `self -> None)
+          &> (Fn.flip Option.bind (Fn.flip StringMap.find_opt builtin_codecs_map)))
     in
     function
     | { Coretype.ct_desc; ct_configs }, `alias _ :: [] ->
@@ -390,7 +363,7 @@ let encoder_of_coretype =
     codec_of_coretype
       ~inherited_codec
       ~get_custom_codec:Json_config.get_custom_encoder
-      ~get_name:get_encoder_name
+      ~get_name:Json_config.get_encoder_name
       ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case base_mangling_style)
       ~wrap_ident
       e ct
@@ -511,28 +484,30 @@ let decoder_of_coretype =
   codec_of_coretype
     ~inherited_codec
     ~get_custom_codec:Json_config.get_custom_decoder
-    ~get_name:get_decoder_name
+    ~get_name:Json_config.get_decoder_name
     ~tuple_case ~map_key_converter ~string_enum_case:(string_enum_case base_mangling_style)
     ~wrap_ident
     e ct
 
-let gen_builtin_codecs ?attrs ~including_optional_fields ~get_name ~get_codec (td: type_decl) =
+let gen_builtin_codecs ?attrs ~including_optional_fields
+  ~(get_name: ?resolution_strategy:[ `default | `in_module of label | `open_ of label ] -> label -> label option * label)
+  ~get_codec (td: type_decl) =
   let loc = Location.none in
   let coders = collect_builtin_codecs ~including_optional_fields td in
   let bind (_, name) expr = Vb.mk ~loc ?attrs (Pat.var (strloc name)) expr in
   StringMap.fold (fun label coder state ->
-    bind (get_name label `default) (get_codec coder) :: state
+    bind (get_name ~resolution_strategy:`default label) (get_codec coder) :: state
   ) coders []
 
 let gen_builtin_encoders : ?attrs:attrs -> type_decl -> value_binding list =
   gen_builtin_codecs
     ~including_optional_fields:false
-    ~get_name:get_encoder_name ~get_codec:(fun x -> x.encoder)
+    ~get_name:Json_config.get_encoder_name ~get_codec:(fun x -> x.encoder)
 
 let gen_builtin_decoders : ?attrs:attrs -> type_decl -> value_binding list =
   gen_builtin_codecs
     ~including_optional_fields:true
-    ~get_name:get_decoder_name ~get_codec:(fun x -> x.decoder)
+    ~get_name:Json_config.get_decoder_name ~get_codec:(fun x -> x.decoder)
 
 type json_shape_explanation_resolution =
   string -> [
@@ -568,18 +543,6 @@ and efield_shape_explanation ~loc (field: json_field_shape_explanation) =
   match field with
   | `mandatory_field (s, shape) -> [%expr `mandatory_field([%e estring ~loc s], [%e ejson_shape_explanation ~loc shape])]
   | `optional_field (s, shape) -> [%expr `optional_field([%e estring ~loc s], [%e ejson_shape_explanation ~loc shape])]
-and ejv ~loc (jv: Kxclib.Json.jv) =
-  match jv with
-  | `null -> [%expr `null]
-  | `bool x -> [%expr `bool [%e ebool ~loc x]]
-  | `num x -> [%expr `num [%e pexp_constant ~loc (Pconst_float (Float.to_string x, None))]]
-  | `str x -> [%expr `str [%e estring ~loc x ]]
-  | `arr xs -> [%expr `arr [%e xs |&> (ejv ~loc) |> elist ~loc ]]
-  | `obj xs -> [%expr
-    `obj [%e xs
-      |&> (fun (s, jv) ->
-        [%expr ([%e estring ~loc s], [%e ejv ~loc jv])])
-      |> elist ~loc ]]
 
 let explain_encoded_json_shape :
   ?json_shape_explanation_resolution:json_shape_explanation_resolution
@@ -708,11 +671,11 @@ let collect_nested_types_uniq f =
 
 let validate_spreading_type = Bindoj_codec.Json.validate_spreading_type
 
-let gen_json_encoder :
+let gen_json_encoder' :
       ?self_contained:bool
       -> ?codec:Coretype.codec
       -> type_decl
-      -> value_binding =
+      -> string * expression =
   fun ?(self_contained=false) ?(codec=`default) td ->
   let loc = Location.none in
   let vari i = "x"^string_of_int i in
@@ -944,8 +907,7 @@ let gen_json_encoder :
       | `root -> false, codec, json_encoder_name ~codec td, fun e -> [%expr `obj [%e e]]
     in
     let self_ename = evar ~loc self_name in
-    let self_pname = pvar ~loc self_name in
-    self_pname, (match td_kind with
+    self_name, (match td_kind with
     | Alias_decl ct ->
       encoder_of_coretype codec base_mangling_style self_ename ct
     | Record_decl fields -> [%expr fun [%p record_params fields] ->
@@ -972,9 +934,9 @@ let gen_json_encoder :
       | ({ td_kind = Alias_decl _; _ }, _) -> None
       | (td, codec) -> Some (
         encoder_of_type_decl ~encoder_kind:(`nested inherited_codec) codec td
-        /> (fun e ->
+        |> (fun (name, e) ->
           let type_name = Utils.type_name_with_codec ~codec:inherited_codec td.td_name in
-          pexp_constraint ~loc e
+          pvar ~loc name, pexp_constraint ~loc e
             [%type: [%t typcons ~loc type_name] -> (string * Kxclib.Json.jv) list])
         |> !! Vb.mk)
     )
@@ -982,17 +944,26 @@ let gen_json_encoder :
     | [] -> e
     | es -> pexp_let ~loc Recursive es e
   in
-  let (self_pname, encoder_body) =
+  let (name, encoder_body) =
     encoder_of_type_decl
       ~encoder_kind:`root
       codec
       td
   in
-  Vb.mk
-    ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
-    self_pname
-    (pexp_constraint ~loc
-        (encoder_body |> wrap_nested_type_decls |> wrap_self_contained)
+  name, encoder_body |> wrap_nested_type_decls |> wrap_self_contained
+
+let gen_json_encoder :
+      ?self_contained:bool
+      -> ?codec:Coretype.codec
+      -> type_decl
+      -> value_binding =
+  fun ?self_contained ?codec td ->
+    let loc = Location.none in
+    let name, body = gen_json_encoder' ?self_contained ?codec td in
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      (pvar ~loc name)
+      (pexp_constraint ~loc body
         [%type: [%t typcons ~loc td.td_name] -> Kxclib.Json.jv])
 
 let gen_json_decoder_impl :
@@ -1324,19 +1295,18 @@ let gen_json_decoder_impl :
       encoder_body |> wrap_nested_type_decls |> wrap_self_contained]
     in [%e evar ~loc self_name]]
 
-let gen_json_decoder_result :
+let gen_json_decoder_result' :
       ?self_contained:bool
       -> ?json_shape_explanation_style:[
         | `inline of json_shape_explanation_resolution option
         | `reference ]
       -> ?codec:Coretype.codec
       -> type_decl
-      -> value_binding =
+      -> string * expression =
   fun ?(self_contained=false) ?(json_shape_explanation_style = `inline None) ?(codec=`default) td ->
   let { td_name; _ } = td in
   let loc = Location.none in
   let self_name = (json_decoder_name ~codec td) ^ "'" in
-  let self_pname = pvar self_name in
 
   let body =
     [%expr fun ?(path=[]) x ->
@@ -1354,11 +1324,56 @@ let gen_json_decoder_result :
               | `in_module _ -> json_shape_name)
         ]))]
   in
-  Vb.mk
-    ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
-    self_pname
-    (pexp_constraint ~loc body
-      [%type: [%t typcons ~loc td_name] Bindoj_runtime.json_full_decoder])
+  (self_name, body)
+
+let gen_json_decoder_result :
+      ?self_contained:bool
+      -> ?json_shape_explanation_style:[
+        | `inline of json_shape_explanation_resolution option
+        | `reference ]
+      -> ?codec:Coretype.codec
+      -> type_decl
+      -> value_binding =
+  fun ?self_contained ?json_shape_explanation_style ?codec td ->
+    let loc = Location.none in
+    let name, body =
+      gen_json_decoder_result'
+        ?self_contained
+        ?json_shape_explanation_style
+        ?codec td
+    in
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      (pvar ~loc name)
+      (pexp_constraint ~loc body
+        [%type: [%t typcons ~loc td.td_name] Bindoj_runtime.json_full_decoder])
+
+let gen_json_decoder_option' :
+    ?implementation_style: [
+      | `refer_existing_result_variant_json_decoder
+      | `embed_full_implementation of [
+        | `self_contained
+        | `non_self_contained
+      ]
+    ]
+      -> ?codec:Coretype.codec
+      -> type_decl
+      -> string * expression =
+  fun ?(implementation_style=`embed_full_implementation `non_self_contained) ?(codec=`default) td ->
+  let loc = Location.none in
+  let self_name = json_decoder_name ~codec td in
+  let body =
+    match implementation_style with
+    | `refer_existing_result_variant_json_decoder ->
+      [%expr fun x -> [%e evar (self_name ^ "'")] x |> Result.to_option]
+    | `embed_full_implementation self_contained ->
+      [%expr fun x -> [%e
+        gen_json_decoder_impl td
+          ~self_contained:(self_contained = `self_contained)
+        ] [] x |> Result.to_option
+      ]
+  in
+  (self_name, body)
 
 let gen_json_decoder_option :
     ?implementation_style: [
@@ -1371,27 +1386,14 @@ let gen_json_decoder_option :
       -> ?codec:Coretype.codec
       -> type_decl
       -> value_binding =
-  fun ?(implementation_style=`embed_full_implementation `non_self_contained) ?(codec=`default) td ->
-  let { td_name; _ } = td in
-  let loc = Location.none in
-  let self_name = json_decoder_name ~codec td in
-  let self_pname = pvar self_name in
-  let body =
-    match implementation_style with
-    | `refer_existing_result_variant_json_decoder ->
-      [%expr fun x -> [%e evar (self_name ^ "'")] x |> Result.to_option]
-    | `embed_full_implementation self_contained ->
-      [%expr fun x -> [%e
-        gen_json_decoder_impl td
-          ~self_contained:(self_contained = `self_contained)
-        ] [] x |> Result.to_option
-      ]
-  in
-  Vb.mk
-    ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
-    self_pname
-    (pexp_constraint ~loc body
-      [%type: Kxclib.Json.jv -> [%t typcons ~loc td_name] option])
+  fun ?implementation_style ?codec td ->
+    let loc = Location.none in
+    let (name, body) = gen_json_decoder_option' ?implementation_style ?codec td in
+    Vb.mk
+      ~attrs:(warning_attribute "-39") (* suppress 'unused rec' warning *)
+      (pvar ~loc name)
+      (pexp_constraint ~loc body
+        [%type: Kxclib.Json.jv -> [%t typcons ~loc td.td_name] option])
 
 let gen_json_shape_explanation :
   ?json_shape_explanation_resolution:json_shape_explanation_resolution
@@ -1612,7 +1614,8 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
         let name =
           ct.ct_configs
           |> Json_config.get_name_opt
-          >? Json_config.mangled `type_name base_mangling_style
+          >? (Json_config.mangled `type_name base_mangling_style
+              &> Bindoj_common.Mangling.(escape ~charmap:charmap_js_identifier))
           |? self_mangled_type_name
         in
         if openapi then (* in OpenAPI, types live in #/components/schemas/ *)

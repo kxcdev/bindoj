@@ -1,0 +1,34 @@
+(library
+  (name bindoj_objintf_gen_test_gen_utils)
+  (modules utils)
+  (libraries kxclib)
+  (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name gen)
+ (modules gen)
+ (libraries
+  bindoj_runtime
+  bindoj_objintf_gen
+  bindoj_test_common_objintf_examples)
+ (preprocess
+  (pps ppxlib.metaquot))
+ (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name duneinc_generator)
+ (modules duneinc_generator)
+ (libraries
+   kxclib fmt dune_file_parts
+   bindoj_test_common_objintf_examples)
+ (flags :standard -open Kxclib -w "-32-33"))
+
+(rule
+ (alias dune-gen)
+ (mode (promote))
+ (action (diff output-dune.inc output-dune.inc.gen)))
+(rule
+ (target output-dune.inc.gen)
+ (action (with-stdout-to %{target}
+          (run %{exe:duneinc_generator.exe} -target %{target}))))
+(include output-dune.inc)

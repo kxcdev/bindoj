@@ -21,8 +21,13 @@ open Kxclib
 
 let lib_gen_generator_dep = "%{workspace_root}/src/lib_gen/unit_test/gen/gen.exe"
 let lib_gen_ts_generator_dep = "%{workspace_root}/src/lib_gen_ts/unit_test/gen/gen.exe"
+
 let json_examples_generator_dep = "%{workspace_root}/with_js/compile-tests/generator/gen_json.exe"
 let json_schema_generator_dep = "%{workspace_root}/with_js/compile-tests/generator/gen_schema.exe"
+
+let lib_objintf_gen_generator_dep = "%{workspace_root}/src/lib_objintf_gen/unit_test/gen/gen.exe"
+let lib_objintf_gen_jsoo_generator_dep = "%{workspace_root}/src/lib_objintf_gen_jsoo/unit_test/gen/gen.exe"
+let lib_objintf_gen_ts_generator_dep = "%{workspace_root}/src/lib_objintf_gen_ts/unit_test/gen/gen.exe"
 
 let chop_suffix_exn suffix = String.(chop_suffix suffix &> Option.get)
 
@@ -190,5 +195,89 @@ let () =
          ];
        ]
       |> const & Bindoj_test_common_apidir_examples.All.all |&> fst
+    )
+  | _, Some ("objintf_examples-dune.inc" as target_name) ->
+    let objintf_gen_lib_name =
+      "dev_example_" ^ chop_suffix_exn "-dune.inc" target_name ^ "-lib_objintf_gen"
+      |> Dcomb.mangle_library_name
+    in
+    output_duneinc_header target_name;
+    output_fmtd_newline & Dcomb.(
+      let single args f =
+        let open Action in
+        with_stdout_to (`expr f) (
+          run "%{generator}" & f :: args
+        )
+      in
+      aggregate [
+        subdir "objintf_examples/lib_objintf_gen" [
+          Library.mk []
+            ~name:(str objintf_gen_lib_name)
+            ~modules':[ list ~sep:sp (fmt "%s_gen"); list ~sep:sp (fmt "%s_trans_gen") ]
+            ~libraries:[
+              "bindoj.base";
+              "bindoj.std_runtime";
+              "bindoj.objintf_shared";
+              "bindoj_objintf_gen_test_gen_utils";
+            ];
+            many (
+              let outputs = [ fmt "%s_gen.ml"; fmt "%s_trans_gen.ml" ] in
+              Rule.mkp_gen [
+                targets outputs;
+                Deps.(mk [named "generator" & str lib_objintf_gen_generator_dep]);
+                Action.mk_progn (outputs |&> single []);
+              ]
+            )
+        ];
+        subdir "objintf_examples/lib_objintf_gen_jsoo" [
+          Library.mk []
+            ~name:("dev_example_" ^ chop_suffix_exn "-dune.inc" target_name ^ "-lib_objintf_gen_jsoo"
+                   |> mangle_library_name
+                   |> str)
+            ~modules':[ list ~sep:sp (fmt "%s_jsoo_gen"); list ~sep:sp (fmt "%s_jsoo_trans_gen") ]
+            ~libraries:[
+              "bindoj.base";
+              "bindoj.std_runtime";
+              "bindoj.objintf_shared";
+              "bindoj_objintf_gen_jsoo_test_gen_utils";
+              "js_of_ocaml";
+              "yojson";
+              objintf_gen_lib_name;
+            ]
+            ~preprocess:[ "(pps js_of_ocaml-ppx)" ];
+            many (
+              let outputs = [ fmt "%s_jsoo_gen.ml"; fmt "%s_jsoo_trans_gen.ml" ] in
+              Rule.mkp_gen [
+                targets outputs;
+                Deps.(mk [named "generator" & str lib_objintf_gen_jsoo_generator_dep]);
+                Action.mk_progn (outputs |&> single []);
+              ]
+            )
+        ];
+        subdir "objintf_examples/lib_objintf_gen_ts" [
+          many (
+            let outputs = [ fmt "%s_gen.ts"; fmt "%s_trans_gen.ts" ] in
+            Rule.mkp_gen [
+              targets [
+                  fmt "%s_gen.ts";
+                  fmt "%s_trans_gen.ts";
+                ];
+              Deps.(mk [
+                named "generator" (atomic lib_objintf_gen_ts_generator_dep);
+              ]);
+              Action.(vpbox ~lead:"action" &.
+                progn (outputs |&> single [])
+              );
+            ]
+        )
+        ];
+      ]
+      |> const & (
+        let open Bindoj_test_common_objintf_examples in
+        All.all
+        |&>> (fun (module M: Utils.Ex) ->
+          let name = String.lowercase_ascii M.module_name in
+          [name])
+      )
     )
   | t, _ -> eprintf "invalid -target value %S" t; exit 2

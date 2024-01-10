@@ -19,6 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_apidir_shared
 open Bindoj_gen.Json_codec
+open Bindoj_common
 
 module Ttd = Bindoj_typedesc.Typed_type_desc
 
@@ -71,7 +72,7 @@ let gen_raw :
     |&> (fun (loc, tds) ->
       let tnames =
         tds
-        |&> (fun (Ttd.Boxed (module T)) -> Json_config.get_mangled_name_of_type T.decl |> fst)
+        |&> (fun (Ttd.Boxed (module T)) -> Json_config.get_mangled_name_of_type ~escaping_charmap:Mangling.charmap_js_identifier T.decl |> fst)
         |> List.sort_uniq compare
       in
       sprintf "import { %s } from \"%s\";"
@@ -90,7 +91,7 @@ let gen_raw :
   in
   let make_ts_type_desc (Ttd.Boxed (module T) as typ): ts_type_desc =
     let { td_name; _ } as td = T.decl in
-    let (json_name, _) = Json_config.get_mangled_name_of_type td in
+    let (json_name, _) = Json_config.get_mangled_name_of_type ~escaping_charmap:Mangling.charmap_js_identifier td in
     match resolution_strategy typ with
     | `inline_type_definition ->
       let () = if is_recursive T.decl then

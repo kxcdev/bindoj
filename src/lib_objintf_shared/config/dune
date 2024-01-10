@@ -1,0 +1,6 @@
+(library
+ (name bindoj_objintf_shared_config)
+ (public_name bindoj.objintf_shared.config)
+ (instrumentation (backend bisect_ppx))
+ (libraries kxclib bindoj_base)
+ (flags (:standard -open Kxclib)))

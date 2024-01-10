@@ -18,8 +18,8 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 include Bindoj_gen_ts_config
+open Bindoj_common
 open Bindoj_gen.Json_codec
-
 open Bindoj_typedesc.Type_desc
 open Bindoj_gen_foreign.Foreign_datatype
 
@@ -42,10 +42,10 @@ let type_of_prim : Coretype.prim -> ts_type_desc = function
 
 let property_type_of_coretype :
       ?definitive:bool
-      -> self_json_name:string
+      -> ?self_json_name:string
       -> Json_config.json_mangling_style
       -> coretype -> [`optional_property of bool]*ts_type_desc =
-  fun ?(definitive = false) ~self_json_name base_mangling_style { ct_desc; ct_configs; _ } ->
+  fun ?(definitive = false) ?self_json_name base_mangling_style { ct_desc; ct_configs; _ } ->
   let base_mangling_style =
     Json_config.get_mangling_style_opt ct_configs
     |? base_mangling_style
@@ -60,7 +60,7 @@ let property_type_of_coretype :
         ct_configs
         |> Json_config.get_name_opt |? id_name
       in
-      `type_reference (Json_config.mangled `type_name base_mangling_style name)
+      `type_reference (Json_config.mangled `type_name base_mangling_style name |> Mangling.(escape ~charmap:charmap_js_identifier))
     | Option ((Option _) as t) -> go t
     | Option t -> `union [go t; `type_reference "null"; `type_reference "undefined"]
     | List t -> `array (go t)
@@ -87,8 +87,9 @@ let property_type_of_coretype :
       `type_reference
         (ct_configs
           |> Json_config.get_name_opt
-          >? Json_config.mangled `type_name base_mangling_style
-          |? self_json_name)
+          >? (Json_config.mangled `type_name base_mangling_style &> Mangling.(escape ~charmap:charmap_js_identifier))
+          ||? self_json_name
+          |?! (fun () -> failwith "Cannot create recursive ts_type_desc because the argument 'self_json_name' is not specified."))
     | StringEnum cs ->
       `union (cs |&> (
           Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style
@@ -117,8 +118,8 @@ let property_type_of_coretype :
   | `mandatory t -> (`optional_property false, t)
 
 let type_of_coretype =
-  fun ?definitive ~self_json_name base_mangling_style ct ->
-    property_type_of_coretype ?definitive ~self_json_name base_mangling_style ct
+  fun ?definitive ?self_json_name base_mangling_style ct ->
+    property_type_of_coretype ?definitive ?self_json_name base_mangling_style ct
     |> function
     | `optional_property true, t -> `union [t; `type_reference "null"; `type_reference "undefined"]
     | `optional_property false, t -> t
@@ -142,7 +143,7 @@ let type_of_nested env name : ts_type_desc =
   | Fwrt_constructor _ -> failwith "Constructor cannot be nested."
   | _ -> `type_reference name
 
-let property_type_of_nested ?definitive ~self_json_name env name : [`optional_property of bool] * ts_type_desc =
+let property_type_of_nested ?definitive ?self_json_name env name : [`optional_property of bool] * ts_type_desc =
   let codec = FwrtTypeEnv.lookup name env in
   let name, mangling_style = get_name_of_fwrt_desc ~default:name Json_config.default_mangling_style codec in
   match codec.fd_kind with
@@ -150,7 +151,7 @@ let property_type_of_nested ?definitive ~self_json_name env name : [`optional_pr
   | Fwrt_alias { fa_type = { ct_desc = Option (Option _); _}; _ } ->
     failwith "Nested option types cannot be fields."
   | Fwrt_alias { fa_type = ct; _ } when Coretype.is_option ct ->
-    property_type_of_coretype ?definitive ~self_json_name mangling_style ct
+    property_type_of_coretype ?definitive ?self_json_name mangling_style ct
   | _ -> `optional_property false, `type_reference name
 
 type ('ann_d, 'ann_f, 'ann_va) ts_fwrt_decl = ('ann_d, 'ann_f, 'ann_va, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
@@ -204,6 +205,151 @@ let rec ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast =
   | _ ->
     [ type_alias_decl ]
 
+and ts_type_desc_of_fwrt_decl' :
+  base_mangling_style:Json_config.json_mangling_style
+  -> ?parent_configs:[`type_decl] configs
+  -> ?self_json_name:string
+  -> fwrt_decl_of_ts
+  -> ts_type_desc =
+  fun ~base_mangling_style ?parent_configs ?self_json_name (name, env) ->
+    let { fd_name; fd_kind; _ } as desc = FwrtTypeEnv.lookup name env in
+    assert (name = fd_name);
+    let (mangled_name, base_mangling_style) = get_name_of_fwrt_desc ~default:name base_mangling_style desc in
+    let self_json_name = self_json_name |? mangled_name in
+    let ts_props_and_nested_types_of_fields base_mangling_style fields: ts_property_signature ignore_order_list * ts_type_desc ignore_order_list =
+      List.fold_right (fun ({ ff_name; ff_type; ff_annot; ff_configs; _}) (members, nested) ->
+        let base_mangling_style = Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
+        let nested_style = Json_config.get_nested_field_style ff_configs in
+        match nested_style, ff_type with
+        | `spreading, `direct _ -> failwith "non-nested argument/field cannot be spread."
+        | `spreading, `nested (name, _) ->
+          members, type_of_nested env name :: nested
+        | `nested, _ ->
+          let (`optional_property tsps_optional), tsps_type_desc = match ff_type with
+            | `direct ct -> property_type_of_coretype ~self_json_name base_mangling_style ct
+            | `nested (name, _) -> property_type_of_nested ~self_json_name env name
+          in
+          let field_name = Json_config.(
+            ff_configs
+            |> get_name_opt |? ff_name
+            |> mangled `field_name base_mangling_style
+          ) in
+          let member =
+            { tsps_modifiers = ff_annot;
+              tsps_name = field_name;
+              tsps_optional;
+              tsps_type_desc; }
+          in
+          member :: members, nested
+      ) fields ([], [])
+    in
+    let when_not_empty f = function | [] -> None | xs -> Some (f xs) in
+    let desc: ts_type_desc =
+      match fd_kind with
+      | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
+        let members, nested = ts_props_and_nested_types_of_fields base_mangling_style fo_fields in
+        let discriminator_name =
+          Json_config.get_mangled_name_of_discriminator_field'
+            ~inherited:base_mangling_style fo_configs
+        in
+        let children: ts_type_desc ignore_order_list =
+          fo_children |&> fun child ->
+            let { tsa_name = discriminator_value; tsa_type_desc; _; } =
+              ts_type_alias_decl_of_fwrt_decl' ~parent_configs:fo_configs ~self_json_name ~base_mangling_style (child, env) in
+            let kind_field =
+              { tsps_modifiers = [];
+                tsps_name = discriminator_name;
+                tsps_optional = false;
+                tsps_type_desc = `literal_type (`string_literal discriminator_value); } in
+            add_kind_field kind_field tsa_type_desc
+        in
+        ([ when_not_empty (fun x -> `type_literal x) members;
+           when_not_empty (fun x -> `union x) children;
+        ] @ (nested |&> Option.some))
+        |&?> identity
+        |> (function | [ t ] -> t | ts -> `intersection ts)
+      | Fwrt_alias { fa_type; fa_annot=(); _ } ->
+        type_of_coretype ~definitive:true ~self_json_name base_mangling_style fa_type
+      | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
+        let parent_configs =
+          parent_configs |?! (fun () ->
+            failwith "Fwrt_constructor cannot be converted to ts_type_alias_decl at the top level and must be a child of Fwrt_object.")
+        in
+        let inline_record_style =
+          Ts_config.(get_reused_variant_inline_record_style_opt fc_configs |? default_reused_variant_inline_record_style)
+        in
+        match fc_annot, inline_record_style with
+        | Some (Tfcki_reused_variant_inline_record td), `intersection_type ->
+          `type_reference (Json_config.get_mangled_name_of_type ~escaping_charmap:Mangling.charmap_js_identifier td |> fst)
+        | _ ->
+          let base_mangling_style =
+            match fc_annot with
+            | Some (Tfcki_reused_variant_inline_record { td_configs; _ }) ->
+              Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
+            | None -> base_mangling_style
+          in
+          let arg_name =
+            Json_config.get_mangled_name_of_variant_arg'
+              ~inherited:base_mangling_style
+              parent_configs
+              fc_configs
+              fd_name
+          in
+          let members, nested =
+            let members, nested =
+              ts_props_and_nested_types_of_fields base_mangling_style fc_fields
+            in
+            let property_type_of_variant_argument, type_of_variant_argument =
+              let type_of_variant_argument' type_of_coretype type_of_nested base_mangling_style arg =
+                let base_mangling_style = Json_config.get_mangling_style_opt arg.fva_configs |? base_mangling_style in
+                match arg.fva_type with
+                | `direct ct -> type_of_coretype ?definitive:None ?self_json_name:(Some self_json_name) base_mangling_style ct
+                | `nested (name, _) -> type_of_nested env name
+              in
+              type_of_variant_argument' property_type_of_coretype (property_type_of_nested ?definitive:None ~self_json_name),
+              type_of_variant_argument' type_of_coretype type_of_nested
+            in
+            match fc_args, Json_config.get_tuple_style fc_configs with
+            | [], _ -> members, nested
+            | [arg], _
+              when Json_config.get_nested_field_style arg.fva_configs = `spreading ->
+                begin match arg.fva_type with
+                | `direct _ -> failwith "non-nested argument/field cannot be spread."
+                | `nested (name, _) ->
+                  members, (type_of_nested env name :: nested)
+                end
+            | [arg], _ ->
+              let base_mangling_style = Json_config.get_mangling_style_opt arg.fva_configs |? base_mangling_style in
+              let (`optional_property tsps_optional), tsps_type_desc = property_type_of_variant_argument base_mangling_style arg in
+              { tsps_modifiers = arg.fva_annot;
+                tsps_name = arg_name;
+                tsps_optional; tsps_type_desc } :: members, nested
+            | args, `arr ->
+              let desc =
+                `tuple (args |&> type_of_variant_argument base_mangling_style)
+              in
+              { tsps_modifiers = args |&>> (fun { fva_annot; _ } -> fva_annot);
+                tsps_name = arg_name;
+                tsps_optional = false;
+                tsps_type_desc = desc } :: members, nested
+            | args, `obj `default ->
+              let fields =
+                args |> List.mapi (fun i arg ->
+                  let (`optional_property tsps_optional), tsps_type_desc = property_type_of_variant_argument base_mangling_style arg in
+                  { tsps_modifiers = arg.fva_annot;
+                    tsps_name = Json_config.tuple_index_to_field_name i;
+                    tsps_optional; tsps_type_desc })
+              in
+              members @ fields, nested
+          in
+          match members, nested with
+          | ps, [] -> `type_literal ps
+          | [], [ t ] -> t
+          | [], ts -> `intersection ts
+          | ps, ts -> `intersection (`type_literal ps :: ts)
+    in
+    desc
+
 and ts_type_alias_decl_of_fwrt_decl' :
   base_mangling_style:Json_config.json_mangling_style
   -> ?parent_configs:[`type_decl] configs
@@ -211,146 +357,14 @@ and ts_type_alias_decl_of_fwrt_decl' :
   -> fwrt_decl_of_ts
   -> ts_type_alias_decl =
   fun ~base_mangling_style ?parent_configs ?self_json_name (name, env) ->
-  let { fd_name; fd_kind; fd_annot; _ } as desc = FwrtTypeEnv.lookup name env in
+  let { fd_name; fd_annot; _ } as desc = FwrtTypeEnv.lookup name env in
   assert (name = fd_name);
-  let (mangled_name, base_mangling_style) = get_name_of_fwrt_desc ~default:name base_mangling_style desc in
-  let self_json_name = self_json_name |? mangled_name in
-  let ts_props_and_nested_types_of_fields base_mangling_style fields: ts_property_signature ignore_order_list * ts_type_desc ignore_order_list =
-    List.fold_right (fun ({ ff_name; ff_type; ff_annot; ff_configs; _}) (members, nested) ->
-      let base_mangling_style = Json_config.get_mangling_style_opt ff_configs |? base_mangling_style in
-      let nested_style = Json_config.get_nested_field_style ff_configs in
-      match nested_style, ff_type with
-      | `spreading, `direct _ -> failwith "non-nested argument/field cannot be spread."
-      | `spreading, `nested (name, _) ->
-        members, type_of_nested env name :: nested
-      | `nested, _ ->
-        let (`optional_property tsps_optional), tsps_type_desc = match ff_type with
-          | `direct ct -> property_type_of_coretype ~self_json_name base_mangling_style ct
-          | `nested (name, _) -> property_type_of_nested ~self_json_name env name
-        in
-        let field_name = Json_config.(
-          ff_configs
-          |> get_name_opt |? ff_name
-          |> mangled `field_name base_mangling_style
-        ) in
-        let member =
-          { tsps_modifiers = ff_annot;
-            tsps_name = field_name;
-            tsps_optional;
-            tsps_type_desc; }
-        in
-        member :: members, nested
-    ) fields ([], [])
-  in
-  let when_not_empty f = function | [] -> None | xs -> Some (f xs) in
-  let desc: ts_type_desc =
-    match fd_kind with
-    | Fwrt_object { fo_fields; fo_children; fo_configs; fo_annot=() } ->
-      let members, nested = ts_props_and_nested_types_of_fields base_mangling_style fo_fields in
-      let discriminator_name =
-        Json_config.get_mangled_name_of_discriminator_field'
-          ~inherited:base_mangling_style fo_configs
-      in
-      let children: ts_type_desc ignore_order_list =
-        fo_children |&> fun child ->
-          let { tsa_name = discriminator_value; tsa_type_desc; _; } =
-            ts_type_alias_decl_of_fwrt_decl' ~parent_configs:fo_configs ~self_json_name ~base_mangling_style (child, env) in
-          let kind_field =
-            { tsps_modifiers = [];
-              tsps_name = discriminator_name;
-              tsps_optional = false;
-              tsps_type_desc = `literal_type (`string_literal discriminator_value); } in
-          add_kind_field kind_field tsa_type_desc
-      in
-      ([ when_not_empty (fun x -> `type_literal x) members;
-         when_not_empty (fun x -> `union x) children;
-      ] @ (nested |&> Option.some))
-      |&?> identity
-      |> (function | [ t ] -> t | ts -> `intersection ts)
-    | Fwrt_alias { fa_type; fa_annot=(); _ } ->
-      type_of_coretype ~definitive:true ~self_json_name base_mangling_style fa_type
-    | Fwrt_constructor { fc_args; fc_fields; fc_configs; fc_annot } ->
-      let parent_configs =
-        parent_configs |?! (fun () ->
-          failwith "Fwrt_constructor cannot be converted to ts_type_alias_decl at the top level and must be a child of Fwrt_object.")
-      in
-      let inline_record_style =
-        Ts_config.(get_reused_variant_inline_record_style_opt fc_configs |? default_reused_variant_inline_record_style)
-      in
-      match fc_annot, inline_record_style with
-      | Some (Tfcki_reused_variant_inline_record td), `intersection_type ->
-        `type_reference (Json_config.get_mangled_name_of_type td |> fst)
-      | _ ->
-        let base_mangling_style =
-          match fc_annot with
-          | Some (Tfcki_reused_variant_inline_record { td_configs; _ }) ->
-            Json_config.(get_mangling_style_opt td_configs |? default_mangling_style)
-          | None -> base_mangling_style
-        in
-        let arg_name =
-          Json_config.get_mangled_name_of_variant_arg'
-            ~inherited:base_mangling_style
-            parent_configs
-            fc_configs
-            fd_name
-        in
-        let members, nested =
-          let members, nested =
-            ts_props_and_nested_types_of_fields base_mangling_style fc_fields
-          in
-          let property_type_of_variant_argument, type_of_variant_argument =
-            let type_of_variant_argument' type_of_coretype type_of_nested base_mangling_style arg =
-              let base_mangling_style = Json_config.get_mangling_style_opt arg.fva_configs |? base_mangling_style in
-              match arg.fva_type with
-              | `direct ct -> type_of_coretype ?definitive:None ~self_json_name base_mangling_style ct
-              | `nested (name, _) -> type_of_nested env name
-            in
-            type_of_variant_argument' property_type_of_coretype (property_type_of_nested ?definitive:None ~self_json_name),
-            type_of_variant_argument' type_of_coretype type_of_nested
-          in
-          match fc_args, Json_config.get_tuple_style fc_configs with
-          | [], _ -> members, nested
-          | [arg], _
-            when Json_config.get_nested_field_style arg.fva_configs = `spreading ->
-              begin match arg.fva_type with
-              | `direct _ -> failwith "non-nested argument/field cannot be spread."
-              | `nested (name, _) ->
-                members, (type_of_nested env name :: nested)
-              end
-          | [arg], _ ->
-            let base_mangling_style = Json_config.get_mangling_style_opt arg.fva_configs |? base_mangling_style in
-            let (`optional_property tsps_optional), tsps_type_desc = property_type_of_variant_argument base_mangling_style arg in
-            { tsps_modifiers = arg.fva_annot;
-              tsps_name = arg_name;
-              tsps_optional; tsps_type_desc } :: members, nested
-          | args, `arr ->
-            let desc =
-              `tuple (args |&> type_of_variant_argument base_mangling_style)
-            in
-            { tsps_modifiers = args |&>> (fun { fva_annot; _ } -> fva_annot);
-              tsps_name = arg_name;
-              tsps_optional = false;
-              tsps_type_desc = desc } :: members, nested
-          | args, `obj `default ->
-            let fields =
-              args |> List.mapi (fun i arg ->
-                let (`optional_property tsps_optional), tsps_type_desc = property_type_of_variant_argument base_mangling_style arg in
-                { tsps_modifiers = arg.fva_annot;
-                  tsps_name = Json_config.tuple_index_to_field_name i;
-                  tsps_optional; tsps_type_desc })
-            in
-            members @ fields, nested
-        in
-        match members, nested with
-        | ps, [] -> `type_literal ps
-        | [], [ t ] -> t
-        | [], ts -> `intersection ts
-        | ps, ts -> `intersection (`type_literal ps :: ts)
-  in
+  let (mangled_name, _) = get_name_of_fwrt_desc ~default:name base_mangling_style desc in
+  let type_desc: ts_type_desc = ts_type_desc_of_fwrt_decl' ~base_mangling_style ?parent_configs ?self_json_name (name, env) in
   { tsa_modifiers = fd_annot;
     tsa_name = mangled_name;
     tsa_type_parameters = [];
-    tsa_type_desc = desc }
+    tsa_type_desc = type_desc }
 
 and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
   fun (name, env) ->
@@ -364,7 +378,7 @@ and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
       Json_config.(get_mangling_style_opt fo_configs |? default_mangling_style)
     in
     let fd_name = Json_config.get_name_opt fo_configs |? fd_name in
-    let self_json_name = Json_config.mangled `type_name base_mangling_style fd_name in
+    let self_json_name = Json_config.mangled `type_name base_mangling_style fd_name |> Mangling.(escape ~charmap:charmap_js_identifier) in
     let name = Json_config.mangled `field_name base_mangling_style ("analyze_" ^ fd_name) in
     let type_param = "__bindoj_ret" in
     let param = "__bindoj_fns" in
@@ -389,7 +403,7 @@ and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
           tsps_optional = false;
           tsps_type_desc =
             (`func_type
-              { tsft_parameters = [{ tsp_name = var_v; tsp_type_desc = desc }];
+              { tsft_parameters = [{ tsp_name = var_v; tsp_optional = false; tsp_type_desc = desc }];
                 tsft_type_desc = `type_reference type_param; }); })
     in
     let var_x = "__bindoj_x" in
@@ -397,6 +411,7 @@ and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
       `func_type
         { tsft_parameters = [
           { tsp_name = var_x;
+            tsp_optional = false;
             tsp_type_desc = `type_reference self_json_name; }];
           tsft_type_desc = `type_reference type_param; } in
     let body =
@@ -404,6 +419,7 @@ and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
         (`arrow_function
             { tsaf_parameters =
                 [{ tsp_name = var_x;
+                  tsp_optional = false;
                   tsp_type_desc = `type_reference self_json_name; }];
               tsaf_body =
                 [fo_children |> List.sort String.compare |> List.rev |@>
@@ -443,10 +459,16 @@ and ts_func_decl_of_fwrt_decl : fwrt_decl_of_ts -> ts_func_decl =
     { tsf_modifiers = fd_annot;
       tsf_name = name;
       tsf_type_parameters = [type_param];
-      tsf_parameters = [{ tsp_name = param; tsp_type_desc = param_type; }];
+      tsf_parameters = [{ tsp_name = param; tsp_optional = false; tsp_type_desc = param_type; }];
       tsf_type_desc = type_desc;
       tsf_body = [body]; }
 
+and ts_type_desc_of_fwrt_decl : ?self_json_name:string -> fwrt_decl_of_ts -> ts_type_desc =
+  fun ?self_json_name fwrt_decl ->
+    ts_type_desc_of_fwrt_decl'
+      ~base_mangling_style:Json_config.default_mangling_style
+      ?self_json_name
+      fwrt_decl
 and ts_type_alias_decl_of_fwrt_decl : ?self_json_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl =
   fun ?self_json_name fwrt_decl ->
   ts_type_alias_decl_of_fwrt_decl'
@@ -515,6 +537,8 @@ let rec rope_of_ts_ast : ts_ast -> Rope.t = fun statements ->
 and rope_of_ts_statement : ts_statement -> Rope.t =
   let open RopeUtil in
   function
+  | `import ts_import ->
+    rope_of_ts_import ts_import
   | `type_alias_declaration type_alias_decl ->
     rope_of_ts_type_alias_decl type_alias_decl
   | `function_declaration func_decl ->
@@ -538,6 +562,21 @@ and rope_of_ts_statement : ts_statement -> Rope.t =
     "throw " @+ rope_of_ts_expression expr
   | `block body ->
     rope_of_ts_ast body |> between "{\n" "\n}"
+
+and rope_of_ts_import : ts_import -> Rope.t =
+  fun { tsi_from; tsi_import_items; } ->
+    let open RopeUtil in
+    let items =
+      tsi_import_items
+      |&> (function
+        |  { tsii_name; tsii_alias = Some alias } ->
+          rope " " +@ tsii_name +@ " as " +@ alias
+        | { tsii_name; tsii_alias = None } ->
+          rope " " +@ tsii_name
+      )
+      |> Rope.concat (rope ",")
+    in
+    rope "import {" ++ items +@ " } from \"" +@ tsi_from +@ "\";"
 
 and rope_of_ts_type_alias_decl : ts_type_alias_decl -> Rope.t =
   fun { tsa_modifiers; tsa_name; tsa_type_parameters; tsa_type_desc; } ->
@@ -563,8 +602,8 @@ and rope_of_ts_func_decl : ts_func_decl -> Rope.t =
       |> comma_separated_list
       |> between "<" ">" in
   let parameters =
-    (tsf_parameters |&> fun { tsp_name; tsp_type_desc; } ->
-        tsp_name @+ " :\n" @+ rope_of_ts_type_desc tsp_type_desc)
+    (tsf_parameters |&> fun { tsp_name; tsp_optional; tsp_type_desc; } ->
+        tsp_name @+ (if tsp_optional then "?" else "") @+ " :\n" @+ rope_of_ts_type_desc tsp_type_desc)
     |> comma_separated_list
     |> between "(\n" "\n)" in
   let type_desc = rope_of_ts_type_desc tsf_type_desc in
@@ -677,8 +716,8 @@ and rope_of_ts_type_desc : ts_type_desc -> Rope.t =
   | `func_type { tsft_parameters;
                  tsft_type_desc; } ->
     let parameters =
-      (tsft_parameters |&> fun { tsp_name; tsp_type_desc; } ->
-          tsp_name @+ " : " @+ rope_of_ts_type_desc tsp_type_desc)
+      (tsft_parameters |&> fun { tsp_name; tsp_optional; tsp_type_desc; } ->
+          tsp_name @+ (if tsp_optional then "?" else "") @+ " : " @+ rope_of_ts_type_desc tsp_type_desc)
       |> comma_separated_list
       |> between "(" ")" in
     let type_desc = rope_of_ts_type_desc tsft_type_desc in
@@ -727,8 +766,8 @@ and rope_of_ts_expression : ts_expression -> Rope.t =
     +@ " " +@ tsbe_operator_token +@ " " ++
     rope_of_ts_expression_with_paren tsbe_right
   | `arrow_function { tsaf_parameters; tsaf_body; } ->
-    (tsaf_parameters |&> fun { tsp_name; tsp_type_desc; } ->
-        tsp_name @+ " : " @+ rope_of_ts_type_desc tsp_type_desc)
+    (tsaf_parameters |&> fun { tsp_name; tsp_optional; tsp_type_desc; } ->
+        tsp_name @+ (if tsp_optional then "?" else "") @+ " : " @+ rope_of_ts_type_desc tsp_type_desc)
     |> comma_separated_list
     |> between "(" ")"
     |> fun param -> param +@ " => " ++ between "{\n" "\n}" (rope_of_ts_ast tsaf_body)

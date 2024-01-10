@@ -1,0 +1,16 @@
+(executables
+ (names
+  ex_objintf_system_io_usage
+  ex_objintf_system_io_trans_usage
+  ex_objintf_one_directional_usage
+  ex_objintf_one_directional_trans_usage)
+ (libraries
+  bindoj_objintf_shared
+  bindoj_objintf_gen
+  bindoj_runtime
+  bindoj_typedesc
+  bindoj_objintf_gen_jsoo_test_gen_output
+  kxclib kxclib.jsoo yojson jsonm js_of_ocaml prr)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show js_of_ocaml-ppx))
+ (modes js))

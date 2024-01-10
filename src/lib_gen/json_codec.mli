@@ -65,6 +65,12 @@ type json_shape_explanation_resolution =
     | `in_module of string (*** resolve as [`named(type_name, m^".json_shape_explanation")] *)
     ]
 
+val gen_json_encoder' :
+  ?self_contained:bool
+  -> ?codec:Coretype.codec
+  -> type_decl -> string * Ppxlib.expression
+(** same as {!gen_json_encoder} but also return the name of the generated encoder *)
+
 val gen_json_encoder :
   ?self_contained:bool
   -> ?codec:Coretype.codec
@@ -76,6 +82,15 @@ val gen_json_encoder :
     If [codec] is [`in_module _], [val to_json] is generated.
     @param type_decl Type declaration to be generated.
     @return value_binding of a encoder function. *)
+
+val gen_json_decoder_result' :
+    ?self_contained:bool
+    -> ?json_shape_explanation_style:
+      [ `inline of json_shape_explanation_resolution option
+      | `reference ]
+    -> ?codec:Coretype.codec
+    -> type_decl -> string * Ppxlib.expression
+(** same as {!gen_json_decoder_result} but also return the name of the generated encoder *)
 
 val gen_json_decoder_result :
   ?self_contained:bool
@@ -92,6 +107,20 @@ val gen_json_decoder_result :
     If [codec] is [`in_module _], [val of_json'] is generated.
     @param type_decl Type declaration to be generated.
     @return value_binding of a decoder function. *)
+
+val gen_json_decoder_option' :
+    ?implementation_style: [
+      | `refer_existing_result_variant_json_decoder
+        (** generate a reference to an already defined JSON decoder that returns a result type *)
+      | `embed_full_implementation of [
+        | `self_contained (** generates builtin decoders. *)
+        | `non_self_contained
+      ] (** embed a full JSON decoder implementation.
+            see also [?self_contained:bool] on {!gen_json_encoder} *)
+    ]
+    -> ?codec:Coretype.codec
+    -> type_decl -> string * Ppxlib.expression
+(** same as {!gen_json_decoder_option} but also return the name of the generated encoder *)
 
 val gen_json_decoder_option :
   ?implementation_style: [

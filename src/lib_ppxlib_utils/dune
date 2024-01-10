@@ -1,0 +1,8 @@
+(library
+ (name bindoj_ppxlib_utils)
+ (public_name bindoj.ppxlib_utils)
+ (instrumentation (backend bisect_ppx))
+ (libraries bindoj_base kxclib ppxlib)
+ (preprocess
+  (pps ppxlib.metaquot))
+ (flags (:standard -open Kxclib)))

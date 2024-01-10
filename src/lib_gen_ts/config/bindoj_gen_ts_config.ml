@@ -24,6 +24,7 @@ let equal_ignore_order_list equal_t xs ys =
 type ts_ast = ts_statement list [@@deriving show, eq]
 
 and ts_statement = [
+  | `import of ts_import
   | `type_alias_declaration of ts_type_alias_decl
   | `function_declaration of ts_func_decl
   | `value_declaration of ts_value_decl
@@ -33,6 +34,16 @@ and ts_statement = [
   | `throw_statement of ts_expression
   | `block of ts_ast
 ]
+
+and ts_import = {
+  tsi_from : string;
+  tsi_import_items : ts_import_item ignore_order_list;
+}
+
+and ts_import_item = {
+  tsii_name : string;
+  tsii_alias : string option;
+}
 
 and ts_type_alias_decl = {
   tsa_modifiers : ts_modifier ignore_order_list;
@@ -100,6 +111,7 @@ and ts_literal_type = [
 
 and ts_parameter = {
   tsp_name : string;
+  tsp_optional : bool;
   tsp_type_desc : ts_type_desc;
 }
 

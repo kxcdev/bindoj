@@ -45,6 +45,8 @@ val show_ts_ast : ts_ast -> string
 val equal_ts_ast : ts_ast -> ts_ast -> bool
 (** Checks equality of two ts_asts. *)
 
+val type_of_coretype : ?definitive:bool -> ?self_json_name:string -> Ts_config.json_mangling_style -> coretype -> ts_type_desc
+
 type ('ann_d, 'ann_f, 'ann_va) ts_fwrt_decl = ('ann_d, 'ann_f, 'ann_va, unit*unit*ts_fwrt_constructor_kind_annot) fwrt_decl
 
 type fwrt_decl_of_ts = (ts_modifier list, [`readonly] list, [`readonly] list) ts_fwrt_decl
@@ -54,6 +56,9 @@ val ts_fwrt_decl_of_type_decl : export:bool -> readonly:bool -> type_decl -> fwr
 
 val ts_ast_of_fwrt_decl : fwrt_decl_of_ts -> ts_ast
 (** Creates a ts ast of the given fwrt declaration. *)
+
+val ts_type_desc_of_fwrt_decl : ?self_json_name:string -> fwrt_decl_of_ts -> ts_type_desc
+(** Creates a type description of the given fwrt declaration. *)
 
 val ts_type_alias_decl_of_fwrt_decl : ?self_json_name:string -> fwrt_decl_of_ts -> ts_type_alias_decl
 (** Creates a type alias declaration of the given fwrt declaration. *)

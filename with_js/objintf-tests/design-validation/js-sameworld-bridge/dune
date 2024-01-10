@@ -1,0 +1,20 @@
+(executable
+ (name example_usage_01)
+ (libraries
+  bindoj_objintf_shared
+  bindoj_objintf_gen
+  bindoj_runtime
+  bindoj_typedesc
+  bindoj_test_common_objintf_examples
+  kxclib kxclib.jsoo yojson jsonm js_of_ocaml prr)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps ppx_deriving.show js_of_ocaml-ppx))
+ (modes js))
+
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (target example_usage_01.js)
+ (deps example_usage_01.bc.js)
+ (action
+  (copy %{deps} %{target})))

@@ -1,0 +1,15 @@
+(library
+ (name bindoj_objintf_gen_utils)
+ (public_name bindoj.objintf_gen_utils)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  kxclib
+  bindoj_base
+  bindoj_typedesc
+  bindoj_codec_config
+  bindoj_objintf_shared
+  (re_export bindoj.runtime))
+ (preprocess
+  (pps ppxlib.metaquot))
+ (flags (:standard
+          -open Kxclib)))

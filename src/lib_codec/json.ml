@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Bindoj_base
+open Bindoj_common
 open Typed_type_desc
 open Runtime
 open Kxclib.Json
@@ -86,7 +87,7 @@ let explain_encoded_json_shape'
   in
   let open (val jse) in
   let rec process_td ~base_ident_codec ?base_mangling_style td: shape =
-    let (json_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type ?inherited:base_mangling_style td in
+    let (json_type_name, base_mangling_style) = Json_config.get_mangled_name_of_type ?inherited:base_mangling_style ~escaping_charmap:Mangling.charmap_js_identifier td in
     named (json_type_name, process_kind ~base_ident_codec base_mangling_style td)
   and process_kind ~base_ident_codec base_mangling_style ({ td_kind; td_configs; _} as td): shape =
     match td_kind with
@@ -243,6 +244,7 @@ let explain_encoded_json_shape'
           configs
           |> Json_config.get_name_opt |? id_name
           |> Json_config.mangled `type_name base_mangling_style
+          |> Bindoj_common.Mangling.(escape ~charmap:charmap_js_identifier)
         in
         (Json_config.get_custom_shape_explanation configs |> function
         | Some s -> named (ident_json_name, shape_of_json_shape_explanation s)

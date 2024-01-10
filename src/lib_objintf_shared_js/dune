@@ -1,0 +1,7 @@
+(library
+ (name bindoj_objintf_shared_js)
+ (public_name bindoj.objintf_shared_js)
+ (libraries bindoj_common)
+ (instrumentation (backend bisect_ppx))
+ (preprocess
+  (pps ppxlib.metaquot)))

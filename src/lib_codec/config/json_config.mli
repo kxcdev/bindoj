@@ -170,6 +170,7 @@ val mangled :
 
 val get_mangled_name_of_type :
   ?inherited:json_mangling_style
+  -> ?escaping_charmap:(char -> string option)
   -> type_decl -> string * json_mangling_style
 val get_mangled_name_of_field :
   ?inherited:json_mangling_style
@@ -208,3 +209,20 @@ val custom_shape_explanation : json_shape_explanation -> ([`coretype], [`json_cu
 val get_custom_shape_explanation : [`coretype] configs -> json_shape_explanation option
 
 val check_field_name_collision : type_decl -> bool
+
+module Bindoj_private : sig
+  val collect_coretypes_folder :
+    ?json_tuple_style:json_tuple_style
+    -> including_optional_fields:bool
+    -> ([> `prim of string
+        | `uninhabitable
+        | `option
+        | `list
+        | `map
+        | `ident of string
+        | `string_enum
+        | `self ] -> 'a option)
+    -> 'a Runtime.StringMap.t
+    -> Coretype.desc
+    -> 'a Runtime.StringMap.t
+end

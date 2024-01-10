@@ -1,0 +1,7 @@
+(executable
+ (name duneinc_generator)
+ (modules duneinc_generator)
+ (libraries
+   kxclib fmt dune_file_parts
+   bindoj_test_common_objintf_examples)
+ (flags :standard -open Kxclib -w "-32-33"))

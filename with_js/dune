@@ -17,7 +17,8 @@
   (source_tree public-packages)
   (source_tree apidir-typescript-tests/tests)
   (source_tree compile-tests/reused_types)
-  (source_tree jsoo-gen/tests))
+  (source_tree jsoo-gen/tests)
+  (source_tree objintf-tests))
  (action
   (progn
    (run yarn test))))

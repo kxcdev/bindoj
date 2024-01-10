@@ -17,8 +17,22 @@ language governing permissions and limitations under the License.
 significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
+module Bindoj_list : sig
+  include module type of Kxclib.List
+
+  (* awaiting https://github.com/kxcinc/kxclib-ocaml/projects/1#card-91408419 *)
+  val uniq_by : ('a -> 'k) -> 'a list -> 'a list
+
+  val skip_tail_while : ('a -> bool) -> 'a t -> 'a t
+  val skip_while : ('a -> bool) -> 'a t -> 'a t
+end
+
 module Mangling : sig
   (** This module provides functions that transform the format of a given string. *)
+
+  val charmap_js_identifier : char -> string option
+
+  val escape : charmap:(char -> string option) -> string -> string
 
   val snake_to_upper_camel :
     ?preserve_version_substring:bool (** default to [true] *)

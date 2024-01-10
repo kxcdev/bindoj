@@ -1,0 +1,7 @@
+(executable
+ (name gen)
+ (modules gen)
+ (libraries
+  bindoj_objintf_gen_ts
+  bindoj_test_common_objintf_examples)
+ (flags (:standard -open Kxclib)))

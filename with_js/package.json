@@ -28,7 +28,8 @@
     "roots": [
       "unit-tests",
       "apidir-typescript-tests/tests",
-      "jsoo-gen/tests"
+      "jsoo-gen/tests",
+      "objintf-tests"
     ],
     "transform": {
       "^.+\\.ts$": "ts-jest"

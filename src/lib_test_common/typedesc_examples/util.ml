@@ -88,6 +88,7 @@ module Ts_ast = struct
     options -> literal list -> ts_parameter list =
     fun options cstrs ->
     [ { tsp_name = options.var_fns;
+        tsp_optional = false;
         tsp_type_desc =
           `type_literal
             (cstrs |&> fun (_, desc) ->
@@ -102,6 +103,7 @@ module Ts_ast = struct
                       `func_type
                         { tsft_parameters =
                             [ { tsp_name = options.var_v;
+                                tsp_optional = false;
                                 tsp_type_desc = desc; } ];
                           tsft_type_desc = `type_reference options.ret; }; }
                 | _ -> failwith "impossible case"); } ]
@@ -114,6 +116,7 @@ module Ts_ast = struct
         (`arrow_function
            { tsaf_parameters =
                [ { tsp_name = options.var_x;
+                   tsp_optional = false;
                    tsp_type_desc = `type_reference name; } ];
              tsaf_body =
                [ cstrs |> List.sort compare_literal |> List.rev |@>
@@ -165,6 +168,7 @@ module Ts_ast = struct
           `func_type
             { tsft_parameters =
                 [ { tsp_name = options.var_x;
+                    tsp_optional = false;
                     tsp_type_desc = `type_reference name; } ];
               tsft_type_desc = `type_reference options.ret; };
         tsf_body =

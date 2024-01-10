@@ -918,6 +918,28 @@ and simple_expr ctxt f x =
 and attributes ctxt f l = List.iter (attribute ctxt f) l
 and item_attributes ctxt f l = List.iter (item_attribute ctxt f) l
 
+and collect_docstr attrs =
+  foldl (fun (acc, attrs) attr ->
+      match classify_attribute attr with
+      | `docstr doc -> doc :: acc, attrs
+      | _ -> acc, attr :: attrs
+    ) ([], []) attrs
+
+and emit_docstr f docstr =
+  (match docstr with
+    | [] -> ()
+    | _ ->
+      pp f "@[<2>(** @[<0>";
+      docstr |&> (fun doc () ->
+        String.split_on_char '\n' doc
+        |> function
+        | [] -> ()
+        | x :: xs -> pp f "%s" x; xs |> List.iter (pp f "@\n%s")
+      )
+      |> List.interpolate (fun () -> pp f "@\n@\n")
+      |!> (fun f -> f());
+      pp f "@] *)@]@\n")
+
 and classify_attribute = function
   | { attr_name = { txt = "ocaml.doc"; _ };
       attr_payload =
@@ -962,23 +984,26 @@ and exception_declaration ctxt f x =
     x.ptyexn_constructor (item_attributes ctxt) x.ptyexn_attributes
 
 and class_type_field ctxt f x =
+  let docstr, attrs = collect_docstr x.pctf_attributes in
+  if not & List.empty docstr then pp f "@\n";
+  emit_docstr f docstr;
   match x.pctf_desc with
   | Pctf_inherit ct ->
       pp f "@[<2>inherit@ %a@]%a" (class_type ctxt) ct (item_attributes ctxt)
-        x.pctf_attributes
+        attrs
   | Pctf_val (s, mf, vf, ct) ->
       pp f "@[<2>val @ %a%a%s@ :@ %a@]%a" mutable_flag mf virtual_flag vf s.txt
-        (core_type ctxt) ct (item_attributes ctxt) x.pctf_attributes
+        (core_type ctxt) ct (item_attributes ctxt) attrs
   | Pctf_method (s, pf, vf, ct) ->
       pp f "@[<2>method %a %a%s :@;%a@]%a" private_flag pf virtual_flag vf s.txt
-        (core_type ctxt) ct (item_attributes ctxt) x.pctf_attributes
+        (core_type ctxt) ct (item_attributes ctxt) attrs
   | Pctf_constraint (ct1, ct2) ->
       pp f "@[<2>constraint@ %a@ =@ %a@]%a" (core_type ctxt) ct1
-        (core_type ctxt) ct2 (item_attributes ctxt) x.pctf_attributes
+        (core_type ctxt) ct2 (item_attributes ctxt) attrs
   | Pctf_attribute a -> floating_attribute ctxt f a
   | Pctf_extension e ->
       item_extension ctxt f e;
-      item_attributes ctxt f x.pctf_attributes
+      item_attributes ctxt f attrs
 
 and class_signature ctxt f { pcsig_self = ct; pcsig_fields = l; _ } =
   pp f "@[<hv0>@[<hv2>object@[<1>%a@]@ %a@]@ end@]"
@@ -1016,10 +1041,13 @@ and class_type ctxt f x =
 (* [class type a = object end] *)
 and class_type_declaration_list ctxt f l =
   let class_type_declaration kwd f x =
+    let docstr, attrs = collect_docstr x.pci_attributes in
+    if not & List.empty docstr then pp f "@\n";
+    emit_docstr f docstr;
     let { pci_params = ls; pci_name = { txt; _ }; _ } = x in
     pp f "@[<2>%s %a%a%s@ =@ %a@]%a" kwd virtual_flag x.pci_virt
       (class_params_def ctxt) ls txt (class_type ctxt) x.pci_expr
-      (item_attributes ctxt) x.pci_attributes
+      (item_attributes ctxt) attrs
   in
   match l with
   | [] -> ()
@@ -1196,8 +1224,11 @@ and signature_item ctxt f x : unit =
       type_def_list ctxt f (Recursive, false, l)
   | Psig_value vd ->
       let intro = if vd.pval_prim = [] then "val" else "external" in
+      let docstr, attrs = collect_docstr vd.pval_attributes in
+      if not & List.empty docstr then pp f "@\n";
+      emit_docstr f docstr;
       pp f "@[<2>%s@ %a@ :@ %a@]%a" intro protect_ident vd.pval_name.txt
-        (value_description ctxt) vd (item_attributes ctxt) vd.pval_attributes
+        (value_description ctxt) vd (item_attributes ctxt) attrs
   | Psig_typext te -> type_extension ctxt f te
   | Psig_exception ed -> exception_declaration ctxt f ed
   | Psig_class l -> (
@@ -1240,6 +1271,9 @@ and signature_item ctxt f x : unit =
       pp f "@[<hov2>include@ %a@]%a" (module_type ctxt) incl.pincl_mod
         (item_attributes ctxt) incl.pincl_attributes
   | Psig_modtype { pmtd_name = s; pmtd_type = md; pmtd_attributes = attrs } ->
+      let docstr, attrs = collect_docstr attrs in
+      if not & List.empty docstr then pp f "@\n";
+      emit_docstr f docstr;
       pp f "@[<hov2>module@ type@ %s%a@]%a" s.txt
         (fun f md ->
           match md with
@@ -1481,6 +1515,9 @@ and structure_item ctxt f x =
         (module_expr ctxt) od.popen_expr (item_attributes ctxt)
         od.popen_attributes
   | Pstr_modtype { pmtd_name = s; pmtd_type = md; pmtd_attributes = attrs } ->
+      let docstr, attrs = collect_docstr attrs in
+      if not & List.empty docstr then pp f "@\n";
+      emit_docstr f docstr;
       pp f "@[<hov2>module@ type@ %s%a@]%a" s.txt
         (fun f md ->
           match md with
@@ -1581,9 +1618,12 @@ and type_def_list ctxt f (rf, exported, l) =
       else if exported then " ="
       else " :="
     in
+    let docstr, attrs = collect_docstr x.ptype_attributes in
+    if not & List.empty docstr then pp f "@\n";
+    emit_docstr f docstr;
     pp f "@[<2>%s %a%a%s%s%a@]%a" kwd nonrec_flag rf (type_params ctxt)
       x.ptype_params x.ptype_name.txt eq (type_declaration ctxt) x
-      (item_attributes ctxt) x.ptype_attributes
+      (item_attributes ctxt) attrs
   in
   match l with
   | [] -> assert false

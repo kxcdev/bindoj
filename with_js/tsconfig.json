@@ -17,6 +17,7 @@
     "./apidir-typescript-tests/tests/",
     "./jsoo-gen/",
     "./jsoo-gen/tests/",
+    "./objintf-tests/"
   ],
   "exclude": [
     "./node_modules"
