@@ -135,6 +135,7 @@ module Code = struct
     let type_B = "B" in
     let type_C = "C" in
     let mod_A = "A" in
+    let libs = "libs" in
 
     let expression_cases = [
       test_case'
@@ -273,21 +274,51 @@ module Code = struct
            ])
          |> rope_of_ts_expression
          |> Rope.to_string);
-    ] in
-
-    let type_desc_cases = [
       test_case'
         "rope_of_ts_expression"
         ("await " ^ var_x)
         (`await_expression (`identifier var_x)
-         |> rope_of_ts_expression
-         |> Rope.to_string);
+          |> rope_of_ts_expression
+          |> Rope.to_string);
       test_case'
         "rope_of_ts_expression"
         "( \"abc\" ) as const"
         (`const_assertion (`literal_expression (`string_literal "abc"))
-         |> rope_of_ts_expression
-         |> Rope.to_string);
+          |> rope_of_ts_expression
+          |> Rope.to_string);
+      test_case'
+        "rope_of_ts_expression"
+        ("((" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ "? : " ^ number ^ ") => {" ^
+          "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
+          ^ "})" ^ "(" ^ var_a ^ ", " ^ var_b ^ ")")
+        (`call_expression {
+            tsce_expression = `arrow_function {
+                tsaf_parameters = [
+                  { tsp_name = var_x;
+                    tsp_optional = false;
+                    tsp_type_desc = `type_reference number; };
+                  { tsp_name = var_y;
+                    tsp_optional = true;
+                    tsp_type_desc = `type_reference number; };
+                ];
+                tsaf_body = [
+                  `return_statement
+                    (`binary_expression {
+                        tsbe_left = `identifier var_x;
+                        tsbe_operator_token = plus;
+                        tsbe_right = `identifier var_y;
+                      })
+                ];
+              };
+            tsce_arguments = [
+              `identifier var_a;
+              `identifier var_b;
+            ];
+          }
+          |> rope_of_ts_expression
+          |> Rope.to_string);
+    ] in
+    let type_desc_cases = [
       test_case'
         "rope_of_ts_type_desc"
         number
@@ -458,6 +489,20 @@ module Code = struct
     let statement_case = [
       test_case'
         "rope_of_ts_statement"
+        ("import { "^var_x^", "^var_y^" as "^var_a^" } from \""^libs^"\";")
+        (`import {
+            tsi_from = libs;
+            tsi_import_items = [
+              { tsii_name = var_x;
+                tsii_alias = None };
+              { tsii_name = var_y;
+                tsii_alias = Some var_a };
+            ];
+          }
+          |> rope_of_ts_statement
+          |> Rope.to_string);
+      test_case'
+        "rope_of_ts_statement"
         ("type " ^ type_A ^ " = { " ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ ": " ^ string ^ ", " ^ var_z ^ "?: " ^ string ^ " }")
         (`type_alias_declaration {
             tsa_modifiers = [];
@@ -554,7 +599,7 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statment"
+        "rope_of_ts_statement"
         ("namespace " ^ mod_A ^ "{ " ^ "type " ^ type_A ^ " = " ^ type_B ^ " }")
         (`module_declaration {
             tsm_modifiers = [];
@@ -598,37 +643,6 @@ module Code = struct
                tsne_arguments = [`literal_expression (`string_literal "something wrong")];
              })
          |> rope_of_ts_statement
-         |> Rope.to_string);
-      test_case'
-        "rope_of_ts_expression"
-        ("((" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ "? : " ^ number ^ ") => {" ^
-         "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
-         ^ "})" ^ "(" ^ var_a ^ ", " ^ var_b ^ ")")
-        (`call_expression {
-            tsce_expression = `arrow_function {
-                tsaf_parameters = [
-                  { tsp_name = var_x;
-                    tsp_optional = false;
-                    tsp_type_desc = `type_reference number; };
-                  { tsp_name = var_y;
-                    tsp_optional = true;
-                    tsp_type_desc = `type_reference number; };
-                ];
-                tsaf_body = [
-                  `return_statement
-                    (`binary_expression {
-                        tsbe_left = `identifier var_x;
-                        tsbe_operator_token = plus;
-                        tsbe_right = `identifier var_y;
-                      })
-                ];
-              };
-            tsce_arguments = [
-              `identifier var_a;
-              `identifier var_b;
-            ];
-          }
-         |> rope_of_ts_expression
          |> Rope.to_string);
     ] in
     [("ex_expression", expression_cases);
