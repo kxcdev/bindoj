@@ -41,6 +41,7 @@
   (mdx (and :with-test (>= 2.1.0)))
   (alcotest :with-test)
   (qcheck :with-test)
+  (qcheck-alcotest :with-test)
   (prr (>= 0.1.1))
   (ppx_inline_test :with-test)
   (lwt :with-test)

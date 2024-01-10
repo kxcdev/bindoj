@@ -1,0 +1,8 @@
+(tests
+ (names map_key)
+ (modules map_key)
+ (libraries
+  bindoj_runtime
+  kxclib_priv_test_lib kxclib
+  qcheck qcheck-alcotest alcotest)
+ (flags (:standard -open Kxclib)))
