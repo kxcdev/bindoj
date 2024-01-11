@@ -1,0 +1,19 @@
+(library
+ (name bindoj_example_objintf_jsoo_sameworld_desc)
+ (modules desc)
+ (libraries
+  bindoj_objintf_shared
+  kxclib)
+ (flags (:standard -open Kxclib)))
+
+(executable
+ (name usage)
+ (modules usage)
+ (libraries
+  bindoj_example_objintf_jsoo_sameworld_desc
+  bindoj_example_objintf_jsoo_sameworld_generated
+  bindoj_objintf_shared
+  kxclib js_of_ocaml)
+ (flags (:standard -open Kxclib))
+ (preprocess (pps js_of_ocaml-ppx))
+ (modes js))

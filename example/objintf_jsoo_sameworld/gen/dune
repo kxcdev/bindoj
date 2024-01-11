@@ -1,0 +1,18 @@
+(executable
+ (name gen_jsoo)
+ (modules gen_jsoo)
+ (libraries
+   kxclib
+   bindoj_gen
+   bindoj_objintf_gen
+   bindoj_objintf_gen_jsoo
+   bindoj_example_objintf_jsoo_sameworld_desc)
+ (flags (:standard -open Kxclib -w "-32-33")))
+
+(executable
+ (name gen_ts)
+ (modules gen_ts)
+ (libraries
+   kxclib bindoj_objintf_gen_ts
+   bindoj_example_objintf_jsoo_sameworld_desc)
+ (flags (:standard -open Kxclib -w "-32-33")))
