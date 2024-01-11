@@ -45,6 +45,7 @@ depends: [
   "ocamlformat" {with-test & = "0.26.0"}
   "ocaml" {>= "4.14"}
   "cohttp-lwt-unix" {with-test}
+  "melange" {with-doc & >= "2.0.0"}
 ]
 build: [
   ["dune" "subst"] {dev}
