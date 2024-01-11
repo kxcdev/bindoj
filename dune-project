@@ -49,4 +49,5 @@
   (bisect_ppx (>= 2.7.1))
   (ocamlformat (and :with-test (= 0.26.0)))
   (ocaml (>= 4.14))
-  (cohttp-lwt-unix :with-test)))
+  (cohttp-lwt-unix :with-test)
+  (melange (and :with-doc (>= 2.0.0)))))

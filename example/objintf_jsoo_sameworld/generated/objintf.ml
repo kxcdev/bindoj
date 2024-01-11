@@ -1,5 +1,3 @@
-open Bindoj_objintf_gen_jsoo_test_gen_utils [@@warning "-33"]
-
 module Simple_interfaces = struct
   type nonrec byte_source' =
     ?max:int ->

@@ -1,0 +1,7 @@
+(rule
+ (alias gen)
+ (mode (promote (until-clean)))
+ (target usage.jsoo.js)
+ (deps ../mlsrc/usage.bc.js)
+ (action
+  (copy %{deps} %{target})))

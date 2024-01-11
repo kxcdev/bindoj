@@ -61,6 +61,7 @@ _doc:
 	rm -rf doc/app/public/html
 	cp -r _build/default/_doc/_html doc/app/public/html
 	cp -r vendors/kxclib/_build/default/_doc/_html/kxclib doc/app/public/html/kxclib
+	cp -r vendors/kxclib/_build/default/_doc/_html/kxclib-jsoo doc/app/public/html/kxclib-jsoo
 
 	rm -rf doc/example
 	cp -r _build/default/example/docs doc/example

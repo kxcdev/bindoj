@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { objintf as bindoj } from "../../public-packages/runtime";
+import { objintf as bindoj } from "../../../with_js/public-packages/runtime";
 export type ByteSource$PRIME$ = (labeledArgs?: {
   readonly max?: number;
 }) => { kind: "data"; readonly value: [string, "eof" | "maybe-more"] } | { kind: "eof" } | { kind: "wait" };
@@ -17,32 +17,37 @@ export namespace GeneratedBridge {
     export type OutputChannel = {
       readonly channelName: () => string;
       readonly write: (__arg0: bindoj.bytes) => void;
-      readonly writeBulk: (__arg0: bindoj.endemic<ByteSource>) => void;
-      readonly writeAsync: (__arg0: bindoj.endemic<ByteSource$PRIME$>) => void;
+      readonly writeBulk: (__arg0: bindoj.peer<ByteSource>) => void;
+      readonly writeAsync: (__arg0: bindoj.peer<ByteSource$PRIME$>) => void;
     };
     export type SystemIo = {
-      readonly stdout: () => bindoj.peer<Interfaces.OutputChannel>;
-      readonly stderr: () => bindoj.peer<Interfaces.OutputChannel>;
-      readonly openFileWo: (labeledArgs: { readonly path: string }) => bindoj.peer<Interfaces.OutputChannel>;
-      readonly openFileRo: (labeledArgs: { readonly path: string }) => bindoj.peer<ByteSource>;
+      readonly stdout: () => bindoj.endemic<Interfaces.OutputChannel>;
+      readonly stderr: () => bindoj.endemic<Interfaces.OutputChannel>;
+      readonly openFileWo: (labeledArgs: { readonly path: string }) => bindoj.endemic<Interfaces.OutputChannel>;
+      readonly openFileRo: (labeledArgs: { readonly path: string }) => bindoj.endemic<ByteSource>;
     };
   }
   export type EndemicSetupParams = {
-    readonly initiallyRegisteredObjects: { readonly logger: [{ readonly id: string }, Logger][] };
-    readonly endemicObjects: { readonly myLogger: Logger };
+    readonly initiallyRegisteredObjects: {
+      readonly logger: [{ readonly name: string; readonly variant: "persistent" | "transient" }, Logger][];
+    };
+    readonly endemicObjects: { readonly systemIo: Interfaces.SystemIo };
   };
   export type ConcreteBridge = {
     readonly peerObjectRegistry: {
-      readonly lookupLogger: (coordinate: {
-        readonly name: string;
-        readonly variant: "persistent" | "transient";
-      }) => bindoj.peer<Logger> | null;
+      readonly lookupLogger: (coordinate: { readonly id: string }) => bindoj.peer<Logger> | null;
     };
-    readonly peerObjects: { readonly systemIo: bindoj.peer<Interfaces.SystemIo> };
+    readonly peerObjects: { readonly myLogger: bindoj.peer<Logger> };
     readonly endemicObjectRegistry: {
       readonly logger: {
-        readonly register: (coordinate: { readonly id: string }, obj: bindoj.endemic<Logger>) => void;
-        readonly deregister: (coordinate: { readonly id: string }) => void;
+        readonly register: (
+          coordinate: { readonly name: string; readonly variant: "persistent" | "transient" },
+          obj: bindoj.endemic<Logger>
+        ) => void;
+        readonly deregister: (coordinate: {
+          readonly name: string;
+          readonly variant: "persistent" | "transient";
+        }) => void;
       };
     };
   };
@@ -60,7 +65,7 @@ export namespace GeneratedBridge {
           },
         },
         peerObjects: {
-          systemIo: undefined as unknown as bindoj.peer<Interfaces.SystemIo>,
+          myLogger: undefined as unknown as bindoj.peer<Logger>,
         },
         endemicObjectRegistry: {
           logger: bindoj.Internal.initEndemicObjectRegistry(initParams.initiallyRegisteredObjects.logger),

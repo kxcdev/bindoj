@@ -1,0 +1,33 @@
+(library
+ (name bindoj_example_objintf_jsoo_sameworld_generated)
+ (libraries
+  bindoj_objintf_shared
+  kxclib kxclib-jsoo js_of_ocaml)
+ (flags (:standard -open Kxclib)))
+
+(rule
+  (target objintf.ml)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{dep:../gen/gen_jsoo.exe} ml)
+        (run %{bin:ocamlformat} --name %{target} -))))
+  (mode (promote)))
+
+(rule
+  (target objintf.mli)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{dep:../gen/gen_jsoo.exe} mli)
+        (run %{bin:ocamlformat} --name %{target} -))))
+  (mode (promote)))
+
+(rule
+  (target objintf.ts)
+  (action
+    (with-stdout-to %{target}
+      (pipe-stdout
+        (run %{dep:../gen/gen_ts.exe})
+        (run %{bin:npx} --prefix ../../../with_js prettier --stdin-filepath %{target}))))
+  (mode (promote)))

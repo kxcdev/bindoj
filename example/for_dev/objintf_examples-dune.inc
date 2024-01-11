@@ -28,13 +28,21 @@
   (action
    (progn
     (with-stdout-to ex_objintf_system_io_gen.ml
-     (run %{generator} ex_objintf_system_io_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_gen.ml -)))
     (with-stdout-to ex_objintf_system_io_gen.mli
-     (run %{generator} ex_objintf_system_io_gen.mli))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_gen.mli -)))
     (with-stdout-to ex_objintf_system_io_trans_gen.ml
-     (run %{generator} ex_objintf_system_io_trans_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_trans_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_trans_gen.ml -)))
     (with-stdout-to ex_objintf_system_io_trans_gen.mli
-     (run %{generator} ex_objintf_system_io_trans_gen.mli)))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_trans_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_trans_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
@@ -48,13 +56,21 @@
   (action
    (progn
     (with-stdout-to ex_objintf_empty_gen.ml
-     (run %{generator} ex_objintf_empty_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_gen.ml -)))
     (with-stdout-to ex_objintf_empty_gen.mli
-     (run %{generator} ex_objintf_empty_gen.mli))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_gen.mli -)))
     (with-stdout-to ex_objintf_empty_trans_gen.ml
-     (run %{generator} ex_objintf_empty_trans_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_trans_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_trans_gen.ml -)))
     (with-stdout-to ex_objintf_empty_trans_gen.mli
-     (run %{generator} ex_objintf_empty_trans_gen.mli)))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_trans_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_trans_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
@@ -68,13 +84,21 @@
   (action
    (progn
     (with-stdout-to ex_objintf_one_directional_gen.ml
-     (run %{generator} ex_objintf_one_directional_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_gen.ml -)))
     (with-stdout-to ex_objintf_one_directional_gen.mli
-     (run %{generator} ex_objintf_one_directional_gen.mli))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_gen.mli -)))
     (with-stdout-to ex_objintf_one_directional_trans_gen.ml
-     (run %{generator} ex_objintf_one_directional_trans_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_trans_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_trans_gen.ml -)))
     (with-stdout-to ex_objintf_one_directional_trans_gen.mli
-     (run %{generator} ex_objintf_one_directional_trans_gen.mli))))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_trans_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_trans_gen.mli -)))))))
 (subdir objintf_examples/lib_objintf_gen_jsoo
  (library
   (name dev_example_objintf_examples_lib_objintf_gen_jsoo)
@@ -107,13 +131,21 @@
   (action
    (progn
     (with-stdout-to ex_objintf_system_io_jsoo_gen.ml
-     (run %{generator} ex_objintf_system_io_jsoo_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_jsoo_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_jsoo_gen.ml -)))
     (with-stdout-to ex_objintf_system_io_jsoo_gen.mli
-     (run %{generator} ex_objintf_system_io_jsoo_gen.mli))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_jsoo_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_jsoo_gen.mli -)))
     (with-stdout-to ex_objintf_system_io_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_jsoo_trans_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_jsoo_trans_gen.ml -)))
     (with-stdout-to ex_objintf_system_io_jsoo_trans_gen.mli
-     (run %{generator} ex_objintf_system_io_jsoo_trans_gen.mli)))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_jsoo_trans_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_system_io_jsoo_trans_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
@@ -128,13 +160,21 @@
   (action
    (progn
     (with-stdout-to ex_objintf_empty_jsoo_gen.ml
-     (run %{generator} ex_objintf_empty_jsoo_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_jsoo_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_jsoo_gen.ml -)))
     (with-stdout-to ex_objintf_empty_jsoo_gen.mli
-     (run %{generator} ex_objintf_empty_jsoo_gen.mli))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_jsoo_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_jsoo_gen.mli -)))
     (with-stdout-to ex_objintf_empty_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_empty_jsoo_trans_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_jsoo_trans_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_jsoo_trans_gen.ml -)))
     (with-stdout-to ex_objintf_empty_jsoo_trans_gen.mli
-     (run %{generator} ex_objintf_empty_jsoo_trans_gen.mli)))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_jsoo_trans_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_empty_jsoo_trans_gen.mli -))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
@@ -149,13 +189,21 @@
   (action
    (progn
     (with-stdout-to ex_objintf_one_directional_jsoo_gen.ml
-     (run %{generator} ex_objintf_one_directional_jsoo_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_jsoo_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_jsoo_gen.ml -)))
     (with-stdout-to ex_objintf_one_directional_jsoo_gen.mli
-     (run %{generator} ex_objintf_one_directional_jsoo_gen.mli))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_jsoo_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_jsoo_gen.mli -)))
     (with-stdout-to ex_objintf_one_directional_jsoo_trans_gen.ml
-     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.ml))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.ml)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_jsoo_trans_gen.ml -)))
     (with-stdout-to ex_objintf_one_directional_jsoo_trans_gen.mli
-     (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.mli))))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_jsoo_trans_gen.mli)
+      (run %{bin:ocamlformat} --name ex_objintf_one_directional_jsoo_trans_gen.mli -)))))))
 (subdir objintf_examples/lib_objintf_gen_ts
  (rule
   (alias gen)
@@ -166,9 +214,13 @@
   (action
    (progn
     (with-stdout-to ex_objintf_system_io_gen.ts
-     (run %{generator} ex_objintf_system_io_gen.ts))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_objintf_system_io_gen.ts)))
     (with-stdout-to ex_objintf_system_io_trans_gen.ts
-     (run %{generator} ex_objintf_system_io_trans_gen.ts)))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_system_io_trans_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_objintf_system_io_trans_gen.ts))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
@@ -178,9 +230,13 @@
   (action
    (progn
     (with-stdout-to ex_objintf_empty_gen.ts
-     (run %{generator} ex_objintf_empty_gen.ts))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_objintf_empty_gen.ts)))
     (with-stdout-to ex_objintf_empty_trans_gen.ts
-     (run %{generator} ex_objintf_empty_trans_gen.ts)))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_empty_trans_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_objintf_empty_trans_gen.ts))))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
@@ -192,6 +248,10 @@
   (action
    (progn
     (with-stdout-to ex_objintf_one_directional_gen.ts
-     (run %{generator} ex_objintf_one_directional_gen.ts))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_objintf_one_directional_gen.ts)))
     (with-stdout-to ex_objintf_one_directional_trans_gen.ts
-     (run %{generator} ex_objintf_one_directional_trans_gen.ts))))))
+     (pipe-stdout
+      (run %{generator} ex_objintf_one_directional_trans_gen.ts)
+      (run %{bin:npx} --prefix %{workspace_root}/with_js prettier --stdin-filepath ex_objintf_one_directional_trans_gen.ts)))))))

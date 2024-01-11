@@ -203,11 +203,19 @@ let () =
     in
     output_duneinc_header target_name;
     output_fmtd_newline & Dcomb.(
-      let single args f =
+      let single_ml args f =
         let open Action in
-        with_stdout_to (`expr f) (
-          run "%{generator}" & f :: args
-        )
+        with_stdout_to_piped (`expr f) [
+          run "%{generator}" & f :: args;
+          run_ocamlformat' ~compact:true f;
+        ]
+      in
+      let single_ts args f =
+        let open Action in
+        with_stdout_to_piped (`expr f) [
+          run "%{generator}" & f :: args;
+          run_prettier' ~compact:true f;
+        ]
       in
       aggregate [
         subdir "objintf_examples/lib_objintf_gen" [
@@ -230,7 +238,7 @@ let () =
               Rule.mkp_gen [
                 targets outputs;
                 Deps.(mk [named "generator" & str lib_objintf_gen_generator_dep]);
-                Action.mk_progn (outputs |&> single []);
+                Action.mk_progn (outputs |&> single_ml []);
               ]
             )
         ];
@@ -259,7 +267,7 @@ let () =
               Rule.mkp_gen [
                 targets outputs;
                 Deps.(mk [named "generator" & str lib_objintf_gen_jsoo_generator_dep]);
-                Action.mk_progn (outputs |&> single []);
+                Action.mk_progn (outputs |&> single_ml []);
               ]
             )
         ];
@@ -275,7 +283,7 @@ let () =
                 named "generator" (atomic lib_objintf_gen_ts_generator_dep);
               ]);
               Action.(vpbox ~lead:"action" &.
-                progn (outputs |&> single [])
+                progn (outputs |&> single_ts [])
               );
             ]
         )
