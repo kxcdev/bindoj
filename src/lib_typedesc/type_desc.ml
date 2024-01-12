@@ -44,6 +44,12 @@ module Configs = struct
 
   let empty : 'pos t = []
 
+  let merge : 'pos t -> 'pos t -> 'pos t = fun xs ys ->
+    let rec go acc = function
+      | [] -> acc
+      | (c :: xs) -> go (c :: acc) xs in
+    go ys xs
+
   let find : (('pos, 'kind) config -> 'a option) -> 'pos t -> 'a option =
     fun finder configs ->
     let rec go : 'pos t -> 'a option = function

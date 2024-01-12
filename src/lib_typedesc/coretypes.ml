@@ -39,7 +39,7 @@ let to_coretype : 'x t -> coretype =
 
 let with_config : [`coretype] configs -> 'x t -> 'x t =
   fun configs -> function
-    | C (desc, _)  -> C (desc, configs)
+    | C (desc, orig)  -> C (desc, Configs.merge configs orig)
 
 module Prims = struct
   let unit : unit t = C (prim `unit, Configs.empty)
@@ -64,7 +64,7 @@ let uninhabitable : Kxclib.null t =
   C (Uninhabitable, Configs.empty)
 
 let option : 'v t -> 'v option t =
-  fun ct -> C (to_desc ct |> option, Configs.empty)
+  fun ct -> C (to_desc ct |> option, configs ct)
 
 let tuple_tag = Obj.tag (Obj.repr (0, 0))
 let is_tuple : 'x. 'x -> bool =
@@ -81,7 +81,14 @@ module Tuple = struct
     let ds =
       iota (Obj.size r) |&> Obj.field r
       |&> (fun pos -> Obj.obj pos |> to_desc) in
-    C (tuple ds, Configs.empty)
+    let cs =
+      iotafl (fun acc i ->
+          Configs.merge
+            (Obj.field r i |> Obj.obj |> configs)
+            acc)
+        Configs.empty (Obj.size r)
+    in
+    C (tuple ds, cs)
 
   let tup2 : ('v1 t * 'v2 t) -> ('v1 * 'v2) t = tuple_unsafe
   let tup3 : ('v1 t * 'v2 t * 'v3 t) -> ('v1 * 'v2 * 'v3) t = tuple_unsafe
@@ -94,11 +101,11 @@ module Tuple = struct
 end
 
 let list : 'v t -> 'v list t =
-  fun ct -> C (to_desc ct |> list, Configs.empty)
+  fun ct -> C (to_desc ct |> list, configs ct)
 
 module Map = struct
   let string_map : 'v t -> (string * 'v) list t =
-    fun ct -> C (to_desc ct |> map `string, Configs.empty)
+    fun ct -> C (to_desc ct |> map `string, configs ct)
 end
 
 module Enum = struct

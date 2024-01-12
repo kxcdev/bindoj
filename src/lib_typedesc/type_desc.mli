@@ -47,6 +47,8 @@ module Configs : sig
   val find : (('pos, 'kind) config -> 'a option) -> 'pos t -> 'a option
   (** Returns the result of the appropriate conversion if found, else [None]. *)
 
+  val merge : ([< pos] as 'pos) t -> 'pos t -> 'pos t
+
   val find_or_default :
     default:'a -> (('pos, 'kind) config -> 'a option) -> 'pos t -> 'a
   (** Returns the result of the appropriate conversion if found, else the default value. *)
