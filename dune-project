@@ -28,7 +28,7 @@
  (synopsis "A generative datatype toolkit for OCaml centric workflows")
  (depends
   (fmt (and :with-test (>= 0.8.10)))
-  (ppxlib (>= 0.28))
+  (ppxlib (>= 0.31))
   (ppx_deriving (>= 5.2.1))
   (yojson (>= 1.7))
   (ppx_yojson_conv (>= v0.15.0))
