@@ -139,31 +139,31 @@ module Code = struct
 
     let expression_cases = [
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - identifier"
         var_x
         (`identifier var_x
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - numeric_literal"
         "42."
         (`literal_expression (`numeric_literal 42.)
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - string_literal"
         "\"strlit\""
         (`literal_expression (`string_literal "strlit")
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - template_literal"
         "`${number}-${number}-${number}`"
         (`literal_expression (`template_literal "${number}-${number}-${number}")
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - call_expression"
         (var_f ^ "(" ^ var_x ^ ")")
         (`call_expression {
             tsce_expression = `identifier var_f;
@@ -172,7 +172,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - element_access_expression"
         (var_x ^ "[" ^ var_i ^ "]")
         (`element_access_expression {
             tsea_expression = `identifier var_x;
@@ -181,7 +181,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - property_access_expression"
         (var_x ^ "." ^ var_y)
         (`property_access_expression {
             tspa_expression = `identifier var_x;
@@ -190,7 +190,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - binary_expression"
         (var_x ^ " " ^ plus ^ " " ^ var_y)
         (`binary_expression {
             tsbe_left = `identifier var_x;
@@ -200,7 +200,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - binary_expression nested right"
         (var_x ^ " " ^ plus ^ " (" ^ var_y ^ " " ^ star ^ " " ^ var_z ^ ")")
         (`binary_expression {
             tsbe_left = `identifier var_x;
@@ -214,7 +214,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - binary_expression nested left"
         ("(" ^ var_x ^ " " ^ plus ^ " " ^ var_y ^ ") " ^ star ^ " " ^ var_z)
         (`binary_expression {
             tsbe_left = `binary_expression {
@@ -228,7 +228,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - arrow_function"
         ("(" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ "? : " ^ number ^ ") => { " ^
          "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
          ^ " }")
@@ -253,7 +253,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - new_expression"
         ("new " ^ type_A ^ "(" ^ var_x ^ ")")
         (`new_expression {
             tsne_expression = `identifier type_A;
@@ -262,7 +262,7 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - literal_expression"
         ({|{"foo": (12.5), "bar": (null as (undefined))}|})
         (`literal_expression (
              `object_literal [
@@ -275,19 +275,19 @@ module Code = struct
          |> rope_of_ts_expression
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - await_expression"
         ("await " ^ var_x)
         (`await_expression (`identifier var_x)
           |> rope_of_ts_expression
           |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - const_assertion"
         "( \"abc\" ) as const"
         (`const_assertion (`literal_expression (`string_literal "abc"))
           |> rope_of_ts_expression
           |> Rope.to_string);
       test_case'
-        "rope_of_ts_expression"
+        "rope_of_ts_expression - call_expression"
         ("((" ^ var_x ^ " : " ^ number ^ ", " ^ var_y ^ "? : " ^ number ^ ") => {" ^
           "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
           ^ "})" ^ "(" ^ var_a ^ ", " ^ var_b ^ ")")
@@ -320,43 +320,43 @@ module Code = struct
     ] in
     let type_desc_cases = [
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - type_reference"
         number
         (`type_reference number
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - void"
         "void"
         (`special `void
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - type_assertion"
         "( void ) as ( null )"
         (`type_assertion (`special `void, `special `null)
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - type_construct"
         "foo<(null), (void)>"
         (`type_construct ("foo", [`special `null; `special `void])
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - typeof"
         "typeof foo"
         (`typeof (`identifier "foo")
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - keyof"
         "keyof bar"
         (`keyof (`type_reference "bar")
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - type_literal"
         ("{ " ^ var_x ^ " : " ^ number ^ " , " ^ var_y ^ " : " ^ number ^ " , " ^ var_z ^ "? :" ^ number ^ " }" )
         (`type_literal [
             { tsps_modifiers = [];
@@ -375,37 +375,37 @@ module Code = struct
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - numeric_literal"
         "42."
         (`literal_type (`numeric_literal 42.)
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - string_literal"
         "\"foo\""
         (`literal_type (`string_literal "foo")
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - template_literal"
         "`${number}-${number}-${number}`"
         (`literal_type (`template_literal "${number}-${number}-${number}")
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - tuple"
         ("[" ^ string ^ ", " ^ number ^ "]")
         (`tuple [`type_reference string; `type_reference number;]
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - union 2"
         "\"foo\" | \"bar\""
         (`union [`literal_type (`string_literal "foo"); `literal_type (`string_literal "bar")]
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - union 3"
         "\"foo\" | \"bar\" | \"baz\""
         (`union [`literal_type (`string_literal "foo");
                  `literal_type (`string_literal "bar");
@@ -413,7 +413,7 @@ module Code = struct
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - union nested left"
         "(\"foo\" | \"bar\") | \"baz\""
         (`union [`union [`literal_type (`string_literal "foo");
                          `literal_type (`string_literal "bar")];
@@ -421,7 +421,7 @@ module Code = struct
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - union nested right"
         "\"foo\" | (\"bar\" | \"baz\")"
         (`union [`literal_type (`string_literal "foo");
                  `union [`literal_type (`string_literal "bar");
@@ -429,13 +429,13 @@ module Code = struct
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - intersection 2"
         (type_A ^ " & " ^ type_B)
         (`intersection [`type_reference type_A; `type_reference type_B]
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - intersection 3"
         (type_A ^ " & " ^ type_B ^ " & " ^ type_C)
         (`intersection [`type_reference type_A;
                         `type_reference type_B;
@@ -443,14 +443,14 @@ module Code = struct
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - intersection nested left"
         ("(" ^ type_A ^ " & " ^ type_B ^ ")" ^ " & " ^ type_C)
         (`intersection [`intersection [`type_reference type_A; `type_reference type_B;];
                         `type_reference type_C]
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - intersection nested right"
         (type_A ^ " & " ^ "(" ^ type_B ^ " & " ^ type_C ^ ")")
         (`intersection [`type_reference type_A;
                         `intersection [`type_reference type_B;
@@ -458,13 +458,13 @@ module Code = struct
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - array"
         (number ^ "[]")
         (`array (`type_reference number)
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - func_type"
         ("(" ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ "?: " ^ number ^ ") => " ^ number)
         (`func_type {
             tsft_parameters = [
@@ -480,7 +480,7 @@ module Code = struct
          |> rope_of_ts_type_desc
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_type_desc"
+        "rope_of_ts_type_desc - record"
         ("Record<" ^ string ^ ", " ^ number ^ ">")
         (`record (`type_reference string, `type_reference number)
          |> rope_of_ts_type_desc
@@ -488,7 +488,7 @@ module Code = struct
     ] in
     let statement_case = [
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - import"
         ("import { "^var_x^", "^var_y^" as "^var_a^" } from \""^libs^"\";")
         (`import {
             tsi_from = libs;
@@ -502,7 +502,7 @@ module Code = struct
           |> rope_of_ts_statement
           |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - type_alias_declaration"
         ("type " ^ type_A ^ " = { " ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ ": " ^ string ^ ", " ^ var_z ^ "?: " ^ string ^ " }")
         (`type_alias_declaration {
             tsa_modifiers = [];
@@ -526,7 +526,7 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - value_declaration"
         ("export const foo = 12.5")
         (`value_declaration {
              tsv_modifiers = [ `export ];
@@ -538,7 +538,7 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - value_declaration"
         ("export const foo: number = 12.5")
         (`value_declaration {
              tsv_modifiers = [ `export ];
@@ -550,7 +550,7 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - function_declaration"
         ("function " ^ var_f ^ "(" ^ var_x ^ ": " ^ number ^ ", " ^ var_y ^ "?: " ^ number ^  "): " ^ number ^ "{ " ^
          "return " ^ var_x ^ " " ^ plus ^ " " ^ var_y
          ^ " }")
@@ -579,7 +579,7 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - function_declaration async"
         ("async function " ^ var_f ^ "<" ^ type_A ^ "> (" ^ var_x ^ ": " ^ type_A ^ "): " ^ type_A ^
          " { " ^ "return await " ^ var_x ^ " }")
         (`function_declaration {
@@ -599,7 +599,7 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - module_declaration with type_alias_declaration"
         ("namespace " ^ mod_A ^ "{ " ^ "type " ^ type_A ^ " = " ^ type_B ^ " }")
         (`module_declaration {
             tsm_modifiers = [];
@@ -616,13 +616,13 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - return_statement"
         ("return " ^ var_x)
         (`return_statement (`identifier var_x)
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - if_statement"
         ("if (" ^ var_x ^ " == " ^ var_a ^ ") { return " ^ var_x ^ " } else { return " ^  var_y ^ " }")
         (`if_statement
            (`binary_expression {
@@ -635,7 +635,7 @@ module Code = struct
          |> rope_of_ts_statement
          |> Rope.to_string);
       test_case'
-        "rope_of_ts_statement"
+        "rope_of_ts_statement - throw_statement"
         "throw new Error(\"something wrong\")"
         (`throw_statement
            (`new_expression {
