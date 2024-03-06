@@ -50,4 +50,4 @@
   (ocamlformat (and :with-test (= 0.26.0)))
   (ocaml (>= 4.14))
   (cohttp-lwt-unix :with-test)
-  (melange (and :with-doc (>= 2.0.0)))))
+  (melange (and :with-doc (>= 2.0.0) (< 3.0.0)))))

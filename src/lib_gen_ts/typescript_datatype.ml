@@ -337,7 +337,7 @@ and ts_type_desc_of_fwrt_decl' :
                 args |> List.mapi (fun i arg ->
                   let (`optional_property tsps_optional), tsps_type_desc = property_type_of_variant_argument base_mangling_style arg in
                   { tsps_modifiers = arg.fva_annot;
-                    tsps_name = Json_config.tuple_index_to_field_name i;
+                    tsps_name = Json_config.(get_name_opt arg.fva_configs |? tuple_index_to_field_name i);
                     tsps_optional; tsps_type_desc })
               in
               members @ fields, nested

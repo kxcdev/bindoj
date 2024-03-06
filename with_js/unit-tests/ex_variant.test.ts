@@ -105,12 +105,14 @@ describe("ex_variant", (): void => {
           foo0: (_) => 0,
           foo1: (v) => v.value,
           foo2: (v) => v.value.reduce((x, y) => x + y, 0),
+          foo3: (v) => v.field1 + v.field2,
         })(x);
       }
 
       expect(analyzer(samples[0])).toBe(0);
       expect(analyzer(samples[1])).toBe(1);
       expect(analyzer(samples[2])).toBe(3);
+      expect(analyzer(samples[3])).toBe(3);
     });
   });
 

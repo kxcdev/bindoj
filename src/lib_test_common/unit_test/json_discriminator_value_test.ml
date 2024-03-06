@@ -65,6 +65,7 @@ module Ex_variant_polymorphic = struct
     | `Foo0 -> "foo0"
     | `Foo1 _ -> "foo1"
     | `Foo2 _ -> "foo2"
+    | `Foo3 _ -> "foo3"
 end
 
 module Ex_variant_customized_union = struct

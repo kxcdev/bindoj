@@ -192,9 +192,9 @@ let explain_encoded_json_shape'
       let tuple_style = Json_config.get_tuple_style vc_configs in
       begin match tuple_style, vas with
       | `obj `default, vas ->
-        vas |> List.mapi (fun i ->
-          Json_config.tuple_index_to_field_name i
-          |> process_non_spread_variant_argument' ~base_ident_codec base_mangling_style)
+        vas |> List.mapi (fun i va ->
+          let field_name = Json_config.(get_name_opt va.va_configs |? tuple_index_to_field_name i) in
+          process_non_spread_variant_argument' ~base_ident_codec base_mangling_style field_name va)
       | `arr, [ va ] ->
         [ process_non_spread_variant_argument' ~base_ident_codec base_mangling_style arg_fname va ]
       | `arr, vas ->
@@ -308,14 +308,6 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
     | Some a -> Result.ok a
   in
   let try_result jvpath f = try f () with Invalid_argument msg -> Error (msg, jvpath) in
-  let parse_obj_style_tuple path (conv: jvpath -> string -> _ -> jv option -> (Expr.t, string * jvpath) result) (ts: _ list) (fields: jv StringMap.t) =
-    ts
-    |> List.mapi (fun i t ->
-      let field_name = Json_config.tuple_index_to_field_name i in
-      fields |> StringMap.find_opt field_name
-      |> conv (`f field_name :: path) field_name t)
-    |> sequence_list
-  in
   let map2i f l1 l2 =
     let rec map2i i f l1 l2 =
       match (l1, l2) with
@@ -327,6 +319,15 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
       | (_, _) -> None
     in
     map2i 0 f l1 l2
+  in
+  let parse_obj_style_tuple ~get_field_name path (conv: jvpath -> string -> _ -> jv option -> (Expr.t, string * jvpath) result) (ts: _ list) (fields: jv StringMap.t) =
+    ts |> List.mapi (fun i t ->
+      let field_name = get_field_name t i in
+      fields
+      |> StringMap.find_opt field_name
+      |> conv (`f field_name :: path) field_name t
+    )
+    |> sequence_list
   in
   let expr_of_json base_mangling_style (path: jvpath) (ct: coretype) (jv: jv) : (Expr.t, string * jvpath) result =
     let base_mangling_style = Json_config.get_mangling_style_opt ct.ct_configs |? base_mangling_style in
@@ -395,7 +396,9 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
           | _, `arr ->
             Result.error (sprintf "an array is expected for a tuple value, but the given is of type '%s'" (jv |> classify_jv |> string_of_jv_kind), path)
           | `obj fields, `obj `default ->
-            parse_obj_style_tuple path (fun path' field_name -> !? (function
+            parse_obj_style_tuple
+              ~get_field_name:(constant Json_config.tuple_index_to_field_name)
+              path (fun path' field_name -> !? (function
               | Coretype.Option (Option _), _ -> Error ("Nested option types cannot be json fields.", path')
               | Option _, None -> Ok Expr.None
               | desc, Some jv -> go path' desc jv
@@ -512,13 +515,16 @@ let rec of_json_impl : ?path:jvpath -> env:tdenv -> 'a typed_type_decl -> jv -> 
               in
               begin match Json_config.get_tuple_style ctor.vc_configs, ts with
               | `obj `default, _ :: _ :: _ ->
-                parse_obj_style_tuple path (fun path' field_name -> !?(function
-                  | { va_type = `direct ct | `nested ({ td_kind = Alias_decl ct; _ }, _); _ }, None
-                    when Coretype.is_option ct ->
-                      Ok Expr.None
-                  | va, Some jv -> variant_argument_of_json base_mangling_style path' va jv
-                  | _, None -> Error (sprintf "mandatory field '%s' does not exist" field_name, path))
-                ) ts obj
+                parse_obj_style_tuple
+                  ~get_field_name:Json_config.(fun t i -> get_name_opt t.va_configs |? tuple_index_to_field_name i)
+                  path
+                  (fun path' field_name -> !?(function
+                    | { va_type = `direct ct | `nested ({ td_kind = Alias_decl ct; _ }, _); _ }, None
+                      when Coretype.is_option ct ->
+                        Ok Expr.None
+                    | va, Some jv -> variant_argument_of_json base_mangling_style path' va jv
+                    | _, None -> Error (sprintf "mandatory field '%s' does not exist" field_name, path))
+                  ) ts obj
                 >>= (fun x -> mk_result path x)
               | _, [] -> mk_result path []
               | _, _ ->
@@ -727,7 +733,8 @@ let rec to_json ~(env: tdenv) (a: 'a typed_type_decl) (value: 'a) : jv =
             let value, is_option = variant_argument_to_json base_mangling_style t e in
             if is_option && e = Expr.None then None
             else
-              Some (Json_config.tuple_index_to_field_name i, value)
+              let field_name = Json_config.(get_name_opt t.va_configs |? tuple_index_to_field_name i) in
+              Some (field_name, value)
             ) |&?> identity
           in
           `obj (discriminator_field @ fields)

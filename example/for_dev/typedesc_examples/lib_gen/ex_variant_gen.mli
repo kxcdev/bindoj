@@ -104,7 +104,8 @@ val ex_variant_int_list_objtuple_typed_decl :
     ex_variant_int_list_objtuple )
   Bindoj_runtime.generic_typed_type_decl
 
-type ex_variant_foo = [ `Foo0 | `Foo1 of int | `Foo2 of int * int ]
+type ex_variant_foo =
+  [ `Foo0 | `Foo1 of int | `Foo2 of int * int | `Foo3 of int * int ]
 
 val ex_variant_foo_reflect : ex_variant_foo Bindoj_runtime.Refl.t
 val ex_variant_foo_json_discriminator_value : ex_variant_foo -> string

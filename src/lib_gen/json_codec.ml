@@ -278,11 +278,11 @@ let opt_to_result : loc:location -> expression -> expression =
   fun ~loc err ->
     [%expr Option.to_result ~none:[%e err]]
 
-let encoder_of_objtuple ?additional_field ~loc to_expr = function
+let encoder_of_objtuple ?additional_field ~loc ~get_field_name to_expr = function
   | [] -> additional_field |?! (fun () -> [%expr []])
   | ts ->
     let es = ts |> List.mapi (fun i t ->
-      let label = estring ~loc (tuple_index_to_field_name i) in
+      let label = estring ~loc (get_field_name t i) in
       let encoded, is_optional = to_expr i t in
       let efield = [%expr ([%e label], [%e encoded])] in
       efield, is_optional)
@@ -323,7 +323,7 @@ let encoder_of_coretype =
       match Json_config.get_tuple_style configs with
       | `obj `default ->
         let fields =
-          encoder_of_objtuple ~loc (fun i -> function
+          encoder_of_objtuple ~loc ~get_field_name:(constant tuple_index_to_field_name) (fun i -> function
             | Option (Option _) -> failwith "Nested option cannot be json fields."
             | Option t ->
               [%expr [%e go t] [%e evari i]], true
@@ -877,7 +877,11 @@ let gen_json_encoder' :
             ]
           | _, `obj `default ->
             args
-            |> encoder_of_objtuple ~loc ~additional_field:cstr (expr_of_arg ~is_field:true)
+            |> encoder_of_objtuple
+              ~loc
+              ~get_field_name:(fun va i -> Json_config.get_name_opt va.va_configs |? tuple_index_to_field_name i)
+              ~additional_field:cstr
+              (expr_of_arg ~is_field:true)
             |> List.return
           end
         | `inline_record fields ->
@@ -1119,7 +1123,7 @@ let gen_json_decoder_impl :
               | `obj `default, _ :: _ :: _ ->
                 let bindings =
                   args |> List.mapi (fun i arg ->
-                    let label_name = tuple_index_to_field_name i in
+                    let label_name = Json_config.get_name_opt arg.va_configs |? tuple_index_to_field_name i in
                     let label_name_e = estring ~loc label_name in
                     let assoc_opt = [%expr List.assoc_opt [%e label_name_e] [%e param_e]] in
                     let decoder = [%expr [%e arg_to_decoder arg] (`f [%e label_name_e] :: path) ] in
@@ -1739,7 +1743,7 @@ let gen_json_schema : ?openapi:bool -> type_decl -> Schema_object.t =
               else [arg_name, Schema_object.tuple ts]
             | _, `obj `default ->
               args |> List.mapi (fun i t ->
-                Json_config.tuple_index_to_field_name i, convert_variant_argument t
+                Json_config.(get_name_opt t.va_configs |? tuple_index_to_field_name i), convert_variant_argument t
               )
           in
           List.return (Some discriminator_value, vc_doc, arg_field @ discriminator_field)

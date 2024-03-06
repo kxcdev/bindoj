@@ -88,11 +88,13 @@ export function analyzeExVariantIntListObjtuple<__bindoj_ret>(__bindoj_fns: {
 export type ExVariantFoo =
   | { kind: "foo0" }
   | { kind: "foo1"; value: number }
-  | { kind: "foo2"; value: [number, number] };
+  | { kind: "foo2"; value: [number, number] }
+  | { kind: "foo3"; field1: number; field2: number };
 export function analyzeExVariantFoo<__bindoj_ret>(__bindoj_fns: {
   foo0: (__bindoj_v: { kind: "foo0" }) => __bindoj_ret;
   foo1: (__bindoj_v: { kind: "foo1"; value: number }) => __bindoj_ret;
   foo2: (__bindoj_v: { kind: "foo2"; value: [number, number] }) => __bindoj_ret;
+  foo3: (__bindoj_v: { kind: "foo3"; field1: number; field2: number }) => __bindoj_ret;
 }): (__bindoj_x: ExVariantFoo) => __bindoj_ret {
   return (__bindoj_x: ExVariantFoo) => {
     if (__bindoj_x.kind === "foo0") {
@@ -100,6 +102,8 @@ export function analyzeExVariantFoo<__bindoj_ret>(__bindoj_fns: {
     } else if (__bindoj_x.kind === "foo1") {
       return __bindoj_fns[__bindoj_x.kind](__bindoj_x);
     } else if (__bindoj_x.kind === "foo2") {
+      return __bindoj_fns[__bindoj_x.kind](__bindoj_x);
+    } else if (__bindoj_x.kind === "foo3") {
       return __bindoj_fns[__bindoj_x.kind](__bindoj_x);
     } else {
       throw new TypeError("panic @analyzeExVariantFoo - unrecognized: " + __bindoj_x);

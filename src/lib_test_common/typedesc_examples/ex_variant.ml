@@ -466,6 +466,13 @@ module Polymorphic : Util.Ex_desc = struct
           ~doc:(doc "polyvariant case (length=1)");
         variant_constructor "Foo2" (`tuple_like [variant_argument cty_int; variant_argument cty_int])
           ~doc:(doc "polyvariant case (length=2)");
+        variant_constructor "Foo3" (`tuple_like [
+          variant_argument cty_int
+            ~configs:[ Json_config.name "field1" ];
+          variant_argument cty_int
+            ~configs:[ Json_config.name "field2" ];
+        ])
+        ~configs:[ Json_config.tuple_style (`obj `default) ]
       ] ~configs:[
         Caml_config.variant_type `polymorphic
       ] ~doc:(doc "polyvariant")
@@ -474,12 +481,16 @@ module Polymorphic : Util.Ex_desc = struct
   let fwrt : (unit, unit, unit) ts_fwrt_decl =
     let parent = "ex_variant_foo" in
     parent, Util.FwrtTypeEnv.(
-      let va_int = variant_argument cty_int in
+      let va_int ?configs () = variant_argument ?configs cty_int in
       init
       |> bind_object ~configs:[Caml_config.variant_type `polymorphic] parent []
       |> bind_constructor ~parent "Foo0"
-      |> bind_constructor ~parent "Foo1" ~args:[va_int]
-      |> bind_constructor ~parent "Foo2" ~args:[va_int; va_int]
+      |> bind_constructor ~parent "Foo1" ~args:[va_int ()]
+      |> bind_constructor ~parent "Foo2" ~args:[va_int (); va_int ()]
+      |> bind_constructor ~parent "Foo3" ~args:[
+        va_int ~configs:[ Json_config.name "field1" ] ();
+        va_int ~configs:[ Json_config.name "field2" ] ()
+      ] ~configs:[ Json_config.tuple_style (`obj `default) ]
     )
 
   let json_name = "ExVariantFoo"
@@ -499,7 +510,13 @@ module Polymorphic : Util.Ex_desc = struct
       `type_literal
         [ discriminator_value "foo2";
           Util.Ts_ast.property "value" (`tuple [`type_reference "number"; `type_reference "number"]) ] in
-    let foos = ["Foo0", foo0; "Foo1", foo1; "Foo2", foo2] in
+    let foo3 =
+      `type_literal
+        [ discriminator_value "foo3";
+          Util.Ts_ast.property "field1" (`type_reference "number");
+          Util.Ts_ast.property "field2" (`type_reference "number");
+        ] in
+    let foos = ["Foo0", foo0; "Foo1", foo1; "Foo2", foo2; "Foo3", foo3] in
     let options : Util.Ts_ast.options =
       { discriminator;
         var_v = "__bindoj_v";
@@ -528,7 +545,11 @@ module Polymorphic : Util.Ex_desc = struct
                     `mandatory_field ("value", `integral)];
                   `object_of
                     [`mandatory_field ("kind", (`exactly (`str "foo2")));
-                    `mandatory_field ("value", (`tuple_of [`integral; `integral]))]]))))
+                    `mandatory_field ("value", (`tuple_of [`integral; `integral]))];
+                  `object_of
+                    [`mandatory_field ("kind", (`exactly (`str "foo3")));
+                    `mandatory_field ("field1", `integral);
+                    `mandatory_field ("field2", `integral)]]))))
     )
 
   open Bindoj_openapi.V3

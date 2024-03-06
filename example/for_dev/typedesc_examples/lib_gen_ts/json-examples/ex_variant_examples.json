@@ -40,7 +40,12 @@
     },
     { "kind": "intcons", "_0": 26335605, "_1": { "kind": "intcons", "_0": 35460072, "_1": { "kind": "intnil" } } }
   ],
-  "ExVariantFoo": [{ "kind": "foo0" }, { "kind": "foo1", "value": 1 }, { "kind": "foo2", "value": [1, 2] }],
+  "ExVariantFoo": [
+    { "kind": "foo0" },
+    { "kind": "foo1", "value": 1 },
+    { "kind": "foo2", "value": [1, 2] },
+    { "kind": "foo3", "field1": 1, "field2": 2 }
+  ],
   "ExVariantCustomizedUnion": [
     { "tag": "case-tuple-like-arg'", "arg": 42 },
     { "tag": "case-tuple-like-exactly'", "Argument": 1024 },

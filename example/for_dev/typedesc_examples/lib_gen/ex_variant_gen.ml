@@ -844,7 +844,8 @@ let ex_variant_int_list_objtuple_typed_decl =
     Bindoj_test_common_typedesc_examples.Ex_variant.Int_list_objtuple.decl
     ex_variant_int_list_objtuple_reflect
 
-type ex_variant_foo = [ `Foo0 | `Foo1 of int | `Foo2 of int * int ]
+type ex_variant_foo =
+  [ `Foo0 | `Foo1 of int | `Foo2 of int * int | `Foo3 of int * int ]
 
 let rec (ex_variant_foo_reflect : _ Bindoj_runtime.Refl.t) =
   lazy
@@ -879,21 +880,43 @@ let rec (ex_variant_foo_reflect : _ Bindoj_runtime.Refl.t) =
              | _ -> None);
          }
      in
+     let ctor_Foo3 =
+       Refl.TupleLike
+         {
+           get =
+             (function
+             | `Foo3 (x0, x1) -> [ Expr.of_int x0; Expr.of_int x1 ]
+             | _ -> invalid_arg "Foo3 is expected");
+           mk =
+             (function
+             | [ x0; x1 ] ->
+                 Expr.to_int x0 >>= fun x0 ->
+                 Expr.to_int x1 >>= fun x1 -> Some (`Foo3 (x0, x1))
+             | _ -> None);
+         }
+     in
      Refl.Variant
        {
          constructors =
            StringMap.of_list
-             [ ("Foo0", ctor_Foo0); ("Foo1", ctor_Foo1); ("Foo2", ctor_Foo2) ];
+             [
+               ("Foo0", ctor_Foo0);
+               ("Foo1", ctor_Foo1);
+               ("Foo2", ctor_Foo2);
+               ("Foo3", ctor_Foo3);
+             ];
          classify =
            (function
            | `Foo0 -> ("Foo0", ctor_Foo0)
            | `Foo1 _ -> ("Foo1", ctor_Foo1)
-           | `Foo2 _ -> ("Foo2", ctor_Foo2));
+           | `Foo2 _ -> ("Foo2", ctor_Foo2)
+           | `Foo3 _ -> ("Foo3", ctor_Foo3));
        })
 [@@warning "-33-39"]
 
 let ex_variant_foo_json_discriminator_value =
-  (function `Foo0 -> "foo0" | `Foo1 _ -> "foo1" | `Foo2 _ -> "foo2"
+  (function
+   | `Foo0 -> "foo0" | `Foo1 _ -> "foo1" | `Foo2 _ -> "foo2" | `Foo3 _ -> "foo3"
     : ex_variant_foo -> string)
 [@@warning "-39"]
 
@@ -915,6 +938,12 @@ let ex_variant_foo_json_shape_explanation =
                    `mandatory_field ("kind", `exactly (`str "foo2"));
                    `mandatory_field ("value", `tuple_of [ `integral; `integral ]);
                  ];
+               `object_of
+                 [
+                   `mandatory_field ("kind", `exactly (`str "foo3"));
+                   `mandatory_field ("field1", `integral);
+                   `mandatory_field ("field2", `integral);
+                 ];
              ] ) )
     : Bindoj_runtime.json_shape_explanation)
 [@@warning "-39"]
@@ -929,6 +958,13 @@ let rec ex_variant_foo_to_json =
          [
            ("kind", `str "foo2");
            ("value", `arr [ int_to_json x0; int_to_json x1 ]);
+         ]
+   | `Foo3 (x0, x1) ->
+       `obj
+         [
+           ("kind", `str "foo3");
+           ("field1", int_to_json x0);
+           ("field2", int_to_json x1);
          ]
     : ex_variant_foo -> Kxclib.Json.jv)
 [@@warning "-39"]
@@ -984,11 +1020,23 @@ and ex_variant_foo_of_json' =
                          string_of_jv_kind (classify_jv jv)),
                       `f "value" :: path )
               | None -> Error ("mandatory field 'value' does not exist", path))
+          | `obj (("kind", `str "foo3") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "field1" param
+              |> Option.to_result
+                   ~none:("mandatory field 'field1' does not exist", path)
+              >>= int_of_json' (`f "field1" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "field2" param
+              |> Option.to_result
+                   ~none:("mandatory field 'field2' does not exist", path)
+              >>= int_of_json' (`f "field2" :: path)
+              >>= fun x1 -> Ok (`Foo3 (x0, x1))
           | `obj (("kind", `str discriminator_value) :: _) ->
               Error
                 ( Printf.sprintf
                     "given discriminator field value '%s' is not one of [ \
-                     'foo0', 'foo1', 'foo2' ]"
+                     'foo0', 'foo1', 'foo2', 'foo3' ]"
                     discriminator_value,
                   `f "kind" :: path )
           | `obj (("kind", jv) :: _) ->

@@ -194,6 +194,17 @@
         },
         "required": ["value", "kind"],
         "additionalProperties": false
+      },
+      {
+        "title": "foo3",
+        "type": "object",
+        "properties": {
+          "field1": { "type": "integer" },
+          "field2": { "type": "integer" },
+          "kind": { "enum": ["foo3"], "type": "string" }
+        },
+        "required": ["field1", "field2", "kind"],
+        "additionalProperties": false
       }
     ]
   },

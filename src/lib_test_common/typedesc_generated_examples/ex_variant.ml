@@ -245,7 +245,7 @@ module Int_list_objtuple = struct
 end
 
 module Polymorphic = struct
-  type t = [ `Foo0  | `Foo1 of int  | `Foo2 of (int * int) ] [@@deriving show]
+  type t = [ `Foo0  | `Foo1 of int  | `Foo2 of (int * int) | `Foo3 of (int * int) ] [@@deriving show]
   let decl = Td_ex_variant.Polymorphic.decl
   let reflect = ex_variant_foo_reflect
 
@@ -273,10 +273,19 @@ module Polymorphic = struct
     jv = ctor2 "foo2" (`num 1.) (`num 2.);
   }
 
+  let sample_value04 = {
+    orig = `Foo3 (1, 2);
+    jv = ctor_record "foo3" [
+      "field1", `num 1.;
+      "field2", `num 2.;
+    ];
+  }
+
   let sample_values = [
     sample_value01;
     sample_value02;
     sample_value03;
+    sample_value04;
   ]
 end
 
