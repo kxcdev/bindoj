@@ -29,6 +29,9 @@ val with_config : [`coretype] configs -> 'x t -> 'x t
 val to_refl : ?env:Typed_type_desc.tdenv -> ?self:'x Refl.t -> 'x t -> 'x Refl.t
 (** Converts the given {!t} into its corresponding reflection. *)
 
+val to_desc : 'x t -> Coretype.desc
+(** Converts the given {!t} into {!Coretype.desc}. *)
+
 val to_coretype : 'x t -> coretype
 (** Converts the given {!t} into coretype. *)
 
