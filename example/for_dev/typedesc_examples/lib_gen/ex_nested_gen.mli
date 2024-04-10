@@ -23,6 +23,7 @@ type ex_nested_record = {
   point2 : ex_nested_point2;
   point2_spread : ex_nested_point2;
   person : Ex_mangling_gen.ex_mangling_person_inherited;
+  optional_variant : Ex_optional_gen.ex_optional_variant;
   person_spread : Ex_mangling_gen.ex_mangling_person_inherited;
 }
 

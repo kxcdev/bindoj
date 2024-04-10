@@ -85,9 +85,122 @@
               }
             ]
           },
+          "optionalVariant": {
+            "description": "definition of ex_optional_variant type",
+            "oneOf": [
+              {
+                "title": "tuple-like",
+                "description": "Tuple_like constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-alias",
+                "description": "Tuple_like_alias constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-alias"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-obj",
+                "description": "Tuple_like_obj constructor",
+                "type": "object",
+                "properties": {
+                  "_0": { "nullable": true, "type": "integer" },
+                  "_1": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-obj"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-spreading",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record",
+                "description": "Inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": {
+                    "description": "x_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "yOpt": {
+                    "description": "y_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "objtuple": {
+                    "description": "objtuple field in Inline_record constructor",
+                    "type": "object",
+                    "properties": {
+                      "_0": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      },
+                      "_1": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "tag": { "enum": ["inline-record"], "type": "string" }
+                },
+                "required": ["objtuple", "tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record-spreading",
+                "description": "Inline_record_spreading constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["inline-record-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "reused-inline-record",
+                "description": "Reused_inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["reused-inline-record"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              }
+            ]
+          },
           "kind": { "enum": ["Anonymous"], "type": "string" }
         },
-        "required": ["unit", "point2", "x", "y", "person", "kind"],
+        "required": ["unit", "point2", "x", "y", "person", "optionalVariant", "kind"],
         "additionalProperties": false
       },
       {
@@ -157,10 +270,123 @@
               }
             ]
           },
+          "optionalVariant": {
+            "description": "definition of ex_optional_variant type",
+            "oneOf": [
+              {
+                "title": "tuple-like",
+                "description": "Tuple_like constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-alias",
+                "description": "Tuple_like_alias constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-alias"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-obj",
+                "description": "Tuple_like_obj constructor",
+                "type": "object",
+                "properties": {
+                  "_0": { "nullable": true, "type": "integer" },
+                  "_1": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-obj"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-spreading",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record",
+                "description": "Inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": {
+                    "description": "x_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "yOpt": {
+                    "description": "y_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "objtuple": {
+                    "description": "objtuple field in Inline_record constructor",
+                    "type": "object",
+                    "properties": {
+                      "_0": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      },
+                      "_1": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "tag": { "enum": ["inline-record"], "type": "string" }
+                },
+                "required": ["objtuple", "tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record-spreading",
+                "description": "Inline_record_spreading constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["inline-record-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "reused-inline-record",
+                "description": "Reused_inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["reused-inline-record"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              }
+            ]
+          },
           "value": { "type": "integer" },
           "kind": { "enum": ["With_id"], "type": "string" }
         },
-        "required": ["unit", "point2", "x", "y", "person", "value", "kind"],
+        "required": ["unit", "point2", "x", "y", "person", "optionalVariant", "value", "kind"],
         "additionalProperties": false
       },
       {
@@ -226,6 +452,119 @@
                   "kind": { "enum": ["Teacher"], "type": "string" }
                 },
                 "required": ["facultyId", "name", "department", "kind"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "optionalVariant": {
+            "description": "definition of ex_optional_variant type",
+            "oneOf": [
+              {
+                "title": "tuple-like",
+                "description": "Tuple_like constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-alias",
+                "description": "Tuple_like_alias constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-alias"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-obj",
+                "description": "Tuple_like_obj constructor",
+                "type": "object",
+                "properties": {
+                  "_0": { "nullable": true, "type": "integer" },
+                  "_1": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-obj"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-spreading",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record",
+                "description": "Inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": {
+                    "description": "x_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "yOpt": {
+                    "description": "y_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "objtuple": {
+                    "description": "objtuple field in Inline_record constructor",
+                    "type": "object",
+                    "properties": {
+                      "_0": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      },
+                      "_1": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "tag": { "enum": ["inline-record"], "type": "string" }
+                },
+                "required": ["objtuple", "tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record-spreading",
+                "description": "Inline_record_spreading constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["inline-record-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "reused-inline-record",
+                "description": "Reused_inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["reused-inline-record"], "type": "string" }
+                },
+                "required": ["tag"],
                 "additionalProperties": false
               }
             ]
@@ -239,7 +578,18 @@
           },
           "kind": { "enum": ["student"], "type": "string" }
         },
-        "required": ["unit", "point2", "x", "y", "person", "student_id", "name", "caseValue", "kind"],
+        "required": [
+          "unit",
+          "point2",
+          "x",
+          "y",
+          "person",
+          "optionalVariant",
+          "student_id",
+          "name",
+          "caseValue",
+          "kind"
+        ],
         "additionalProperties": false
       },
       {
@@ -309,12 +659,136 @@
               }
             ]
           },
+          "optionalVariant": {
+            "description": "definition of ex_optional_variant type",
+            "oneOf": [
+              {
+                "title": "tuple-like",
+                "description": "Tuple_like constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-alias",
+                "description": "Tuple_like_alias constructor",
+                "type": "object",
+                "properties": {
+                  "arg": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-alias"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-obj",
+                "description": "Tuple_like_obj constructor",
+                "type": "object",
+                "properties": {
+                  "_0": { "nullable": true, "type": "integer" },
+                  "_1": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-obj"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "tuple-like-spreading",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["tuple-like-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record",
+                "description": "Inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": {
+                    "description": "x_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "yOpt": {
+                    "description": "y_opt field in Inline_record constructor",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "objtuple": {
+                    "description": "objtuple field in Inline_record constructor",
+                    "type": "object",
+                    "properties": {
+                      "_0": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      },
+                      "_1": {
+                        "description": "objtuple field in Inline_record constructor",
+                        "nullable": true,
+                        "type": "integer"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "tag": { "enum": ["inline-record"], "type": "string" }
+                },
+                "required": ["objtuple", "tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "inline-record-spreading",
+                "description": "Inline_record_spreading constructor",
+                "type": "object",
+                "properties": {
+                  "intOpt": { "description": "alias of int option type", "nullable": true, "type": "integer" },
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["inline-record-spreading"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              },
+              {
+                "title": "reused-inline-record",
+                "description": "Reused_inline_record constructor",
+                "type": "object",
+                "properties": {
+                  "xOpt": { "description": "an optional int x", "nullable": true, "type": "integer" },
+                  "yOpt": { "description": "an optional int y", "nullable": true, "type": "integer" },
+                  "tag": { "enum": ["reused-inline-record"], "type": "string" }
+                },
+                "required": ["tag"],
+                "additionalProperties": false
+              }
+            ]
+          },
           "facultyId": { "description": "faculty_id field of ex_record_teacher type", "type": "integer" },
           "name": { "description": "name field of ex_record_teacher type", "type": "string" },
           "department": { "description": "dapartment field of ex_record_teacher type", "type": "string" },
           "kind": { "enum": ["Teacher"], "type": "string" }
         },
-        "required": ["unit", "point2", "x", "y", "person", "facultyId", "name", "department", "kind"],
+        "required": [
+          "unit",
+          "point2",
+          "x",
+          "y",
+          "person",
+          "optionalVariant",
+          "facultyId",
+          "name",
+          "department",
+          "kind"
+        ],
         "additionalProperties": false
       }
     ]

@@ -586,6 +586,7 @@ module Sample_ex_nested = struct
         "point2", `obj [ "x", `num 1.; "y", `num 2. ];
         "y", `num 2.;
         "person", ctor0 "Anonymous";
+        "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
         "kind", `str "Anonymous";
       ],
       (field_not_found "x", []);
@@ -596,6 +597,7 @@ module Sample_ex_nested = struct
         "x", `num 1.;
         "y", `num 2.;
         "person", ctor0 "Anonymous";
+        "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
       ],
       (discriminator_not_found "kind", []);
 
@@ -605,6 +607,7 @@ module Sample_ex_nested = struct
         "x", `num 1.;
         "y", `num 2.;
         "person", `obj [];
+        "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
         "kind", `str "With_id";
         "value", `num 123.
       ],
@@ -616,6 +619,7 @@ module Sample_ex_nested = struct
         "x", `num 1.;
         "y", `num 2.;
         "person", ctor0 "Anonymous";
+        "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
         "kind", `str "With_id";
         "value", `num 123.5
       ],
@@ -686,6 +690,7 @@ module Sample_ex_nested_multiply = struct
           "x", `num 1.;
           "y", `num 2.;
           "person", ctor0 "Anonymous";
+          "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
           "kind", `str "With_id";
           "value", `num 123.
         ]
@@ -700,6 +705,7 @@ module Sample_ex_nested_multiply = struct
           "x", `num 1.;
           "y", `num 2.;
           "person", ctor0 "Anonymous";
+          "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
           "kind", `str "With_id";
         ]
       ],
@@ -713,6 +719,7 @@ module Sample_ex_nested_multiply = struct
           "x", `num 1.;
           "y", `num 2.;
           "person", ctor0 "Anonymous";
+          "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
           "kind", `str "With_id";
           "value", `num 123.
         ];
@@ -742,6 +749,7 @@ module Sample_ex_nested_multiply = struct
           "x", `num 1.;
           "y", `num 2.;
           "person", ctor0 "Anonymous";
+          "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
           "kind", `str "With_id";
           "arg", `num 123.
         ]
@@ -757,6 +765,7 @@ module Sample_ex_nested_multiply = struct
           "x", `num 1.;
           "y", `num 2.;
           "person", ctor0 "Anonymous";
+          "optionalVariant", ctor0 ~discriminator:"tag" "tuple-like";
           "kind", `str "With_id";
         ]
       ],

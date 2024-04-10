@@ -1,10 +1,13 @@
 import { ExVariantIntList } from "./ex_variant_gen";
 import { ExRecordStudent } from "./ex_record_gen";
+import { ExOptionalVariant } from "./ex_optional_gen";
 import { ex_mangling_person_inherited } from "./ex_mangling_gen";
 import { ExAliasUnit } from "./ex_alias_gen";
+type ExOptionalXyOpt = { xOpt?: number; yOpt?: number };
 export type ExNestedPoint2 = { x: number; y: number };
 
 export type ExNestedRecord = {
+  optionalVariant: ExOptionalVariant;
   person: ex_mangling_person_inherited;
   point2: ExNestedPoint2;
   unit: ExAliasUnit;

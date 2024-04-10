@@ -18,6 +18,7 @@ significant portion of this file is developed under the funding provided by
 AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 open Kxclib
+open Bindoj_runtime
 open struct
   module Td_ex_nested = Bindoj_test_common_typedesc_examples.Ex_nested
 end
@@ -50,6 +51,7 @@ module Record = struct
     point2: Point2.t;
     point2_spread: Point2.t;
     person: Ex_mangling.Person_inherited.t;
+    optional_variant: Ex_optional.Variant.t;
     person_spread: Ex_mangling.Person_inherited.t }
   [@@deriving show]
 
@@ -97,21 +99,25 @@ module Record = struct
   let sample_values : t Util.Sample_value.t list =
     let point2 = { x = 1.; y = 2. } in
     let point2_fields= [ ("x", `num 1.); ("y", `num 2.) ] in
-    person_samples |&> (fun (person, person_fields) ->
-      { Util.Sample_value.orig =
-          { unit = ();
-            point2;
-            point2_spread = point2;
-            person;
-            person_spread = person;
-          };
-        jv = `obj (
-          [ ("unit", `num 1.); ("point2", `obj point2_fields) ]
-          @ point2_fields
-          @ [ ("person", `obj person_fields) ]
-          @ person_fields)
-      })
-
+    person_samples |&>> (fun (person, person_fields) ->
+      Ex_optional.Variant.sample_values
+      |&> (fun optional_variant ->
+        { Util.Sample_value.orig =
+            { unit = ();
+              point2;
+              point2_spread = point2;
+              person;
+              optional_variant = optional_variant.orig;
+              person_spread = person;
+            };
+          jv = `obj (
+            [ ("unit", `num 1.); ("point2", `obj point2_fields) ]
+            @ point2_fields
+            @ [ ("person", `obj person_fields);
+                ("optionalVariant", optional_variant.jv)
+              ]
+            @ person_fields)
+        }))
 end
 
 module Variant = struct
@@ -195,13 +201,17 @@ let env =
   let open Bindoj_typedesc.Typed_type_desc in
   { Type_decl_environment.empty with
     alias_ident_typemap =
-      Util.Env.to_alias_ident_typemap [
+      Util.Env.to_alias_ident_typelist [
         (module Ex_alias.Unit);
         (module Ex_mangling.Person_inherited);
         (module Ex_record.Student);
         (module Ex_variant.Int_list);
         (module Point2);
-      ] }
+        (module Ex_optional.Variant);
+      ]
+      @ (Ex_optional.env.alias_ident_typemap
+         |> StringMap.to_list)
+      |> StringMap.of_list}
 
 let example_generated_descs : (module Util.Ex_generated_desc) list = [
   (module Point2);

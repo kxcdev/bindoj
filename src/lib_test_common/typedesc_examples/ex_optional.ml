@@ -325,7 +325,44 @@ module Variant : Util.Ex_desc = struct
 
   open Bindoj_openapi.V3
 
-  let schema_object : Schema_object.t option = None
+  let schema_object : Schema_object.t option = 
+    let open Schema_object in
+    Util.Schema_object.variant json_name
+      ~discriminator_fname:"tag"
+      [ "tuple-like", [
+          "arg", integer () ~nullable:true;
+        ];
+        "tuple-like-alias", [
+          "arg", integer () ~nullable:true;
+        ];
+        "tuple-like-obj", [
+          "_0", integer () ~nullable:true;
+          "_1", integer () ~nullable:true;
+        ];
+        "tuple-like-spreading", [
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+        ];
+        "inline-record", [
+          "intOpt", integer () ~nullable:true;
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+          "objtuple", record [
+            "_0", integer () ~nullable:true;
+            "_1", integer () ~nullable:true;
+          ];
+        ];
+        "inline-record-spreading", [
+          "intOpt", integer () ~nullable:true;
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+        ];
+        "reused-inline-record", [
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+        ]
+    ]
+    |> Option.some
 end
 
 let example_module_path = "Bindoj_test_common_typedesc_examples.Ex_optional"

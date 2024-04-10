@@ -99,6 +99,7 @@ type ex_nested_record = {
   point2 : ex_nested_point2;
   point2_spread : ex_nested_point2;
   person : Ex_mangling_gen.ex_mangling_person_inherited;
+  optional_variant : Ex_optional_gen.ex_optional_variant;
   person_spread : Ex_mangling_gen.ex_mangling_person_inherited;
 }
 
@@ -109,7 +110,14 @@ let rec (ex_nested_record_reflect : _ Bindoj_runtime.Refl.t) =
      Refl.Record
        {
          get =
-           (fun { unit; point2; point2_spread; person; person_spread } ->
+           (fun {
+                  unit;
+                  point2;
+                  point2_spread;
+                  person;
+                  optional_variant;
+                  person_spread;
+                } ->
              StringMap.of_list
                [
                  ("unit", Expr.of_unit unit);
@@ -120,6 +128,9 @@ let rec (ex_nested_record_reflect : _ Bindoj_runtime.Refl.t) =
                    (Expr.of_refl
                       Ex_mangling_gen.ex_mangling_person_inherited_reflect)
                      person );
+                 ( "optional_variant",
+                   (Expr.of_refl Ex_optional_gen.ex_optional_variant_reflect)
+                     optional_variant );
                  ( "person_spread",
                    (Expr.of_refl
                       Ex_mangling_gen.ex_mangling_person_inherited_reflect)
@@ -142,11 +153,23 @@ let rec (ex_nested_record_reflect : _ Bindoj_runtime.Refl.t) =
                    Ex_mangling_gen.ex_mangling_person_inherited_reflect
              >>= fun person ->
              xs
+             |> StringMap.find_opt "optional_variant"
+             >>= Expr.to_refl Ex_optional_gen.ex_optional_variant_reflect
+             >>= fun optional_variant ->
+             xs
              |> StringMap.find_opt "person_spread"
              >>= Expr.to_refl
                    Ex_mangling_gen.ex_mangling_person_inherited_reflect
              >>= fun person_spread ->
-             Some { unit; point2; point2_spread; person; person_spread });
+             Some
+               {
+                 unit;
+                 point2;
+                 point2_spread;
+                 person;
+                 optional_variant;
+                 person_spread;
+               });
        })
 [@@warning "-33-39"]
 
@@ -211,6 +234,73 @@ let ex_nested_record_json_shape_explanation =
                                    `mandatory_field ("department", `string);
                                  ];
                              ] ) );
+                   `mandatory_field
+                     ( "optionalVariant",
+                       `named
+                         ( "ExOptionalVariant",
+                           `anyone_of
+                             [
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-alias"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-obj"));
+                                   `optional_field ("_0", `integral);
+                                   `optional_field ("_1", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "tuple-like-spreading") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "inline-record"));
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                   `mandatory_field
+                                     ( "objtuple",
+                                       `object_of
+                                         [
+                                           `optional_field ("_0", `integral);
+                                           `optional_field ("_1", `integral);
+                                         ] );
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "inline-record-spreading")
+                                     );
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "reused-inline-record") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                             ] ) );
                    `mandatory_field ("kind", `exactly (`str "Anonymous"));
                  ];
                `object_of
@@ -265,6 +355,73 @@ let ex_nested_record_json_shape_explanation =
                                    `mandatory_field ("facultyId", `integral);
                                    `mandatory_field ("name", `string);
                                    `mandatory_field ("department", `string);
+                                 ];
+                             ] ) );
+                   `mandatory_field
+                     ( "optionalVariant",
+                       `named
+                         ( "ExOptionalVariant",
+                           `anyone_of
+                             [
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-alias"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-obj"));
+                                   `optional_field ("_0", `integral);
+                                   `optional_field ("_1", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "tuple-like-spreading") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "inline-record"));
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                   `mandatory_field
+                                     ( "objtuple",
+                                       `object_of
+                                         [
+                                           `optional_field ("_0", `integral);
+                                           `optional_field ("_1", `integral);
+                                         ] );
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "inline-record-spreading")
+                                     );
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "reused-inline-record") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
                                  ];
                              ] ) );
                    `mandatory_field ("kind", `exactly (`str "With_id"));
@@ -322,6 +479,73 @@ let ex_nested_record_json_shape_explanation =
                                    `mandatory_field ("facultyId", `integral);
                                    `mandatory_field ("name", `string);
                                    `mandatory_field ("department", `string);
+                                 ];
+                             ] ) );
+                   `mandatory_field
+                     ( "optionalVariant",
+                       `named
+                         ( "ExOptionalVariant",
+                           `anyone_of
+                             [
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-alias"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-obj"));
+                                   `optional_field ("_0", `integral);
+                                   `optional_field ("_1", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "tuple-like-spreading") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "inline-record"));
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                   `mandatory_field
+                                     ( "objtuple",
+                                       `object_of
+                                         [
+                                           `optional_field ("_0", `integral);
+                                           `optional_field ("_1", `integral);
+                                         ] );
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "inline-record-spreading")
+                                     );
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "reused-inline-record") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
                                  ];
                              ] ) );
                    `mandatory_field ("kind", `exactly (`str "student"));
@@ -384,6 +608,73 @@ let ex_nested_record_json_shape_explanation =
                                    `mandatory_field ("department", `string);
                                  ];
                              ] ) );
+                   `mandatory_field
+                     ( "optionalVariant",
+                       `named
+                         ( "ExOptionalVariant",
+                           `anyone_of
+                             [
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-alias"));
+                                   `optional_field ("arg", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "tuple-like-obj"));
+                                   `optional_field ("_0", `integral);
+                                   `optional_field ("_1", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "tuple-like-spreading") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ("tag", `exactly (`str "inline-record"));
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                   `mandatory_field
+                                     ( "objtuple",
+                                       `object_of
+                                         [
+                                           `optional_field ("_0", `integral);
+                                           `optional_field ("_1", `integral);
+                                         ] );
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "inline-record-spreading")
+                                     );
+                                   `optional_field ("intOpt", `integral);
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                               `object_of
+                                 [
+                                   `mandatory_field
+                                     ( "tag",
+                                       `exactly (`str "reused-inline-record") );
+                                   `optional_field ("xOpt", `integral);
+                                   `optional_field ("yOpt", `integral);
+                                 ];
+                             ] ) );
                    `mandatory_field ("kind", `exactly (`str "Teacher"));
                    `mandatory_field ("facultyId", `integral);
                    `mandatory_field ("name", `string);
@@ -421,6 +712,68 @@ let rec ex_nested_record_to_json =
           ]
        : Ex_mangling_gen.ex_mangling_person_inherited ->
          (string * Kxclib.Json.jv) list)
+   and ex_optional_gen__ex_optional_variant_to_json_nested =
+     (function
+      | Tuple_like None -> [ ("tag", `str "tuple-like") ]
+      | Tuple_like (Some x0) ->
+          [ ("tag", `str "tuple-like"); ("arg", int_to_json x0) ]
+      | Tuple_like_alias None -> [ ("tag", `str "tuple-like-alias") ]
+      | Tuple_like_alias (Some x0) ->
+          [ ("tag", `str "tuple-like-alias"); ("arg", int_to_json x0) ]
+      | Tuple_like_obj (x0, x1) ->
+          ("tag", `str "tuple-like-obj")
+          :: List.filter_map Kxclib.identity
+               [
+                 Option.map (fun x0 -> ("_0", int_to_json x0)) x0;
+                 Option.map (fun x1 -> ("_1", int_to_json x1)) x1;
+               ]
+      | Tuple_like_spreading x0 ->
+          ("tag", `str "tuple-like-spreading")
+          :: ex_optional_gen__ex_optional_xy_opt_to_json_nested x0
+      | Inline_record { int_opt = x0; x_opt = x1; y_opt = x2; objtuple = x3 } ->
+          ("tag", `str "inline-record")
+          :: (List.filter_map
+                (fun x -> x)
+                [
+                  Option.map (fun x0 -> ("intOpt", int_to_json x0)) x0;
+                  Option.map (fun x1 -> ("xOpt", int_to_json x1)) x1;
+                  Option.map (fun x2 -> ("yOpt", int_to_json x2)) x2;
+                ]
+             @ [
+                 ( "objtuple",
+                   (fun (x0, x1) : Kxclib.Json.jv ->
+                     `obj
+                       (List.filter_map Kxclib.identity
+                          [
+                            Option.map (fun x0 -> ("_0", int_to_json x0)) x0;
+                            Option.map (fun x1 -> ("_1", int_to_json x1)) x1;
+                          ]))
+                     x3 );
+               ])
+      | Inline_record_spreading { int_opt = x0; xy_opt = x1 } ->
+          ("tag", `str "inline-record-spreading")
+          :: (List.filter_map
+                (fun x -> x)
+                [ Option.map (fun x0 -> ("intOpt", int_to_json x0)) x0 ]
+             @ ex_optional_gen__ex_optional_xy_opt_to_json_nested x1)
+      | Reused_inline_record { x_opt = x0; y_opt = x1 } ->
+          ("tag", `str "reused-inline-record")
+          :: List.filter_map
+               (fun x -> x)
+               [
+                 Option.map (fun x0 -> ("xOpt", int_to_json x0)) x0;
+                 Option.map (fun x1 -> ("yOpt", int_to_json x1)) x1;
+               ]
+       : Ex_optional_gen.ex_optional_variant -> (string * Kxclib.Json.jv) list)
+   and ex_optional_gen__ex_optional_xy_opt_to_json_nested =
+     (fun { x_opt = x0; y_opt = x1 } ->
+        List.filter_map
+          (fun x -> x)
+          [
+            Option.map (fun x0 -> ("xOpt", int_to_json x0)) x0;
+            Option.map (fun x1 -> ("yOpt", int_to_json x1)) x1;
+          ]
+       : Ex_optional_gen.ex_optional_xy_opt -> (string * Kxclib.Json.jv) list)
    and ex_nested_point2_to_json_nested =
      (fun { x = x0; y = x1 } ->
         [ ("x", float_to_json x0); ("y", float_to_json x1) ]
@@ -431,7 +784,8 @@ let rec ex_nested_record_to_json =
          point2 = x1;
          point2_spread = x2;
          person = x3;
-         person_spread = x4;
+         optional_variant = x4;
+         person_spread = x5;
        } ->
      `obj
        ([
@@ -444,8 +798,10 @@ let rec ex_nested_record_to_json =
              `obj
                (ex_mangling_gen__ex_mangling_person_inherited_to_json_nested x3)
            );
+           ( "optionalVariant",
+             `obj (ex_optional_gen__ex_optional_variant_to_json_nested x4) );
          ]
-       @ ex_mangling_gen__ex_mangling_person_inherited_to_json_nested x4)
+       @ ex_mangling_gen__ex_mangling_person_inherited_to_json_nested x5)
     : ex_nested_record -> Kxclib.Json.jv)
 [@@warning "-39"]
 
@@ -470,6 +826,12 @@ and ex_nested_record_of_json' =
                     (let open Kxclib.Json in
                      string_of_jv_kind (classify_jv jv)),
                   path )
+        and option_of_json' t_of_json path = function
+          | `null -> Ok None
+          | x -> (
+              match t_of_json path x with
+              | Ok x -> Ok (Some x)
+              | Error msg -> Error msg)
         and int_of_json' path = function
           | (`num x : Kxclib.Json.jv) ->
               if Float.is_integer x then Ok (int_of_float x)
@@ -591,6 +953,157 @@ and ex_nested_record_of_json' =
                     (let open Kxclib.Json in
                      string_of_jv_kind (classify_jv jv)),
                   path )
+        and ex_optional_gen__ex_optional_variant_of_json_nested path
+            __bindoj_orig =
+          match Kxclib.Jv.pump_field "tag" __bindoj_orig with
+          | `obj (("tag", `str "tuple-like") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "arg" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "arg" :: path)
+              >>= fun x0 ->
+              Ok (Tuple_like x0 : Ex_optional_gen.ex_optional_variant)
+          | `obj (("tag", `str "tuple-like-alias") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "arg" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "arg" :: path)
+              >>= fun x0 ->
+              Ok (Tuple_like_alias x0 : Ex_optional_gen.ex_optional_variant)
+          | `obj (("tag", `str "tuple-like-obj") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "_0" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "_0" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "_1" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "_1" :: path)
+              >>= fun x1 ->
+              Ok (Tuple_like_obj (x0, x1) : Ex_optional_gen.ex_optional_variant)
+          | `obj (("tag", `str "tuple-like-spreading") :: _) ->
+              let ( >>= ) = Result.bind in
+              ex_optional_gen__ex_optional_xy_opt_of_json_nested path
+                __bindoj_orig
+              >>= fun x0 ->
+              Ok (Tuple_like_spreading x0 : Ex_optional_gen.ex_optional_variant)
+          | `obj (("tag", `str "inline-record") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "intOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "intOpt" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "xOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+              >>= fun x1 ->
+              List.assoc_opt "yOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+              >>= fun x2 ->
+              List.assoc_opt "objtuple" param
+              |> Option.to_result
+                   ~none:("mandatory field 'objtuple' does not exist", path)
+              >>= (fun path -> function
+                    | (`obj fields : Kxclib.Json.jv) ->
+                        let ( >>= ) = Result.bind in
+                        List.assoc_opt "_0" fields
+                        |> Option.value ~default:`null
+                        |> (option_of_json' int_of_json') (`f "_0" :: path)
+                        >>= fun x0 ->
+                        List.assoc_opt "_1" fields
+                        |> Option.value ~default:`null
+                        |> (option_of_json' int_of_json') (`f "_1" :: path)
+                        >>= fun x1 -> Ok (x0, x1)
+                    | jv ->
+                        Error
+                          ( Printf.sprintf
+                              "an object is expected for a tuple value, but \
+                               the given is of type '%s'"
+                              (let open Kxclib.Json in
+                               string_of_jv_kind (classify_jv jv)),
+                            path ))
+                    (`f "objtuple" :: path)
+              >>= fun x3 ->
+              Ok
+                (Inline_record
+                   { int_opt = x0; x_opt = x1; y_opt = x2; objtuple = x3 }
+                  : Ex_optional_gen.ex_optional_variant)
+          | `obj (("tag", `str "inline-record-spreading") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "intOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "intOpt" :: path)
+              >>= fun x0 ->
+              ex_optional_gen__ex_optional_xy_opt_of_json_nested path
+                __bindoj_orig
+              >>= fun x1 ->
+              Ok
+                (Inline_record_spreading { int_opt = x0; xy_opt = x1 }
+                  : Ex_optional_gen.ex_optional_variant)
+          | `obj (("tag", `str "reused-inline-record") :: param) ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "xOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "yOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+              >>= fun x1 ->
+              Ok
+                (Reused_inline_record { x_opt = x0; y_opt = x1 }
+                  : Ex_optional_gen.ex_optional_variant)
+          | `obj (("tag", `str discriminator_value) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "given discriminator field value '%s' is not one of [ \
+                     'tuple-like', 'tuple-like-alias', 'tuple-like-obj', \
+                     'tuple-like-spreading', 'inline-record', \
+                     'inline-record-spreading', 'reused-inline-record' ]"
+                    discriminator_value,
+                  `f "tag" :: path )
+          | `obj (("tag", jv) :: _) ->
+              Error
+                ( Printf.sprintf
+                    "a string is expected for a variant discriminator, but the \
+                     given is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  `f "tag" :: path )
+          | `obj _ -> Error ("discriminator field 'tag' does not exist", path)
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a variant value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
+        and ex_optional_gen__ex_optional_xy_opt_of_json_nested path
+            __bindoj_orig =
+          match __bindoj_orig with
+          | `obj param ->
+              let ( >>= ) = Result.bind in
+              List.assoc_opt "xOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+              >>= fun x0 ->
+              List.assoc_opt "yOpt" param
+              |> Option.value ~default:`null
+              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+              >>= fun x1 ->
+              Ok
+                ({ x_opt = x0; y_opt = x1 }
+                  : Ex_optional_gen.ex_optional_xy_opt)
+          | jv ->
+              Error
+                ( Printf.sprintf
+                    "an object is expected for a record value, but the given \
+                     is of type '%s'"
+                    (let open Kxclib.Json in
+                     string_of_jv_kind (classify_jv jv)),
+                  path )
         and ex_nested_point2_of_json_nested path __bindoj_orig =
           match __bindoj_orig with
           | `obj param ->
@@ -635,16 +1148,24 @@ and ex_nested_record_of_json' =
               >>= ex_mangling_gen__ex_mangling_person_inherited_of_json_nested
                     (`f "person" :: path)
               >>= fun x3 ->
+              List.assoc_opt "optionalVariant" param
+              |> Option.to_result
+                   ~none:
+                     ("mandatory field 'optionalVariant' does not exist", path)
+              >>= ex_optional_gen__ex_optional_variant_of_json_nested
+                    (`f "optionalVariant" :: path)
+              >>= fun x4 ->
               ex_mangling_gen__ex_mangling_person_inherited_of_json_nested path
                 __bindoj_orig
-              >>= fun x4 ->
+              >>= fun x5 ->
               Ok
                 {
                   unit = x0;
                   point2 = x1;
                   point2_spread = x2;
                   person = x3;
-                  person_spread = x4;
+                  optional_variant = x4;
+                  person_spread = x5;
                 }
           | jv ->
               Error

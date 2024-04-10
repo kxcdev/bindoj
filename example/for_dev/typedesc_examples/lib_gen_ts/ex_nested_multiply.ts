@@ -6,6 +6,15 @@ type ex_mangling_person_inherited =
   | { kind: "Teacher"; department: string; facultyId: number; name: string }
   | { kind: "With_id"; value: number };
 type ExNestedPoint2 = { x: number; y: number };
+type ExOptionalVariant =
+  | { tag: "inline-record"; intOpt?: number; objtuple: { _0?: number; _1?: number }; xOpt?: number; yOpt?: number }
+  | ({ tag: "inline-record-spreading"; intOpt?: number } & ExOptionalXyOpt)
+  | ({ tag: "reused-inline-record" } & ExOptionalXyOpt)
+  | { tag: "tuple-like"; arg?: number }
+  | { tag: "tuple-like-alias"; arg?: number }
+  | { tag: "tuple-like-obj"; _0?: number; _1?: number }
+  | ({ tag: "tuple-like-spreading" } & ExOptionalXyOpt);
+type ExOptionalXyOpt = { xOpt?: number; yOpt?: number };
 type ExRecordStudent = { admissionYear: number; name: string };
 type ExVariantIntList = { kind: "intcons"; value: [number, ExVariantIntList] } | { kind: "intnil" };
 export type ExNestedMultiplyRecord = { nestedRecord: ExNestedRecord } & ExNestedRecord;

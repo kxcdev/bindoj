@@ -1119,7 +1119,7 @@ let gen_json_decoder_impl :
             in
             let path_arg = [%expr `f [%e estring ~loc arg_fname] :: path ] in
             begin match Json_config.get_tuple_style vc_configs, args with
-              | _, [] -> cstr_p [%pat? _], [%expr Ok [%e construct vc_name None]]
+              | _, [] -> cstr_p [%pat? _], [%expr Ok [%e construct vc_name None |> type_constraint]]
               | `obj `default, _ :: _ :: _ ->
                 let bindings =
                   args |> List.mapi (fun i arg ->
@@ -1149,7 +1149,7 @@ let gen_json_decoder_impl :
                     |> Option.value ~default:`null
                     |> [%e arg_to_decoder va] [%e path_arg]]
                 ] [%expr
-                  Ok ([%e construct vc_name (Some (evari 0))])
+                  Ok ([%e construct vc_name (Some (evari 0)) |> type_constraint])
                 ]
               | _, _ ->
                 cstr_p param_p, (

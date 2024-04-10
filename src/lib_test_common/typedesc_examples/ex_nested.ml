@@ -84,6 +84,11 @@ module Record : Util.Ex_desc = struct
           ~codec:(open_ "Ex_mangling")
           ~doc:(doc "person field");
 
+        (* nested optional variant *)
+        record_field_nested "optional_variant" (decl (module Ex_optional.Variant))
+          ~codec:(open_ "Ex_optional")
+          ~doc:(doc "optional_variant field");
+
         (* nested spread variant *)
         record_field_nested "person_spread" (decl (module Ex_mangling.Person_inherited))
           ~codec:(open_ "Ex_mangling")
@@ -96,11 +101,13 @@ module Record : Util.Ex_desc = struct
     let unit, unit_env = Ex_alias.Unit.fwrt in
     let point2, point2_env = Point2.fwrt in
     let person, person_env = Ex_mangling.Person_inherited.fwrt in
+    let optional_variant, optional_variant_env = Ex_optional.Variant.fwrt in
     "ex_nested_record", Util.FwrtTypeEnv.(
     init
     |> union unit_env
     |> union point2_env
     |> union person_env
+    |> union optional_variant_env
     |> bind_object "ex_nested_record" [
       field_nested ~codec:(`open_ "Ex_alias_gen") "unit" unit;
 
@@ -114,6 +121,8 @@ module Record : Util.Ex_desc = struct
         ];
 
       field_nested ~codec:(`open_ "Ex_mangling_gen") "person" person;
+
+      field_nested ~codec:(`open_ "Ex_optional_gen") "optional_variant" optional_variant;
 
       field_nested ~codec:(`open_ "Ex_mangling_gen") "person_spread" person
         ~configs:[ Json_config.nested_field_style `spreading ];
@@ -133,6 +142,7 @@ module Record : Util.Ex_desc = struct
               property "unit" (`type_reference "ExAliasUnit");
               property "point2" (`type_reference "ExNestedPoint2");
               property "person" (`type_reference "ex_mangling_person_inherited");
+              property "optionalVariant" (`type_reference "ExOptionalVariant");
             ];
             `type_reference "ExNestedPoint2";
             `type_reference "ex_mangling_person_inherited";
@@ -187,6 +197,57 @@ module Record : Util.Ex_desc = struct
                                     `mandatory_field ("facultyId", `integral);
                                     `mandatory_field ("name", `string);
                                     `mandatory_field ("department", `string)]]))));
+                      `mandatory_field
+                        ("optionalVariant",
+                          (`named
+                            ("ExOptionalVariant",
+                              (`anyone_of
+                                  [`object_of
+                                    [`mandatory_field
+                                        ("tag", (`exactly (`str "tuple-like")));
+                                    `optional_field ("arg", `integral)];
+                                  `object_of
+                                    [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-alias")));
+                                    `optional_field ("arg", `integral)];
+                                  `object_of
+                                    [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-obj")));
+                                    `optional_field ("_0", `integral);
+                                    `optional_field ("_1", `integral)];
+                                  `object_of
+                                    [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-spreading")));
+                                    `optional_field ("xOpt", `integral);
+                                    `optional_field ("yOpt", `integral)];
+                                  `object_of
+                                    [`mandatory_field
+                                      ("tag", (`exactly (`str "inline-record")));
+                                    `optional_field ("intOpt", `integral);
+                                    `optional_field ("xOpt", `integral);
+                                    `optional_field ("yOpt", `integral);
+                                    `mandatory_field
+                                      ("objtuple",
+                                        (`object_of
+                                          [`optional_field ("_0", `integral);
+                                          `optional_field ("_1", `integral)]))];
+                                  `object_of
+                                    [`mandatory_field
+                                      ("tag",
+                                        (`exactly
+                                            (`str "inline-record-spreading")));
+                                    `optional_field ("intOpt", `integral);
+                                    `optional_field ("xOpt", `integral);
+                                    `optional_field ("yOpt", `integral)];
+                                  `object_of
+                                    [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "reused-inline-record")));
+                                    `optional_field ("xOpt", `integral);
+                                    `optional_field ("yOpt", `integral)]]))));
                       `mandatory_field ("kind", (`exactly (`str "Anonymous")))];
                   `object_of
                     [`mandatory_field
@@ -229,6 +290,56 @@ module Record : Util.Ex_desc = struct
                                   `mandatory_field ("facultyId", `integral);
                                   `mandatory_field ("name", `string);
                                   `mandatory_field ("department", `string)]]))));
+                    `mandatory_field
+                      ("optionalVariant",
+                        (`named
+                            ("ExOptionalVariant",
+                              (`anyone_of
+                                [`object_of
+                                    [`mandatory_field
+                                      ("tag", (`exactly (`str "tuple-like")));
+                                    `optional_field ("arg", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-alias")));
+                                  `optional_field ("arg", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag", (`exactly (`str "tuple-like-obj")));
+                                  `optional_field ("_0", `integral);
+                                  `optional_field ("_1", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-spreading")));
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag", (`exactly (`str "inline-record")));
+                                  `optional_field ("intOpt", `integral);
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral);
+                                  `mandatory_field
+                                    ("objtuple",
+                                      (`object_of
+                                          [`optional_field ("_0", `integral);
+                                          `optional_field ("_1", `integral)]))];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly
+                                          (`str "inline-record-spreading")));
+                                  `optional_field ("intOpt", `integral);
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "reused-inline-record")));
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)]]))));
                     `mandatory_field ("kind", (`exactly (`str "With_id")));
                     `mandatory_field ("value", `integral)];
                   `object_of
@@ -272,6 +383,56 @@ module Record : Util.Ex_desc = struct
                                   `mandatory_field ("facultyId", `integral);
                                   `mandatory_field ("name", `string);
                                   `mandatory_field ("department", `string)]]))));
+                    `mandatory_field
+                      ("optionalVariant",
+                        (`named
+                            ("ExOptionalVariant",
+                              (`anyone_of
+                                [`object_of
+                                    [`mandatory_field
+                                      ("tag", (`exactly (`str "tuple-like")));
+                                    `optional_field ("arg", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-alias")));
+                                  `optional_field ("arg", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag", (`exactly (`str "tuple-like-obj")));
+                                  `optional_field ("_0", `integral);
+                                  `optional_field ("_1", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-spreading")));
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag", (`exactly (`str "inline-record")));
+                                  `optional_field ("intOpt", `integral);
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral);
+                                  `mandatory_field
+                                    ("objtuple",
+                                      (`object_of
+                                          [`optional_field ("_0", `integral);
+                                          `optional_field ("_1", `integral)]))];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly
+                                          (`str "inline-record-spreading")));
+                                  `optional_field ("intOpt", `integral);
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "reused-inline-record")));
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)]]))));
                     `mandatory_field ("kind", (`exactly (`str "student")));
                     `mandatory_field ("student_id", `integral);
                     `mandatory_field ("name", `string);
@@ -318,6 +479,56 @@ module Record : Util.Ex_desc = struct
                                   `mandatory_field ("facultyId", `integral);
                                   `mandatory_field ("name", `string);
                                   `mandatory_field ("department", `string)]]))));
+                    `mandatory_field
+                      ("optionalVariant",
+                        (`named
+                            ("ExOptionalVariant",
+                              (`anyone_of
+                                [`object_of
+                                    [`mandatory_field
+                                      ("tag", (`exactly (`str "tuple-like")));
+                                    `optional_field ("arg", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-alias")));
+                                  `optional_field ("arg", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag", (`exactly (`str "tuple-like-obj")));
+                                  `optional_field ("_0", `integral);
+                                  `optional_field ("_1", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "tuple-like-spreading")));
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag", (`exactly (`str "inline-record")));
+                                  `optional_field ("intOpt", `integral);
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral);
+                                  `mandatory_field
+                                    ("objtuple",
+                                      (`object_of
+                                          [`optional_field ("_0", `integral);
+                                          `optional_field ("_1", `integral)]))];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly
+                                          (`str "inline-record-spreading")));
+                                  `optional_field ("intOpt", `integral);
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)];
+                                `object_of
+                                  [`mandatory_field
+                                      ("tag",
+                                        (`exactly (`str "reused-inline-record")));
+                                  `optional_field ("xOpt", `integral);
+                                  `optional_field ("yOpt", `integral)]]))));
                     `mandatory_field ("kind", (`exactly (`str "Teacher")));
                     `mandatory_field ("facultyId", `integral);
                     `mandatory_field ("name", `string);
@@ -344,6 +555,44 @@ module Record : Util.Ex_desc = struct
       ] |&> (fun (name, fields) ->
         (name, fields @ [ "kind", string () ~enum:[`str name]]))
     in
+    let optional_variant = 
+      [ "tuple-like", [
+          "arg", integer () ~nullable:true;
+        ];
+        "tuple-like-alias", [
+          "arg", integer () ~nullable:true;
+        ];
+        "tuple-like-obj", [
+          "_0", integer () ~nullable:true;
+          "_1", integer () ~nullable:true;
+        ];
+        "tuple-like-spreading", [
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+        ];
+        "inline-record", [
+          "intOpt", integer () ~nullable:true;
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+          "objtuple", record [
+            "_0", integer () ~nullable:true;
+            "_1", integer () ~nullable:true;
+          ];
+        ];
+        "inline-record-spreading", [
+          "intOpt", integer () ~nullable:true;
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+        ];
+        "reused-inline-record", [
+          "xOpt", integer () ~nullable:true;
+          "yOpt", integer () ~nullable:true;
+        ]
+      ]
+      |&> (fun (title, fields) ->
+        record ~title & fields @ [ "tag", string () ~enum:[`str title]])
+      |> oneOf
+    in
     let fields =
       ("unit", integer () ~minimum:1 ~maximum:1)
       :: ("point2", record [
@@ -355,6 +604,7 @@ module Record : Util.Ex_desc = struct
         "person", (person_ctors
           |&> (fun (title, fields) -> record ~title fields)
           |> oneOf);
+        "optionalVariant", optional_variant;
       ]
     in
     oneOf ~schema ~title:json_name ~id:("#"^json_name) (
