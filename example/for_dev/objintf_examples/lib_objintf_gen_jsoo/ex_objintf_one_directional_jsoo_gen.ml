@@ -38,67 +38,71 @@ let ex_record_student_json_shape_explanation =
 [@@warning "-39"]
 
 let rec ex_record_student_to_json =
-  (let string_to_json (x : string) : Kxclib.Json.jv = `str x
-   and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+  (let string_to_json (x : string) = (`str x : Kxclib.Json.jv)
+   and int_to_json (x : int) = (`num (float_of_int x) : Kxclib.Json.jv) in
    fun { admission_year = x0; name = x1 } ->
      `obj [ ("admissionYear", int_to_json x0); ("name", string_to_json x1) ]
     : ex_record_student -> Kxclib.Json.jv)
 [@@warning "-39"]
 
 and ex_record_student_of_json' =
-  (fun ?(path = []) x ->
-     (let rec of_json_impl =
-        let string_of_json' path = function
-          | (`str x : Kxclib.Json.jv) -> Ok x
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'string' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and int_of_json' path = function
-          | (`num x : Kxclib.Json.jv) ->
-              if Float.is_integer x then Ok (int_of_float x)
-              else
+  (fun ?(path = []) ->
+     fun x ->
+      (let rec of_json_impl =
+         let string_of_json' path = function
+           | (`str x : Kxclib.Json.jv) -> Ok x
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'string' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and int_of_json' path = function
+           | (`num x : Kxclib.Json.jv) ->
+               if Float.is_integer x then Ok (int_of_float x)
+               else
+                 Error
+                   ( Printf.sprintf "expecting an integer but the given is '%f'"
+                       x,
+                     path )
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'int' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         fun path ->
+           fun __bindoj_orig ->
+            match __bindoj_orig with
+            | `obj param ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "admissionYear" param
+                |> Option.to_result
+                     ~none:
+                       ("mandatory field 'admissionYear' does not exist", path)
+                >>= int_of_json' (`f "admissionYear" :: path)
+                >>= fun x0 ->
+                List.assoc_opt "name" param
+                |> Option.to_result
+                     ~none:("mandatory field 'name' does not exist", path)
+                >>= string_of_json' (`f "name" :: path)
+                >>= fun x1 -> Ok { admission_year = x0; name = x1 }
+            | jv ->
                 Error
-                  ( Printf.sprintf "expecting an integer but the given is '%f'" x,
+                  ( Printf.sprintf
+                      "an object is expected for a record value, but the given \
+                       is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
                     path )
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'int' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        fun path __bindoj_orig ->
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "admissionYear" param
-              |> Option.to_result
-                   ~none:("mandatory field 'admissionYear' does not exist", path)
-              >>= int_of_json' (`f "admissionYear" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "name" param
-              |> Option.to_result
-                   ~none:("mandatory field 'name' does not exist", path)
-              >>= string_of_json' (`f "name" :: path)
-              >>= fun x1 -> Ok { admission_year = x0; name = x1 }
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-      in
-      of_json_impl)
-       path x
-     |> Result.map_error (fun (msg, path) ->
-            (msg, path, ex_record_student_json_shape_explanation))
+       in
+       of_json_impl)
+        path x
+      |> Result.map_error (fun (msg, path) ->
+             (msg, path, ex_record_student_json_shape_explanation))
     : ex_record_student Bindoj_runtime.json_full_decoder)
 [@@warning "-39"]
 
@@ -251,7 +255,7 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
 
                       let unwrap_endemic
                           (Bindoj_objintf_shared.Endemic_object
-                            { bridge = Br; underlying }) =
+                             { bridge = Br; underlying }) =
                         underlying
                       [@@warning "-32"]
 
@@ -321,7 +325,7 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                         end
                       [@@warning "-39"]
 
-                      and decode_unit_mod_of_js __js_obj : (module unit_mod) =
+                      and decode_unit_mod_of_js __js_obj =
                         (module struct
                           let name () =
                             let open Js_of_ocaml in
@@ -351,11 +355,10 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                  [|
                                    Js.Unsafe.inject (encode_string_to_js __arg0);
                                  |])
-                        end)
+                        end : unit_mod)
                       [@@warning "-39"]
 
-                      and decode_with_default_value_of_js __js_obj :
-                          (module with_default_value) =
+                      and decode_with_default_value_of_js __js_obj =
                         (module struct
                           let get_default_string ?str =
                             let open Js_of_ocaml in
@@ -401,7 +404,7 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                         |]);
                                  |])
                           [@@warning "-16"]
-                        end)
+                        end : with_default_value)
                       [@@warning "-39"]
 
                       let rec decode_sole_var_of_js __js_obj =
@@ -551,19 +554,20 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                           ( "register",
                                             Unsafe.inject
                                               (Unsafe.callback_with_arity 2
-                                                 (fun coordinate value ->
-                                                   register_string
-                                                     ~id0:
-                                                       (decode_string_of_js
-                                                          (Js.Unsafe.get
-                                                             coordinate "id0"))
-                                                     ~id1:
-                                                       (decode_int53p_of_js
-                                                          (Js.Unsafe.get
-                                                             coordinate "id1"))
-                                                     (Some
+                                                 (fun coordinate ->
+                                                   fun value ->
+                                                    register_string
+                                                      ~id0:
                                                         (decode_string_of_js
-                                                           value)))) );
+                                                           (Js.Unsafe.get
+                                                              coordinate "id0"))
+                                                      ~id1:
+                                                        (decode_int53p_of_js
+                                                           (Js.Unsafe.get
+                                                              coordinate "id1"))
+                                                      (Some
+                                                         (decode_string_of_js
+                                                            value)))) );
                                           ( "deregister",
                                             Unsafe.inject
                                               (Unsafe.callback
@@ -587,16 +591,17 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                           ( "register",
                                             Unsafe.inject
                                               (Unsafe.callback_with_arity 2
-                                                 (fun coordinate value ->
-                                                   register_hello
-                                                     ~id:
-                                                       (decode_string_of_js
-                                                          (Js.Unsafe.get
-                                                             coordinate "id"))
-                                                     (Some
-                                                        ((wrap_peer
-                                                            decode_hello_of_js)
-                                                           value)))) );
+                                                 (fun coordinate ->
+                                                   fun value ->
+                                                    register_hello
+                                                      ~id:
+                                                        (decode_string_of_js
+                                                           (Js.Unsafe.get
+                                                              coordinate "id"))
+                                                      (Some
+                                                         ((wrap_peer
+                                                             decode_hello_of_js)
+                                                            value)))) );
                                           ( "deregister",
                                             Unsafe.inject
                                               (Unsafe.callback
@@ -701,6 +706,6 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                   !continuations |> List.iter (fun f -> f concrete_bridge);
                   continuations := [])) );
        |])
-    |> fun x : Bindoj_objintf_shared.endemic_full_bridge_reference ->
-    Obj.magic x
+    |> fun x ->
+    (Obj.magic x : Bindoj_objintf_shared.endemic_full_bridge_reference)
 end

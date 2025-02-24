@@ -6,31 +6,31 @@ module Simple_interfaces = struct
     unit ->
     [ `data of Bytes.t * [ `eof | `maybe_more ] | `wait | `eof ]
   (** byte_source' bridgeable
-        @param max max argument.
-        @param arg0 argument at 0. *)
+      @param max max argument.
+      @param arg0 argument at 0. *)
 
   (** Logger bridgeable. *)
   module type Logger = sig
     val info : string -> unit
     (** info method.
-            @param arg0 argument at 0. *)
+        @param arg0 argument at 0. *)
 
     val error : ?exn:string -> string -> unit
     (** error method.
-            @param exn exn argument.
-            @param arg0 argument at 0. *)
+        @param exn exn argument.
+        @param arg0 argument at 0. *)
   end
 
   (** byte_source bridgeable. *)
   class type byte_source = object
     method bytes_left : unit -> int
     (** bytes_left method.
-            @param arg0 argument at 0. *)
+        @param arg0 argument at 0. *)
 
     method next_block : ?max:int -> unit -> Bytes.t
     (** next_block method.
-            @param max max argument.
-            @param arg0 argument at 0. *)
+        @param max max argument.
+        @param arg0 argument at 0. *)
   end
 end
 
@@ -70,11 +70,11 @@ module Concrete_bridge_interfaces = struct
 
       method write_bulk : byte_source peer -> unit
       (** write_bulk method.
-                @param arg0 argument at 0. *)
+          @param arg0 argument at 0. *)
 
       method write_async : byte_source' peer -> unit
       (** write_async method.
-                @param arg0 argument at 0. *)
+          @param arg0 argument at 0. *)
     end
 
     (** System_io bridgeable *)
@@ -87,11 +87,11 @@ module Concrete_bridge_interfaces = struct
 
       val open_file_wo : path:string -> output_channel endemic
       (** open_file_wo method
-                @param path path argument *)
+          @param path path argument *)
 
       val open_file_ro : path:string -> byte_source endemic
       (** open_file_ro method
-                @param path path argument *)
+          @param path path argument *)
     end
   end
 
@@ -124,7 +124,7 @@ end
 open Concrete_bridge_interfaces.Interfaces [@@warning "-33"]
 
 module type Dual_setup_full_bridge = functor
-  (_ : sig
+  (M : sig
      val system_io : (module System_io)
      (** system_io object *)
 

@@ -32,52 +32,54 @@ let ex_nested_point2_json_shape_explanation =
 [@@warning "-39"]
 
 let rec ex_nested_point2_to_json =
-  (let float_to_json (x : float) : Kxclib.Json.jv = `num x in
+  (let float_to_json (x : float) = (`num x : Kxclib.Json.jv) in
    fun { x = x0; y = x1 } ->
      `obj [ ("x", float_to_json x0); ("y", float_to_json x1) ]
     : ex_nested_point2 -> Kxclib.Json.jv)
 [@@warning "-39"]
 
 and ex_nested_point2_of_json' =
-  (fun ?(path = []) x ->
-     (let rec of_json_impl =
-        let float_of_json' path = function
-          | (`num x : Kxclib.Json.jv) -> Ok x
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'float' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        fun path __bindoj_orig ->
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "x" param
-              |> Option.to_result
-                   ~none:("mandatory field 'x' does not exist", path)
-              >>= float_of_json' (`f "x" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "y" param
-              |> Option.to_result
-                   ~none:("mandatory field 'y' does not exist", path)
-              >>= float_of_json' (`f "y" :: path)
-              >>= fun x1 -> Ok { x = x0; y = x1 }
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-      in
-      of_json_impl)
-       path x
-     |> Result.map_error (fun (msg, path) ->
-            (msg, path, ex_nested_point2_json_shape_explanation))
+  (fun ?(path = []) ->
+     fun x ->
+      (let rec of_json_impl =
+         let float_of_json' path = function
+           | (`num x : Kxclib.Json.jv) -> Ok x
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'float' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         fun path ->
+           fun __bindoj_orig ->
+            match __bindoj_orig with
+            | `obj param ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "x" param
+                |> Option.to_result
+                     ~none:("mandatory field 'x' does not exist", path)
+                >>= float_of_json' (`f "x" :: path)
+                >>= fun x0 ->
+                List.assoc_opt "y" param
+                |> Option.to_result
+                     ~none:("mandatory field 'y' does not exist", path)
+                >>= float_of_json' (`f "y" :: path)
+                >>= fun x1 -> Ok { x = x0; y = x1 }
+            | jv ->
+                Error
+                  ( Printf.sprintf
+                      "an object is expected for a record value, but the given \
+                       is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
+                    path )
+       in
+       of_json_impl)
+        path x
+      |> Result.map_error (fun (msg, path) ->
+             (msg, path, ex_nested_point2_json_shape_explanation))
     : ex_nested_point2 Bindoj_runtime.json_full_decoder)
 [@@warning "-39"]
 
@@ -117,7 +119,8 @@ let rec (ex_nested_record_reflect : _ Bindoj_runtime.Refl.t) =
                   person;
                   optional_variant;
                   person_spread;
-                } ->
+                }
+           ->
              StringMap.of_list
                [
                  ("unit", Expr.of_unit unit);
@@ -685,10 +688,10 @@ let ex_nested_record_json_shape_explanation =
 [@@warning "-39"]
 
 let rec ex_nested_record_to_json =
-  (let unit_to_json () : Kxclib.Json.jv = `num 1.
-   and string_to_json (x : string) : Kxclib.Json.jv = `str x
-   and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x)
-   and float_to_json (x : float) : Kxclib.Json.jv = `num x in
+  (let unit_to_json () = (`num 1. : Kxclib.Json.jv)
+   and string_to_json (x : string) = (`str x : Kxclib.Json.jv)
+   and int_to_json (x : int) = (`num (float_of_int x) : Kxclib.Json.jv)
+   and float_to_json (x : float) = (`num x : Kxclib.Json.jv) in
    let rec ex_mangling_gen__ex_mangling_person_inherited_to_json_nested =
      (function
       | Anonymous -> [ ("kind", `str "Anonymous") ]
@@ -741,13 +744,14 @@ let rec ex_nested_record_to_json =
                 ]
              @ [
                  ( "objtuple",
-                   (fun (x0, x1) : Kxclib.Json.jv ->
-                     `obj
-                       (List.filter_map Kxclib.identity
-                          [
-                            Option.map (fun x0 -> ("_0", int_to_json x0)) x0;
-                            Option.map (fun x1 -> ("_1", int_to_json x1)) x1;
-                          ]))
+                   (fun (x0, x1) ->
+                     (`obj
+                        (List.filter_map Kxclib.identity
+                           [
+                             Option.map (fun x0 -> ("_0", int_to_json x0)) x0;
+                             Option.map (fun x1 -> ("_1", int_to_json x1)) x1;
+                           ])
+                       : Kxclib.Json.jv))
                      x3 );
                ])
       | Inline_record_spreading { int_opt = x0; xy_opt = x1 } ->
@@ -806,380 +810,386 @@ let rec ex_nested_record_to_json =
 [@@warning "-39"]
 
 and ex_nested_record_of_json' =
-  (fun ?(path = []) x ->
-     (let rec of_json_impl =
-        let unit_of_json' path = function
-          | `bool _ | `num _ | `str _ | `arr [] | `obj [] -> Ok ()
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'unit' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and string_of_json' path = function
-          | (`str x : Kxclib.Json.jv) -> Ok x
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'string' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and option_of_json' t_of_json path = function
-          | `null -> Ok None
-          | x -> (
-              match t_of_json path x with
-              | Ok x -> Ok (Some x)
-              | Error msg -> Error msg)
-        and int_of_json' path = function
-          | (`num x : Kxclib.Json.jv) ->
-              if Float.is_integer x then Ok (int_of_float x)
-              else
+  (fun ?(path = []) ->
+     fun x ->
+      (let rec of_json_impl =
+         let unit_of_json' path = function
+           | `bool _ | `num _ | `str _ | `arr [] | `obj [] -> Ok ()
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'unit' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and string_of_json' path = function
+           | (`str x : Kxclib.Json.jv) -> Ok x
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'string' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and option_of_json' t_of_json path = function
+           | `null -> Ok None
+           | x -> (
+               match t_of_json path x with
+               | Ok x -> Ok (Some x)
+               | Error msg -> Error msg)
+         and int_of_json' path = function
+           | (`num x : Kxclib.Json.jv) ->
+               if Float.is_integer x then Ok (int_of_float x)
+               else
+                 Error
+                   ( Printf.sprintf "expecting an integer but the given is '%f'"
+                       x,
+                     path )
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'int' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and float_of_json' path = function
+           | (`num x : Kxclib.Json.jv) -> Ok x
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'float' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         let rec ex_mangling_gen__ex_mangling_person_inherited_of_json_nested
+             path __bindoj_orig =
+           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
+           | `obj (("kind", `str "Anonymous") :: _) ->
+               Ok (Anonymous : Ex_mangling_gen.ex_mangling_person_inherited)
+           | `obj (("kind", `str "With_id") :: param) -> (
+               match List.assoc_opt "value" param with
+               | Some arg ->
+                   let ( >>= ) = Result.bind in
+                   int_of_json' (`f "value" :: path) arg >>= fun x0 ->
+                   Ok
+                     (With_id x0 : Ex_mangling_gen.ex_mangling_person_inherited)
+               | None -> Error ("mandatory field 'value' does not exist", path))
+           | `obj (("kind", `str "student") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "student_id" param
+               |> Option.to_result
+                    ~none:("mandatory field 'student_id' does not exist", path)
+               >>= int_of_json' (`f "student_id" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "name" param
+               |> Option.to_result
+                    ~none:("mandatory field 'name' does not exist", path)
+               >>= string_of_json' (`f "name" :: path)
+               >>= fun x1 ->
+               List.assoc_opt "caseValue" param
+               |> Option.to_result
+                    ~none:("mandatory field 'caseValue' does not exist", path)
+               >>= (fun path -> function
+                     | `str s ->
+                         (function
+                           | "Case_at0" -> Ok `Case_at0
+                           | "case-at1" -> Ok `case_at1
+                           | s ->
+                               Error
+                                 ( Printf.sprintf
+                                     "given string '%s' is not one of [ \
+                                      'Case_at0', 'case-at1' ]"
+                                     s,
+                                   path ))
+                           s
+                     | jv ->
+                         Error
+                           ( Printf.sprintf
+                               "expecting type 'string' but the given is of \
+                                type '%s'"
+                               (let open Kxclib.Json in
+                                string_of_jv_kind (classify_jv jv)),
+                             path ))
+                     (`f "caseValue" :: path)
+               >>= fun x2 ->
+               Ok
+                 (Student { student_id = x0; name = x1; case_value = x2 }
+                   : Ex_mangling_gen.ex_mangling_person_inherited)
+           | `obj (("kind", `str "Teacher") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "facultyId" param
+               |> Option.to_result
+                    ~none:("mandatory field 'facultyId' does not exist", path)
+               >>= int_of_json' (`f "facultyId" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "name" param
+               |> Option.to_result
+                    ~none:("mandatory field 'name' does not exist", path)
+               >>= string_of_json' (`f "name" :: path)
+               >>= fun x1 ->
+               List.assoc_opt "department" param
+               |> Option.to_result
+                    ~none:("mandatory field 'department' does not exist", path)
+               >>= string_of_json' (`f "department" :: path)
+               >>= fun x2 ->
+               Ok
+                 (Teacher { faculty_id = x0; name = x1; department = x2 }
+                   : Ex_mangling_gen.ex_mangling_person_inherited)
+           | `obj (("kind", `str discriminator_value) :: _) ->
+               Error
+                 ( Printf.sprintf
+                     "given discriminator field value '%s' is not one of [ \
+                      'Anonymous', 'With_id', 'student', 'Teacher' ]"
+                     discriminator_value,
+                   `f "kind" :: path )
+           | `obj (("kind", jv) :: _) ->
+               Error
+                 ( Printf.sprintf
+                     "a string is expected for a variant discriminator, but \
+                      the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   `f "kind" :: path )
+           | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "an object is expected for a variant value, but the given \
+                      is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and ex_optional_gen__ex_optional_variant_of_json_nested path
+             __bindoj_orig =
+           match Kxclib.Jv.pump_field "tag" __bindoj_orig with
+           | `obj (("tag", `str "tuple-like") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "arg" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "arg" :: path)
+               >>= fun x0 ->
+               Ok (Tuple_like x0 : Ex_optional_gen.ex_optional_variant)
+           | `obj (("tag", `str "tuple-like-alias") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "arg" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "arg" :: path)
+               >>= fun x0 ->
+               Ok (Tuple_like_alias x0 : Ex_optional_gen.ex_optional_variant)
+           | `obj (("tag", `str "tuple-like-obj") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "_0" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "_0" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "_1" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "_1" :: path)
+               >>= fun x1 ->
+               Ok
+                 (Tuple_like_obj (x0, x1) : Ex_optional_gen.ex_optional_variant)
+           | `obj (("tag", `str "tuple-like-spreading") :: _) ->
+               let ( >>= ) = Result.bind in
+               ex_optional_gen__ex_optional_xy_opt_of_json_nested path
+                 __bindoj_orig
+               >>= fun x0 ->
+               Ok
+                 (Tuple_like_spreading x0 : Ex_optional_gen.ex_optional_variant)
+           | `obj (("tag", `str "inline-record") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "intOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "intOpt" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "xOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+               >>= fun x1 ->
+               List.assoc_opt "yOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+               >>= fun x2 ->
+               List.assoc_opt "objtuple" param
+               |> Option.to_result
+                    ~none:("mandatory field 'objtuple' does not exist", path)
+               >>= (fun path -> function
+                     | (`obj fields : Kxclib.Json.jv) ->
+                         let ( >>= ) = Result.bind in
+                         List.assoc_opt "_0" fields
+                         |> Option.value ~default:`null
+                         |> (option_of_json' int_of_json') (`f "_0" :: path)
+                         >>= fun x0 ->
+                         List.assoc_opt "_1" fields
+                         |> Option.value ~default:`null
+                         |> (option_of_json' int_of_json') (`f "_1" :: path)
+                         >>= fun x1 -> Ok (x0, x1)
+                     | jv ->
+                         Error
+                           ( Printf.sprintf
+                               "an object is expected for a tuple value, but \
+                                the given is of type '%s'"
+                               (let open Kxclib.Json in
+                                string_of_jv_kind (classify_jv jv)),
+                             path ))
+                     (`f "objtuple" :: path)
+               >>= fun x3 ->
+               Ok
+                 (Inline_record
+                    { int_opt = x0; x_opt = x1; y_opt = x2; objtuple = x3 }
+                   : Ex_optional_gen.ex_optional_variant)
+           | `obj (("tag", `str "inline-record-spreading") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "intOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "intOpt" :: path)
+               >>= fun x0 ->
+               ex_optional_gen__ex_optional_xy_opt_of_json_nested path
+                 __bindoj_orig
+               >>= fun x1 ->
+               Ok
+                 (Inline_record_spreading { int_opt = x0; xy_opt = x1 }
+                   : Ex_optional_gen.ex_optional_variant)
+           | `obj (("tag", `str "reused-inline-record") :: param) ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "xOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "yOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+               >>= fun x1 ->
+               Ok
+                 (Reused_inline_record { x_opt = x0; y_opt = x1 }
+                   : Ex_optional_gen.ex_optional_variant)
+           | `obj (("tag", `str discriminator_value) :: _) ->
+               Error
+                 ( Printf.sprintf
+                     "given discriminator field value '%s' is not one of [ \
+                      'tuple-like', 'tuple-like-alias', 'tuple-like-obj', \
+                      'tuple-like-spreading', 'inline-record', \
+                      'inline-record-spreading', 'reused-inline-record' ]"
+                     discriminator_value,
+                   `f "tag" :: path )
+           | `obj (("tag", jv) :: _) ->
+               Error
+                 ( Printf.sprintf
+                     "a string is expected for a variant discriminator, but \
+                      the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   `f "tag" :: path )
+           | `obj _ -> Error ("discriminator field 'tag' does not exist", path)
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "an object is expected for a variant value, but the given \
+                      is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and ex_optional_gen__ex_optional_xy_opt_of_json_nested path
+             __bindoj_orig =
+           match __bindoj_orig with
+           | `obj param ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "xOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "yOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+               >>= fun x1 ->
+               Ok
+                 ({ x_opt = x0; y_opt = x1 }
+                   : Ex_optional_gen.ex_optional_xy_opt)
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "an object is expected for a record value, but the given \
+                      is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and ex_nested_point2_of_json_nested path __bindoj_orig =
+           match __bindoj_orig with
+           | `obj param ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "x" param
+               |> Option.to_result
+                    ~none:("mandatory field 'x' does not exist", path)
+               >>= float_of_json' (`f "x" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "y" param
+               |> Option.to_result
+                    ~none:("mandatory field 'y' does not exist", path)
+               >>= float_of_json' (`f "y" :: path)
+               >>= fun x1 -> Ok ({ x = x0; y = x1 } : ex_nested_point2)
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "an object is expected for a record value, but the given \
+                      is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         fun path ->
+           fun __bindoj_orig ->
+            match __bindoj_orig with
+            | `obj param ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "unit" param
+                |> Option.to_result
+                     ~none:("mandatory field 'unit' does not exist", path)
+                >>= unit_of_json' (`f "unit" :: path)
+                >>= fun x0 ->
+                List.assoc_opt "point2" param
+                |> Option.to_result
+                     ~none:("mandatory field 'point2' does not exist", path)
+                >>= ex_nested_point2_of_json_nested (`f "point2" :: path)
+                >>= fun x1 ->
+                ex_nested_point2_of_json_nested path __bindoj_orig >>= fun x2 ->
+                List.assoc_opt "person" param
+                |> Option.to_result
+                     ~none:("mandatory field 'person' does not exist", path)
+                >>= ex_mangling_gen__ex_mangling_person_inherited_of_json_nested
+                      (`f "person" :: path)
+                >>= fun x3 ->
+                List.assoc_opt "optionalVariant" param
+                |> Option.to_result
+                     ~none:
+                       ("mandatory field 'optionalVariant' does not exist", path)
+                >>= ex_optional_gen__ex_optional_variant_of_json_nested
+                      (`f "optionalVariant" :: path)
+                >>= fun x4 ->
+                ex_mangling_gen__ex_mangling_person_inherited_of_json_nested
+                  path __bindoj_orig
+                >>= fun x5 ->
+                Ok
+                  {
+                    unit = x0;
+                    point2 = x1;
+                    point2_spread = x2;
+                    person = x3;
+                    optional_variant = x4;
+                    person_spread = x5;
+                  }
+            | jv ->
                 Error
-                  ( Printf.sprintf "expecting an integer but the given is '%f'" x,
+                  ( Printf.sprintf
+                      "an object is expected for a record value, but the given \
+                       is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
                     path )
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'int' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and float_of_json' path = function
-          | (`num x : Kxclib.Json.jv) -> Ok x
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'float' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        let rec ex_mangling_gen__ex_mangling_person_inherited_of_json_nested
-            path __bindoj_orig =
-          match Kxclib.Jv.pump_field "kind" __bindoj_orig with
-          | `obj (("kind", `str "Anonymous") :: _) ->
-              Ok (Anonymous : Ex_mangling_gen.ex_mangling_person_inherited)
-          | `obj (("kind", `str "With_id") :: param) -> (
-              match List.assoc_opt "value" param with
-              | Some arg ->
-                  let ( >>= ) = Result.bind in
-                  int_of_json' (`f "value" :: path) arg >>= fun x0 ->
-                  Ok (With_id x0 : Ex_mangling_gen.ex_mangling_person_inherited)
-              | None -> Error ("mandatory field 'value' does not exist", path))
-          | `obj (("kind", `str "student") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "student_id" param
-              |> Option.to_result
-                   ~none:("mandatory field 'student_id' does not exist", path)
-              >>= int_of_json' (`f "student_id" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "name" param
-              |> Option.to_result
-                   ~none:("mandatory field 'name' does not exist", path)
-              >>= string_of_json' (`f "name" :: path)
-              >>= fun x1 ->
-              List.assoc_opt "caseValue" param
-              |> Option.to_result
-                   ~none:("mandatory field 'caseValue' does not exist", path)
-              >>= (fun path -> function
-                    | `str s ->
-                        (function
-                          | "Case_at0" -> Ok `Case_at0
-                          | "case-at1" -> Ok `case_at1
-                          | s ->
-                              Error
-                                ( Printf.sprintf
-                                    "given string '%s' is not one of [ \
-                                     'Case_at0', 'case-at1' ]"
-                                    s,
-                                  path ))
-                          s
-                    | jv ->
-                        Error
-                          ( Printf.sprintf
-                              "expecting type 'string' but the given is of \
-                               type '%s'"
-                              (let open Kxclib.Json in
-                               string_of_jv_kind (classify_jv jv)),
-                            path ))
-                    (`f "caseValue" :: path)
-              >>= fun x2 ->
-              Ok
-                (Student { student_id = x0; name = x1; case_value = x2 }
-                  : Ex_mangling_gen.ex_mangling_person_inherited)
-          | `obj (("kind", `str "Teacher") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "facultyId" param
-              |> Option.to_result
-                   ~none:("mandatory field 'facultyId' does not exist", path)
-              >>= int_of_json' (`f "facultyId" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "name" param
-              |> Option.to_result
-                   ~none:("mandatory field 'name' does not exist", path)
-              >>= string_of_json' (`f "name" :: path)
-              >>= fun x1 ->
-              List.assoc_opt "department" param
-              |> Option.to_result
-                   ~none:("mandatory field 'department' does not exist", path)
-              >>= string_of_json' (`f "department" :: path)
-              >>= fun x2 ->
-              Ok
-                (Teacher { faculty_id = x0; name = x1; department = x2 }
-                  : Ex_mangling_gen.ex_mangling_person_inherited)
-          | `obj (("kind", `str discriminator_value) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "given discriminator field value '%s' is not one of [ \
-                     'Anonymous', 'With_id', 'student', 'Teacher' ]"
-                    discriminator_value,
-                  `f "kind" :: path )
-          | `obj (("kind", jv) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "a string is expected for a variant discriminator, but the \
-                     given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  `f "kind" :: path )
-          | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a variant value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and ex_optional_gen__ex_optional_variant_of_json_nested path
-            __bindoj_orig =
-          match Kxclib.Jv.pump_field "tag" __bindoj_orig with
-          | `obj (("tag", `str "tuple-like") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "arg" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "arg" :: path)
-              >>= fun x0 ->
-              Ok (Tuple_like x0 : Ex_optional_gen.ex_optional_variant)
-          | `obj (("tag", `str "tuple-like-alias") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "arg" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "arg" :: path)
-              >>= fun x0 ->
-              Ok (Tuple_like_alias x0 : Ex_optional_gen.ex_optional_variant)
-          | `obj (("tag", `str "tuple-like-obj") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "_0" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "_0" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "_1" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "_1" :: path)
-              >>= fun x1 ->
-              Ok (Tuple_like_obj (x0, x1) : Ex_optional_gen.ex_optional_variant)
-          | `obj (("tag", `str "tuple-like-spreading") :: _) ->
-              let ( >>= ) = Result.bind in
-              ex_optional_gen__ex_optional_xy_opt_of_json_nested path
-                __bindoj_orig
-              >>= fun x0 ->
-              Ok (Tuple_like_spreading x0 : Ex_optional_gen.ex_optional_variant)
-          | `obj (("tag", `str "inline-record") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "intOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "intOpt" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "xOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
-              >>= fun x1 ->
-              List.assoc_opt "yOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
-              >>= fun x2 ->
-              List.assoc_opt "objtuple" param
-              |> Option.to_result
-                   ~none:("mandatory field 'objtuple' does not exist", path)
-              >>= (fun path -> function
-                    | (`obj fields : Kxclib.Json.jv) ->
-                        let ( >>= ) = Result.bind in
-                        List.assoc_opt "_0" fields
-                        |> Option.value ~default:`null
-                        |> (option_of_json' int_of_json') (`f "_0" :: path)
-                        >>= fun x0 ->
-                        List.assoc_opt "_1" fields
-                        |> Option.value ~default:`null
-                        |> (option_of_json' int_of_json') (`f "_1" :: path)
-                        >>= fun x1 -> Ok (x0, x1)
-                    | jv ->
-                        Error
-                          ( Printf.sprintf
-                              "an object is expected for a tuple value, but \
-                               the given is of type '%s'"
-                              (let open Kxclib.Json in
-                               string_of_jv_kind (classify_jv jv)),
-                            path ))
-                    (`f "objtuple" :: path)
-              >>= fun x3 ->
-              Ok
-                (Inline_record
-                   { int_opt = x0; x_opt = x1; y_opt = x2; objtuple = x3 }
-                  : Ex_optional_gen.ex_optional_variant)
-          | `obj (("tag", `str "inline-record-spreading") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "intOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "intOpt" :: path)
-              >>= fun x0 ->
-              ex_optional_gen__ex_optional_xy_opt_of_json_nested path
-                __bindoj_orig
-              >>= fun x1 ->
-              Ok
-                (Inline_record_spreading { int_opt = x0; xy_opt = x1 }
-                  : Ex_optional_gen.ex_optional_variant)
-          | `obj (("tag", `str "reused-inline-record") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "xOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "yOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
-              >>= fun x1 ->
-              Ok
-                (Reused_inline_record { x_opt = x0; y_opt = x1 }
-                  : Ex_optional_gen.ex_optional_variant)
-          | `obj (("tag", `str discriminator_value) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "given discriminator field value '%s' is not one of [ \
-                     'tuple-like', 'tuple-like-alias', 'tuple-like-obj', \
-                     'tuple-like-spreading', 'inline-record', \
-                     'inline-record-spreading', 'reused-inline-record' ]"
-                    discriminator_value,
-                  `f "tag" :: path )
-          | `obj (("tag", jv) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "a string is expected for a variant discriminator, but the \
-                     given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  `f "tag" :: path )
-          | `obj _ -> Error ("discriminator field 'tag' does not exist", path)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a variant value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and ex_optional_gen__ex_optional_xy_opt_of_json_nested path
-            __bindoj_orig =
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "xOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "yOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
-              >>= fun x1 ->
-              Ok
-                ({ x_opt = x0; y_opt = x1 }
-                  : Ex_optional_gen.ex_optional_xy_opt)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and ex_nested_point2_of_json_nested path __bindoj_orig =
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "x" param
-              |> Option.to_result
-                   ~none:("mandatory field 'x' does not exist", path)
-              >>= float_of_json' (`f "x" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "y" param
-              |> Option.to_result
-                   ~none:("mandatory field 'y' does not exist", path)
-              >>= float_of_json' (`f "y" :: path)
-              >>= fun x1 -> Ok ({ x = x0; y = x1 } : ex_nested_point2)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        fun path __bindoj_orig ->
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "unit" param
-              |> Option.to_result
-                   ~none:("mandatory field 'unit' does not exist", path)
-              >>= unit_of_json' (`f "unit" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "point2" param
-              |> Option.to_result
-                   ~none:("mandatory field 'point2' does not exist", path)
-              >>= ex_nested_point2_of_json_nested (`f "point2" :: path)
-              >>= fun x1 ->
-              ex_nested_point2_of_json_nested path __bindoj_orig >>= fun x2 ->
-              List.assoc_opt "person" param
-              |> Option.to_result
-                   ~none:("mandatory field 'person' does not exist", path)
-              >>= ex_mangling_gen__ex_mangling_person_inherited_of_json_nested
-                    (`f "person" :: path)
-              >>= fun x3 ->
-              List.assoc_opt "optionalVariant" param
-              |> Option.to_result
-                   ~none:
-                     ("mandatory field 'optionalVariant' does not exist", path)
-              >>= ex_optional_gen__ex_optional_variant_of_json_nested
-                    (`f "optionalVariant" :: path)
-              >>= fun x4 ->
-              ex_mangling_gen__ex_mangling_person_inherited_of_json_nested path
-                __bindoj_orig
-              >>= fun x5 ->
-              Ok
-                {
-                  unit = x0;
-                  point2 = x1;
-                  point2_spread = x2;
-                  person = x3;
-                  optional_variant = x4;
-                  person_spread = x5;
-                }
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-      in
-      of_json_impl)
-       path x
-     |> Result.map_error (fun (msg, path) ->
-            (msg, path, ex_nested_record_json_shape_explanation))
+       in
+       of_json_impl)
+        path x
+      |> Result.map_error (fun (msg, path) ->
+             (msg, path, ex_nested_record_json_shape_explanation))
     : ex_nested_record Bindoj_runtime.json_full_decoder)
 [@@warning "-39"]
 
@@ -1432,8 +1442,8 @@ let ex_nested_variant_json_shape_explanation =
 [@@warning "-39"]
 
 let rec ex_nested_variant_to_json =
-  (let string_to_json (x : string) : Kxclib.Json.jv = `str x
-   and int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+  (let string_to_json (x : string) = (`str x : Kxclib.Json.jv)
+   and int_to_json (x : int) = (`num (float_of_int x) : Kxclib.Json.jv) in
    let rec ex_record_gen__ex_record_student_to_json_nested =
      (fun { admission_year = x0; name = x1 } ->
         [ ("admissionYear", int_to_json x0); ("name", string_to_json x1) ]
@@ -1488,183 +1498,189 @@ let rec ex_nested_variant_to_json =
 [@@warning "-39"]
 
 and ex_nested_variant_of_json' =
-  (fun ?(path = []) x ->
-     (let rec of_json_impl =
-        let string_of_json' path = function
-          | (`str x : Kxclib.Json.jv) -> Ok x
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'string' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and int_of_json' path = function
-          | (`num x : Kxclib.Json.jv) ->
-              if Float.is_integer x then Ok (int_of_float x)
-              else
+  (fun ?(path = []) ->
+     fun x ->
+      (let rec of_json_impl =
+         let string_of_json' path = function
+           | (`str x : Kxclib.Json.jv) -> Ok x
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'string' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and int_of_json' path = function
+           | (`num x : Kxclib.Json.jv) ->
+               if Float.is_integer x then Ok (int_of_float x)
+               else
+                 Error
+                   ( Printf.sprintf "expecting an integer but the given is '%f'"
+                       x,
+                     path )
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'int' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         let rec ex_record_gen__ex_record_student_of_json_nested path
+             __bindoj_orig =
+           match __bindoj_orig with
+           | `obj param ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "admissionYear" param
+               |> Option.to_result
+                    ~none:
+                      ("mandatory field 'admissionYear' does not exist", path)
+               >>= int_of_json' (`f "admissionYear" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "name" param
+               |> Option.to_result
+                    ~none:("mandatory field 'name' does not exist", path)
+               >>= string_of_json' (`f "name" :: path)
+               >>= fun x1 ->
+               Ok
+                 ({ admission_year = x0; name = x1 }
+                   : Ex_record_gen.ex_record_student)
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "an object is expected for a record value, but the given \
+                      is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         and ex_variant_gen__ex_variant_int_list_of_json_nested path
+             __bindoj_orig =
+           match Kxclib.Jv.pump_field "kind" __bindoj_orig with
+           | `obj (("kind", `str "intnil") :: _) ->
+               Ok (IntNil : Ex_variant_gen.ex_variant_int_list)
+           | `obj (("kind", `str "intcons") :: param) -> (
+               match List.assoc_opt "value" param with
+               | Some (`arr [ x0; x1 ]) ->
+                   let ( >>= ) = Result.bind in
+                   int_of_json' (`i 0 :: `f "value" :: path) x0 >>= fun x0 ->
+                   ex_variant_gen__ex_variant_int_list_of_json_nested
+                     (`i 1 :: `f "value" :: path)
+                     x1
+                   >>= fun x1 ->
+                   Ok (IntCons (x0, x1) : Ex_variant_gen.ex_variant_int_list)
+               | Some (`arr xs) ->
+                   Error
+                     ( Printf.sprintf
+                         "expecting an array of length 2, but the given has a \
+                          length of %d"
+                         (List.length xs),
+                       `f "value" :: path )
+               | Some jv ->
+                   Error
+                     ( Printf.sprintf
+                         "an array is expected for a tuple value, but the \
+                          given is of type '%s'"
+                         (let open Kxclib.Json in
+                          string_of_jv_kind (classify_jv jv)),
+                       `f "value" :: path )
+               | None -> Error ("mandatory field 'value' does not exist", path))
+           | `obj (("kind", `str discriminator_value) :: _) ->
+               Error
+                 ( Printf.sprintf
+                     "given discriminator field value '%s' is not one of [ \
+                      'intnil', 'intcons' ]"
+                     discriminator_value,
+                   `f "kind" :: path )
+           | `obj (("kind", jv) :: _) ->
+               Error
+                 ( Printf.sprintf
+                     "a string is expected for a variant discriminator, but \
+                      the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   `f "kind" :: path )
+           | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "an object is expected for a variant value, but the given \
+                      is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         fun path ->
+           fun __bindoj_orig ->
+            match Kxclib.Jv.pump_field "tag" __bindoj_orig with
+            | `obj (("tag", `str "student1") :: param) ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "student" param
+                |> Option.to_result
+                     ~none:("mandatory field 'student' does not exist", path)
+                >>= ex_record_gen__ex_record_student_of_json_nested
+                      (`f "student" :: path)
+                >>= fun x0 -> Ok (Student1 { student = x0 })
+            | `obj (("tag", `str "student2") :: _) ->
+                let ( >>= ) = Result.bind in
+                ex_record_gen__ex_record_student_of_json_nested path
+                  __bindoj_orig
+                >>= fun x0 -> Ok (Student2 { student = x0 })
+            | `obj (("tag", `str "student3") :: param) -> (
+                match List.assoc_opt "arg" param with
+                | Some arg ->
+                    let ( >>= ) = Result.bind in
+                    ex_record_gen__ex_record_student_of_json_nested
+                      (`f "arg" :: path) arg
+                    >>= fun x0 -> Ok (Student3 x0)
+                | None -> Error ("mandatory field 'arg' does not exist", path))
+            | `obj (("tag", `str "student4") :: _) ->
+                let ( >>= ) = Result.bind in
+                ex_record_gen__ex_record_student_of_json_nested path
+                  __bindoj_orig
+                >>= fun x0 -> Ok (Student4 x0)
+            | `obj (("tag", `str "int-list1") :: param) -> (
+                match List.assoc_opt "arg" param with
+                | Some arg ->
+                    let ( >>= ) = Result.bind in
+                    ex_variant_gen__ex_variant_int_list_of_json_nested
+                      (`f "arg" :: path) arg
+                    >>= fun x0 -> Ok (Int_list1 x0)
+                | None -> Error ("mandatory field 'arg' does not exist", path))
+            | `obj (("tag", `str "int-list2") :: _) ->
+                let ( >>= ) = Result.bind in
+                ex_variant_gen__ex_variant_int_list_of_json_nested path
+                  __bindoj_orig
+                >>= fun x0 -> Ok (Int_list2 x0)
+            | `obj (("tag", `str discriminator_value) :: _) ->
                 Error
-                  ( Printf.sprintf "expecting an integer but the given is '%f'" x,
+                  ( Printf.sprintf
+                      "given discriminator field value '%s' is not one of [ \
+                       'student1', 'student2', 'student3', 'student4', \
+                       'int-list1', 'int-list2' ]"
+                      discriminator_value,
+                    `f "tag" :: path )
+            | `obj (("tag", jv) :: _) ->
+                Error
+                  ( Printf.sprintf
+                      "a string is expected for a variant discriminator, but \
+                       the given is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
+                    `f "tag" :: path )
+            | `obj _ -> Error ("discriminator field 'tag' does not exist", path)
+            | jv ->
+                Error
+                  ( Printf.sprintf
+                      "an object is expected for a variant value, but the \
+                       given is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
                     path )
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'int' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        let rec ex_record_gen__ex_record_student_of_json_nested path
-            __bindoj_orig =
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "admissionYear" param
-              |> Option.to_result
-                   ~none:("mandatory field 'admissionYear' does not exist", path)
-              >>= int_of_json' (`f "admissionYear" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "name" param
-              |> Option.to_result
-                   ~none:("mandatory field 'name' does not exist", path)
-              >>= string_of_json' (`f "name" :: path)
-              >>= fun x1 ->
-              Ok
-                ({ admission_year = x0; name = x1 }
-                  : Ex_record_gen.ex_record_student)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        and ex_variant_gen__ex_variant_int_list_of_json_nested path
-            __bindoj_orig =
-          match Kxclib.Jv.pump_field "kind" __bindoj_orig with
-          | `obj (("kind", `str "intnil") :: _) ->
-              Ok (IntNil : Ex_variant_gen.ex_variant_int_list)
-          | `obj (("kind", `str "intcons") :: param) -> (
-              match List.assoc_opt "value" param with
-              | Some (`arr [ x0; x1 ]) ->
-                  let ( >>= ) = Result.bind in
-                  int_of_json' (`i 0 :: `f "value" :: path) x0 >>= fun x0 ->
-                  ex_variant_gen__ex_variant_int_list_of_json_nested
-                    (`i 1 :: `f "value" :: path)
-                    x1
-                  >>= fun x1 ->
-                  Ok (IntCons (x0, x1) : Ex_variant_gen.ex_variant_int_list)
-              | Some (`arr xs) ->
-                  Error
-                    ( Printf.sprintf
-                        "expecting an array of length 2, but the given has a \
-                         length of %d"
-                        (List.length xs),
-                      `f "value" :: path )
-              | Some jv ->
-                  Error
-                    ( Printf.sprintf
-                        "an array is expected for a tuple value, but the given \
-                         is of type '%s'"
-                        (let open Kxclib.Json in
-                         string_of_jv_kind (classify_jv jv)),
-                      `f "value" :: path )
-              | None -> Error ("mandatory field 'value' does not exist", path))
-          | `obj (("kind", `str discriminator_value) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "given discriminator field value '%s' is not one of [ \
-                     'intnil', 'intcons' ]"
-                    discriminator_value,
-                  `f "kind" :: path )
-          | `obj (("kind", jv) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "a string is expected for a variant discriminator, but the \
-                     given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  `f "kind" :: path )
-          | `obj _ -> Error ("discriminator field 'kind' does not exist", path)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a variant value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        fun path __bindoj_orig ->
-          match Kxclib.Jv.pump_field "tag" __bindoj_orig with
-          | `obj (("tag", `str "student1") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "student" param
-              |> Option.to_result
-                   ~none:("mandatory field 'student' does not exist", path)
-              >>= ex_record_gen__ex_record_student_of_json_nested
-                    (`f "student" :: path)
-              >>= fun x0 -> Ok (Student1 { student = x0 })
-          | `obj (("tag", `str "student2") :: _) ->
-              let ( >>= ) = Result.bind in
-              ex_record_gen__ex_record_student_of_json_nested path __bindoj_orig
-              >>= fun x0 -> Ok (Student2 { student = x0 })
-          | `obj (("tag", `str "student3") :: param) -> (
-              match List.assoc_opt "arg" param with
-              | Some arg ->
-                  let ( >>= ) = Result.bind in
-                  ex_record_gen__ex_record_student_of_json_nested
-                    (`f "arg" :: path) arg
-                  >>= fun x0 -> Ok (Student3 x0)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
-          | `obj (("tag", `str "student4") :: _) ->
-              let ( >>= ) = Result.bind in
-              ex_record_gen__ex_record_student_of_json_nested path __bindoj_orig
-              >>= fun x0 -> Ok (Student4 x0)
-          | `obj (("tag", `str "int-list1") :: param) -> (
-              match List.assoc_opt "arg" param with
-              | Some arg ->
-                  let ( >>= ) = Result.bind in
-                  ex_variant_gen__ex_variant_int_list_of_json_nested
-                    (`f "arg" :: path) arg
-                  >>= fun x0 -> Ok (Int_list1 x0)
-              | None -> Error ("mandatory field 'arg' does not exist", path))
-          | `obj (("tag", `str "int-list2") :: _) ->
-              let ( >>= ) = Result.bind in
-              ex_variant_gen__ex_variant_int_list_of_json_nested path
-                __bindoj_orig
-              >>= fun x0 -> Ok (Int_list2 x0)
-          | `obj (("tag", `str discriminator_value) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "given discriminator field value '%s' is not one of [ \
-                     'student1', 'student2', 'student3', 'student4', \
-                     'int-list1', 'int-list2' ]"
-                    discriminator_value,
-                  `f "tag" :: path )
-          | `obj (("tag", jv) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "a string is expected for a variant discriminator, but the \
-                     given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  `f "tag" :: path )
-          | `obj _ -> Error ("discriminator field 'tag' does not exist", path)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a variant value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-      in
-      of_json_impl)
-       path x
-     |> Result.map_error (fun (msg, path) ->
-            (msg, path, ex_nested_variant_json_shape_explanation))
+       in
+       of_json_impl)
+        path x
+      |> Result.map_error (fun (msg, path) ->
+             (msg, path, ex_nested_variant_json_shape_explanation))
     : ex_nested_variant Bindoj_runtime.json_full_decoder)
 [@@warning "-39"]
 

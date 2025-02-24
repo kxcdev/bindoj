@@ -283,19 +283,19 @@ val validate: instance:any -> schema:any -> ?options:Options.t -> unit -> Valida
 
 module Export : sig
   (* export interface Schema *)
-  [@@@js.stop] module Schema = Schema [@@@js.start] [@@@js.implem module Schema = Schema]
+  [@@@js.stop] module Schema : module type of Schema [@@@js.start] [@@@js.implem module Schema = Schema]
   (* export interface Options *)
-  [@@@js.stop] module Options = Options [@@@js.start] [@@@js.implem module Options = Options]
+  [@@@js.stop] module Options : module type of Options [@@@js.start] [@@@js.implem module Options = Options]
   (* export interface RewriteFunction *)
-  [@@@js.stop] module RewriteFunction = RewriteFunction [@@@js.start] [@@@js.implem module RewriteFunction = RewriteFunction]
+  [@@@js.stop] module RewriteFunction : module type of RewriteFunction [@@@js.start] [@@@js.implem module RewriteFunction = RewriteFunction]
   (* export interface PreValidatePropertyFunction *)
-  [@@@js.stop] module PreValidatePropertyFunction = PreValidatePropertyFunction [@@@js.start] [@@@js.implem module PreValidatePropertyFunction = PreValidatePropertyFunction]
+  [@@@js.stop] module PreValidatePropertyFunction : module type of PreValidatePropertyFunction [@@@js.start] [@@@js.implem module PreValidatePropertyFunction = PreValidatePropertyFunction]
   (* export interface SchemaContext *)
-  [@@@js.stop] module SchemaContext = SchemaContext [@@@js.start] [@@@js.implem module SchemaContext = SchemaContext]
+  [@@@js.stop] module SchemaContext : module type of SchemaContext [@@@js.start] [@@@js.implem module SchemaContext = SchemaContext]
   (* export interface CustomFormat *)
-  [@@@js.stop] module CustomFormat = CustomFormat [@@@js.start] [@@@js.implem module CustomFormat = CustomFormat]
+  [@@@js.stop] module CustomFormat : module type of CustomFormat [@@@js.start] [@@@js.implem module CustomFormat = CustomFormat]
   (* export interface CustomProperty *)
-  [@@@js.stop] module CustomProperty = CustomProperty [@@@js.start] [@@@js.implem module CustomProperty = CustomProperty]
+  [@@@js.stop] module CustomProperty : module type of CustomProperty [@@@js.start] [@@@js.implem module CustomProperty = CustomProperty]
   (* export interface ErrorDetail *)
-  [@@@js.stop] module ErrorDetail = ErrorDetail [@@@js.start] [@@@js.implem module ErrorDetail = ErrorDetail]
+  [@@@js.stop] module ErrorDetail : module type of ErrorDetail [@@@js.start] [@@@js.implem module ErrorDetail = ErrorDetail]
 end

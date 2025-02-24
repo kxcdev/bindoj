@@ -22,8 +22,8 @@ jobs:
           - ubuntu-latest
         ocaml-version:
           - 4.14.x
-          - 5.0.x
           - 5.1.x
+          - 5.3.x
         node-version:
           - lts/gallium # v16 Active LTS
           - lts/hydrogen # v18 Active LTS
@@ -37,18 +37,18 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 2
 
       - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-version }}
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: yarn
@@ -56,7 +56,7 @@ jobs:
 
       - name: Cache OPAM switch
         id: cache-switch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: _opam
           key: v1-${{ runner.os }}-${{ matrix.ocaml-version }}-opam-switch

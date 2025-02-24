@@ -4,31 +4,31 @@ module Simple_interfaces = struct
     unit ->
     [ `data of Bytes.t * [ `eof | `maybe_more ] | `wait | `eof ]
   (** byte_source' bridgeable
-        @param max max argument.
-        @param arg0 argument at 0. *)
+      @param max max argument.
+      @param arg0 argument at 0. *)
 
   (** Logger bridgeable. *)
   module type Logger = sig
     val info : string -> unit
     (** info method.
-            @param arg0 argument at 0. *)
+        @param arg0 argument at 0. *)
 
     val error : ?exn:string -> string -> unit
     (** error method.
-            @param exn exn argument.
-            @param arg0 argument at 0. *)
+        @param exn exn argument.
+        @param arg0 argument at 0. *)
   end
 
   (** byte_source bridgeable. *)
   class type byte_source = object
     method bytes_left : unit -> int
     (** bytes_left method.
-            @param arg0 argument at 0. *)
+        @param arg0 argument at 0. *)
 
     method next_block : ?max:int -> unit -> Bytes.t
     (** next_block method.
-            @param max max argument.
-            @param arg0 argument at 0. *)
+        @param max max argument.
+        @param arg0 argument at 0. *)
   end
 end
 
@@ -64,11 +64,11 @@ module Concrete_bridge_interfaces = struct
 
       method write_bulk : byte_source endemic -> unit
       (** write_bulk method.
-                @param arg0 argument at 0. *)
+          @param arg0 argument at 0. *)
 
       method write_async : byte_source' endemic -> unit
       (** write_async method.
-                @param arg0 argument at 0. *)
+          @param arg0 argument at 0. *)
     end
 
     (** System_io bridgeable *)
@@ -81,11 +81,11 @@ module Concrete_bridge_interfaces = struct
 
       val open_file_wo : path:string -> output_channel peer
       (** open_file_wo method
-                @param path path argument *)
+          @param path path argument *)
 
       val open_file_ro : path:string -> byte_source peer
       (** open_file_ro method
-                @param path path argument *)
+          @param path path argument *)
     end
   end
 
@@ -121,7 +121,7 @@ end
 open Concrete_bridge_interfaces.Interfaces [@@warning "-33"]
 
 module type Dual_setup_full_bridge = functor
-  (_ : sig
+  (M : sig
      val my_logger : (module Logger)
      (** my_logger object *)
 
@@ -201,7 +201,7 @@ functor
 
                         let unwrap_endemic
                             (Bindoj_objintf_shared.Endemic_object
-                              { bridge = Br; underlying }) =
+                               { bridge = Br; underlying }) =
                           underlying
                         [@@warning "-32"]
 
@@ -258,8 +258,8 @@ functor
                         [@@warning "-32"]
 
                         let rec byte_source_state_to_json =
-                          (let bytes_to_json (x : Bytes.t) : Kxclib.Json.jv =
-                             `str (Kxclib.Base64.encode x)
+                          (let bytes_to_json (x : Bytes.t) =
+                             (`str (Kxclib.Base64.encode x) : Kxclib.Json.jv)
                            in
                            function
                            | `data (x0, x1) ->
@@ -353,7 +353,7 @@ functor
                           end
                         [@@warning "-39"]
 
-                        and decode_Logger_of_js __js_obj : (module Logger) =
+                        and decode_Logger_of_js __js_obj =
                           (module struct
                             let info __arg0 =
                               let open Js_of_ocaml in
@@ -382,7 +382,7 @@ functor
                                                    encode_string_to_js) );
                                           |]);
                                    |])
-                          end)
+                          end : Logger)
                         [@@warning "-39"]
 
                         and encode_Logger_to_js (module M : Logger) =
@@ -397,19 +397,19 @@ functor
                               );
                               ( "error",
                                 Unsafe.inject
-                                  (Unsafe.callback_with_arity 2
-                                     (fun __arg0 labeledArgs ->
-                                       encode_unit_to_js
-                                         (M.error
-                                            ?exn:
-                                              (let open Js_of_ocaml.Js in
-                                               Optdef.bind labeledArgs
-                                                 (fun la ->
-                                                   Optdef.map
-                                                     (Unsafe.get la "exn")
-                                                     decode_string_of_js)
-                                               |> Optdef.to_option)
-                                            (decode_string_of_js __arg0)))) );
+                                  (Unsafe.callback_with_arity 2 (fun __arg0 ->
+                                       fun labeledArgs ->
+                                        encode_unit_to_js
+                                          (M.error
+                                             ?exn:
+                                               (let open Js_of_ocaml.Js in
+                                                Optdef.bind labeledArgs
+                                                  (fun la ->
+                                                    Optdef.map
+                                                      (Unsafe.get la "exn")
+                                                      decode_string_of_js)
+                                                |> Optdef.to_option)
+                                             (decode_string_of_js __arg0)))) );
                             |]
                         [@@warning "-39"]
 
@@ -455,8 +455,7 @@ functor
                           end
                         [@@warning "-39"]
 
-                        and decode_System_io_of_js __js_obj : (module System_io)
-                            =
+                        and decode_System_io_of_js __js_obj =
                           (module struct
                             let stdout () =
                               let open Js_of_ocaml in
@@ -497,7 +496,7 @@ functor
                                                 (encode_string_to_js path) );
                                           |]);
                                    |])
-                          end)
+                          end : System_io)
                         [@@warning "-39"]
 
                         module Peer_object_registry = struct
@@ -516,7 +515,7 @@ functor
                                       encode_map_key
                                         ~check_type:
                                           (`StringEnum
-                                            [ "persistent"; "transient" ])
+                                             [ "persistent"; "transient" ])
                                         (Mk_string_enum
                                            (match variant with
                                            | `persistent -> "persistent"
@@ -535,7 +534,7 @@ functor
                                         encode_map_key
                                           ~check_type:
                                             (`StringEnum
-                                              [ "persistent"; "transient" ])
+                                               [ "persistent"; "transient" ])
                                           (Mk_string_enum
                                              (match variant with
                                              | `persistent -> "persistent"
@@ -621,40 +620,44 @@ functor
                                             ( "register",
                                               Unsafe.inject
                                                 (Unsafe.callback_with_arity 2
-                                                   (fun coordinate value ->
-                                                     register_logger
-                                                       ~name:
-                                                         (decode_string_of_js
-                                                            (Js.Unsafe.get
-                                                               coordinate "name"))
-                                                       ~variant:
-                                                         ((fun jv ->
-                                                            match
-                                                              Js_of_ocaml.Js
-                                                              .to_string jv
-                                                            with
-                                                            | "persistent" ->
-                                                                `persistent
-                                                            | "transient" ->
-                                                                `transient
-                                                            | s ->
-                                                                Format.kasprintf
-                                                                  failwith
-                                                                  "given \
-                                                                   string '%s' \
-                                                                   is not one \
-                                                                   of [ \
-                                                                   'persistent', \
-                                                                   'transient' \
-                                                                   ]"
-                                                                  s)
-                                                            (Js.Unsafe.get
-                                                               coordinate
-                                                               "variant"))
-                                                       (Some
-                                                          ((wrap_peer
-                                                              decode_Logger_of_js)
-                                                             value)))) );
+                                                   (fun coordinate ->
+                                                     fun value ->
+                                                      register_logger
+                                                        ~name:
+                                                          (decode_string_of_js
+                                                             (Js.Unsafe.get
+                                                                coordinate
+                                                                "name"))
+                                                        ~variant:
+                                                          ((fun jv ->
+                                                             match
+                                                               Js_of_ocaml.Js
+                                                               .to_string jv
+                                                             with
+                                                             | "persistent" ->
+                                                                 `persistent
+                                                             | "transient" ->
+                                                                 `transient
+                                                             | s ->
+                                                                 Format
+                                                                 .kasprintf
+                                                                   failwith
+                                                                   "given \
+                                                                    string \
+                                                                    '%s' is \
+                                                                    not one of \
+                                                                    [ \
+                                                                    'persistent', \
+                                                                    'transient' \
+                                                                    ]"
+                                                                   s)
+                                                             (Js.Unsafe.get
+                                                                coordinate
+                                                                "variant"))
+                                                        (Some
+                                                           ((wrap_peer
+                                                               decode_Logger_of_js)
+                                                              value)))) );
                                             ( "deregister",
                                               Unsafe.inject
                                                 (Unsafe.callback
@@ -768,6 +771,6 @@ functor
                     !continuations |> List.iter (fun f -> f concrete_bridge);
                     continuations := [])) );
          |])
-      |> fun x : Bindoj_objintf_shared.endemic_full_bridge_reference ->
-      Obj.magic x
+      |> fun x ->
+      (Obj.magic x : Bindoj_objintf_shared.endemic_full_bridge_reference)
   end

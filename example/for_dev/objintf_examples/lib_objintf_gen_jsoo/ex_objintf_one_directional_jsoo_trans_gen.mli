@@ -84,7 +84,7 @@ end
 open Concrete_bridge_interfaces.Interfaces [@@warning "-33"]
 
 module type Endemic_setup_only_full_bridge = functor
-  (_ : sig
+  (M : sig
      val my_string : string
      val my_hello : hello
      val my_sole_var : sole_var

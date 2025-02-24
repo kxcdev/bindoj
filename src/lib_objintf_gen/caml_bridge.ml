@@ -621,7 +621,7 @@ let gen_full_bridge :
         ] @ [ endemic_full_bridge () ]
         |> Mty.signature
       in
-      match to_full_bridge_kind ~resolution_strategy ~bridgeable_ident_resolver objintf with
+      match to_full_bridge_kind ~param_name:Bridge_labels.functor_parameter_var ~resolution_strategy ~bridgeable_ident_resolver objintf with
       | `setup_less -> Bridge_labels.setup_less_full_bridge, Mty.ident (lidloc Bridge_labels.concrete_bridge)
       | `peer_setup_only -> Bridge_labels.peer_setup_only_full_bridge, peer_setup_bridge ()
       | `endemic_setup_only p ->

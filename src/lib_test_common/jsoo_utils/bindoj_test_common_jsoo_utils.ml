@@ -241,7 +241,7 @@ module Alcotest_jsoo_platform : Alcotest_engine.Platform.MAKER = functor (M : Al
     flush stdout; flush stderr;
     flush_all()
 
-  let setup_std_outputs ?style_renderer ?utf_8 () =
+  let setup_std_outputs ?style_renderer ?utf_8 _ _ =
     force_flush();
     if stdout_isatty() then (
       Fmt_tty.setup_std_outputs ?style_renderer ?utf_8 ())

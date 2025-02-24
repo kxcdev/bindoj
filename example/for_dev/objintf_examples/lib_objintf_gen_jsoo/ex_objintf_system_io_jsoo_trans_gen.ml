@@ -6,31 +6,31 @@ module Simple_interfaces = struct
     unit ->
     [ `data of Bytes.t * [ `eof | `maybe_more ] | `wait | `eof ]
   (** byte_source' bridgeable
-        @param max max argument.
-        @param arg0 argument at 0. *)
+      @param max max argument.
+      @param arg0 argument at 0. *)
 
   (** Logger bridgeable. *)
   module type Logger = sig
     val info : string -> unit
     (** info method.
-            @param arg0 argument at 0. *)
+        @param arg0 argument at 0. *)
 
     val error : ?exn:string -> string -> unit
     (** error method.
-            @param exn exn argument.
-            @param arg0 argument at 0. *)
+        @param exn exn argument.
+        @param arg0 argument at 0. *)
   end
 
   (** byte_source bridgeable. *)
   class type byte_source = object
     method bytes_left : unit -> int
     (** bytes_left method.
-            @param arg0 argument at 0. *)
+        @param arg0 argument at 0. *)
 
     method next_block : ?max:int -> unit -> Bytes.t
     (** next_block method.
-            @param max max argument.
-            @param arg0 argument at 0. *)
+        @param max max argument.
+        @param arg0 argument at 0. *)
   end
 end
 
@@ -70,11 +70,11 @@ module Concrete_bridge_interfaces = struct
 
       method write_bulk : byte_source peer -> unit
       (** write_bulk method.
-                @param arg0 argument at 0. *)
+          @param arg0 argument at 0. *)
 
       method write_async : byte_source' peer -> unit
       (** write_async method.
-                @param arg0 argument at 0. *)
+          @param arg0 argument at 0. *)
     end
 
     (** System_io bridgeable *)
@@ -87,11 +87,11 @@ module Concrete_bridge_interfaces = struct
 
       val open_file_wo : path:string -> output_channel endemic
       (** open_file_wo method
-                @param path path argument *)
+          @param path path argument *)
 
       val open_file_ro : path:string -> byte_source endemic
       (** open_file_ro method
-                @param path path argument *)
+          @param path path argument *)
     end
   end
 
@@ -124,7 +124,7 @@ end
 open Concrete_bridge_interfaces.Interfaces [@@warning "-33"]
 
 module type Dual_setup_full_bridge = functor
-  (_ : sig
+  (M : sig
      val system_io : (module System_io)
      (** system_io object *)
 
@@ -204,7 +204,7 @@ functor
 
                         let unwrap_endemic
                             (Bindoj_objintf_shared.Endemic_object
-                              { bridge = Br; underlying }) =
+                               { bridge = Br; underlying }) =
                           underlying
                         [@@warning "-32"]
 
@@ -261,167 +261,172 @@ functor
                         [@@warning "-32"]
 
                         let rec byte_source_state_of_json' =
-                          (fun ?(path = []) x ->
-                             (let rec of_json_impl =
-                                let bytes_of_json' path = function
-                                  | (`str x : Kxclib.Json.jv) -> (
-                                      try Ok (Kxclib.Base64.decode x)
-                                      with Invalid_argument msg ->
-                                        Error (msg, path))
-                                  | jv ->
-                                      Error
-                                        ( Printf.sprintf
-                                            "expecting type 'bytes' but the \
-                                             given is of type '%s'"
-                                            (let open Kxclib.Json in
-                                             string_of_jv_kind (classify_jv jv)),
-                                          path )
-                                in
-                                fun path __bindoj_orig ->
-                                  match
-                                    Kxclib.Jv.pump_field "kind" __bindoj_orig
-                                  with
-                                  | `obj (("kind", `str "data") :: param) -> (
-                                      match List.assoc_opt "value" param with
-                                      | Some (`arr [ x0; x1 ]) ->
-                                          let ( >>= ) = Result.bind in
-                                          bytes_of_json'
-                                            (`i 0 :: `f "value" :: path)
-                                            x0
-                                          >>= fun x0 ->
-                                          (fun path -> function
-                                            | `str s ->
-                                                (function
-                                                  | "eof" -> Ok `eof
-                                                  | "maybe-more" ->
-                                                      Ok `maybe_more
-                                                  | s ->
-                                                      Error
-                                                        ( Printf.sprintf
-                                                            "given string '%s' \
-                                                             is not one of [ \
-                                                             'eof', \
-                                                             'maybe-more' ]"
-                                                            s,
-                                                          path ))
-                                                  s
-                                            | jv ->
-                                                Error
-                                                  ( Printf.sprintf
-                                                      "expecting type 'string' \
-                                                       but the given is of \
-                                                       type '%s'"
-                                                      (let open Kxclib.Json in
-                                                       string_of_jv_kind
-                                                         (classify_jv jv)),
-                                                    path ))
-                                            (`i 1 :: `f "value" :: path)
-                                            x1
-                                          >>= fun x1 -> Ok (`data (x0, x1))
-                                      | Some (`arr xs) ->
-                                          Error
-                                            ( Printf.sprintf
-                                                "expecting an array of length \
-                                                 2, but the given has a length \
-                                                 of %d"
-                                                (List.length xs),
-                                              `f "value" :: path )
-                                      | Some jv ->
-                                          Error
-                                            ( Printf.sprintf
-                                                "an array is expected for a \
-                                                 tuple value, but the given is \
-                                                 of type '%s'"
-                                                (let open Kxclib.Json in
-                                                 string_of_jv_kind
-                                                   (classify_jv jv)),
-                                              `f "value" :: path )
-                                      | None ->
-                                          Error
-                                            ( "mandatory field 'value' does \
-                                               not exist",
-                                              path ))
-                                  | `obj (("kind", `str "wait") :: _) ->
-                                      Ok `wait
-                                  | `obj (("kind", `str "eof") :: _) -> Ok `eof
-                                  | `obj
-                                      (("kind", `str discriminator_value) :: _)
-                                    ->
-                                      Error
-                                        ( Printf.sprintf
-                                            "given discriminator field value \
-                                             '%s' is not one of [ 'data', \
-                                             'wait', 'eof' ]"
-                                            discriminator_value,
-                                          `f "kind" :: path )
-                                  | `obj (("kind", jv) :: _) ->
-                                      Error
-                                        ( Printf.sprintf
-                                            "a string is expected for a \
-                                             variant discriminator, but the \
-                                             given is of type '%s'"
-                                            (let open Kxclib.Json in
-                                             string_of_jv_kind (classify_jv jv)),
-                                          `f "kind" :: path )
-                                  | `obj _ ->
-                                      Error
-                                        ( "discriminator field 'kind' does not \
-                                           exist",
-                                          path )
-                                  | jv ->
-                                      Error
-                                        ( Printf.sprintf
-                                            "an object is expected for a \
-                                             variant value, but the given is \
-                                             of type '%s'"
-                                            (let open Kxclib.Json in
-                                             string_of_jv_kind (classify_jv jv)),
-                                          path )
-                              in
-                              of_json_impl)
-                               path x
-                             |> Result.map_error (fun (msg, path) ->
-                                    ( msg,
-                                      path,
-                                      `with_warning
-                                        ( "not considering any config if exists",
-                                          `named
-                                            ( "ByteSourceState",
-                                              `anyone_of
-                                                [
-                                                  `object_of
-                                                    [
-                                                      `mandatory_field
-                                                        ( "kind",
-                                                          `exactly (`str "data")
-                                                        );
-                                                      `mandatory_field
-                                                        ( "value",
-                                                          `tuple_of
-                                                            [
-                                                              `base64str;
-                                                              `string_enum
-                                                                [
-                                                                  "eof";
-                                                                  "maybe-more";
-                                                                ];
-                                                            ] );
-                                                    ];
-                                                  `object_of
-                                                    [
-                                                      `mandatory_field
-                                                        ( "kind",
-                                                          `exactly (`str "wait")
-                                                        );
-                                                    ];
-                                                  `object_of
-                                                    [
-                                                      `mandatory_field
-                                                        ( "kind",
-                                                          `exactly (`str "eof")
-                                                        );
-                                                    ];
-                                                ] ) ) ))
+                          (fun ?(path = []) ->
+                             fun x ->
+                              (let rec of_json_impl =
+                                 let bytes_of_json' path = function
+                                   | (`str x : Kxclib.Json.jv) -> (
+                                       try Ok (Kxclib.Base64.decode x)
+                                       with Invalid_argument msg ->
+                                         Error (msg, path))
+                                   | jv ->
+                                       Error
+                                         ( Printf.sprintf
+                                             "expecting type 'bytes' but the \
+                                              given is of type '%s'"
+                                             (let open Kxclib.Json in
+                                              string_of_jv_kind (classify_jv jv)),
+                                           path )
+                                 in
+                                 fun path ->
+                                   fun __bindoj_orig ->
+                                    match
+                                      Kxclib.Jv.pump_field "kind" __bindoj_orig
+                                    with
+                                    | `obj (("kind", `str "data") :: param) -> (
+                                        match List.assoc_opt "value" param with
+                                        | Some (`arr [ x0; x1 ]) ->
+                                            let ( >>= ) = Result.bind in
+                                            bytes_of_json'
+                                              (`i 0 :: `f "value" :: path)
+                                              x0
+                                            >>= fun x0 ->
+                                            (fun path -> function
+                                              | `str s ->
+                                                  (function
+                                                    | "eof" -> Ok `eof
+                                                    | "maybe-more" ->
+                                                        Ok `maybe_more
+                                                    | s ->
+                                                        Error
+                                                          ( Printf.sprintf
+                                                              "given string \
+                                                               '%s' is not one \
+                                                               of [ 'eof', \
+                                                               'maybe-more' ]"
+                                                              s,
+                                                            path ))
+                                                    s
+                                              | jv ->
+                                                  Error
+                                                    ( Printf.sprintf
+                                                        "expecting type \
+                                                         'string' but the \
+                                                         given is of type '%s'"
+                                                        (let open Kxclib.Json in
+                                                         string_of_jv_kind
+                                                           (classify_jv jv)),
+                                                      path ))
+                                              (`i 1 :: `f "value" :: path)
+                                              x1
+                                            >>= fun x1 -> Ok (`data (x0, x1))
+                                        | Some (`arr xs) ->
+                                            Error
+                                              ( Printf.sprintf
+                                                  "expecting an array of \
+                                                   length 2, but the given has \
+                                                   a length of %d"
+                                                  (List.length xs),
+                                                `f "value" :: path )
+                                        | Some jv ->
+                                            Error
+                                              ( Printf.sprintf
+                                                  "an array is expected for a \
+                                                   tuple value, but the given \
+                                                   is of type '%s'"
+                                                  (let open Kxclib.Json in
+                                                   string_of_jv_kind
+                                                     (classify_jv jv)),
+                                                `f "value" :: path )
+                                        | None ->
+                                            Error
+                                              ( "mandatory field 'value' does \
+                                                 not exist",
+                                                path ))
+                                    | `obj (("kind", `str "wait") :: _) ->
+                                        Ok `wait
+                                    | `obj (("kind", `str "eof") :: _) ->
+                                        Ok `eof
+                                    | `obj
+                                        (("kind", `str discriminator_value) :: _)
+                                      ->
+                                        Error
+                                          ( Printf.sprintf
+                                              "given discriminator field value \
+                                               '%s' is not one of [ 'data', \
+                                               'wait', 'eof' ]"
+                                              discriminator_value,
+                                            `f "kind" :: path )
+                                    | `obj (("kind", jv) :: _) ->
+                                        Error
+                                          ( Printf.sprintf
+                                              "a string is expected for a \
+                                               variant discriminator, but the \
+                                               given is of type '%s'"
+                                              (let open Kxclib.Json in
+                                               string_of_jv_kind
+                                                 (classify_jv jv)),
+                                            `f "kind" :: path )
+                                    | `obj _ ->
+                                        Error
+                                          ( "discriminator field 'kind' does \
+                                             not exist",
+                                            path )
+                                    | jv ->
+                                        Error
+                                          ( Printf.sprintf
+                                              "an object is expected for a \
+                                               variant value, but the given is \
+                                               of type '%s'"
+                                              (let open Kxclib.Json in
+                                               string_of_jv_kind
+                                                 (classify_jv jv)),
+                                            path )
+                               in
+                               of_json_impl)
+                                path x
+                              |> Result.map_error (fun (msg, path) ->
+                                     ( msg,
+                                       path,
+                                       `with_warning
+                                         ( "not considering any config if exists",
+                                           `named
+                                             ( "ByteSourceState",
+                                               `anyone_of
+                                                 [
+                                                   `object_of
+                                                     [
+                                                       `mandatory_field
+                                                         ( "kind",
+                                                           `exactly
+                                                             (`str "data") );
+                                                       `mandatory_field
+                                                         ( "value",
+                                                           `tuple_of
+                                                             [
+                                                               `base64str;
+                                                               `string_enum
+                                                                 [
+                                                                   "eof";
+                                                                   "maybe-more";
+                                                                 ];
+                                                             ] );
+                                                     ];
+                                                   `object_of
+                                                     [
+                                                       `mandatory_field
+                                                         ( "kind",
+                                                           `exactly
+                                                             (`str "wait") );
+                                                     ];
+                                                   `object_of
+                                                     [
+                                                       `mandatory_field
+                                                         ( "kind",
+                                                           `exactly (`str "eof")
+                                                         );
+                                                     ];
+                                                 ] ) ) ))
                             : [ `data of Bytes.t * [ `eof | `maybe_more ]
                               | `wait
                               | `eof ]
@@ -518,23 +523,23 @@ functor
                               );
                               ( "error",
                                 Unsafe.inject
-                                  (Unsafe.callback_with_arity 2
-                                     (fun __arg0 labeledArgs ->
-                                       encode_unit_to_js
-                                         (M.error
-                                            ?exn:
-                                              (let open Js_of_ocaml.Js in
-                                               Optdef.bind labeledArgs
-                                                 (fun la ->
-                                                   Optdef.map
-                                                     (Unsafe.get la "exn")
-                                                     decode_string_of_js)
-                                               |> Optdef.to_option)
-                                            (decode_string_of_js __arg0)))) );
+                                  (Unsafe.callback_with_arity 2 (fun __arg0 ->
+                                       fun labeledArgs ->
+                                        encode_unit_to_js
+                                          (M.error
+                                             ?exn:
+                                               (let open Js_of_ocaml.Js in
+                                                Optdef.bind labeledArgs
+                                                  (fun la ->
+                                                    Optdef.map
+                                                      (Unsafe.get la "exn")
+                                                      decode_string_of_js)
+                                                |> Optdef.to_option)
+                                             (decode_string_of_js __arg0)))) );
                             |]
                         [@@warning "-39"]
 
-                        and decode_Logger_of_js __js_obj : (module Logger) =
+                        and decode_Logger_of_js __js_obj =
                           (module struct
                             let info __arg0 =
                               let open Js_of_ocaml in
@@ -563,7 +568,7 @@ functor
                                                    encode_string_to_js) );
                                           |]);
                                    |])
-                          end)
+                          end : Logger)
                         [@@warning "-39"]
 
                         let rec encode_output_channel_to_js
@@ -714,16 +719,17 @@ functor
                                             ( "register",
                                               Unsafe.inject
                                                 (Unsafe.callback_with_arity 2
-                                                   (fun coordinate value ->
-                                                     register_logger
-                                                       ~id:
-                                                         (decode_string_of_js
-                                                            (Js.Unsafe.get
-                                                               coordinate "id"))
-                                                       (Some
-                                                          ((wrap_peer
-                                                              decode_Logger_of_js)
-                                                             value)))) );
+                                                   (fun coordinate ->
+                                                     fun value ->
+                                                      register_logger
+                                                        ~id:
+                                                          (decode_string_of_js
+                                                             (Js.Unsafe.get
+                                                                coordinate "id"))
+                                                        (Some
+                                                           ((wrap_peer
+                                                               decode_Logger_of_js)
+                                                              value)))) );
                                             ( "deregister",
                                               Unsafe.inject
                                                 (Unsafe.callback
@@ -765,7 +771,7 @@ functor
                                       encode_map_key
                                         ~check_type:
                                           (`StringEnum
-                                            [ "persistent"; "transient" ])
+                                             [ "persistent"; "transient" ])
                                         (Mk_string_enum
                                            (match variant with
                                            | `persistent -> "persistent"
@@ -784,7 +790,7 @@ functor
                                         encode_map_key
                                           ~check_type:
                                             (`StringEnum
-                                              [ "persistent"; "transient" ])
+                                               [ "persistent"; "transient" ])
                                           (Mk_string_enum
                                              (match variant with
                                              | `persistent -> "persistent"
@@ -852,6 +858,6 @@ functor
                     !continuations |> List.iter (fun f -> f concrete_bridge);
                     continuations := [])) );
          |])
-      |> fun x : Bindoj_objintf_shared.endemic_full_bridge_reference ->
-      Obj.magic x
+      |> fun x ->
+      (Obj.magic x : Bindoj_objintf_shared.endemic_full_bridge_reference)
   end

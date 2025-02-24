@@ -36,7 +36,7 @@ let ex_optional_xy_opt_json_shape_explanation =
 [@@warning "-39"]
 
 let rec ex_optional_xy_opt_to_json =
-  (let int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+  (let int_to_json (x : int) = (`num (float_of_int x) : Kxclib.Json.jv) in
    fun { x_opt = x0; y_opt = x1 } ->
      `obj
        (List.filter_map
@@ -49,54 +49,57 @@ let rec ex_optional_xy_opt_to_json =
 [@@warning "-39"]
 
 and ex_optional_xy_opt_of_json' =
-  (fun ?(path = []) x ->
-     (let rec of_json_impl =
-        let option_of_json' t_of_json path = function
-          | `null -> Ok None
-          | x -> (
-              match t_of_json path x with
-              | Ok x -> Ok (Some x)
-              | Error msg -> Error msg)
-        and int_of_json' path = function
-          | (`num x : Kxclib.Json.jv) ->
-              if Float.is_integer x then Ok (int_of_float x)
-              else
+  (fun ?(path = []) ->
+     fun x ->
+      (let rec of_json_impl =
+         let option_of_json' t_of_json path = function
+           | `null -> Ok None
+           | x -> (
+               match t_of_json path x with
+               | Ok x -> Ok (Some x)
+               | Error msg -> Error msg)
+         and int_of_json' path = function
+           | (`num x : Kxclib.Json.jv) ->
+               if Float.is_integer x then Ok (int_of_float x)
+               else
+                 Error
+                   ( Printf.sprintf "expecting an integer but the given is '%f'"
+                       x,
+                     path )
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'int' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         fun path ->
+           fun __bindoj_orig ->
+            match __bindoj_orig with
+            | `obj param ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "xOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+                >>= fun x0 ->
+                List.assoc_opt "yOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+                >>= fun x1 -> Ok { x_opt = x0; y_opt = x1 }
+            | jv ->
                 Error
-                  ( Printf.sprintf "expecting an integer but the given is '%f'" x,
+                  ( Printf.sprintf
+                      "an object is expected for a record value, but the given \
+                       is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
                     path )
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'int' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        fun path __bindoj_orig ->
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "xOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "yOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
-              >>= fun x1 -> Ok { x_opt = x0; y_opt = x1 }
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-      in
-      of_json_impl)
-       path x
-     |> Result.map_error (fun (msg, path) ->
-            (msg, path, ex_optional_xy_opt_json_shape_explanation))
+       in
+       of_json_impl)
+        path x
+      |> Result.map_error (fun (msg, path) ->
+             (msg, path, ex_optional_xy_opt_json_shape_explanation))
     : ex_optional_xy_opt Bindoj_runtime.json_full_decoder)
 [@@warning "-39"]
 
@@ -229,11 +232,11 @@ let rec (ex_optional_variant_reflect : _ Bindoj_runtime.Refl.t) =
                >>= fun x_opt ->
                xs |> StringMap.find_opt "y_opt" >>= Expr.to_option Expr.to_int
                >>= fun y_opt ->
-               (xs |> StringMap.find_opt "objtuple" >>= function
-                | Expr.Tuple [ x0; x1 ] ->
-                    (Expr.to_option Expr.to_int) x0 >>= fun x0 ->
-                    (Expr.to_option Expr.to_int) x1 >>= fun x1 -> Some (x0, x1)
-                | _ -> None)
+               ( xs |> StringMap.find_opt "objtuple" >>= function
+                 | Expr.Tuple [ x0; x1 ] ->
+                     (Expr.to_option Expr.to_int) x0 >>= fun x0 ->
+                     (Expr.to_option Expr.to_int) x1 >>= fun x1 -> Some (x0, x1)
+                 | _ -> None )
                >>= fun objtuple ->
                Some (Inline_record { int_opt; x_opt; y_opt; objtuple }));
          }
@@ -385,7 +388,7 @@ let ex_optional_variant_json_shape_explanation =
 [@@warning "-39"]
 
 let rec ex_optional_variant_to_json =
-  (let int_to_json (x : int) : Kxclib.Json.jv = `num (float_of_int x) in
+  (let int_to_json (x : int) = (`num (float_of_int x) : Kxclib.Json.jv) in
    let rec ex_optional_xy_opt_to_json_nested =
      (fun { x_opt = x0; y_opt = x1 } ->
         List.filter_map
@@ -427,13 +430,14 @@ let rec ex_optional_variant_to_json =
                ]
             @ [
                 ( "objtuple",
-                  (fun (x0, x1) : Kxclib.Json.jv ->
-                    `obj
-                      (List.filter_map Kxclib.identity
-                         [
-                           Option.map (fun x0 -> ("_0", int_to_json x0)) x0;
-                           Option.map (fun x1 -> ("_1", int_to_json x1)) x1;
-                         ]))
+                  (fun (x0, x1) ->
+                    (`obj
+                       (List.filter_map Kxclib.identity
+                          [
+                            Option.map (fun x0 -> ("_0", int_to_json x0)) x0;
+                            Option.map (fun x1 -> ("_1", int_to_json x1)) x1;
+                          ])
+                      : Kxclib.Json.jv))
                     x3 );
               ]))
    | Inline_record_spreading { int_opt = x0; xy_opt = x1 } ->
@@ -456,168 +460,174 @@ let rec ex_optional_variant_to_json =
 [@@warning "-39"]
 
 and ex_optional_variant_of_json' =
-  (fun ?(path = []) x ->
-     (let rec of_json_impl =
-        let option_of_json' t_of_json path = function
-          | `null -> Ok None
-          | x -> (
-              match t_of_json path x with
-              | Ok x -> Ok (Some x)
-              | Error msg -> Error msg)
-        and int_of_json' path = function
-          | (`num x : Kxclib.Json.jv) ->
-              if Float.is_integer x then Ok (int_of_float x)
-              else
+  (fun ?(path = []) ->
+     fun x ->
+      (let rec of_json_impl =
+         let option_of_json' t_of_json path = function
+           | `null -> Ok None
+           | x -> (
+               match t_of_json path x with
+               | Ok x -> Ok (Some x)
+               | Error msg -> Error msg)
+         and int_of_json' path = function
+           | (`num x : Kxclib.Json.jv) ->
+               if Float.is_integer x then Ok (int_of_float x)
+               else
+                 Error
+                   ( Printf.sprintf "expecting an integer but the given is '%f'"
+                       x,
+                     path )
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "expecting type 'int' but the given is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         let rec ex_optional_xy_opt_of_json_nested path __bindoj_orig =
+           match __bindoj_orig with
+           | `obj param ->
+               let ( >>= ) = Result.bind in
+               List.assoc_opt "xOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+               >>= fun x0 ->
+               List.assoc_opt "yOpt" param
+               |> Option.value ~default:`null
+               |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+               >>= fun x1 ->
+               Ok ({ x_opt = x0; y_opt = x1 } : ex_optional_xy_opt)
+           | jv ->
+               Error
+                 ( Printf.sprintf
+                     "an object is expected for a record value, but the given \
+                      is of type '%s'"
+                     (let open Kxclib.Json in
+                      string_of_jv_kind (classify_jv jv)),
+                   path )
+         in
+         fun path ->
+           fun __bindoj_orig ->
+            match Kxclib.Jv.pump_field "tag" __bindoj_orig with
+            | `obj (("tag", `str "tuple-like") :: param) ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "arg" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "arg" :: path)
+                >>= fun x0 -> Ok (Tuple_like x0)
+            | `obj (("tag", `str "tuple-like-alias") :: param) ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "arg" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "arg" :: path)
+                >>= fun x0 -> Ok (Tuple_like_alias x0)
+            | `obj (("tag", `str "tuple-like-obj") :: param) ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "_0" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "_0" :: path)
+                >>= fun x0 ->
+                List.assoc_opt "_1" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "_1" :: path)
+                >>= fun x1 -> Ok (Tuple_like_obj (x0, x1))
+            | `obj (("tag", `str "tuple-like-spreading") :: _) ->
+                let ( >>= ) = Result.bind in
+                ex_optional_xy_opt_of_json_nested path __bindoj_orig
+                >>= fun x0 -> Ok (Tuple_like_spreading x0)
+            | `obj (("tag", `str "inline-record") :: param) ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "intOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "intOpt" :: path)
+                >>= fun x0 ->
+                List.assoc_opt "xOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+                >>= fun x1 ->
+                List.assoc_opt "yOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+                >>= fun x2 ->
+                List.assoc_opt "objtuple" param
+                |> Option.to_result
+                     ~none:("mandatory field 'objtuple' does not exist", path)
+                >>= (fun path -> function
+                      | (`obj fields : Kxclib.Json.jv) ->
+                          let ( >>= ) = Result.bind in
+                          List.assoc_opt "_0" fields
+                          |> Option.value ~default:`null
+                          |> (option_of_json' int_of_json') (`f "_0" :: path)
+                          >>= fun x0 ->
+                          List.assoc_opt "_1" fields
+                          |> Option.value ~default:`null
+                          |> (option_of_json' int_of_json') (`f "_1" :: path)
+                          >>= fun x1 -> Ok (x0, x1)
+                      | jv ->
+                          Error
+                            ( Printf.sprintf
+                                "an object is expected for a tuple value, but \
+                                 the given is of type '%s'"
+                                (let open Kxclib.Json in
+                                 string_of_jv_kind (classify_jv jv)),
+                              path ))
+                      (`f "objtuple" :: path)
+                >>= fun x3 ->
+                Ok
+                  (Inline_record
+                     { int_opt = x0; x_opt = x1; y_opt = x2; objtuple = x3 })
+            | `obj (("tag", `str "inline-record-spreading") :: param) ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "intOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "intOpt" :: path)
+                >>= fun x0 ->
+                ex_optional_xy_opt_of_json_nested path __bindoj_orig
+                >>= fun x1 ->
+                Ok (Inline_record_spreading { int_opt = x0; xy_opt = x1 })
+            | `obj (("tag", `str "reused-inline-record") :: param) ->
+                let ( >>= ) = Result.bind in
+                List.assoc_opt "xOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "xOpt" :: path)
+                >>= fun x0 ->
+                List.assoc_opt "yOpt" param
+                |> Option.value ~default:`null
+                |> (option_of_json' int_of_json') (`f "yOpt" :: path)
+                >>= fun x1 ->
+                Ok (Reused_inline_record { x_opt = x0; y_opt = x1 })
+            | `obj (("tag", `str discriminator_value) :: _) ->
                 Error
-                  ( Printf.sprintf "expecting an integer but the given is '%f'" x,
+                  ( Printf.sprintf
+                      "given discriminator field value '%s' is not one of [ \
+                       'tuple-like', 'tuple-like-alias', 'tuple-like-obj', \
+                       'tuple-like-spreading', 'inline-record', \
+                       'inline-record-spreading', 'reused-inline-record' ]"
+                      discriminator_value,
+                    `f "tag" :: path )
+            | `obj (("tag", jv) :: _) ->
+                Error
+                  ( Printf.sprintf
+                      "a string is expected for a variant discriminator, but \
+                       the given is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
+                    `f "tag" :: path )
+            | `obj _ -> Error ("discriminator field 'tag' does not exist", path)
+            | jv ->
+                Error
+                  ( Printf.sprintf
+                      "an object is expected for a variant value, but the \
+                       given is of type '%s'"
+                      (let open Kxclib.Json in
+                       string_of_jv_kind (classify_jv jv)),
                     path )
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "expecting type 'int' but the given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        let rec ex_optional_xy_opt_of_json_nested path __bindoj_orig =
-          match __bindoj_orig with
-          | `obj param ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "xOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "yOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
-              >>= fun x1 -> Ok ({ x_opt = x0; y_opt = x1 } : ex_optional_xy_opt)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a record value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-        in
-        fun path __bindoj_orig ->
-          match Kxclib.Jv.pump_field "tag" __bindoj_orig with
-          | `obj (("tag", `str "tuple-like") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "arg" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "arg" :: path)
-              >>= fun x0 -> Ok (Tuple_like x0)
-          | `obj (("tag", `str "tuple-like-alias") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "arg" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "arg" :: path)
-              >>= fun x0 -> Ok (Tuple_like_alias x0)
-          | `obj (("tag", `str "tuple-like-obj") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "_0" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "_0" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "_1" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "_1" :: path)
-              >>= fun x1 -> Ok (Tuple_like_obj (x0, x1))
-          | `obj (("tag", `str "tuple-like-spreading") :: _) ->
-              let ( >>= ) = Result.bind in
-              ex_optional_xy_opt_of_json_nested path __bindoj_orig >>= fun x0 ->
-              Ok (Tuple_like_spreading x0)
-          | `obj (("tag", `str "inline-record") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "intOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "intOpt" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "xOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
-              >>= fun x1 ->
-              List.assoc_opt "yOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
-              >>= fun x2 ->
-              List.assoc_opt "objtuple" param
-              |> Option.to_result
-                   ~none:("mandatory field 'objtuple' does not exist", path)
-              >>= (fun path -> function
-                    | (`obj fields : Kxclib.Json.jv) ->
-                        let ( >>= ) = Result.bind in
-                        List.assoc_opt "_0" fields
-                        |> Option.value ~default:`null
-                        |> (option_of_json' int_of_json') (`f "_0" :: path)
-                        >>= fun x0 ->
-                        List.assoc_opt "_1" fields
-                        |> Option.value ~default:`null
-                        |> (option_of_json' int_of_json') (`f "_1" :: path)
-                        >>= fun x1 -> Ok (x0, x1)
-                    | jv ->
-                        Error
-                          ( Printf.sprintf
-                              "an object is expected for a tuple value, but \
-                               the given is of type '%s'"
-                              (let open Kxclib.Json in
-                               string_of_jv_kind (classify_jv jv)),
-                            path ))
-                    (`f "objtuple" :: path)
-              >>= fun x3 ->
-              Ok
-                (Inline_record
-                   { int_opt = x0; x_opt = x1; y_opt = x2; objtuple = x3 })
-          | `obj (("tag", `str "inline-record-spreading") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "intOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "intOpt" :: path)
-              >>= fun x0 ->
-              ex_optional_xy_opt_of_json_nested path __bindoj_orig >>= fun x1 ->
-              Ok (Inline_record_spreading { int_opt = x0; xy_opt = x1 })
-          | `obj (("tag", `str "reused-inline-record") :: param) ->
-              let ( >>= ) = Result.bind in
-              List.assoc_opt "xOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "xOpt" :: path)
-              >>= fun x0 ->
-              List.assoc_opt "yOpt" param
-              |> Option.value ~default:`null
-              |> (option_of_json' int_of_json') (`f "yOpt" :: path)
-              >>= fun x1 -> Ok (Reused_inline_record { x_opt = x0; y_opt = x1 })
-          | `obj (("tag", `str discriminator_value) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "given discriminator field value '%s' is not one of [ \
-                     'tuple-like', 'tuple-like-alias', 'tuple-like-obj', \
-                     'tuple-like-spreading', 'inline-record', \
-                     'inline-record-spreading', 'reused-inline-record' ]"
-                    discriminator_value,
-                  `f "tag" :: path )
-          | `obj (("tag", jv) :: _) ->
-              Error
-                ( Printf.sprintf
-                    "a string is expected for a variant discriminator, but the \
-                     given is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  `f "tag" :: path )
-          | `obj _ -> Error ("discriminator field 'tag' does not exist", path)
-          | jv ->
-              Error
-                ( Printf.sprintf
-                    "an object is expected for a variant value, but the given \
-                     is of type '%s'"
-                    (let open Kxclib.Json in
-                     string_of_jv_kind (classify_jv jv)),
-                  path )
-      in
-      of_json_impl)
-       path x
-     |> Result.map_error (fun (msg, path) ->
-            (msg, path, ex_optional_variant_json_shape_explanation))
+       in
+       of_json_impl)
+        path x
+      |> Result.map_error (fun (msg, path) ->
+             (msg, path, ex_optional_variant_json_shape_explanation))
     : ex_optional_variant Bindoj_runtime.json_full_decoder)
 [@@warning "-39"]
 

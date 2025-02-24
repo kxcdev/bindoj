@@ -79,44 +79,47 @@ let rec ex_ident_student_pair_to_json =
 [@@warning "-39"]
 
 and ex_ident_student_pair_of_json' =
-  (fun ?(path = []) x ->
-     (let rec of_json_impl path __bindoj_orig =
-        match __bindoj_orig with
-        | `obj param ->
-            let ( >>= ) = Result.bind in
-            List.assoc_opt "student1" param
-            |> Option.to_result
-                 ~none:("mandatory field 'student1' does not exist", path)
-            >>= (fun path x ->
-                  (let open Ex_record_gen in
-                   ex_record_student_of_json')
-                    ~path x
-                  |> Result.map_error (fun (msg, path, _) -> (msg, path)))
-                  (`f "student1" :: path)
-            >>= fun x0 ->
-            List.assoc_opt "student2" param
-            |> Option.to_result
-                 ~none:("mandatory field 'student2' does not exist", path)
-            >>= (fun path x ->
-                  (let open Ex_record_gen in
-                   ex_record_student_of_json')
-                    ~path x
-                  |> Result.map_error (fun (msg, path, _) -> (msg, path)))
-                  (`f "student2" :: path)
-            >>= fun x1 -> Ok { student1 = x0; student2 = x1 }
-        | jv ->
-            Error
-              ( Printf.sprintf
-                  "an object is expected for a record value, but the given is \
-                   of type '%s'"
-                  (let open Kxclib.Json in
-                   string_of_jv_kind (classify_jv jv)),
-                path )
-      in
-      of_json_impl)
-       path x
-     |> Result.map_error (fun (msg, path) ->
-            (msg, path, ex_ident_student_pair_json_shape_explanation))
+  (fun ?(path = []) ->
+     fun x ->
+      (let rec of_json_impl path __bindoj_orig =
+         match __bindoj_orig with
+         | `obj param ->
+             let ( >>= ) = Result.bind in
+             List.assoc_opt "student1" param
+             |> Option.to_result
+                  ~none:("mandatory field 'student1' does not exist", path)
+             >>= (fun path ->
+                   fun x ->
+                    (let open Ex_record_gen in
+                     ex_record_student_of_json')
+                      ~path x
+                    |> Result.map_error (fun (msg, path, _) -> (msg, path)))
+                   (`f "student1" :: path)
+             >>= fun x0 ->
+             List.assoc_opt "student2" param
+             |> Option.to_result
+                  ~none:("mandatory field 'student2' does not exist", path)
+             >>= (fun path ->
+                   fun x ->
+                    (let open Ex_record_gen in
+                     ex_record_student_of_json')
+                      ~path x
+                    |> Result.map_error (fun (msg, path, _) -> (msg, path)))
+                   (`f "student2" :: path)
+             >>= fun x1 -> Ok { student1 = x0; student2 = x1 }
+         | jv ->
+             Error
+               ( Printf.sprintf
+                   "an object is expected for a record value, but the given is \
+                    of type '%s'"
+                   (let open Kxclib.Json in
+                    string_of_jv_kind (classify_jv jv)),
+                 path )
+       in
+       of_json_impl)
+        path x
+      |> Result.map_error (fun (msg, path) ->
+             (msg, path, ex_ident_student_pair_json_shape_explanation))
     : ex_ident_student_pair Bindoj_runtime.json_full_decoder)
 [@@warning "-39"]
 

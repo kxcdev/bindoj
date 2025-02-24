@@ -40,7 +40,7 @@ module Json = struct
 end
 
 module Console = struct
-  let log (x: 'a) = Firebug.console##log x
+  let log (x: 'a) = Console.console##log x
 end
 
 module Promise = struct
