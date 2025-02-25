@@ -25,7 +25,28 @@ type method_bundle_caml_style = [ `module_ | `object_ ]
 type ('pos, 'kind) config +=
   | Config_objintf_caml_style :
     method_bundle_caml_style -> ([ `method_bundle_brideable_decl ], [ `objintf_caml_style ]) config
+  | Config_idents_of_type_decls :
+    type_decl list -> ([ `coretype ], [`idents_of_type_decls]) config
+    (** Specifying this [config] when creating [Bindoj_typedesc.Type_desc.Ident]
+        for [Bindoj_typedesc.Type_desc.type_decl] will automatically output
+        an encoder/decoder for [Bindoj_typedesc.Type_desc.type_decl].
+
+        {3 Example}
+        {[
+          Coretype.(mk_list
+            ~configs:[
+              Objintf_config.ident_of_type_decls [ student; teacher ]
+            ]
+            & tuple [
+              ident student.td_name;
+              ident teacher.id_name;
+              ident "custom_type"; ])
+        ]}
+     *)
 
 val default_caml_style : method_bundle_caml_style
 val caml_style : method_bundle_caml_style -> ([ `method_bundle_brideable_decl ], [ `objintf_caml_style ]) config
 val get_caml_style : [ `method_bundle_brideable_decl ] configs -> method_bundle_caml_style
+
+val ident_of_type_decls : type_decl list -> ([ `coretype ], [`idents_of_type_decls]) config
+val get_ident_of_type_decls : [ `coretype ] configs -> type_decl list

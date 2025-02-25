@@ -19,6 +19,7 @@ AnchorZ Inc. to satisfy its needs in its product development workflow.
                                                                               *)
 let all : (module Utils.Ex) list = [
   (module Ex_objintf_system_io);
+  (module Ex_objintf_simple_types);
   (module Ex_objintf_empty);
   (module Ex_objintf_one_directional);
 ]

@@ -107,31 +107,73 @@ let extract_type_decls : 'bi sameworld_objintf -> (type_decl * Coretype.codec) l
     |&?> (function
       | { ord_typ = `nested(td, codec); _ } -> Some (td, codec)
       | _ -> None))
+    |> List.sort_uniq compare
 
-let nested_type_to_ident_opt : [> `direct of Coretype.t | `nested of type_decl * Coretype.codec ] -> _ =
-  function
-  | `direct { ct_desc = Coretype.Ident ident; ct_configs } ->
-    Some (ident, Json_config.(get_mangling_style_opt ct_configs |? default_mangling_style))
-  | `nested ({ td_kind = Alias_decl { ct_desc = Coretype.Ident ident; ct_configs }; td_configs; _ }, _) ->
-    Some (ident, Json_config.(
-        get_mangling_style_opt ct_configs
-        ||?! (fun () -> get_mangling_style_opt td_configs)
-        |? default_mangling_style)
-    )
+let nested_type_to_ident_opt
+  : [> `direct of Coretype.t | `nested of type_decl * Coretype.codec ]
+  -> (Coretype.ident * Json_config.json_mangling_style) option = function
+  | `direct { ct_desc = Ident i; ct_configs } ->
+    Some (i, Json_config.(get_mangling_style_opt ct_configs |? default_mangling_style))
+  | `nested ({ td_kind = Alias_decl { ct_desc = Ident i; ct_configs }; td_configs; _ }, _) ->
+    Some (i, Json_config.(
+      get_mangling_style_opt ct_configs
+      ||?! (fun () -> get_mangling_style_opt td_configs)
+      |? default_mangling_style)
+  )
   | _ -> None
+
+let rec coretype_to_idents ?(inherited=Json_config.default_mangling_style) =
+  let rec go = function
+    | Coretype.Ident ident -> [ident]
+    | Option d -> go d
+    | Tuple ds -> ds |&>> go
+    | List d -> go d
+    | Map (_, d) -> go d
+    | _ -> []
+  in
+  fun { Coretype.ct_desc; ct_configs } ->
+    go ct_desc |&> (fun i ->
+      i, Json_config.(get_mangling_style_opt ct_configs |? inherited))
+and record_field_to_idents ?(inherited=Json_config.default_mangling_style) =
+  fun { rf_type; rf_configs; _ } ->
+    let inherited =
+      Json_config.get_mangling_style_opt rf_configs
+      |? inherited
+    in
+    match rf_type with
+    | `direct ct -> coretype_to_idents ~inherited ct
+    | `nested (td, _) -> type_decl_to_idents ~inherited td
+and type_decl_to_idents ?(inherited=Json_config.default_mangling_style) =
+  function
+  | { td_kind = Alias_decl ct; td_configs; _ } ->
+    coretype_to_idents
+      ~inherited:Json_config.(
+        get_mangling_style_opt td_configs
+        |? inherited)
+      ct
+  | _ -> []
+and nested_type_to_idents
+  : [> `direct of Coretype.t | `nested of type_decl * Coretype.codec ]
+  -> (Coretype.ident * Json_config.json_mangling_style) list
+  =
+  function
+  | `direct ct -> coretype_to_idents ct
+  | `nested (td, _) -> type_decl_to_idents td
+  | _ -> []
 
 let extract_idents : 'bridgeable_ident sameworld_objintf -> (Coretype.ident * Json_config.json_mangling_style) list =
   let idents_of_method :
     _ method_descriptor_body
     -> _ =
     fun body ->
-      (body.positional_arguments |&?> (function
-        | Parg_regular { typ; _ } -> nested_type_to_ident_opt typ))
-      @ (body.labeled_arguments |&?> (function
-        | Larg_regular { typ; _ } -> nested_type_to_ident_opt typ
-        | Larg_optional_with_default _ -> None))
+      (body.positional_arguments |&>> (function
+        | Parg_regular { typ; _ } -> nested_type_to_idents typ))
+      @ (body.labeled_arguments |&>> (function
+        | Larg_regular { typ; _ } -> nested_type_to_idents typ
+        | Larg_optional_with_default { typ; _ } ->
+          type_decl_to_idents (Bindoj_typedesc.Typed_type_desc.Typed.decl typ)))
       @ (match body.return_type with
-        | Mret_regular typ -> nested_type_to_ident_opt typ |> Option.to_list)
+        | Mret_regular typ -> nested_type_to_idents typ)
   in
   fun objintf ->
     (objintf.so_bridgeable_decls
@@ -143,8 +185,9 @@ let extract_idents : 'bridgeable_ident sameworld_objintf -> (Coretype.ident * Js
         | Simple_method body -> idents_of_method body
         | Complex_method body -> idents_of_method body)
       ))
-    @ (objintf.so_named_objects |&?> (fun { nod_typ; _ } -> nested_type_to_ident_opt nod_typ))
-    @ (objintf.so_object_registries |&?> (fun { ord_typ; _ } -> nested_type_to_ident_opt ord_typ))
+    @ (objintf.so_named_objects |&>> (fun { nod_typ; _ } -> nested_type_to_idents nod_typ))
+    @ (objintf.so_object_registries |&>> (fun { ord_typ; _ } -> nested_type_to_idents ord_typ))
+    |> List.sort_uniq compare
 
 let map_bridgeables_of :
   [ `simple | `complex ]

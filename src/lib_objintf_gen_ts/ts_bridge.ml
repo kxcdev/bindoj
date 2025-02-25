@@ -100,13 +100,13 @@ let resolve_type_decls_and_idents
     | ((td, codec) as x :: xs) :: ys ->
       let resolution = validate_resolution_strategy ~type_decl_resolution_strategy td codec in
       begin match resolution, td.td_kind with
-        | `import_location _, _ -> go tds ids ys
+        | `import_location _, _ -> go (x :: tds) ids (xs :: ys)
         | _, Alias_decl _ ->
-          let id = nested_type_to_ident_opt (`nested x) |> Option.to_list in
+          let id = nested_type_to_idents (`nested x) in
           go (x :: tds) (id @ ids) (xs :: ys)
         | _, Record_decl fields ->
           let ids =
-            (fields |&?> ((fun r -> r.rf_type) &> nested_type_to_ident_opt)) @ ids
+            (fields |&>> ((fun r -> r.rf_type) &> nested_type_to_idents)) @ ids
           in
           let typs =
             fields |&?> ((fun r -> r.rf_type) &> choose_td)
@@ -119,10 +119,10 @@ let resolve_type_decls_and_idents
             | `no_param -> [], []
             | `tuple_like args ->
               args |&?> ((fun a -> a.va_type) &> choose_td),
-              args |&?> ((fun a -> a.va_type) &> nested_type_to_ident_opt)
+              args |&>> ((fun a -> a.va_type) &> nested_type_to_idents)
             | `inline_record fields ->
               fields |&?> ((fun r -> r.rf_type) &> choose_td),
-              fields |&?> ((fun r -> r.rf_type) &> nested_type_to_ident_opt)
+              fields |&>> ((fun r -> r.rf_type) &> nested_type_to_idents)
             | `reused_inline_record td when
               Ts_config.(get_reused_variant_inline_record_style_opt c.vc_configs
                 |? default_reused_variant_inline_record_style) = `intersection_type
@@ -148,6 +148,7 @@ let resolve_type_decls_and_idents
         | `import_location location -> some (
           Ts_config.mangled `type_name mangling_style id.id_name |> Mangling.(escape ~charmap:charmap_js_identifier), location)
         | _ -> None))
+      |> List.sort_uniq compare
       |> List.group_by snd
       |&> (fun (loc, names) ->
         `import {

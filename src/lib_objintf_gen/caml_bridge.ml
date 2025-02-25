@@ -414,7 +414,11 @@ and gen_concrete_bridge :
       [ Sig.include_ & Incl.mk & Mty.typeof_ &  Mod.ident (lidloc Bridge_labels.concrete_bridge_interfaces) ];
       (match peer_object_registry, peer_objects with
         | [], [] -> []
-        | _ -> [ Sig.open_ (Opn.mk (lidloc Bridge_labels.interfaces)) ]);
+        | _ ->
+          [ Sig.open_ &
+              Opn.mk
+                ~attrs:(warning_attribute "-33") (* suppress 'unused open' warning *)
+                (lidloc Bridge_labels.interfaces) ]);
       [
         (peer_object_registry
         |> function
@@ -858,9 +862,10 @@ let gen_full_bridge_impl : type bridgeable_ident.
         match typ with
         | (`nested _ | `direct _) as typ when is_self_coretype typ ->
           failwith "Coretype.Self is not supported."
+        | `direct ct | `nested ({td_kind = Alias_decl ct; _}, _) ->
+          ((kind, party), `coretype ct) :: bs, ts, ss, cs
         | `nested td ->
           bs, ((kind, party), td) :: ts, ss, cs
-        | `direct ct -> ((kind, party), `coretype ct) :: bs, ts, ss, cs
         | `bridgeable (_, bi) ->
           let bd = bridgeable_ident_resolver bi in
           let name = bd |> complex_descriptor_of_bridgeable |> name_of_bridgeable in
@@ -1068,10 +1073,17 @@ let gen_full_bridge_impl : type bridgeable_ident.
     in
 
     let init_registry_objects ident =
-      [%expr
-        [%e evar & Bridge_labels.functor_parameter_var ^ "." ^ Bridge_labels.initially_registry_objects]
-          [%e Exp.pack (Mod.ident (lidloc & ident))];
-      ]
+      if objintf.so_object_registries
+        |> List.exists (fun { ord_party; _ } ->
+          party_with_polarity ~polarity ord_party = `endemic
+        )
+      then
+        [%expr
+          [%e evar & Bridge_labels.functor_parameter_var ^ "." ^ Bridge_labels.initially_registry_objects]
+            [%e Exp.pack (Mod.ident (lidloc & ident))];
+        ]
+      else
+        [%expr ()]
     in
 
     let gen_object_registy
@@ -1079,7 +1091,7 @@ let gen_full_bridge_impl : type bridgeable_ident.
       ~gen_register
       party
       gen_setup =
-      [%str open Bindoj_runtime]
+      [%str open Bindoj_runtime [@@warning "-33"]]
       @ (objintf.so_object_registries
         |> List.concat_map (function
           | { ord_name; ord_coordinate_desc; ord_party; _ }
@@ -1231,7 +1243,9 @@ let gen_full_bridge_impl : type bridgeable_ident.
     let setup_endemic =
       Exp.sequence
         (gen_setup_endemic_object_registry ()
-        |> Exp.open_ (Opn.mk & Mod.ident & lidloc Bridge_labels.endemic_object_registry))
+        |> Exp.open_
+            ~attrs:(warning_attribute "-33") (* suppress 'unused open' warning *)
+            (Opn.mk & Mod.ident & lidloc Bridge_labels.endemic_object_registry))
         (gen_setup_endemic_objects ())
     in
 

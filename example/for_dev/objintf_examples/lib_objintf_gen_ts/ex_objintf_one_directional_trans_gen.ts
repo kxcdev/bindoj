@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { objintf as bindoj } from "../../public-packages/runtime";
 import { NonJsonValues } from "./utils";
-export type ExRecordStudent = { readonly admissionYear: number; readonly name: string };
 export type MyString = string;
+export type ExRecordStudent = { readonly admissionYear: number; readonly name: string };
 export type Hello = (name: string) => void;
 export type UnitSole = (__arg0: string) => string;
 export type UnitObj = {

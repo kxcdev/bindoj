@@ -111,8 +111,8 @@ module Builtin_codecs = struct
   }
 
   let float = {
-    encoder = [%expr fun x -> x];
-    decoder = [%expr fun x -> x];
+    encoder = [%expr fun (x: float) -> x];
+    decoder = [%expr fun (x: float) -> x];
   }
 
   let string = {
@@ -169,7 +169,7 @@ module Builtin_codecs = struct
         |> Js_of_ocaml.Js.array
       ];
     decoder = [%expr fun js_to_t jv ->
-      jv |> Js_of_ocaml.Js.to_array |> Array.map js_to_t
+      jv |> Js_of_ocaml.Js.to_array |> Array.map js_to_t |> Array.to_list
     ];
   }
 
@@ -181,7 +181,7 @@ module Builtin_codecs = struct
   let map = {
     encoder = [%expr fun key_to_string js_of_v fields ->
       fields
-      |> List.map (fun (k, v) -> (key_to_string k, js_of_v v))
+      |> List.map (fun (k, v) -> (key_to_string k, (Obj.magic (js_of_v v) : Js_of_ocaml.Js.Unsafe.any)))
       |> Array.of_list
       |> Js_of_ocaml.Js.Unsafe.obj
     ];
@@ -192,7 +192,7 @@ module Builtin_codecs = struct
         |> Js.to_array
         |> Array.map (fun elem ->
           let [| k; v |] = Js.to_array elem [@@warning "-8"] in
-          (key_of_string (Js.to_string k), js_to_v v))
+          (key_of_string (Js.to_string (Obj.magic (k: Js.Unsafe.any): js_string Js.t)), js_to_v (Obj.magic (v: Js.Unsafe.any))))
         |> Array.to_list
       ];
   }
@@ -219,9 +219,29 @@ let builtin_codecs = Builtin_codecs.all
 let builtin_codecs_map =
   builtin_codecs |> StringMap.of_list
 
+let encoder_of_type_decl codec ({ td_name; _ }) =
+  let loc = Location.none in
+  let open_, name = Json_config.get_encoder_name ~resolution_strategy:codec td_name in
+  [%expr (fun x ->
+    [%e evar ?open_ name] x
+    |> Kxclib_js.Json_ext.to_xjv
+  )]
+
+let decoder_of_type_decl codec ({ td_name; _ }) =
+  let loc = Location.none in
+  let open_, name = Json_config.get_decoder_name ~resolution_strategy:codec td_name in
+  [%expr (fun x ->
+    Kxclib_js.Json_ext.of_xjv x
+    |> [%e evar ?open_ name]
+    |> (function
+      | Error e -> failwith (Bindoj_runtime.OfJsonResult.Err.to_string e)
+      | Ok result -> result)
+  )]
+
 let codec_of_coretype
   ?self_codec
   ~get_custom_codec
+  ~get_ident_codec_opt
   ~get_name
   ~map_key_converter
   ~tuple_case
@@ -240,7 +260,8 @@ let codec_of_coretype
         [%expr [%e evar_name (Coretype.string_of_prim p)]]
       | Uninhabitable -> evar_name "uninhabitable"
       | Ident i ->
-        evar_name ~codec:i.id_codec i.id_name
+        get_ident_codec_opt i
+        |? (evar_name ~codec:i.id_codec i.id_name)
       | Option (Option _) -> failwith "Nested option is not supported."
       | Option t -> [%expr [%e evar_name "option"] [%e go t]]
       | List t -> [%expr [%e evar_name "list"] [%e go t]]
@@ -298,15 +319,15 @@ let encoder_of_coretype =
           encoder_of_objtuple ~loc vari (fun i -> function
             | Option (Option _) -> failwith "unsupported"
             | Option t ->
-              [%expr [%e go t] [%e evar (vari i)]], true
+              [%expr (Obj.magic ([%e go t] [%e evar (vari i)]): Js_of_ocaml.Js.Unsafe.any)], true
             | t ->
-              [%expr [%e go t] [%e evar (vari i)]], false
+              [%expr (Obj.magic ([%e go t] [%e evar (vari i)]): Js_of_ocaml.Js.Unsafe.any)], false
           ) ts
         in
         [%expr Js_of_ocaml.Js.Unsafe.obj [%e fields]]
       | `arr ->
         [%expr Js_of_ocaml.Js.array [%e
-          ts |> List.mapi (fun i t -> [%expr [%e go t] [%e evar (vari i)]])
+          ts |> List.mapi (fun i t -> [%expr (Obj.magic ([%e go t] [%e evar (vari i)]) : 'a Js_of_ocaml.Js.t)])
              |> Exp.array]]
     in
     Exp.fun_ Nolabel None args body
@@ -327,6 +348,11 @@ let encoder_of_coretype =
   fun ?self_codec base_mangling_style ct ->
     codec_of_coretype
       ~get_custom_codec:Objintf_config.get_custom_encoder
+      ~get_ident_codec_opt:(fun i ->
+          Objintf_config.get_ident_of_type_decls ct.ct_configs
+          |> List.find_opt (fun { td_name; _ } -> td_name = i.id_name)
+          >? (encoder_of_type_decl i.id_codec)
+        )
       ~get_name:Bridge_labels.Codec.get_encoder_name
       ~tuple_case
       ~map_key_converter
@@ -349,7 +375,7 @@ let decoder_of_coretype =
           | [%p Pat.array args] ->
             [%e Exp.tuple (
               ts |> List.mapi (fun i t ->
-                [%expr [%e go t] [%e evar (vari i)]])
+                [%expr [%e go t] (Obj.magic ([%e evar (vari i)] : 'a Js_of_ocaml.Js.t))])
             )]
           | xs -> Format.kasprintf failwith [%e estring ~loc tuple_length_error_message] (Array.length xs)
         ]
@@ -374,7 +400,7 @@ let decoder_of_coretype =
     in
     Exp.fun_ Nolabel None [%pat? jv] body
   in
-  let map_key_converter = function | `string -> [%expr fun (s: string) -> Some s] in
+  let map_key_converter = function | `string -> [%expr fun (s: string) -> s] in
   let string_enum_case ~base_mangling_style (cs: string_enum_case list) =
     (cs |&> (fun ((name, _, _) as c) ->
       let json_name = Json_config.get_mangled_name_of_string_enum_case ~inherited:base_mangling_style c in
@@ -394,6 +420,11 @@ let decoder_of_coretype =
   fun ?self_codec base_mangling_style ct ->
     codec_of_coretype
       ~get_custom_codec:Objintf_config.get_custom_decoder
+      ~get_ident_codec_opt:(fun i ->
+        Objintf_config.get_ident_of_type_decls ct.ct_configs
+        |> List.find_opt (fun { td_name; _ } -> td_name = i.id_name)
+        >? (decoder_of_type_decl i.id_codec)
+      )
       ~get_name:Bridge_labels.Codec.get_decoder_name
       ~tuple_case
       ~map_key_converter
@@ -442,17 +473,13 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
           if is_self_coretype typ then failwith "Coretype.Self is not supported.";
           encoder_of_coretype
             base_mangling_style ct
-        | `nested ({ td_name; _ } as td, codec) ->
+        | `nested (td, codec) ->
           let codec =
             match resolution_strategy td codec with
             | `inline_type_definition -> `default
             | _ -> codec
           in
-          let open_, name = Json_config.get_encoder_name ~resolution_strategy:codec td_name in
-          [%expr (fun x ->
-            [%e evar ?open_ name] x
-            |> Kxclib_js.Json_ext.to_xjv
-          )]
+          encoder_of_type_decl codec td
         | `bridgeable (party, bi) ->
           bi
           |> bridgeable_ident_resolver
@@ -484,20 +511,13 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
           if is_self_coretype typ then failwith "Coretype.Self is not supported.";
           decoder_of_coretype
             base_mangling_style ct
-        | `nested ({ td_name; _ } as td, codec) ->
+        | `nested (td, codec) ->
           let codec =
             match resolution_strategy td codec with
             | `inline_type_definition -> `default
             | _ -> codec
           in
-          let open_, name = Json_config.get_decoder_name ~resolution_strategy:codec td_name in
-          [%expr (fun x ->
-            Kxclib_js.Json_ext.of_xjv x
-            |> [%e evar ?open_ name]
-            |> (function
-              | Error e -> failwith (Bindoj_runtime.OfJsonResult.Err.to_string e)
-              | Ok result -> result)
-          )]
+          decoder_of_type_decl codec td
         | `bridgeable (party, bi) ->
           bridgeable_ident_resolver bi
           |> complex_descriptor_of_bridgeable
@@ -864,6 +884,7 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
           let [%p pvar js_registry] =
             [%e get_instance
             |> ejs_unsafe_get ~loc (estring ~loc Bridge_labels.Js.endemic_object_registry)]
+            [@@warning "-26"]
           in
           [%e (peer_object_registries |&> (fun { ord_name; ord_coordinate_desc; ord_typ; _ } ->
               [%expr

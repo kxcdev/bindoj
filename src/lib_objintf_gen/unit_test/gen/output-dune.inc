@@ -5,16 +5,19 @@
   (name bindoj_objintf_gen_test_gen_output)
   (modules
    ex_objintf_system_io_gen
+   ex_objintf_simple_types_gen
    ex_objintf_empty_gen
    ex_objintf_one_directional_gen
    ex_objintf_system_io_trans_gen
+   ex_objintf_simple_types_trans_gen
    ex_objintf_empty_trans_gen
    ex_objintf_one_directional_trans_gen)
   (libraries
    bindoj.base
    bindoj.std_runtime
    bindoj.objintf_shared
-   bindoj_objintf_gen_test_gen_utils))
+   bindoj_objintf_gen_test_gen_utils
+   bindoj_test_common_typedesc_generated_examples))
  (rule
   (alias gen)
   (mode (promote (until-clean)))
@@ -34,6 +37,25 @@
      (run %{generator} ex_objintf_system_io_trans_gen.ml))
     (with-stdout-to ex_objintf_system_io_trans_gen.mli
      (run %{generator} ex_objintf_system_io_trans_gen.mli)))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (targets
+   ex_objintf_simple_types_gen.ml
+   ex_objintf_simple_types_gen.mli
+   ex_objintf_simple_types_trans_gen.ml
+   ex_objintf_simple_types_trans_gen.mli)
+  (deps (:generator ../gen.exe))
+  (action
+   (progn
+    (with-stdout-to ex_objintf_simple_types_gen.ml
+     (run %{generator} ex_objintf_simple_types_gen.ml))
+    (with-stdout-to ex_objintf_simple_types_gen.mli
+     (run %{generator} ex_objintf_simple_types_gen.mli))
+    (with-stdout-to ex_objintf_simple_types_trans_gen.ml
+     (run %{generator} ex_objintf_simple_types_trans_gen.ml))
+    (with-stdout-to ex_objintf_simple_types_trans_gen.mli
+     (run %{generator} ex_objintf_simple_types_trans_gen.mli)))))
  (rule
   (alias gen)
   (mode (promote (until-clean)))

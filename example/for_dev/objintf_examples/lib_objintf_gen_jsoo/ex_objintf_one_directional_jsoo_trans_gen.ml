@@ -365,7 +365,7 @@ functor
     let ref_setup_called = ref false
 
     module Endemic_object_registry = struct
-      open Bindoj_runtime
+      open Bindoj_runtime [@@warning "-33"]
 
       let registry_of_string = ref StringMap.empty
 
@@ -461,7 +461,7 @@ functor
                                      | Some obj ->
                                          Js.Unsafe.inject
                                            (encode_hello_to_js obj))) );
-                          |]));
+                          |])) [@warning "-33"];
                     let open Js_of_ocaml in
                     Js.Unsafe.set
                       (Js.Unsafe.get peer_full_bridge "instance")

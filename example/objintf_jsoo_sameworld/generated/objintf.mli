@@ -100,7 +100,7 @@ end
 (** Ex_objintf_system_io objintf *)
 module type Concrete_bridge = sig
   include module type of Concrete_bridge_interfaces
-  open Interfaces
+  open Interfaces [@@warning "-33"]
 
   module Peer_object_registry : sig
     val lookup_logger :

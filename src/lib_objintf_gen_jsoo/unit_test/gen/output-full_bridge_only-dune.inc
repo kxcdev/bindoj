@@ -5,13 +5,16 @@
   (name bindoj_objintf_gen_jsoo_test_gen_output_full_bridge_only)
   (modules
    ex_objintf_system_io_jsoo_gen
+   ex_objintf_simple_types_jsoo_gen
    ex_objintf_empty_jsoo_gen
    ex_objintf_one_directional_jsoo_gen
    ex_objintf_system_io_jsoo_trans_gen
+   ex_objintf_simple_types_jsoo_trans_gen
    ex_objintf_empty_jsoo_trans_gen
    ex_objintf_one_directional_jsoo_trans_gen)
   (libraries
    bindoj_objintf_gen_jsoo_test_gen_utils
+   bindoj_test_common_typedesc_generated_examples
    bindoj.base
    bindoj.std_runtime
    bindoj.objintf_shared
@@ -43,6 +46,31 @@
      (run
       %{generator}
       ex_objintf_system_io_jsoo_trans_gen.mli
+      -full-bridge-only)))))
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
+  (targets
+   ex_objintf_simple_types_jsoo_gen.ml
+   ex_objintf_simple_types_jsoo_gen.mli
+   ex_objintf_simple_types_jsoo_trans_gen.ml
+   ex_objintf_simple_types_jsoo_trans_gen.mli)
+  (deps (:generator ../gen.exe))
+  (action
+   (progn
+    (with-stdout-to ex_objintf_simple_types_jsoo_gen.ml
+     (run %{generator} ex_objintf_simple_types_jsoo_gen.ml -full-bridge-only))
+    (with-stdout-to ex_objintf_simple_types_jsoo_gen.mli
+     (run %{generator} ex_objintf_simple_types_jsoo_gen.mli -full-bridge-only))
+    (with-stdout-to ex_objintf_simple_types_jsoo_trans_gen.ml
+     (run
+      %{generator}
+      ex_objintf_simple_types_jsoo_trans_gen.ml
+      -full-bridge-only))
+    (with-stdout-to ex_objintf_simple_types_jsoo_trans_gen.mli
+     (run
+      %{generator}
+      ex_objintf_simple_types_jsoo_trans_gen.mli
       -full-bridge-only)))))
  (rule
   (alias gen)

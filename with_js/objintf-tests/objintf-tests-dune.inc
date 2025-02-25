@@ -17,6 +17,21 @@
  (rule
   (alias gen)
   (mode (promote (until-clean)))
+  (targets
+   ex_objintf_simple_types_gen.ts
+   ex_objintf_simple_types_trans_gen.ts)
+  (deps
+   (:ts_gen %{workspace_root}/src/lib_objintf_gen_ts/unit_test/gen/gen.exe))
+  (action
+   (progn
+    (with-stdout-to ex_objintf_simple_types_gen.ts
+     (run %{ts_gen} ex_objintf_simple_types_gen.ts))
+    (with-stdout-to ex_objintf_simple_types_trans_gen.ts
+     (run %{ts_gen} ex_objintf_simple_types_trans_gen.ts))))))
+(subdir ts
+ (rule
+  (alias gen)
+  (mode (promote (until-clean)))
   (targets ex_objintf_empty_gen.ts ex_objintf_empty_trans_gen.ts)
   (deps
    (:ts_gen %{workspace_root}/src/lib_objintf_gen_ts/unit_test/gen/gen.exe))

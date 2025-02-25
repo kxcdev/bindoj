@@ -685,7 +685,10 @@ let gen_json_encoder' :
   let nested_encoder_name codec td =
     (match codec with
     | `default -> ""
-    | `open_ m | `in_module m -> String.lowercase_ascii m ^ "__")
+    | `open_ m | `in_module m ->
+      (String.split_on_char '.' m
+      |> String.concat "__"
+      |> String.lowercase_ascii) ^ "__")
     ^ json_encoder_name td ^ "_nested"
   in
   let get_encoder ?(is_field=false) ~inherited_codec ~nested ~spreading base_mangling_style self_ename ty arg =
@@ -989,7 +992,10 @@ let gen_json_decoder_impl :
   let nested_decoder_name codec td =
     (match codec with
     | `default -> ""
-    | `open_ m | `in_module m -> String.lowercase_ascii m ^ "__")
+    | `open_ m | `in_module m ->
+      (String.split_on_char '.' m
+      |> String.concat "__"
+      |> String.lowercase_ascii) ^ "__")
     ^ json_decoder_name td ^ "_nested"
   in
   let get_decoder ~inherited_codec base_mangling_style self_ename = function

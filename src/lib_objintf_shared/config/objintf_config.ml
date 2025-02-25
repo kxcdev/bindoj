@@ -25,10 +25,19 @@ type method_bundle_caml_style = [ `module_ | `object_ ]
 type ('pos, 'kind) config +=
   | Config_objintf_caml_style :
     method_bundle_caml_style -> ([ `method_bundle_brideable_decl ], [ `objintf_caml_style ]) config
+  | Config_idents_of_type_decls :
+    type_decl list -> ([ `coretype ], [`idents_of_type_decls]) config
 
 let default_caml_style = `module_
 let caml_style s = Config_objintf_caml_style s
 let get_caml_style =
   Configs.find_or_default ~default:default_caml_style (function
     | Config_objintf_caml_style s -> Some s
+    | _ -> None)
+
+let ident_of_type_decls tds = Config_idents_of_type_decls tds
+
+let get_ident_of_type_decls =
+  Configs.find_or_default ~default:[] (function
+    | Config_idents_of_type_decls tds -> Some tds
     | _ -> None)

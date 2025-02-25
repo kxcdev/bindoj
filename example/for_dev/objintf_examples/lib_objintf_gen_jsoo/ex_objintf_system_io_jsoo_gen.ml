@@ -102,7 +102,7 @@ end
 (** Ex_objintf_system_io objintf *)
 module type Concrete_bridge = sig
   include module type of Concrete_bridge_interfaces
-  open Interfaces
+  open Interfaces [@@warning "-33"]
 
   module Peer_object_registry : sig
     val lookup_logger :
@@ -502,7 +502,7 @@ functor
                         [@@warning "-39"]
 
                         module Peer_object_registry = struct
-                          open Bindoj_runtime
+                          open Bindoj_runtime [@@warning "-33"]
 
                           let registry_of_logger = ref StringMap.empty
 
@@ -550,6 +550,7 @@ functor
                               Js.Unsafe.get
                                 (Js.Unsafe.get peer_full_bridge "instance")
                                 "endemicObjectRegistry"
+                                [@@warning "-26"]
                             in
                             Js.Unsafe.get
                               (Js.Unsafe.get js_registry "logger")
@@ -710,7 +711,7 @@ functor
                         end
 
                         module Endemic_object_registry = struct
-                          open Bindoj_runtime
+                          open Bindoj_runtime [@@warning "-33"]
 
                           let registry_of_logger = ref StringMap.empty
 
@@ -752,7 +753,7 @@ functor
                                            | Some obj ->
                                                Js.Unsafe.inject
                                                  (encode_Logger_to_js obj))) );
-                                |]));
+                                |])) [@warning "-33"];
                           let open Js_of_ocaml in
                           Js.Unsafe.set
                             (Js.Unsafe.get peer_full_bridge "instance")

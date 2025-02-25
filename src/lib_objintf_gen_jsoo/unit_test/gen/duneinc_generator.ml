@@ -84,6 +84,7 @@ let () =
             ~modules':[ list ~sep:sp (fmt "%s_jsoo_gen"); list ~sep:sp (fmt "%s_jsoo_trans_gen") ]
             ~libraries:([
               "bindoj_objintf_gen_jsoo_test_gen_utils";
+              "bindoj_test_common_typedesc_generated_examples";
               "bindoj.base";
               "bindoj.std_runtime";
               "bindoj.objintf_shared";

@@ -170,7 +170,7 @@ end
 
 module type Concrete_bridge = sig
   include module type of Concrete_bridge_interfaces
-  open Interfaces
+  open Interfaces [@@warning "-33"]
 
   module Peer_object_registry : sig
     val lookup_string : id0:string -> id1:Kxclib.int53p -> string option
@@ -427,7 +427,7 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                       [@@warning "-39"]
 
                       module Peer_object_registry = struct
-                        open Bindoj_runtime
+                        open Bindoj_runtime [@@warning "-33"]
 
                         let registry_of_string = ref StringMap.empty
 
@@ -481,6 +481,7 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                             Js.Unsafe.get
                               (Js.Unsafe.get peer_full_bridge "instance")
                               "endemicObjectRegistry"
+                              [@@warning "-26"]
                           in
                           Js.Unsafe.get
                             (Js.Unsafe.get js_registry "string")

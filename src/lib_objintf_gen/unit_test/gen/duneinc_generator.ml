@@ -71,6 +71,7 @@ let () =
               "bindoj.std_runtime";
               "bindoj.objintf_shared";
               "bindoj_objintf_gen_test_gen_utils";
+              "bindoj_test_common_typedesc_generated_examples";
             ];
             many caml_module
         ]
