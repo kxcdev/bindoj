@@ -71,7 +71,7 @@ let bridgeables : (bridgeable_ident * (_, bridgeable_ident) bridgeable_decl) lis
         (method_return_type_regular & `direct cty_string);
       simple_method_with_trailing_units 2 "unit_02"
         ~pargs:[
-          positional_argument_regular (`direct cty_string);
+          positional_argument_regular ~name:"parg_name" (`direct cty_string);
         ]
         (method_return_type_regular & `direct cty_string);
       simple_method_with_trailing_units 3 "unit_03"
@@ -94,7 +94,7 @@ let bridgeables : (bridgeable_ident * (_, bridgeable_ident) bridgeable_decl) lis
       simple_bridgeable & sole_method_bridgeable &
         simple_method "hello"
           ~pargs:[
-            positional_argument_regular ~name:"name" (`direct cty_string);
+            positional_argument_regular ~name:"parg_name" (`direct cty_string);
           ]
           (method_return_type_regular & `direct cty_unit);
 
@@ -121,12 +121,12 @@ let bridgeables : (bridgeable_ident * (_, bridgeable_ident) bridgeable_decl) lis
       simple_bridgeable & method_bundle_bridgeable "with_default_value" [
         simple_method "get_default_string"
           ~largs:[
-            labeled_argument_with_default "str" ttd_my_string ~default:"Hello"
+            labeled_argument_with_default "larg_str" ttd_my_string ~default:"Hello"
           ]
           (method_return_type_regular & `direct cty_string);
         simple_method "get_default_student"
           ~largs:[
-            labeled_argument_with_default "student"
+            labeled_argument_with_default "larg_student"
               ttd_student
               ~default:{
                 admission_year = 1984;
@@ -173,14 +173,14 @@ let objintf_decl polarity: bridgeable_ident sameworld_objintf =
   ] ~object_registries:[
     object_registry_decl "string"
       ~coordinate_desc:[
-        "id0", `prim `string;
-        "id1", `prim `int53p;
+        "cdn_id0", `prim `string;
+        "cdn_id1", `prim `int53p;
       ]
       ~party:`peer
       ~typ:(`direct cty_string);
     object_registry_decl "hello"
       ~coordinate_desc:[
-        "id", `prim `string;
+        "cdn_id", `prim `string;
       ]
       ~party:`peer
       ~typ:(`bridgeable (`peer, `hello));

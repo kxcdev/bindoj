@@ -130,16 +130,18 @@ module Simple_interfaces = struct
   end
 
   module type with_default_value = sig
-    val get_default_string : ?str:string -> string
-    val get_default_student : ?student:ex_record_student -> string
+    val get_default_string : ?larg_str:string -> string
+    val get_default_student : ?larg_student:ex_record_student -> string
   end
 end
 
 open Simple_interfaces [@@warning "-33"]
 
 module type Endemic_object_registry_interface = sig
-  val register_string : id0:string -> id1:Kxclib.int53p -> string option -> unit
-  val register_hello : id:string -> hello option -> unit
+  val register_string :
+    cdn_id0:string -> cdn_id1:Kxclib.int53p -> string option -> unit
+
+  val register_hello : cdn_id:string -> hello option -> unit
 end
 
 module Concrete_bridge_interfaces = struct
@@ -237,8 +239,8 @@ functor
     and decode_int53p_of_js = Kxclib.Int53p.of_float [@@warning "-32"]
 
     let rec encode_hello_to_js (__caml_obj : hello) =
-      Js_of_ocaml.Js.Unsafe.callback (fun name ->
-          encode_unit_to_js (__caml_obj (decode_string_of_js name)))
+      Js_of_ocaml.Js.Unsafe.callback (fun parg_name ->
+          encode_unit_to_js (__caml_obj (decode_string_of_js parg_name)))
     [@@warning "-39"]
 
     and encode_unit_sole_to_js (__caml_obj : unit_sole) =
@@ -261,9 +263,9 @@ functor
                      (__caml_obj#unit_01 (decode_string_of_js __arg0) ()))) );
           ( "unit02",
             Unsafe.inject
-              (Unsafe.callback (fun __arg0 ->
+              (Unsafe.callback (fun parg_name ->
                    encode_string_to_js
-                     (__caml_obj#unit_02 (decode_string_of_js __arg0) () ())))
+                     (__caml_obj#unit_02 (decode_string_of_js parg_name) () ())))
           );
           ( "unit03",
             Unsafe.inject
@@ -288,9 +290,9 @@ functor
                      (M.unit_01 (decode_string_of_js __arg0) ()))) );
           ( "unit02",
             Unsafe.inject
-              (Unsafe.callback (fun __arg0 ->
+              (Unsafe.callback (fun parg_name ->
                    encode_string_to_js
-                     (M.unit_02 (decode_string_of_js __arg0) () ()))) );
+                     (M.unit_02 (decode_string_of_js parg_name) () ()))) );
           ( "unit03",
             Unsafe.inject
               (Unsafe.callback (fun __arg0 ->
@@ -308,10 +310,10 @@ functor
               (Unsafe.callback (fun labeledArgs ->
                    encode_string_to_js
                      (M.get_default_string
-                        ~str:
+                        ~larg_str:
                           ((let open Js_of_ocaml.Js in
                             Optdef.bind labeledArgs (fun la ->
-                                Optdef.map (Unsafe.get la "str")
+                                Optdef.map (Unsafe.get la "largStr")
                                   decode_string_of_js)
                             |> Optdef.to_option)
                           |> Option.value ~default:"Hello")))) );
@@ -320,10 +322,11 @@ functor
               (Unsafe.callback (fun labeledArgs ->
                    encode_string_to_js
                      (M.get_default_student
-                        ~student:
+                        ~larg_student:
                           ((let open Js_of_ocaml.Js in
                             Optdef.bind labeledArgs (fun la ->
-                                Optdef.map (Unsafe.get la "student") (fun x ->
+                                Optdef.map (Unsafe.get la "largStudent")
+                                  (fun x ->
                                     Kxclib_js.Json_ext.of_xjv x
                                     |> ex_record_student_of_json'
                                     |> function
@@ -369,42 +372,42 @@ functor
 
       let registry_of_string = ref StringMap.empty
 
-      let lookup_string ~id0 ~id1 =
+      let lookup_string ~cdn_id0 ~cdn_id1 =
         !registry_of_string
         |> StringMap.find_opt
              (let open Map_key in
               String.concat ""
                 [
-                  encode_map_key ~check_type:`string (Mk_string id0);
-                  encode_map_key ~check_type:`int53p (Mk_int53 id1);
+                  encode_map_key ~check_type:`string (Mk_string cdn_id0);
+                  encode_map_key ~check_type:`int53p (Mk_int53 cdn_id1);
                 ])
 
-      and register_string ~id0 ~id1 value =
+      and register_string ~cdn_id0 ~cdn_id1 value =
         registry_of_string :=
           !registry_of_string
           |> StringMap.update
                (let open Map_key in
                 String.concat ""
                   [
-                    encode_map_key ~check_type:`string (Mk_string id0);
-                    encode_map_key ~check_type:`int53p (Mk_int53 id1);
+                    encode_map_key ~check_type:`string (Mk_string cdn_id0);
+                    encode_map_key ~check_type:`int53p (Mk_int53 cdn_id1);
                   ])
                (fun _ -> value)
 
       let registry_of_hello = ref StringMap.empty
 
-      let lookup_hello ~id =
+      let lookup_hello ~cdn_id =
         !registry_of_hello
         |> StringMap.find_opt
              (let open Map_key in
-              encode_map_key ~check_type:`string (Mk_string id))
+              encode_map_key ~check_type:`string (Mk_string cdn_id))
 
-      and register_hello ~id value =
+      and register_hello ~cdn_id value =
         registry_of_hello :=
           !registry_of_hello
           |> StringMap.update
                (let open Map_key in
-                encode_map_key ~check_type:`string (Mk_string id))
+                encode_map_key ~check_type:`string (Mk_string cdn_id))
                (fun _ -> value)
     end
 
@@ -438,12 +441,12 @@ functor
                               Unsafe.inject
                                 (Unsafe.callback (fun coordinate ->
                                      lookup_string
-                                       ~id0:
+                                       ~cdn_id0:
                                          (decode_string_of_js
-                                            (Js.Unsafe.get coordinate "id0"))
-                                       ~id1:
+                                            (Js.Unsafe.get coordinate "cdnId0"))
+                                       ~cdn_id1:
                                          (decode_int53p_of_js
-                                            (Js.Unsafe.get coordinate "id1"))
+                                            (Js.Unsafe.get coordinate "cdnId1"))
                                      |> function
                                      | None -> Js.Unsafe.inject Js.null
                                      | Some obj ->
@@ -453,9 +456,9 @@ functor
                               Unsafe.inject
                                 (Unsafe.callback (fun coordinate ->
                                      lookup_hello
-                                       ~id:
+                                       ~cdn_id:
                                          (decode_string_of_js
-                                            (Js.Unsafe.get coordinate "id"))
+                                            (Js.Unsafe.get coordinate "cdnId"))
                                      |> function
                                      | None -> Js.Unsafe.inject Js.null
                                      | Some obj ->

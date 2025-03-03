@@ -31,8 +31,8 @@ const initParams: GeneratedBridge.EndemicSetupParams = {
   initiallyRegisteredObjects: {
     string: [],
     hello: [
-      [ { id: "foo" }, (s) => buffer.push("hello(foo): " + s)],
-      [ { id: "bar" }, (s) => buffer.push("hello(bar): " + s)]
+      [ { cdnId: "foo" }, (s) => buffer.push("hello(foo): " + s)],
+      [ { cdnId: "bar" }, (s) => buffer.push("hello(bar): " + s)]
     ]
   },
   endemicObjects: (() => {
@@ -54,10 +54,10 @@ const initParams: GeneratedBridge.EndemicSetupParams = {
       },
       withDefaultValue: {
         getDefaultString(labeledArgs) {
-          return labeledArgs!.str!;
+          return labeledArgs!.largStr!;
         },
         getDefaultStudent(labeledArgs) {
-          return labeledArgs!.student!.name;
+          return labeledArgs!.largStudent!.name;
         },
       }
     };
@@ -129,7 +129,7 @@ describe("ex_objintf_one_directinoal", () => {
   test("hello_registry", async () => {
     const bridge = await fullBridge.bridgeAsync;
     bridge.endemicObjectRegistry.string
-      .register({ id0: "1", id1: 1.2 }, "registered string");
+      .register({ cdnId0: "1", cdnId1: 1.2 }, "registered string");
     
     usage.usage()?.hello_registry();
 

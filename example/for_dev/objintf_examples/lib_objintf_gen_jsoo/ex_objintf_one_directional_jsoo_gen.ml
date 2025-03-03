@@ -130,8 +130,8 @@ module Simple_interfaces = struct
   end
 
   module type with_default_value = sig
-    val get_default_string : ?str:string -> string
-    val get_default_student : ?student:ex_record_student -> string
+    val get_default_string : ?larg_str:string -> string
+    val get_default_student : ?larg_student:ex_record_student -> string
   end
 end
 
@@ -173,8 +173,8 @@ module type Concrete_bridge = sig
   open Interfaces [@@warning "-33"]
 
   module Peer_object_registry : sig
-    val lookup_string : id0:string -> id1:Kxclib.int53p -> string option
-    val lookup_hello : id:string -> hello peer option
+    val lookup_string : cdn_id0:string -> cdn_id1:Kxclib.int53p -> string option
+    val lookup_hello : cdn_id:string -> hello peer option
   end
 
   module Peer_objects : sig
@@ -278,11 +278,13 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                       and decode_int53p_of_js = Kxclib.Int53p.of_float
                       [@@warning "-32"]
 
-                      let rec decode_hello_of_js __js_obj name =
+                      let rec decode_hello_of_js __js_obj parg_name =
                         let open Js_of_ocaml in
                         decode_unit_of_js
                           (Js.Unsafe.fun_call __js_obj
-                             [| Js.Unsafe.inject (encode_string_to_js name) |])
+                             [|
+                               Js.Unsafe.inject (encode_string_to_js parg_name);
+                             |])
                       [@@warning "-39"]
 
                       and decode_unit_sole_of_js __js_obj __arg0 () () =
@@ -307,12 +309,13 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                    Js.Unsafe.inject (encode_string_to_js __arg0);
                                  |])
 
-                          method unit_02 __arg0 () () =
+                          method unit_02 parg_name () () =
                             let open Js_of_ocaml in
                             decode_string_of_js
                               (Js.Unsafe.meth_call __js_obj "unit02"
                                  [|
-                                   Js.Unsafe.inject (encode_string_to_js __arg0);
+                                   Js.Unsafe.inject
+                                     (encode_string_to_js parg_name);
                                  |])
 
                           method unit_03 __arg0 () () () =
@@ -340,12 +343,13 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                    Js.Unsafe.inject (encode_string_to_js __arg0);
                                  |])
 
-                          and unit_02 __arg0 () () =
+                          and unit_02 parg_name () () =
                             let open Js_of_ocaml in
                             decode_string_of_js
                               (Js.Unsafe.meth_call __js_obj "unit02"
                                  [|
-                                   Js.Unsafe.inject (encode_string_to_js __arg0);
+                                   Js.Unsafe.inject
+                                     (encode_string_to_js parg_name);
                                  |])
 
                           and unit_03 __arg0 () () () =
@@ -360,7 +364,7 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
 
                       and decode_with_default_value_of_js __js_obj =
                         (module struct
-                          let get_default_string ?str =
+                          let get_default_string ?larg_str =
                             let open Js_of_ocaml in
                             decode_string_of_js
                               (Js.Unsafe.meth_call __js_obj "getDefaultString"
@@ -369,17 +373,17 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                      (let open Js_of_ocaml.Js in
                                       Unsafe.obj
                                         [|
-                                          ( "str",
+                                          ( "largStr",
                                             Unsafe.inject
                                               (encode_string_to_js
-                                                 (str
+                                                 (larg_str
                                                  |> Option.value
                                                       ~default:"Hello")) );
                                         |]);
                                  |])
                           [@@warning "-16"]
 
-                          and get_default_student ?student =
+                          and get_default_student ?larg_student =
                             let open Js_of_ocaml in
                             decode_string_of_js
                               (Js.Unsafe.meth_call __js_obj "getDefaultStudent"
@@ -388,12 +392,12 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                      (let open Js_of_ocaml.Js in
                                       Unsafe.obj
                                         [|
-                                          ( "student",
+                                          ( "largStudent",
                                             Unsafe.inject
                                               ((fun x ->
                                                  ex_record_student_to_json x
                                                  |> Kxclib_js.Json_ext.to_xjv)
-                                                 (student
+                                                 (larg_student
                                                  |> Option.value
                                                       ~default:
                                                         {
@@ -431,19 +435,19 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
 
                         let registry_of_string = ref StringMap.empty
 
-                        let lookup_string ~id0 ~id1 =
+                        let lookup_string ~cdn_id0 ~cdn_id1 =
                           !registry_of_string
                           |> StringMap.find_opt
                                (let open Map_key in
                                 String.concat ""
                                   [
                                     encode_map_key ~check_type:`string
-                                      (Mk_string id0);
+                                      (Mk_string cdn_id0);
                                     encode_map_key ~check_type:`int53p
-                                      (Mk_int53 id1);
+                                      (Mk_int53 cdn_id1);
                                   ])
 
-                        and register_string ~id0 ~id1 value =
+                        and register_string ~cdn_id0 ~cdn_id1 value =
                           registry_of_string :=
                             !registry_of_string
                             |> StringMap.update
@@ -451,28 +455,28 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                   String.concat ""
                                     [
                                       encode_map_key ~check_type:`string
-                                        (Mk_string id0);
+                                        (Mk_string cdn_id0);
                                       encode_map_key ~check_type:`int53p
-                                        (Mk_int53 id1);
+                                        (Mk_int53 cdn_id1);
                                     ])
                                  (fun _ -> value)
 
                         let registry_of_hello = ref StringMap.empty
 
-                        let lookup_hello ~id =
+                        let lookup_hello ~cdn_id =
                           !registry_of_hello
                           |> StringMap.find_opt
                                (let open Map_key in
                                 encode_map_key ~check_type:`string
-                                  (Mk_string id))
+                                  (Mk_string cdn_id))
 
-                        and register_hello ~id value =
+                        and register_hello ~cdn_id value =
                           registry_of_hello :=
                             !registry_of_hello
                             |> StringMap.update
                                  (let open Map_key in
                                   encode_map_key ~check_type:`string
-                                    (Mk_string id))
+                                    (Mk_string cdn_id))
                                  (fun _ -> value)
 
                         let () =
@@ -496,23 +500,23 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                  with
                                  | "register" ->
                                      register_string
-                                       ~id0:
+                                       ~cdn_id0:
                                          (decode_string_of_js
-                                            (Js.Unsafe.get coordinate "id0"))
-                                       ~id1:
+                                            (Js.Unsafe.get coordinate "cdnId0"))
+                                       ~cdn_id1:
                                          (decode_int53p_of_js
-                                            (Js.Unsafe.get coordinate "id1"))
+                                            (Js.Unsafe.get coordinate "cdnId1"))
                                        (Some
                                           (decode_string_of_js
                                              (Js.Unsafe.get x "value")))
                                  | "deregister" ->
                                      register_string
-                                       ~id0:
+                                       ~cdn_id0:
                                          (decode_string_of_js
-                                            (Js.Unsafe.get coordinate "id0"))
-                                       ~id1:
+                                            (Js.Unsafe.get coordinate "cdnId0"))
+                                       ~cdn_id1:
                                          (decode_int53p_of_js
-                                            (Js.Unsafe.get coordinate "id1"))
+                                            (Js.Unsafe.get coordinate "cdnId1"))
                                        None
                                  | kind -> failwith ("unexpected kind: " ^ kind));
                           Js.Unsafe.get
@@ -528,17 +532,17 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                  with
                                  | "register" ->
                                      register_hello
-                                       ~id:
+                                       ~cdn_id:
                                          (decode_string_of_js
-                                            (Js.Unsafe.get coordinate "id"))
+                                            (Js.Unsafe.get coordinate "cdnId"))
                                        (Some
                                           ((wrap_peer decode_hello_of_js)
                                              (Js.Unsafe.get x "value")))
                                  | "deregister" ->
                                      register_hello
-                                       ~id:
+                                       ~cdn_id:
                                          (decode_string_of_js
-                                            (Js.Unsafe.get coordinate "id"))
+                                            (Js.Unsafe.get coordinate "cdnId"))
                                        None
                                  | kind -> failwith ("unexpected kind: " ^ kind));
                           Js.Unsafe.set
@@ -558,14 +562,16 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                                  (fun coordinate ->
                                                    fun value ->
                                                     register_string
-                                                      ~id0:
+                                                      ~cdn_id0:
                                                         (decode_string_of_js
                                                            (Js.Unsafe.get
-                                                              coordinate "id0"))
-                                                      ~id1:
+                                                              coordinate
+                                                              "cdnId0"))
+                                                      ~cdn_id1:
                                                         (decode_int53p_of_js
                                                            (Js.Unsafe.get
-                                                              coordinate "id1"))
+                                                              coordinate
+                                                              "cdnId1"))
                                                       (Some
                                                          (decode_string_of_js
                                                             value)))) );
@@ -574,14 +580,14 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                               (Unsafe.callback
                                                  (fun coordinate ->
                                                    register_string
-                                                     ~id0:
+                                                     ~cdn_id0:
                                                        (decode_string_of_js
                                                           (Js.Unsafe.get
-                                                             coordinate "id0"))
-                                                     ~id1:
+                                                             coordinate "cdnId0"))
+                                                     ~cdn_id1:
                                                        (decode_int53p_of_js
                                                           (Js.Unsafe.get
-                                                             coordinate "id1"))
+                                                             coordinate "cdnId1"))
                                                      None)) );
                                         |]) );
                                  ( "hello",
@@ -595,10 +601,10 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                                  (fun coordinate ->
                                                    fun value ->
                                                     register_hello
-                                                      ~id:
+                                                      ~cdn_id:
                                                         (decode_string_of_js
                                                            (Js.Unsafe.get
-                                                              coordinate "id"))
+                                                              coordinate "cdnId"))
                                                       (Some
                                                          ((wrap_peer
                                                              decode_hello_of_js)
@@ -608,10 +614,10 @@ module Full_bridge_with_jsoo : Peer_setup_only_full_bridge = struct
                                               (Unsafe.callback
                                                  (fun coordinate ->
                                                    register_hello
-                                                     ~id:
+                                                     ~cdn_id:
                                                        (decode_string_of_js
                                                           (Js.Unsafe.get
-                                                             coordinate "id"))
+                                                             coordinate "cdnId"))
                                                      None)) );
                                         |]) );
                                |])

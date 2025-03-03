@@ -130,16 +130,18 @@ module Simple_interfaces = struct
   end
 
   module type with_default_value = sig
-    val get_default_string : ?str:string -> string
-    val get_default_student : ?student:ex_record_student -> string
+    val get_default_string : ?larg_str:string -> string
+    val get_default_student : ?larg_student:ex_record_student -> string
   end
 end
 
 open Simple_interfaces [@@warning "-33"]
 
 module type Endemic_object_registry_interface = sig
-  val register_string : id0:string -> id1:Kxclib.int53p -> string option -> unit
-  val register_hello : id:string -> hello option -> unit
+  val register_string :
+    cdn_id0:string -> cdn_id1:Kxclib.int53p -> string option -> unit
+
+  val register_hello : cdn_id:string -> hello option -> unit
 end
 
 module Concrete_bridge_interfaces = struct

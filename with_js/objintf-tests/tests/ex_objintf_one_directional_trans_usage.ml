@@ -49,15 +49,15 @@ module Bridge = Full_bridge_with_jsoo(struct
     { bytes = Bytes.of_string "Hello, world!" }
 
   let with_default_value = (module (struct
-    let get_default_string ?str : string = Option.get str
+    let get_default_string ?larg_str : string = Option.get larg_str
     [@@warning "-16"]
-    let get_default_student ?student = (Option.get student).name
+    let get_default_student ?larg_student = (Option.get larg_student).name
     [@@warning "-16"]
   end) : Interfaces.with_default_value)
   
   let initially_registry_objects (module E: Endemic_object_registry_interface) =
-    E.register_hello ~id:"foo" (some & fun name -> refappend buffer ("hello (foo): "^name));
-    E.register_hello ~id:"bar" (some & fun name -> refappend buffer ("hello (bar): "^name));
+    E.register_hello ~cdn_id:"foo" (some & fun name -> refappend buffer ("hello (foo): "^name));
+    E.register_hello ~cdn_id:"bar" (some & fun name -> refappend buffer ("hello (bar): "^name));
     ()
 end)
 
@@ -69,7 +69,7 @@ let () =
     method register_js =
       Bridge.Endemic_object_registry.(
         register_string
-          ~id0:"1" ~id1:(Int53p.of_float 1.2)
+          ~cdn_id0:"1" ~cdn_id1:(Int53p.of_float 1.2)
           (Some "registered string");
       )
 

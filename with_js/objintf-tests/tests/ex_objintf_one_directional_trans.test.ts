@@ -101,14 +101,14 @@ describe("ex_objintf_one_directinoal_trans", () => {
   });
 
   test("helloRegistry", () => {
-    const getName = () => b.peerObjectRegistry.lookupString({ id0: "1", id1: 1.2});
+    const getName = () => b.peerObjectRegistry.lookupString({ cdnId0: "1", cdnId1: 1.2});
 
     expect(getName()).toBeNull();
     
     usage.register();
 
     const name = getName();
-    const hello = b.peerObjectRegistry.lookupHello({ id: "foo" });
+    const hello = b.peerObjectRegistry.lookupHello({ cdnId: "foo" });
     
 
     expect(name).not.toBeNull();

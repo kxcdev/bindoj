@@ -41,14 +41,14 @@ module Usage(Bridge : Concrete_bridge) = struct
     let open Bridge.Peer_object_registry in
     let name = 
       lookup_string
-        ~id0:"1"
-        ~id1:(Int53p.of_float 1.2)
+        ~cdn_id0:"1"
+        ~cdn_id1:(Int53p.of_float 1.2)
       |?! (fun () -> failwith "string not found")
       |> from_ocaml
     in
     let hello =
       lookup_hello
-        ~id:"foo"
+        ~cdn_id:"foo"
       |?! (fun () -> failwith "hello not found")
     in
     Bridge.access hello name
@@ -68,8 +68,8 @@ module Usage(Bridge : Concrete_bridge) = struct
 
   let hello_with_default_value () =
     let module V = (val Bridge.(access Peer_objects.with_default_value)) in
-    my_hello (V.get_default_string ?str:None);
-    my_hello (V.get_default_student ?student:None);
+    my_hello (V.get_default_string ?larg_str:None);
+    my_hello (V.get_default_student ?larg_student:None);
 end
 
 let () =

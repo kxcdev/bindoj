@@ -634,6 +634,7 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
                 | _ -> [ (Nolabel, None, pvar Bridge_labels.Js.labeledArgs) ])
             in
             let get_larg label optional encoder =
+              let label = Bridge_labels.Js.mangle_field_name label in
               if all_largs_are_optional then
                 [%expr Js_of_ocaml.Js.(
                   Optdef.bind [%e evar Bridge_labels.Js.labeledArgs] (fun la ->
@@ -828,7 +829,7 @@ let jsoo_full_bridge_impl : type bridgeable_ident.
               [%e
                 decoder_of_complex_type
                   (`direct (ord_coordinate_to_coretype desc))]
-              (Js.Unsafe.get [%e earg] [%e estring ~loc label])
+              (Js.Unsafe.get [%e earg] [%e estring ~loc (Bridge_labels.Js.mangle_field_name label)])
             ])
       end
 

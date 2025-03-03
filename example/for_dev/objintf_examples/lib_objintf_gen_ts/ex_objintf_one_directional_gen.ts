@@ -3,23 +3,23 @@ import { objintf as bindoj } from "../../public-packages/runtime";
 import { NonJsonValues } from "./utils";
 export type MyString = string;
 export type ExRecordStudent = { readonly admissionYear: number; readonly name: string };
-export type Hello = (name: string) => void;
+export type Hello = (pargName: string) => void;
 export type UnitSole = (__arg0: string) => string;
 export type UnitObj = {
   readonly name: () => string;
   readonly unit01: (__arg0: string) => string;
-  readonly unit02: (__arg0: string) => string;
+  readonly unit02: (pargName: string) => string;
   readonly unit03: (__arg0: string) => string;
 };
 export type UnitMod = {
   readonly name: () => string;
   readonly unit01: (__arg0: string) => string;
-  readonly unit02: (__arg0: string) => string;
+  readonly unit02: (pargName: string) => string;
   readonly unit03: (__arg0: string) => string;
 };
 export type WithDefaultValue = {
-  readonly getDefaultString: (labeledArgs?: { readonly str?: MyString }) => string;
-  readonly getDefaultStudent: (labeledArgs?: { readonly student?: ExRecordStudent }) => string;
+  readonly getDefaultString: (labeledArgs?: { readonly largStr?: MyString }) => string;
+  readonly getDefaultStudent: (labeledArgs?: { readonly largStudent?: ExRecordStudent }) => string;
 };
 export namespace GeneratedBridge {
   export type PeerFullBridgeReference = bindoj.PeerFullBridgeReference<ConcreteBridge>;
@@ -29,8 +29,8 @@ export namespace GeneratedBridge {
   }
   export type ConcreteBridge = {
     readonly peerObjectRegistry: {
-      readonly lookupString: (coordinate: { readonly id0: string; readonly id1: number }) => string | null;
-      readonly lookupHello: (coordinate: { readonly id: string }) => bindoj.peer<Hello> | null;
+      readonly lookupString: (coordinate: { readonly cdnId0: string; readonly cdnId1: number }) => string | null;
+      readonly lookupHello: (coordinate: { readonly cdnId: string }) => bindoj.peer<Hello> | null;
     };
     readonly peerObjects: {
       readonly myString: string;

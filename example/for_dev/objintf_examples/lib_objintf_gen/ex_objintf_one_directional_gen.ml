@@ -130,8 +130,8 @@ module Simple_interfaces = struct
   end
 
   module type with_default_value = sig
-    val get_default_string : ?str:string -> string
-    val get_default_student : ?student:ex_record_student -> string
+    val get_default_string : ?larg_str:string -> string
+    val get_default_student : ?larg_student:ex_record_student -> string
   end
 end
 
@@ -173,8 +173,8 @@ module type Concrete_bridge = sig
   open Interfaces [@@warning "-33"]
 
   module Peer_object_registry : sig
-    val lookup_string : id0:string -> id1:Kxclib.int53p -> string option
-    val lookup_hello : id:string -> hello peer option
+    val lookup_string : cdn_id0:string -> cdn_id1:Kxclib.int53p -> string option
+    val lookup_hello : cdn_id:string -> hello peer option
   end
 
   module Peer_objects : sig
