@@ -57,8 +57,9 @@ Start the client program.
     status = `Unpaid }
 
 Check endpoints
-  $ curl -si localhost:$PORT/orders/get \
-  >   -d '{"products": [0, 2, 5, 9]}'
+  $ curl -si localhost:$PORT/orders/get  \
+  >   -d '{"products": [0, 2, 5, 9]}' \
+  >   | grep -v 'connection: '
   HTTP/1.1 200 Status 200
   Content-Type: application/json
   content-length: 281
@@ -67,7 +68,8 @@ Check endpoints
 
 Check endpoints
   $ curl -si localhost:8082/order/status/update \
-  >   -d '{"_0": 10, "_1": "Shipped"}'
+  >   -d '{"_0": 10, "_1": "Shipped"}' \
+  >   | grep -v 'connection: '
   HTTP/1.1 400 Status 400
   Content-Type: application/json
   content-length: 22
@@ -76,7 +78,8 @@ Check endpoints
 
 Check endpoints
   $ curl -si localhost:8082/product/details/update \
-  >   -d '{ "_0": 0, _1: { "price": 1000 } }'
+  >   -d '{ "_0": 0, _1: { "price": 1000 } }' \
+  >   | grep -v 'connection: '
   HTTP/1.1 400 Status 400
   Content-Type: application/json
   content-length: 1547

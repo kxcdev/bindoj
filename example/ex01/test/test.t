@@ -30,7 +30,8 @@ Check endpoints
 
 Check endpoints
   $ curl -si localhost:$PORT/student/from-person \
-  >   -d '{"kind":"with-id","value":0}'
+  >   -d '{"kind":"with-id","value":0}' \
+  >   | grep -v 'connection: '
   HTTP/1.1 422 Status 422
   Content-Type: application/json
   content-length: 22
@@ -39,7 +40,8 @@ Check endpoints
 
 Check endpoints
   $ curl -si localhost:$PORT/student/from-person \
-  >   -d '{"kind":"student","studentId":0}'
+  >   -d '{"kind":"student","studentId":0}' \
+  >   | grep -v 'connection: '
   HTTP/1.1 400 Status 400
   Content-Type: application/json
   content-length: 1611
