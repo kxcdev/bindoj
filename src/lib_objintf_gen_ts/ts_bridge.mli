@@ -26,12 +26,14 @@ type type_decl_resolution_strategy = [
   | `import_location of string
   | `inline_type_definition
   | `infile_type_definition
+  | `no_resolution
 ]
 
 type ident_resolution_strategy = [
   | `import_location of string
   | `inline_type_definition of ts_type_desc
   | `infile_type_definition of ts_type_desc
+  | `no_resolution
 ]
 
 val ts_ast_of_objintf :

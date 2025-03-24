@@ -69,19 +69,22 @@ type type_decl_resolution_strategy = [
   | `import_location of string
   | `inline_type_definition
   | `infile_type_definition
+  | `no_resolution
 ]
 
 type ident_resolution_strategy = [
   | `import_location of string
   | `inline_type_definition of ts_type_desc
   | `infile_type_definition of ts_type_desc
+  | `no_resolution
 ]
 
 let validate_resolution_strategy ~(type_decl_resolution_strategy: _ -> _ -> type_decl_resolution_strategy) td codec = 
   let strategy = type_decl_resolution_strategy td codec in
   let () = match strategy with
   | `import_location _
-  | `infile_type_definition -> ()
+  | `infile_type_definition
+  | `no_resolution -> ()
   | `inline_type_definition when is_recursive td -> failwith "Recursive type cannot be defined inilne."
   | `inline_type_definition -> ()
   in
@@ -187,7 +190,8 @@ let ts_type_desc_of_type_decl :
   fun ~type_decl_resolution_strategy td codec ->
     match type_decl_resolution_strategy td codec with
     | `import_location _
-    | `infile_type_definition ->
+    | `infile_type_definition
+    | `no_resolution ->
       `type_reference (Ts_config.get_mangled_name_of_type ~escaping_charmap:Mangling.charmap_js_identifier td |> fst)
     | `inline_type_definition ->
       td
@@ -202,7 +206,8 @@ let ts_type_desc_of_ident :
   fun ~ident_resolution_strategy mangling_style ident ->
     match ident_resolution_strategy ident with
     | `import_location _
-    | `infile_type_definition _ ->
+    | `infile_type_definition _
+    | `no_resolution ->
       `type_reference (Ts_config.mangled `type_name mangling_style ident.id_name |> Mangling.(escape ~charmap:charmap_js_identifier))
     | `inline_type_definition desc -> desc
 
