@@ -45,6 +45,7 @@
   (prr (>= 0.1.1))
   (ppx_inline_test :with-test)
   (lwt :with-test)
+  (ssl :with-test)
   (uri (>= 4.2.0))
   (bisect_ppx (>= 2.7.1))
   (ocamlformat (and :with-test (= 0.27.0)))
